@@ -394,7 +394,7 @@ defmodule JustBash.Parser do
     line =
       cond do
         name -> current(parser).line
-        length(assignments) > 0 -> current(parser).line
+        assignments != [] -> current(parser).line
         true -> nil
       end
 

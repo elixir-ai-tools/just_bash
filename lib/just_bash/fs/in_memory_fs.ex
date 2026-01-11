@@ -107,30 +107,28 @@ defmodule JustBash.Fs.InMemoryFs do
   """
   @spec normalize_path(String.t()) :: String.t()
   def normalize_path(path) do
-    cond do
-      path == "" or path == "/" ->
-        "/"
+    if path == "" or path == "/" do
+      "/"
+    else
+      normalized =
+        path
+        |> String.trim_trailing("/")
+        |> ensure_leading_slash()
 
-      true ->
-        normalized =
-          path
-          |> String.trim_trailing("/")
-          |> ensure_leading_slash()
+      parts =
+        normalized
+        |> String.split("/")
+        |> Enum.filter(&(&1 != "" and &1 != "."))
 
-        parts =
-          normalized
-          |> String.split("/")
-          |> Enum.filter(&(&1 != "" and &1 != "."))
+      resolved =
+        Enum.reduce(parts, [], fn
+          "..", [] -> []
+          "..", acc -> tl(acc)
+          part, acc -> [part | acc]
+        end)
+        |> Enum.reverse()
 
-        resolved =
-          Enum.reduce(parts, [], fn
-            "..", [] -> []
-            "..", acc -> tl(acc)
-            part, acc -> [part | acc]
-          end)
-          |> Enum.reverse()
-
-        "/" <> Enum.join(resolved, "/")
+      "/" <> Enum.join(resolved, "/")
     end
   end
 

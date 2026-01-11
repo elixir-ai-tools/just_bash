@@ -493,14 +493,12 @@ defmodule JustBash.Arithmetic do
     {name, pos} = collect_var_name(str, pos, "")
     pos = skip_whitespace(str, pos)
 
-    cond do
-      match_assignment_op?(str, pos) ->
-        {op, op_len} = get_assignment_op(str, pos)
-        {value, pos} = parse_ternary(str, pos + op_len)
-        {%AST.ArithAssignment{operator: op, variable: name, value: value}, pos}
-
-      true ->
-        {%AST.ArithVariable{name: name}, pos}
+    if match_assignment_op?(str, pos) do
+      {op, op_len} = get_assignment_op(str, pos)
+      {value, pos} = parse_ternary(str, pos + op_len)
+      {%AST.ArithAssignment{operator: op, variable: name, value: value}, pos}
+    else
+      {%AST.ArithVariable{name: name}, pos}
     end
   end
 

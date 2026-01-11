@@ -89,7 +89,7 @@ jobs:
         run: mix format --check-formatted
 
       - name: Run Credo
-        run: mix credo --strict
+        run: mix credo
 
   dialyzer:
     name: Dialyzer

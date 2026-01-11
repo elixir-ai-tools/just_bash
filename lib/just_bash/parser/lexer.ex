@@ -168,8 +168,8 @@ defmodule JustBash.Parser.Lexer do
   end
 
   defp maybe_read_heredoc_content(lexer) do
-    has_pending = length(lexer.pending_heredocs) > 0
-    has_tokens = length(lexer.tokens) > 0
+    has_pending = lexer.pending_heredocs != []
+    has_tokens = lexer.tokens != []
     last_is_newline = has_tokens and hd(lexer.tokens).type == :newline
 
     if has_pending and last_is_newline do
