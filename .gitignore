@@ -1,0 +1,32 @@
+/_build/
+/cover/
+/deps/
+/doc/
+/.fetch
+erl_crash.dump
+*.ez
+just_bash-*.tar
+/tmp/
+
+# Dialyzer
+/priv/plts/
+*.plt
+*.plt.hash
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Elixir
+.elixir_ls/
+.elixir-tools/
+
+# Mix
+mix.lock.bak
