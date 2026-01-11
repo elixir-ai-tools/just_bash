@@ -34,14 +34,14 @@ defmodule JustBash.Commands.Test do
       "-z" -> if arg == "", do: 0, else: 1
       "-n" -> if arg != "", do: 0, else: 1
       "-e" -> if file_exists?(bash, arg), do: 0, else: 1
-      "-f" -> if is_file?(bash, arg), do: 0, else: 1
-      "-d" -> if is_directory?(bash, arg), do: 0, else: 1
+      "-f" -> if file?(bash, arg), do: 0, else: 1
+      "-d" -> if directory?(bash, arg), do: 0, else: 1
       "-r" -> if file_exists?(bash, arg), do: 0, else: 1
       "-w" -> if file_exists?(bash, arg), do: 0, else: 1
       "-x" -> if file_exists?(bash, arg), do: 0, else: 1
       "-s" -> if file_has_size?(bash, arg), do: 0, else: 1
-      "-L" -> if is_symlink?(bash, arg), do: 0, else: 1
-      "-h" -> if is_symlink?(bash, arg), do: 0, else: 1
+      "-L" -> if symlink?(bash, arg), do: 0, else: 1
+      "-h" -> if symlink?(bash, arg), do: 0, else: 1
       "!" -> if arg == "", do: 0, else: 1
       _ -> 1
     end
@@ -124,7 +124,7 @@ defmodule JustBash.Commands.Test do
     end
   end
 
-  defp is_file?(bash, path) do
+  defp file?(bash, path) do
     resolved = InMemoryFs.resolve_path(bash.cwd, path)
 
     case InMemoryFs.stat(bash.fs, resolved) do
@@ -133,7 +133,7 @@ defmodule JustBash.Commands.Test do
     end
   end
 
-  defp is_directory?(bash, path) do
+  defp directory?(bash, path) do
     resolved = InMemoryFs.resolve_path(bash.cwd, path)
 
     case InMemoryFs.stat(bash.fs, resolved) do
@@ -142,7 +142,7 @@ defmodule JustBash.Commands.Test do
     end
   end
 
-  defp is_symlink?(bash, path) do
+  defp symlink?(bash, path) do
     resolved = InMemoryFs.resolve_path(bash.cwd, path)
 
     case InMemoryFs.stat(bash.fs, resolved) do

@@ -396,10 +396,10 @@ defmodule JustBash.Arithmetic do
 
         {%AST.ArithGroup{expression: inner}, pos}
 
-      is_digit?(str, pos) ->
+      digit?(str, pos) ->
         parse_number(str, pos)
 
-      is_var_start?(str, pos) ->
+      var_start?(str, pos) ->
         parse_variable_or_assignment(str, pos)
 
       String.at(str, pos) == "$" ->
@@ -421,12 +421,10 @@ defmodule JustBash.Arithmetic do
   defp collect_number(str, pos, acc) do
     char = String.at(str, pos)
 
-    cond do
-      is_alnum?(char) or char == "#" or char == "x" or char == "X" ->
-        collect_number(str, pos + 1, acc <> char)
-
-      true ->
-        {acc, pos}
+    if alnum?(char) or char == "#" or char == "x" or char == "X" do
+      collect_number(str, pos + 1, acc <> char)
+    else
+      {acc, pos}
     end
   end
 
@@ -556,14 +554,14 @@ defmodule JustBash.Arithmetic do
   defp collect_var_name(str, pos, acc) do
     char = String.at(str, pos)
 
-    if is_var_char?(char, acc == "") do
+    if var_char?(char, acc == "") do
       collect_var_name(str, pos + 1, acc <> char)
     else
       {acc, pos}
     end
   end
 
-  defp is_var_char?(char, is_first) do
+  defp var_char?(char, is_first) do
     cond do
       char >= "a" and char <= "z" -> true
       char >= "A" and char <= "Z" -> true
@@ -573,17 +571,17 @@ defmodule JustBash.Arithmetic do
     end
   end
 
-  defp is_var_start?(str, pos) do
+  defp var_start?(str, pos) do
     char = String.at(str, pos)
-    is_var_char?(char, true)
+    var_char?(char, true)
   end
 
-  defp is_digit?(str, pos) do
+  defp digit?(str, pos) do
     char = String.at(str, pos)
     char >= "0" and char <= "9"
   end
 
-  defp is_alnum?(char) do
+  defp alnum?(char) do
     (char >= "0" and char <= "9") or
       (char >= "a" and char <= "z") or
       (char >= "A" and char <= "Z")

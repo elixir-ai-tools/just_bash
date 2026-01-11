@@ -33,8 +33,7 @@ defmodule JustBash.Commands.Uniq do
       if count_flag do
         lines
         |> Enum.chunk_by(& &1)
-        |> Enum.map(fn chunk -> "#{length(chunk)} #{hd(chunk)}" end)
-        |> Enum.join("\n")
+        |> Enum.map_join("\n", fn chunk -> "#{length(chunk)} #{hd(chunk)}" end)
       else
         lines
         |> Enum.dedup()

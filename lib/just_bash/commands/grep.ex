@@ -32,7 +32,7 @@ defmodule JustBash.Commands.Grep do
 
                 if matching_lines != [] do
                   prefix = if length(files) > 1, do: "#{file}:", else: ""
-                  output = matching_lines |> Enum.map(&(prefix <> &1)) |> Enum.join("\n")
+                  output = Enum.map_join(matching_lines, "\n", &(prefix <> &1))
                   {out_acc <> output <> "\n", 0}
                 else
                   {out_acc, code_acc}

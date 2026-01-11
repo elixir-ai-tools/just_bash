@@ -45,8 +45,7 @@ defmodule JustBash.Commands.Tr do
 
     input
     |> String.graphemes()
-    |> Enum.map(fn char -> Map.get(mapping, char, char) end)
-    |> Enum.join()
+    |> Enum.map_join("", fn char -> Map.get(mapping, char, char) end)
   end
 
   defp expand_set(set) do
@@ -55,7 +54,7 @@ defmodule JustBash.Commands.Tr do
       to_cp = String.to_charlist(to) |> hd()
 
       if from_cp <= to_cp do
-        Enum.map(from_cp..to_cp, &<<&1::utf8>>) |> Enum.join()
+        Enum.map_join(from_cp..to_cp, "", &<<&1::utf8>>)
       else
         from <> "-" <> to
       end

@@ -173,7 +173,7 @@ defmodule JustBash.Parser do
     parser
   end
 
-  defp is_statement_end?(parser) do
+  defp statement_end?(parser) do
     check?(parser, [
       :eof,
       :newline,
@@ -189,7 +189,7 @@ defmodule JustBash.Parser do
     ])
   end
 
-  defp is_command_start?(parser) do
+  defp command_start?(parser) do
     check?(parser, [
       :word,
       :name,
@@ -228,7 +228,7 @@ defmodule JustBash.Parser do
   end
 
   defp parse_script_loop(parser, statements, iterations) do
-    if iterations > 10000 do
+    if iterations > 10_000 do
       error(parser, "Parser stuck: too many iterations")
     end
 
@@ -290,11 +290,11 @@ defmodule JustBash.Parser do
   defp parse_statement(parser) do
     parser = skip_newlines(parser)
 
-    if not is_command_start?(parser) do
-      {nil, parser}
-    else
+    if command_start?(parser) do
       {pipelines, operators, background, parser} = parse_statement_inner(parser)
       {AST.statement(pipelines, operators, background), parser}
+    else
+      {nil, parser}
     end
   end
 
@@ -374,12 +374,12 @@ defmodule JustBash.Parser do
       check?(parser, :dparen_start) -> parse_arithmetic_command(parser)
       check?(parser, :dbrack_start) -> parse_conditional_command(parser)
       check?(parser, :function) -> parse_function_def(parser)
-      is_function_def?(parser) -> parse_function_def(parser)
+      function_def?(parser) -> parse_function_def(parser)
       true -> parse_simple_command(parser)
     end
   end
 
-  defp is_function_def?(parser) do
+  defp function_def?(parser) do
     check?(parser, [:name, :word]) and
       peek(parser, 1).type == :lparen and
       peek(parser, 2).type == :rparen
@@ -436,7 +436,7 @@ defmodule JustBash.Parser do
   end
 
   defp parse_command_words(parser) do
-    if is_word?(parser) do
+    if word?(parser) do
       {name_token, parser} = advance(parser)
       name = parse_word_from_token(name_token)
       {args, parser} = parse_args(parser, [])
@@ -447,7 +447,7 @@ defmodule JustBash.Parser do
   end
 
   defp parse_args(parser, acc) do
-    if is_word?(parser) and not is_statement_end?(parser) do
+    if word?(parser) and not statement_end?(parser) do
       {token, parser} = advance(parser)
       word = parse_word_from_token(token)
       parse_args(parser, [word | acc])
@@ -456,7 +456,7 @@ defmodule JustBash.Parser do
     end
   end
 
-  defp is_word?(parser) do
+  defp word?(parser) do
     check?(parser, [
       :word,
       :name,
@@ -484,7 +484,7 @@ defmodule JustBash.Parser do
 
   defp parse_word_from_token(token) do
     parts =
-      JustBash.Parser.WordParts.parse(
+      WordParts.parse(
         token.value,
         quoted: token.quoted,
         single_quoted: token.single_quoted
@@ -494,7 +494,7 @@ defmodule JustBash.Parser do
   end
 
   defp parse_redirections(parser, acc) do
-    if is_redirection?(parser) do
+    if redirection?(parser) do
       {redir, parser} = parse_redirection(parser)
       parse_redirections(parser, [redir | acc])
     else
@@ -502,7 +502,7 @@ defmodule JustBash.Parser do
     end
   end
 
-  defp is_redirection?(parser) do
+  defp redirection?(parser) do
     token = current(parser)
 
     token.type in [
@@ -658,7 +658,7 @@ defmodule JustBash.Parser do
   end
 
   defp parse_word_list_loop(parser, acc) do
-    if is_word?(parser) and not check?(parser, [:semicolon, :newline, :do]) do
+    if word?(parser) and not check?(parser, [:semicolon, :newline, :do]) do
       {token, parser} = advance(parser)
       word = parse_word_from_token(token)
       parse_word_list_loop(parser, [word | acc])
@@ -921,7 +921,7 @@ defmodule JustBash.Parser do
         :semi_semi_and
       ])
 
-    if is_end or not is_command_start?(parser) do
+    if is_end or not command_start?(parser) do
       {Enum.reverse(statements), parser}
     else
       parser = check_iteration_limit(parser)

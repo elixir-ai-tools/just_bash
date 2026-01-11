@@ -3,17 +3,16 @@ defmodule JustBash.Interpreter.Expansion do
   Handles shell expansion: variables, command substitution, arithmetic.
   """
 
-  alias JustBash.AST
   alias JustBash.Arithmetic
+  alias JustBash.AST
+  alias JustBash.Interpreter.Executor
 
   @doc """
   Expand word parts into a string, handling all substitution types.
   """
   @spec expand_word_parts(JustBash.t(), [AST.word_part()]) :: String.t()
   def expand_word_parts(bash, parts) do
-    parts
-    |> Enum.map(&expand_part(bash, &1))
-    |> Enum.join()
+    Enum.map_join(parts, "", &expand_part(bash, &1))
   end
 
   defp expand_part(_bash, part) when is_binary(part), do: part
@@ -61,7 +60,7 @@ defmodule JustBash.Interpreter.Expansion do
   end
 
   defp execute_command_substitution(bash, %AST.Script{} = script) do
-    {result, _bash} = JustBash.Interpreter.Executor.execute_script(bash, script)
+    {result, _bash} = Executor.execute_script(bash, script)
     String.trim_trailing(result.stdout, "\n")
   end
 
