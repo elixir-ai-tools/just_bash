@@ -37,7 +37,10 @@ defmodule JustBash do
             cwd: "/home/user",
             functions: %{},
             exit_code: 0,
-            last_exit_code: 0
+            last_exit_code: 0,
+            network: %{enabled: false, allow_list: []},
+            shell_opts: %{errexit: false, nounset: false, pipefail: false},
+            http_client: nil
 
   @type exec_result :: %{
           stdout: String.t(),
@@ -46,13 +49,26 @@ defmodule JustBash do
           env: map()
         }
 
+  @type network_config :: %{
+          enabled: boolean(),
+          allow_list: [String.t()]
+        }
+
+  @type shell_opts :: %{
+          errexit: boolean(),
+          nounset: boolean(),
+          pipefail: boolean()
+        }
+
   @type t :: %__MODULE__{
           fs: InMemoryFs.t(),
           env: map(),
           cwd: String.t(),
           functions: map(),
           exit_code: non_neg_integer(),
-          last_exit_code: non_neg_integer()
+          last_exit_code: non_neg_integer(),
+          network: network_config(),
+          shell_opts: shell_opts()
         }
 
   @doc """
@@ -63,18 +79,29 @@ defmodule JustBash do
   - `:files` - Initial files as a map of path => content
   - `:env` - Initial environment variables
   - `:cwd` - Starting working directory (default: "/home/user")
+  - `:network` - Network configuration map with:
+    - `:enabled` - Whether network access is allowed (default: false)
+    - `:allow_list` - List of allowed hosts/patterns (default: [] = all allowed when enabled)
+  - `:http_client` - Module implementing the HTTP client behaviour (default: uses Req)
 
   ## Examples
 
       bash = JustBash.new()
       bash = JustBash.new(files: %{"/data/file.txt" => "content"})
       bash = JustBash.new(env: %{"MY_VAR" => "value"}, cwd: "/app")
+      bash = JustBash.new(network: %{enabled: true})
+      bash = JustBash.new(network: %{enabled: true, allow_list: ["api.example.com", "*.github.com"]})
+
+      # Custom HTTP client for testing:
+      bash = JustBash.new(network: %{enabled: true}, http_client: MyTestHttpClient)
   """
   @spec new(keyword()) :: t()
   def new(opts \\ []) do
     files = Keyword.get(opts, :files, %{})
     env = Keyword.get(opts, :env, %{})
     cwd = Keyword.get(opts, :cwd, "/home/user")
+    network = Keyword.get(opts, :network, %{enabled: false, allow_list: []})
+    http_client = Keyword.get(opts, :http_client)
 
     default_env = %{
       "HOME" => "/home/user",
@@ -91,7 +118,9 @@ defmodule JustBash do
       cwd: cwd,
       functions: %{},
       exit_code: 0,
-      last_exit_code: 0
+      last_exit_code: 0,
+      network: Map.merge(%{enabled: false, allow_list: []}, network),
+      http_client: http_client
     }
   end
 

@@ -145,8 +145,8 @@ defmodule JustBash.Commands.Test do
   defp symlink?(bash, path) do
     resolved = InMemoryFs.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.stat(bash.fs, resolved) do
-      {:ok, %{is_symlink: true}} -> true
+    case InMemoryFs.lstat(bash.fs, resolved) do
+      {:ok, %{is_symbolic_link: true}} -> true
       _ -> false
     end
   end

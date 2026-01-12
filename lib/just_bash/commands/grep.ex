@@ -3,64 +3,94 @@ defmodule JustBash.Commands.Grep do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.FlagParser
   alias JustBash.Fs.InMemoryFs
+
+  @flag_spec %{
+    boolean: [:i, :v, :e_ext, :f_fixed, :c, :l, :n, :o, :q, :w, :x, :with_filename, :no_filename],
+    aliases: %{"E" => :e_ext, "F" => :f_fixed, "H" => :with_filename, "h" => :no_filename},
+    value: [],
+    defaults: %{
+      i: false,
+      v: false,
+      e_ext: false,
+      f_fixed: false,
+      c: false,
+      l: false,
+      n: false,
+      o: false,
+      q: false,
+      w: false,
+      x: false,
+      with_filename: false,
+      no_filename: false
+    }
+  }
 
   @impl true
   def names, do: ["grep"]
 
   @impl true
   def execute(bash, args, stdin) do
-    {flags, rest} = parse_flags(args)
+    {flags, rest} = FlagParser.parse(args, @flag_spec)
 
     case rest do
       [pattern | files] when files != [] ->
         regex = compile_pattern(pattern, flags)
+        show_filename = flags.with_filename or (length(files) > 1 and not flags.no_filename)
 
-        {stdout, exit_code} =
-          Enum.reduce(files, {"", 1}, fn file, {out_acc, code_acc} ->
+        {results, any_match} =
+          Enum.reduce(files, {[], false}, fn file, {acc, had_match} ->
             resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
             case InMemoryFs.read_file(bash.fs, resolved) do
               {:ok, content} ->
-                matching_lines =
-                  content
-                  |> String.split("\n")
-                  |> Enum.filter(fn line ->
-                    matches = Regex.match?(regex, line)
-                    if flags.v, do: not matches, else: matches
-                  end)
+                prefix = if show_filename, do: "#{file}:", else: ""
+                lines = process_content(content, regex, flags, prefix)
+                matched = lines != []
 
-                if matching_lines != [] do
-                  prefix = if length(files) > 1, do: "#{file}:", else: ""
-                  output = Enum.map_join(matching_lines, "\n", &(prefix <> &1))
-                  {out_acc <> output <> "\n", 0}
-                else
-                  {out_acc, code_acc}
-                end
+                result =
+                  cond do
+                    flags.q -> nil
+                    flags.l and matched -> file
+                    flags.c -> "#{prefix}#{length(lines)}"
+                    matched -> Enum.join(lines, "\n")
+                    true -> nil
+                  end
+
+                {if(result, do: [result | acc], else: acc), had_match or matched}
 
               {:error, _} ->
-                {out_acc, code_acc}
+                {acc, had_match}
             end
           end)
 
-        {Command.result(stdout, "", exit_code), bash}
+        if flags.q do
+          {Command.result("", "", if(any_match, do: 0, else: 1)), bash}
+        else
+          output = results |> Enum.reverse() |> Enum.join("\n")
+          output = if output != "", do: output <> "\n", else: ""
+          {Command.result(output, "", if(any_match, do: 0, else: 1)), bash}
+        end
 
       [pattern] ->
         regex = compile_pattern(pattern, flags)
+        lines = process_content(stdin, regex, flags, "")
+        matched = lines != []
 
-        matching_lines =
-          stdin
-          |> String.split("\n")
-          |> Enum.filter(fn line ->
-            matches = Regex.match?(regex, line)
-            if flags.v, do: not matches, else: matches
-          end)
+        cond do
+          flags.q ->
+            {Command.result("", "", if(matched, do: 0, else: 1)), bash}
 
-        if matching_lines != [] do
-          output = Enum.join(matching_lines, "\n") <> "\n"
-          {Command.ok(output), bash}
-        else
-          {Command.result("", "", 1), bash}
+          flags.c ->
+            {Command.ok("#{length(lines)}\n"), bash}
+
+          matched ->
+            output = Enum.join(lines, "\n") <> "\n"
+            {Command.ok(output), bash}
+
+          true ->
+            {Command.result("", "", 1), bash}
         end
 
       _ ->
@@ -68,21 +98,65 @@ defmodule JustBash.Commands.Grep do
     end
   end
 
-  defp parse_flags(args), do: parse_flags(args, %{i: false, v: false}, [])
-
-  defp parse_flags(["-i" | rest], flags, acc),
-    do: parse_flags(rest, %{flags | i: true}, acc)
-
-  defp parse_flags(["-v" | rest], flags, acc),
-    do: parse_flags(rest, %{flags | v: true}, acc)
-
-  defp parse_flags([arg | rest], flags, acc),
-    do: parse_flags(rest, flags, acc ++ [arg])
-
-  defp parse_flags([], flags, acc), do: {flags, acc}
-
   defp compile_pattern(pattern, flags) do
     opts = if flags.i, do: [:caseless], else: []
-    Regex.compile!(Regex.escape(pattern), opts)
+
+    regex_pattern =
+      cond do
+        flags.f_fixed ->
+          Regex.escape(pattern)
+
+        flags.w ->
+          "\\b" <> pattern <> "\\b"
+
+        flags.x ->
+          "^" <> pattern <> "$"
+
+        true ->
+          pattern
+      end
+
+    case Regex.compile(regex_pattern, opts) do
+      {:ok, regex} -> regex
+      {:error, _} -> Regex.compile!(Regex.escape(pattern), opts)
+    end
+  end
+
+  defp grep_line(line, regex, flags, line_num, prefix) do
+    matches = Regex.match?(regex, line)
+    should_output = if flags.v, do: not matches, else: matches
+
+    if should_output do
+      cond do
+        flags.o ->
+          Regex.scan(regex, line)
+          |> List.flatten()
+          |> Enum.map(fn match ->
+            add_prefix(match, prefix, flags.n, line_num)
+          end)
+
+        flags.n ->
+          [add_prefix(line, prefix, true, line_num)]
+
+        true ->
+          [add_prefix(line, prefix, false, line_num)]
+      end
+    else
+      []
+    end
+  end
+
+  defp add_prefix(content, prefix, with_line_num, line_num) do
+    line_prefix = if with_line_num, do: "#{line_num}:", else: ""
+    prefix <> line_prefix <> content
+  end
+
+  defp process_content(content, regex, flags, prefix) do
+    content
+    |> String.split("\n", trim: false)
+    |> Enum.with_index(1)
+    |> Enum.flat_map(fn {line, line_num} ->
+      grep_line(line, regex, flags, line_num, prefix)
+    end)
   end
 end

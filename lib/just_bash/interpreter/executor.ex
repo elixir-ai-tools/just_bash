@@ -16,12 +16,21 @@ defmodule JustBash.Interpreter.Executor do
   """
   @spec execute_script(JustBash.t(), AST.Script.t()) :: {result(), JustBash.t()}
   def execute_script(bash, %AST.Script{statements: statements}) do
-    {final_bash, stdout, stderr, exit_code} =
-      Enum.reduce(statements, {bash, "", "", 0}, fn stmt, {b, out, err, _code} ->
+    {final_bash, stdout, stderr, exit_code, _halted} =
+      Enum.reduce_while(statements, {bash, "", "", 0, false}, fn stmt, {b, out, err, _code, _} ->
         {result, new_bash} = execute_statement(b, stmt)
         new_env = Map.put(new_bash.env, "?", to_string(result.exit_code))
         new_bash = %{new_bash | last_exit_code: result.exit_code, env: new_env}
-        {new_bash, out <> result.stdout, err <> result.stderr, result.exit_code}
+        acc = {new_bash, out <> result.stdout, err <> result.stderr, result.exit_code, false}
+
+        # Check errexit: exit if enabled and command failed
+        # Note: errexit doesn't apply to statements with && or || operators
+        if new_bash.shell_opts.errexit and result.exit_code != 0 and
+             not has_short_circuit_operators?(stmt) do
+          {:halt, put_elem(acc, 4, true)}
+        else
+          {:cont, acc}
+        end
       end)
 
     result = %{
@@ -34,12 +43,22 @@ defmodule JustBash.Interpreter.Executor do
     {result, final_bash}
   end
 
+  # Check if statement uses && or || operators (errexit doesn't apply to these)
+  defp has_short_circuit_operators?(%AST.Statement{operators: operators}) do
+    Enum.any?(operators, &(&1 in [:and, :or]))
+  end
+
   @doc """
   Execute a statement (one or more pipelines with && or ||).
   """
-  @spec execute_statement(JustBash.t(), AST.Statement.t()) :: {result(), JustBash.t()}
+  @spec execute_statement(JustBash.t(), AST.Statement.t() | AST.Group.t()) ::
+          {result(), JustBash.t()}
   def execute_statement(bash, %AST.Statement{pipelines: pipelines, operators: operators}) do
     execute_pipelines(bash, pipelines, operators, 0, "", "", nil)
+  end
+
+  def execute_statement(bash, %AST.Group{body: body}) do
+    execute_body_with_bash(bash, body)
   end
 
   defp execute_pipelines(bash, [], _operators, exit_code, stdout, stderr, _prev_op) do
@@ -55,20 +74,10 @@ defmodule JustBash.Interpreter.Executor do
         :semicolon -> true
       end
 
+    {next_op, next_operators} = advance_operators(operators)
+
     if should_run do
       {result, new_bash} = execute_pipeline(bash, pipeline)
-
-      next_op =
-        case operators do
-          [op | _] -> op
-          [] -> nil
-        end
-
-      next_operators =
-        case operators do
-          [_ | rest_ops] -> rest_ops
-          [] -> []
-        end
 
       execute_pipelines(
         new_bash,
@@ -80,40 +89,42 @@ defmodule JustBash.Interpreter.Executor do
         next_op
       )
     else
-      next_op =
-        case operators do
-          [op | _] -> op
-          [] -> nil
-        end
-
-      next_operators =
-        case operators do
-          [_ | rest_ops] -> rest_ops
-          [] -> []
-        end
-
       execute_pipelines(bash, rest, next_operators, prev_exit, stdout, stderr, next_op)
     end
   end
+
+  defp advance_operators([op | rest]), do: {op, rest}
+  defp advance_operators([]), do: {nil, []}
 
   @doc """
   Execute a pipeline (commands connected by |).
   """
   @spec execute_pipeline(JustBash.t(), AST.Pipeline.t()) :: {result(), JustBash.t()}
   def execute_pipeline(bash, %AST.Pipeline{commands: commands, negated: negated}) do
-    {final_result, final_bash} =
-      Enum.reduce(commands, {%{stdout: "", stderr: "", exit_code: 0}, bash}, fn cmd,
-                                                                                {prev_result,
-                                                                                 current_bash} ->
+    # Track all exit codes for pipefail
+    {final_result, final_bash, exit_codes} =
+      Enum.reduce(commands, {%{stdout: "", stderr: "", exit_code: 0}, bash, []}, fn cmd,
+                                                                                    {prev_result,
+                                                                                     current_bash,
+                                                                                     codes} ->
         {result, new_bash} = execute_command(current_bash, cmd, prev_result.stdout)
-        {result, new_bash}
+        {result, new_bash, codes ++ [result.exit_code]}
       end)
+
+    # With pipefail, return the rightmost non-zero exit code
+    # Without pipefail, return the last command's exit code
+    pipeline_exit =
+      if bash.shell_opts.pipefail do
+        Enum.find(Enum.reverse(exit_codes), 0, &(&1 != 0))
+      else
+        final_result.exit_code
+      end
 
     exit_code =
       if negated do
-        if final_result.exit_code == 0, do: 1, else: 0
+        if pipeline_exit == 0, do: 1, else: 0
       else
-        final_result.exit_code
+        pipeline_exit
       end
 
     {%{final_result | exit_code: exit_code}, final_bash}
@@ -140,24 +151,38 @@ defmodule JustBash.Interpreter.Executor do
         },
         stdin
       ) do
-    temp_bash = execute_assignments(bash, assignments)
-    cmd_name = Expansion.expand_word_parts(temp_bash, name.parts)
+    try do
+      temp_bash = execute_assignments(bash, assignments)
+      cmd_name = Expansion.expand_word_parts(temp_bash, name.parts)
 
-    expanded_args =
-      Enum.map(args, fn arg -> Expansion.expand_word_parts(temp_bash, arg.parts) end)
+      # Apply any assignments from ${VAR:=default} expansions
+      temp_bash = apply_expansion_assignments(temp_bash)
 
-    {result, exec_bash} =
-      case Map.get(temp_bash.functions, cmd_name) do
-        nil ->
-          execute_builtin(temp_bash, cmd_name, expanded_args, stdin)
+      expanded_args =
+        Enum.flat_map(args, fn arg -> Expansion.expand_word_with_glob(temp_bash, arg.parts) end)
 
-        func_body ->
-          execute_function(temp_bash, func_body, expanded_args)
-      end
+      # Apply assignments from arg expansion as well
+      temp_bash = apply_expansion_assignments(temp_bash)
 
-    {result, exec_bash} = apply_redirections(result, exec_bash, redirs)
+      # Extract heredoc content as stdin if present
+      {heredoc_stdin, non_heredoc_redirs} = extract_heredoc_stdin(temp_bash, redirs)
+      effective_stdin = heredoc_stdin || stdin
 
-    {result, exec_bash}
+      {result, exec_bash} =
+        case Map.get(temp_bash.functions, cmd_name) do
+          nil ->
+            execute_builtin(temp_bash, cmd_name, expanded_args, effective_stdin)
+
+          func_body ->
+            execute_function(temp_bash, func_body, expanded_args)
+        end
+
+      {result, exec_bash} = apply_redirections(result, exec_bash, non_heredoc_redirs)
+      {result, exec_bash}
+    rescue
+      e in Expansion.UnsetVariableError ->
+        {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
+    end
   end
 
   def execute_command(bash, %AST.If{clauses: clauses, else_body: else_body}, _stdin),
@@ -191,8 +216,180 @@ defmodule JustBash.Interpreter.Executor do
     {%{stdout: "", stderr: "", exit_code: 0}, new_bash}
   end
 
+  def execute_command(bash, %AST.ArithmeticCommand{expression: expr}, _stdin) do
+    {value, new_env} = JustBash.Arithmetic.evaluate(expr.expression, bash.env)
+    new_bash = %{bash | env: new_env}
+    exit_code = if value == 0, do: 1, else: 0
+    {%{stdout: "", stderr: "", exit_code: exit_code}, new_bash}
+  end
+
+  def execute_command(bash, %AST.ConditionalCommand{expression: expr}, _stdin) do
+    result = evaluate_conditional(bash, expr)
+    exit_code = if result, do: 0, else: 1
+    {%{stdout: "", stderr: "", exit_code: exit_code}, bash}
+  end
+
   def execute_command(bash, _command, _stdin),
     do: {%{stdout: "", stderr: "", exit_code: 0}, bash}
+
+  defp evaluate_conditional(bash, %AST.CondWord{word: word}) do
+    value = Expansion.expand_word_parts(bash, word.parts)
+    value != ""
+  end
+
+  defp evaluate_conditional(bash, %AST.CondNot{operand: operand}) do
+    not evaluate_conditional(bash, operand)
+  end
+
+  defp evaluate_conditional(bash, %AST.CondAnd{left: left, right: right}) do
+    evaluate_conditional(bash, left) and evaluate_conditional(bash, right)
+  end
+
+  defp evaluate_conditional(bash, %AST.CondOr{left: left, right: right}) do
+    evaluate_conditional(bash, left) or evaluate_conditional(bash, right)
+  end
+
+  defp evaluate_conditional(bash, %AST.CondGroup{expression: expr}) do
+    evaluate_conditional(bash, expr)
+  end
+
+  defp evaluate_conditional(bash, %AST.CondUnary{operator: op, operand: word}) do
+    path = Expansion.expand_word_parts(bash, word.parts)
+    resolved = JustBash.Fs.InMemoryFs.resolve_path(bash.cwd, path)
+
+    case op do
+      :"-e" -> file_exists?(bash, resolved)
+      :"-a" -> file_exists?(bash, resolved)
+      :"-f" -> regular_file?(bash, resolved)
+      :"-d" -> directory?(bash, resolved)
+      :"-r" -> file_exists?(bash, resolved)
+      :"-w" -> file_exists?(bash, resolved)
+      :"-x" -> file_exists?(bash, resolved)
+      :"-s" -> file_size_gt_zero?(bash, resolved)
+      :"-z" -> path == ""
+      :"-n" -> path != ""
+      :"-L" -> is_symlink?(bash, resolved)
+      :"-h" -> is_symlink?(bash, resolved)
+      :"-b" -> false
+      :"-c" -> false
+      :"-p" -> false
+      :"-S" -> false
+      :"-t" -> false
+      :"-g" -> false
+      :"-u" -> false
+      :"-k" -> false
+      :"-O" -> file_exists?(bash, resolved)
+      :"-G" -> file_exists?(bash, resolved)
+      :"-N" -> file_exists?(bash, resolved)
+      :"-v" -> Map.has_key?(bash.env, path)
+      _ -> false
+    end
+  end
+
+  defp evaluate_conditional(bash, %AST.CondBinary{
+         operator: op,
+         left: left_word,
+         right: right_word
+       }) do
+    left = Expansion.expand_word_parts(bash, left_word.parts)
+    right = Expansion.expand_word_parts(bash, right_word.parts)
+
+    case op do
+      :"-eq" -> parse_int(left) == parse_int(right)
+      :"-ne" -> parse_int(left) != parse_int(right)
+      :"-lt" -> parse_int(left) < parse_int(right)
+      :"-le" -> parse_int(left) <= parse_int(right)
+      :"-gt" -> parse_int(left) > parse_int(right)
+      :"-ge" -> parse_int(left) >= parse_int(right)
+      :"-nt" -> file_newer?(bash, left, right)
+      :"-ot" -> file_newer?(bash, right, left)
+      :"-ef" -> same_file?(bash, left, right)
+      := -> left == right
+      :== -> pattern_match?(left, right)
+      :!= -> not pattern_match?(left, right)
+      :=~ -> regex_match?(left, right)
+      :< -> left < right
+      :> -> left > right
+      _ -> false
+    end
+  end
+
+  defp parse_int(s) do
+    case Integer.parse(s) do
+      {n, _} -> n
+      :error -> 0
+    end
+  end
+
+  defp pattern_match?(str, pattern) do
+    regex_pattern =
+      pattern
+      |> Regex.escape()
+      |> String.replace("\\*", ".*")
+      |> String.replace("\\?", ".")
+
+    case Regex.compile("^" <> regex_pattern <> "$") do
+      {:ok, regex} -> Regex.match?(regex, str)
+      {:error, _} -> str == pattern
+    end
+  end
+
+  defp regex_match?(str, pattern) do
+    case Regex.compile(pattern) do
+      {:ok, regex} -> Regex.match?(regex, str)
+      {:error, _} -> false
+    end
+  end
+
+  defp file_exists?(bash, path) do
+    case JustBash.Fs.InMemoryFs.stat(bash.fs, path) do
+      {:ok, _} -> true
+      {:error, _} -> false
+    end
+  end
+
+  defp regular_file?(bash, path) do
+    case JustBash.Fs.InMemoryFs.stat(bash.fs, path) do
+      {:ok, stat} -> stat.is_file
+      {:error, _} -> false
+    end
+  end
+
+  defp directory?(bash, path) do
+    case JustBash.Fs.InMemoryFs.stat(bash.fs, path) do
+      {:ok, stat} -> stat.is_directory
+      {:error, _} -> false
+    end
+  end
+
+  defp file_size_gt_zero?(bash, path) do
+    case JustBash.Fs.InMemoryFs.stat(bash.fs, path) do
+      {:ok, stat} -> stat.size > 0
+      {:error, _} -> false
+    end
+  end
+
+  defp is_symlink?(bash, path) do
+    case JustBash.Fs.InMemoryFs.lstat(bash.fs, path) do
+      {:ok, stat} -> stat.is_symlink
+      {:error, _} -> false
+    end
+  end
+
+  defp file_newer?(bash, path1, path2) do
+    with {:ok, stat1} <- JustBash.Fs.InMemoryFs.stat(bash.fs, path1),
+         {:ok, stat2} <- JustBash.Fs.InMemoryFs.stat(bash.fs, path2) do
+      stat1.mtime > stat2.mtime
+    else
+      _ -> false
+    end
+  end
+
+  defp same_file?(bash, path1, path2) do
+    resolved1 = JustBash.Fs.InMemoryFs.resolve_path(bash.cwd, path1)
+    resolved2 = JustBash.Fs.InMemoryFs.resolve_path(bash.cwd, path2)
+    resolved1 == resolved2
+  end
 
   defp execute_if(bash, [], else_body) do
     if else_body do
@@ -225,12 +422,7 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   defp execute_for(bash, variable, words, body) do
-    expanded_words =
-      Enum.flat_map(words, fn word ->
-        expanded = Expansion.expand_word_parts(bash, word.parts)
-        String.split(expanded, ~r/\s+/, trim: true)
-      end)
-
+    expanded_words = Expansion.expand_for_loop_words(bash, words)
     execute_for_loop(bash, variable, expanded_words, body, "", "", 0)
   end
 
@@ -369,6 +561,18 @@ defmodule JustBash.Interpreter.Executor do
     end)
   end
 
+  defp apply_expansion_assignments(bash) do
+    case Expansion.get_pending_assignments() do
+      [] ->
+        bash
+
+      assignments ->
+        Enum.reduce(assignments, bash, fn {name, value}, acc ->
+          %{acc | env: Map.put(acc.env, name, value)}
+        end)
+    end
+  end
+
   defp execute_builtin(bash, cmd, args, stdin) do
     case Registry.get(cmd) do
       nil ->
@@ -377,6 +581,34 @@ defmodule JustBash.Interpreter.Executor do
       module ->
         module.execute(bash, args, stdin)
     end
+  end
+
+  defp extract_heredoc_stdin(bash, redirections) do
+    {heredocs, others} =
+      Enum.split_with(redirections, fn redir ->
+        match?(%AST.Redirection{operator: op} when op in [:"<<", :"<<-"], redir)
+      end)
+
+    heredoc_content =
+      case heredocs do
+        [%AST.Redirection{target: %AST.HereDoc{content: content, quoted: quoted}} | _] ->
+          if content do
+            raw = Expansion.expand_word_parts(bash, content.parts)
+
+            if quoted do
+              raw
+            else
+              raw
+            end
+          else
+            ""
+          end
+
+        _ ->
+          nil
+      end
+
+    {heredoc_content, others}
   end
 
   defp apply_redirections(result, bash, []) do
@@ -404,32 +636,16 @@ defmodule JustBash.Interpreter.Executor do
         end
 
       fd == 2 and operator == :> ->
-        {:ok, new_fs} = InMemoryFs.write_file(bash.fs, resolved, result.stderr)
-        {%{result | stderr: ""}, %{bash | fs: new_fs}}
+        write_to_file(bash, resolved, result.stderr, result, :stderr)
 
       fd == 2 and operator == :">>" ->
-        current_content =
-          case InMemoryFs.read_file(bash.fs, resolved) do
-            {:ok, content} -> content
-            {:error, _} -> ""
-          end
-
-        {:ok, new_fs} = InMemoryFs.write_file(bash.fs, resolved, current_content <> result.stderr)
-        {%{result | stderr: ""}, %{bash | fs: new_fs}}
+        append_to_file(bash, resolved, result.stderr, result, :stderr)
 
       operator == :> ->
-        {:ok, new_fs} = InMemoryFs.write_file(bash.fs, resolved, result.stdout)
-        {%{result | stdout: ""}, %{bash | fs: new_fs}}
+        write_to_file(bash, resolved, result.stdout, result, :stdout)
 
       operator == :">>" ->
-        current_content =
-          case InMemoryFs.read_file(bash.fs, resolved) do
-            {:ok, content} -> content
-            {:error, _} -> ""
-          end
-
-        {:ok, new_fs} = InMemoryFs.write_file(bash.fs, resolved, current_content <> result.stdout)
-        {%{result | stdout: ""}, %{bash | fs: new_fs}}
+        append_to_file(bash, resolved, result.stdout, result, :stdout)
 
       fd == 1 and operator == :">&" and target_path == "2" ->
         {%{result | stderr: result.stderr <> result.stdout, stdout: ""}, bash}
@@ -439,11 +655,60 @@ defmodule JustBash.Interpreter.Executor do
 
       operator == :"&>" ->
         combined = result.stdout <> result.stderr
-        {:ok, new_fs} = InMemoryFs.write_file(bash.fs, resolved, combined)
-        {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
+        write_combined_to_file(bash, resolved, combined, result)
 
       true ->
         {result, bash}
     end
   end
+
+  defp write_to_file(bash, path, content, result, stream) do
+    case InMemoryFs.write_file(bash.fs, path, content) do
+      {:ok, new_fs} ->
+        updated_result = clear_stream(result, stream)
+        {updated_result, %{bash | fs: new_fs}}
+
+      {:error, reason} ->
+        error_msg = format_redirection_error(path, reason)
+        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, bash}
+    end
+  end
+
+  defp append_to_file(bash, path, content, result, stream) do
+    current_content =
+      case InMemoryFs.read_file(bash.fs, path) do
+        {:ok, existing} -> existing
+        {:error, _} -> ""
+      end
+
+    case InMemoryFs.write_file(bash.fs, path, current_content <> content) do
+      {:ok, new_fs} ->
+        updated_result = clear_stream(result, stream)
+        {updated_result, %{bash | fs: new_fs}}
+
+      {:error, reason} ->
+        error_msg = format_redirection_error(path, reason)
+        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, bash}
+    end
+  end
+
+  defp write_combined_to_file(bash, path, content, result) do
+    case InMemoryFs.write_file(bash.fs, path, content) do
+      {:ok, new_fs} ->
+        {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
+
+      {:error, reason} ->
+        error_msg = format_redirection_error(path, reason)
+        {%{result | stderr: error_msg, exit_code: 1}, bash}
+    end
+  end
+
+  defp clear_stream(result, :stdout), do: %{result | stdout: ""}
+  defp clear_stream(result, :stderr), do: %{result | stderr: ""}
+
+  defp format_redirection_error(path, :enoent), do: "bash: #{path}: No such file or directory\n"
+  defp format_redirection_error(path, :enotdir), do: "bash: #{path}: Not a directory\n"
+  defp format_redirection_error(path, :eisdir), do: "bash: #{path}: Is a directory\n"
+  defp format_redirection_error(path, :eacces), do: "bash: #{path}: Permission denied\n"
+  defp format_redirection_error(path, reason), do: "bash: #{path}: #{inspect(reason)}\n"
 end

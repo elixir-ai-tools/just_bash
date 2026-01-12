@@ -1,35 +1,160 @@
-IO.puts("\nJustBash Demo\n" <> String.duplicate("=", 50))
+IO.puts("\n" <> String.duplicate("=", 60))
+IO.puts("  JustBash - A Sandboxed Bash Environment for Elixir")
+IO.puts(String.duplicate("=", 60))
 
 bash =
   JustBash.new(
     files: %{
-      "/data/users.txt" => "alice\nbob\ncharlie\nalice\nbob\nalice",
-      "/data/numbers.txt" => "5\n3\n8\n1\n9\n2\n7",
-      "/app/config.env" => "DATABASE_URL=postgres://localhost/mydb\nPORT=3000"
+      "/data/users.csv" =>
+        "name,role,salary\nalice,engineer,95000\nbob,manager,120000\ncharlie,engineer,85000\ndiana,designer,90000\neve,engineer,100000",
+      "/data/logs.txt" =>
+        "2024-01-15 ERROR Connection failed\n2024-01-15 INFO Server started\n2024-01-16 WARN High memory usage\n2024-01-16 ERROR Disk full\n2024-01-17 INFO Backup complete",
+      "/data/numbers.txt" => "42\n17\n99\n3\n256\n8\n1024"
     }
   )
 
 run = fn bash, cmd ->
-  IO.puts("\n$ #{cmd}")
+  IO.puts("\n  $ #{cmd}")
   {result, bash} = JustBash.exec(bash, cmd)
-  if result.stdout != "", do: IO.write(result.stdout)
-  if result.stderr != "", do: IO.puts("stderr: #{result.stderr}")
+
+  if result.stdout != "" do
+    result.stdout
+    |> String.split("\n")
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.each(&IO.puts("  #{&1}"))
+  end
+
+  if result.stderr != "", do: IO.puts("  stderr: #{result.stderr}")
   bash
 end
 
-IO.puts("\n\n[File Operations & Pipelines]")
-IO.puts(String.duplicate("-", 50))
+IO.puts("\n\n[1] BRACE EXPANSION - Generate multiple items from patterns")
+IO.puts(String.duplicate("-", 60))
+
+bash = run.(bash, "echo {a,b,c}")
+bash = run.(bash, "echo {1..5}")
+bash = run.(bash, "echo {a..f}")
+bash = run.(bash, "echo file{1,2,3}.txt")
+bash = run.(bash, "echo {mon,tues,wednes,thurs,fri}day")
+bash = run.(bash, "echo {1..3}{a,b}")
+
+IO.puts("\n\n[2] NESTED ARITHMETIC - Complex math with proper nesting")
+IO.puts(String.duplicate("-", 60))
+
+bash = run.(bash, "echo \"Nested: \\$((1 + (2 * (3 + 4))))\"")
+bash = run.(bash, "echo \"Powers: \\$((2 ** 10))\"")
+bash = run.(bash, "echo \"Modulo: \\$((17 % 5))\"")
+bash = run.(bash, "echo \"Ternary: \\$((10 > 5 ? 100 : 0))\"")
+
+IO.puts("\n\n[3] NESTED PARAMETER EXPANSION - Defaults within defaults")
+IO.puts(String.duplicate("-", 60))
+
+bash = run.(bash, "echo \"Fallback: \\${X:-\\${Y:-final}}\"")
+bash = run.(bash, "text=hello; echo \"Upper: \\${text^^}\"")
+bash = run.(bash, "path=/usr/local/bin/script.sh; echo \"Base: \\${path##*/}\"")
+bash = run.(bash, "file=doc.tar.gz; echo \"Stem: \\${file%.*}\"")
+bash = run.(bash, "str=hello; echo \"Slice: \\${str:1:3}\"")
+
+IO.puts("\n\n[4] GLOB EXPANSION - Pattern matching")
+IO.puts(String.duplicate("-", 60))
 
 bash = run.(bash, "ls /data")
-bash = run.(bash, "cat /data/users.txt | sort | uniq -c | sort -rn")
-bash = run.(bash, "cat /data/numbers.txt | sort -n | head -3")
+bash = run.(bash, "echo /data/*.txt")
+bash = run.(bash, "echo /data/*")
 
-IO.puts("\n\n[FizzBuzz - for loop + arithmetic + conditionals]")
-IO.puts(String.duplicate("-", 50))
+IO.puts("\n\n[5] PIPELINES & TEXT PROCESSING")
+IO.puts(String.duplicate("-", 60))
+
+bash = run.(bash, "cat /data/users.csv | head -1")
+bash = run.(bash, "grep ERROR /data/logs.txt | wc -l")
+bash = run.(bash, "cat /data/numbers.txt | sort -n | tail -3")
+bash = run.(bash, "echo 'hello world' | tr 'a-z' 'A-Z'")
+
+IO.puts("\n\n[6] SED - Stream editing")
+IO.puts(String.duplicate("-", 60))
+
+bash = run.(bash, "echo 'hello world' | sed 's/world/universe/'")
+bash = run.(bash, "echo 'aaa bbb ccc' | sed 's/b/X/g'")
+
+IO.puts("\n\n[7] CONDITIONALS & TESTS")
+IO.puts(String.duplicate("-", 60))
+
+bash = run.(bash, "test -f /data/users.csv && echo 'users.csv exists'")
+bash = run.(bash, "test 10 -gt 5 && echo '10 > 5'")
+bash = run.(bash, "[ -d /data ] && echo '/data is a directory'")
+
+IO.puts("\n\n[8] LOOPS - For with brace expansion")
+IO.puts(String.duplicate("-", 60))
 
 {result, bash} =
   JustBash.exec(bash, """
-  for i in $(seq 1 15); do
+  for fruit in apple banana cherry; do
+    echo "I like $fruit"
+  done
+  """)
+
+IO.puts("\n  $ for fruit in apple banana cherry; do echo ...; done")
+String.split(result.stdout, "\n") |> Enum.reject(&(&1 == "")) |> Enum.each(&IO.puts("  #{&1}"))
+
+{result, bash} =
+  JustBash.exec(bash, """
+  sum=0
+  for n in $(cat /data/numbers.txt); do
+    sum=$((sum + n))
+  done
+  echo "Sum of all numbers: $sum"
+  """)
+
+IO.puts("\n  $ # Sum all numbers from file")
+String.split(result.stdout, "\n") |> Enum.reject(&(&1 == "")) |> Enum.each(&IO.puts("  #{&1}"))
+
+IO.puts("\n\n[9] CASE STATEMENTS - Pattern matching")
+IO.puts(String.duplicate("-", 60))
+
+{result, bash} =
+  JustBash.exec(bash, """
+  for file in data.txt users.csv run.sh image.png; do
+    case "$file" in
+      *.txt) echo "$file -> text" ;;
+      *.csv) echo "$file -> csv" ;;
+      *.sh)  echo "$file -> script" ;;
+      *)     echo "$file -> unknown" ;;
+    esac
+  done
+  """)
+
+IO.puts("\n  $ case \"\\$file\" in *.txt) ... ;; esac")
+String.split(result.stdout, "\n") |> Enum.reject(&(&1 == "")) |> Enum.each(&IO.puts("  #{&1}"))
+
+IO.puts("\n\n[10] HEREDOCS - Multi-line strings with expansion")
+IO.puts(String.duplicate("-", 60))
+
+{result, bash} =
+  JustBash.exec(bash, """
+  name="World"
+  count=42
+  cat <<EOF
+  Hello, $name!
+  The answer is $count.
+  Today is $(date).
+  EOF
+  """)
+
+IO.puts("\n  $ cat <<EOF ...")
+String.split(result.stdout, "\n") |> Enum.reject(&(&1 == "")) |> Enum.each(&IO.puts("  #{&1}"))
+
+IO.puts("\n\n[11] XARGS - Build and execute commands")
+IO.puts(String.duplicate("-", 60))
+
+bash = run.(bash, "echo -e 'one\\ntwo\\nthree' | xargs echo 'Items:'")
+bash = run.(bash, "echo '1 2 3 4 5' | xargs -n 2 echo")
+
+IO.puts("\n\n[12] FIZZBUZZ - Combining features")
+IO.puts(String.duplicate("-", 60))
+
+{result, _bash} =
+  JustBash.exec(bash, """
+  for i in {1..15}; do
     if [ $((i % 15)) -eq 0 ]; then
       echo "FizzBuzz"
     elif [ $((i % 3)) -eq 0 ]; then
@@ -42,76 +167,10 @@ IO.puts(String.duplicate("-", 50))
   done
   """)
 
-IO.puts("\n$ # FizzBuzz 1-15")
-IO.write(result.stdout)
+IO.puts("\n  $ for i in {1..15}; do if [ \\$((i % 15)) -eq 0 ]; then ...")
+String.split(result.stdout, "\n") |> Enum.reject(&(&1 == "")) |> Enum.each(&IO.puts("  #{&1}"))
 
-IO.puts("\n\n[Arithmetic Expansion]")
-IO.puts(String.duplicate("-", 50))
-
-bash = run.(bash, ~S[echo "2 + 2 = $((2 + 2))"])
-bash = run.(bash, ~S[echo "2 ** 10 = $((2 ** 10))"])
-bash = run.(bash, ~S[echo "Ternary: $((5 > 3 ? 100 : 0))"])
-bash = run.(bash, ~S[x=7; echo "x is $x, x squared is $((x * x))"])
-bash = run.(bash, ~S[echo "Factorial 5! = $((5 * 4 * 3 * 2 * 1))"])
-
-IO.puts("\n\n[Variable Expansion]")
-IO.puts(String.duplicate("-", 50))
-
-bash = run.(bash, ~S[name="World"; echo "Hello, $name!"])
-bash = run.(bash, ~S[echo "Default: ${UNDEFINED:-default_value}"])
-bash = run.(bash, ~S[greeting="Hello"; echo "Length: ${#greeting}"])
-
-IO.puts("\n\n[Command Substitution]")
-IO.puts(String.duplicate("-", 50))
-
-bash = run.(bash, ~S[echo "Files in /data: $(ls /data | wc -l)"])
-bash = run.(bash, ~S[echo "Today is $(date)"])
-
-IO.puts("\n\n[Conditionals & Tests]")
-IO.puts(String.duplicate("-", 50))
-
-bash = run.(bash, "[ -f /data/users.txt ] && echo \"users.txt exists!\"")
-bash = run.(bash, "[ -d /data ] && echo \"/data is a directory\"")
-bash = run.(bash, "test 5 -gt 3 && echo \"5 is greater than 3\"")
-
-IO.puts("\n\n[While Loop - countdown]")
-IO.puts(String.duplicate("-", 50))
-
-{result, bash} =
-  JustBash.exec(bash, """
-  n=5
-  while [ $n -gt 0 ]; do
-    echo "T-minus $n..."
-    n=$((n - 1))
-  done
-  echo "Liftoff!"
-  """)
-
-IO.puts("\n$ # Countdown")
-IO.write(result.stdout)
-
-IO.puts("\n\n[File Manipulation]")
-IO.puts(String.duplicate("-", 50))
-
-bash = run.(bash, "mkdir -p /tmp/myproject/src")
-bash = run.(bash, "echo \"console.log('hello')\" > /tmp/myproject/src/index.js")
-bash = run.(bash, "cat /tmp/myproject/src/index.js")
-bash = run.(bash, "ls -la /tmp/myproject/src")
-
-IO.puts("\n\n[Text Processing]")
-IO.puts(String.duplicate("-", 50))
-
-bash = run.(bash, "grep alice /data/users.txt | wc -l")
-bash = run.(bash, "echo \"hello world\" | tr 'a-z' 'A-Z'")
-
-IO.puts("\n\n[Short-circuit Evaluation]")
-IO.puts(String.duplicate("-", 50))
-
-bash = run.(bash, "true && echo \"AND: first was true\"")
-bash = run.(bash, "false || echo \"OR: first was false\"")
-_bash = run.(bash, "false && echo \"never printed\" || echo \"fallback executed\"")
-
-IO.puts("\n\n" <> String.duplicate("=", 50))
-IO.puts("All examples completed!")
-IO.puts("This all ran in a sandboxed virtual filesystem.")
-IO.puts(String.duplicate("=", 50) <> "\n")
+IO.puts("\n\n" <> String.duplicate("=", 60))
+IO.puts("  All examples executed in a sandboxed virtual filesystem!")
+IO.puts("  No real files were touched. Perfect for AI agents.")
+IO.puts(String.duplicate("=", 60) <> "\n")

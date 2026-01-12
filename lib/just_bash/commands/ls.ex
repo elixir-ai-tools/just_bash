@@ -3,14 +3,21 @@ defmodule JustBash.Commands.Ls do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.FlagParser
   alias JustBash.Fs.InMemoryFs
+
+  @flag_spec %{
+    boolean: [:a, :l],
+    value: [],
+    defaults: %{a: false, l: false}
+  }
 
   @impl true
   def names, do: ["ls"]
 
   @impl true
   def execute(bash, args, _stdin) do
-    {flags, paths} = parse_flags(args)
+    {flags, paths} = FlagParser.parse(args, @flag_spec)
     paths = if paths == [], do: ["."], else: paths
 
     {stdout, stderr, exit_code} =
@@ -49,23 +56,6 @@ defmodule JustBash.Commands.Ls do
 
     {Command.result(stdout, stderr, exit_code), bash}
   end
-
-  defp parse_flags(args), do: parse_flags(args, %{a: false, l: false}, [])
-
-  defp parse_flags(["-a" | rest], flags, paths),
-    do: parse_flags(rest, %{flags | a: true}, paths)
-
-  defp parse_flags(["-l" | rest], flags, paths),
-    do: parse_flags(rest, %{flags | l: true}, paths)
-
-  defp parse_flags(["-la" | rest], flags, paths),
-    do: parse_flags(rest, %{flags | l: true, a: true}, paths)
-
-  defp parse_flags(["-al" | rest], flags, paths),
-    do: parse_flags(rest, %{flags | l: true, a: true}, paths)
-
-  defp parse_flags([arg | rest], flags, paths), do: parse_flags(rest, flags, paths ++ [arg])
-  defp parse_flags([], flags, paths), do: {flags, paths}
 
   defp format_entry(fs, dir, name) do
     path = InMemoryFs.resolve_path(dir, name)

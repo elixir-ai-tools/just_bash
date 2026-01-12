@@ -4,6 +4,8 @@ defmodule JustBash.Commands.Printf do
 
   alias JustBash.Commands.Command
 
+  @format_regex ~r/%(-)?(\d+)?(?:\.(\d+))?([sdxXofec%])/
+
   @impl true
   def names, do: ["printf"]
 
@@ -19,35 +21,145 @@ defmodule JustBash.Commands.Printf do
     end
   end
 
+  @spec format_string(String.t(), [String.t()]) :: String.t()
   defp format_string(format, args) do
     format
+    |> unescape()
+    |> apply_formats(args)
+  end
+
+  @spec unescape(String.t()) :: String.t()
+  defp unescape(str) do
+    str
     |> String.replace("\\n", "\n")
     |> String.replace("\\t", "\t")
-    |> apply_args(args)
+    |> String.replace("\\r", "\r")
+    |> String.replace("\\\\", "\0ESCAPED_BACKSLASH\0")
+    |> String.replace("\0ESCAPED_BACKSLASH\0", "\\")
   end
 
-  defp apply_args(format, []) do
-    format
-    |> String.replace(~r/%s/, "")
-    |> String.replace(~r/%d/, "0")
+  @spec apply_formats(String.t(), [String.t()]) :: String.t()
+  defp apply_formats(format, args) do
+    {result, _remaining_args} =
+      Regex.split(@format_regex, format, include_captures: true)
+      |> process_parts(args, [])
+
+    result
   end
 
-  defp apply_args(format, [arg | rest]) do
-    cond do
-      String.contains?(format, "%s") ->
-        format |> String.replace("%s", arg, global: false) |> apply_args(rest)
+  defp process_parts([], _args, acc), do: {IO.iodata_to_binary(Enum.reverse(acc)), []}
 
-      String.contains?(format, "%d") ->
-        num =
-          case Integer.parse(arg) do
-            {n, _} -> to_string(n)
-            :error -> "0"
-          end
+  defp process_parts([part | rest], args, acc) do
+    case Regex.run(@format_regex, part) do
+      nil ->
+        process_parts(rest, args, [part | acc])
 
-        format |> String.replace("%d", num, global: false) |> apply_args(rest)
+      [_full, left_align, width, precision, specifier] ->
+        {formatted, remaining} = format_specifier(specifier, left_align, width, precision, args)
+        process_parts(rest, remaining, [formatted | acc])
+    end
+  end
 
-      true ->
-        format
+  defp format_specifier("%", _left, _width, _precision, args) do
+    {"%", args}
+  end
+
+  defp format_specifier(spec, left_align, width, precision, [arg | rest]) do
+    formatted = do_format(spec, arg, precision)
+    padded = apply_width(formatted, left_align, width)
+    {padded, rest}
+  end
+
+  defp format_specifier(spec, left_align, width, precision, []) do
+    formatted = do_format(spec, "", precision)
+    padded = apply_width(formatted, left_align, width)
+    {padded, []}
+  end
+
+  defp do_format("s", arg, precision) do
+    case precision do
+      "" -> arg
+      nil -> arg
+      p -> String.slice(arg, 0, String.to_integer(p))
+    end
+  end
+
+  defp do_format("d", arg, _precision) do
+    case Integer.parse(arg) do
+      {n, _} -> Integer.to_string(n)
+      :error -> "0"
+    end
+  end
+
+  defp do_format("x", arg, _precision) do
+    case Integer.parse(arg) do
+      {n, _} when n >= 0 -> Integer.to_string(n, 16) |> String.downcase()
+      {n, _} -> "-" <> (Integer.to_string(abs(n), 16) |> String.downcase())
+      :error -> "0"
+    end
+  end
+
+  defp do_format("X", arg, _precision) do
+    case Integer.parse(arg) do
+      {n, _} when n >= 0 -> Integer.to_string(n, 16) |> String.upcase()
+      {n, _} -> "-" <> (Integer.to_string(abs(n), 16) |> String.upcase())
+      :error -> "0"
+    end
+  end
+
+  defp do_format("o", arg, _precision) do
+    case Integer.parse(arg) do
+      {n, _} when n >= 0 -> Integer.to_string(n, 8)
+      {n, _} -> "-" <> Integer.to_string(abs(n), 8)
+      :error -> "0"
+    end
+  end
+
+  defp do_format("f", arg, precision) do
+    prec = parse_precision(precision, 6)
+
+    case Float.parse(arg) do
+      {f, _} -> :erlang.float_to_binary(f, decimals: prec)
+      :error -> :erlang.float_to_binary(0.0, decimals: prec)
+    end
+  end
+
+  defp do_format("e", arg, precision) do
+    prec = parse_precision(precision, 6)
+
+    case Float.parse(arg) do
+      {f, _} -> format_scientific(f, prec)
+      :error -> format_scientific(0.0, prec)
+    end
+  end
+
+  defp do_format("c", arg, _precision) do
+    case String.first(arg) do
+      nil -> ""
+      char -> char
+    end
+  end
+
+  defp format_scientific(f, precision) do
+    :io_lib.format("~.*e", [precision, f]) |> IO.iodata_to_binary()
+  end
+
+  defp parse_precision("", default), do: default
+  defp parse_precision(nil, default), do: default
+  defp parse_precision(p, _default), do: String.to_integer(p)
+
+  defp apply_width(str, _left_align, nil), do: str
+  defp apply_width(str, _left_align, ""), do: str
+
+  defp apply_width(str, left_align, width_str) do
+    width = String.to_integer(width_str)
+    len = String.length(str)
+
+    if len >= width do
+      str
+    else
+      padding = String.duplicate(" ", width - len)
+      if left_align == "-", do: str <> padding, else: padding <> str
     end
   end
 end

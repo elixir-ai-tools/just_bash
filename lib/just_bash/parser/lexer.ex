@@ -268,21 +268,70 @@ defmodule JustBash.Parser.Lexer do
     |> reduce({:join_chars, []})
   )
 
-  # $((...)) arithmetic expansion
+  # $((...)) arithmetic expansion - handles nested parens
   arith_expansion =
     string("$((")
-    |> utf8_string([not: ?)], min: 0)
+    |> concat(parsec(:arith_content))
     |> string("))")
     |> reduce({:join_chars, []})
     |> unwrap_and_tag(:chars)
 
-  # ${...} parameter expansion
+  # Content inside $((...)) - handles nested parens
+  defcombinatorp(
+    :arith_content,
+    repeat(
+      choice([
+        string("(") |> concat(parsec(:arith_paren_content)) |> string(")"),
+        utf8_char([{:not, ?(}, {:not, ?)}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside nested parens within $((...))
+  defcombinatorp(
+    :arith_paren_content,
+    repeat(
+      choice([
+        string("(") |> concat(parsec(:arith_paren_content)) |> string(")"),
+        utf8_char([{:not, ?(}, {:not, ?)}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # ${...} parameter expansion - handles nested braces
   param_expansion =
     string("${")
-    |> utf8_string([not: ?}], min: 0)
+    |> concat(parsec(:param_content))
     |> string("}")
     |> reduce({:join_chars, []})
     |> unwrap_and_tag(:chars)
+
+  # Content inside ${...} - handles nested braces and nested ${}
+  defcombinatorp(
+    :param_content,
+    repeat(
+      choice([
+        string("${") |> concat(parsec(:param_content)) |> string("}"),
+        string("{") |> concat(parsec(:brace_content)) |> string("}"),
+        utf8_char([{:not, ?{}, {:not, ?}}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside nested braces within ${}
+  defcombinatorp(
+    :brace_content,
+    repeat(
+      choice([
+        string("{") |> concat(parsec(:brace_content)) |> string("}"),
+        utf8_char([{:not, ?{}, {:not, ?}}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
 
   # `...` backtick command substitution
   backtick_subst =
@@ -346,9 +395,16 @@ defmodule JustBash.Parser.Lexer do
   def build_escape([c]) when is_integer(c), do: "\\" <> <<c::utf8>>
 
   # In double quotes, only certain escapes are processed
-  # \\ -> \, \" -> ", \$ -> $, \` -> `, \n stays as \n (not newline)
-  def build_dq_escape(["\\", c]) when c == ?\\ or c == ?" or c == ?$ or c == ?` do
+  # \\ -> \, \" -> ", \n stays as \n (not newline)
+  # IMPORTANT: \$ and \` must be preserved as-is so word_parts can recognize them as escaped
+  # If we convert \$ to $ here, word_parts will interpret it as a variable expansion
+  def build_dq_escape(["\\", c]) when c == ?\\ or c == ?" do
     <<c::utf8>>
+  end
+
+  # Preserve \$ and \` for word_parts to handle
+  def build_dq_escape(["\\", c]) when c == ?$ or c == ?` do
+    "\\" <> <<c::utf8>>
   end
 
   def build_dq_escape(["\\", c]) when is_integer(c) do
@@ -427,11 +483,120 @@ defmodule JustBash.Parser.Lexer do
       {:ok, raw_tokens, "", _, _, _} ->
         tokens = build_tokens(raw_tokens, input, 1, 1, 0, [])
         tokens = process_heredocs(tokens, input)
+        tokens = process_brace_expansion(tokens)
         tokens ++ [eof_token(input)]
 
       {:error, msg, _rest, _ctx, {line, col}, _off} ->
         raise "Lexer error at #{line}:#{col}: #{msg}"
     end
+  end
+
+  # Post-process to handle brace expansion
+  # Merge sequences like: [word?, lbrace, word, rbrace, word?] into a single word
+  # when the content contains , or ..
+  defp process_brace_expansion(tokens) do
+    process_brace_expansion_loop(tokens, [])
+  end
+
+  defp process_brace_expansion_loop([], acc), do: Enum.reverse(acc)
+
+  defp process_brace_expansion_loop([%Token{type: :lbrace} = lbrace | rest], acc) do
+    case try_merge_brace_expansion(rest, lbrace, acc) do
+      {:merged, new_token, remaining, new_acc} ->
+        process_brace_expansion_loop(remaining, [new_token | new_acc])
+
+      :not_brace_expansion ->
+        process_brace_expansion_loop(rest, [lbrace | acc])
+    end
+  end
+
+  defp process_brace_expansion_loop([token | rest], acc) do
+    process_brace_expansion_loop(rest, [token | acc])
+  end
+
+  defp try_merge_brace_expansion(tokens, lbrace, acc) do
+    case collect_brace_content(tokens, 1, []) do
+      {:ok, content_tokens, rbrace, remaining} ->
+        content = Enum.map_join(content_tokens, "", & &1.value)
+
+        merged_value = "{" <> content <> "}"
+
+        {prefix_token, new_acc} =
+          case acc do
+            [%Token{type: t} = prev | rest]
+            when t in [:word, :name, :number] and prev.end == lbrace.start ->
+              {prev, rest}
+
+            _ ->
+              {nil, acc}
+          end
+
+        {suffix_token, final_remaining} =
+          case remaining do
+            [%Token{type: t} = next | rest2]
+            when t in [:word, :name, :number] and rbrace.end == next.start ->
+              {next, rest2}
+
+            _ ->
+              {nil, remaining}
+          end
+
+        has_adjacent = prefix_token != nil or suffix_token != nil
+        is_brace_exp = is_brace_expansion_content?(content)
+        is_word_like = not String.contains?(content, " ") and not String.contains?(content, "\t")
+
+        if has_adjacent or is_brace_exp or is_word_like do
+          final_value =
+            if(prefix_token, do: prefix_token.value, else: "") <>
+              merged_value <>
+              if(suffix_token, do: suffix_token.value, else: "")
+
+          new_token = %Token{
+            type: :word,
+            value: final_value,
+            start: (prefix_token || lbrace).start,
+            end: (suffix_token || rbrace).end,
+            line: (prefix_token || lbrace).line,
+            column: (prefix_token || lbrace).column,
+            quoted: false,
+            single_quoted: false
+          }
+
+          {:merged, new_token, final_remaining, new_acc}
+        else
+          :not_brace_expansion
+        end
+
+      :error ->
+        :not_brace_expansion
+    end
+  end
+
+  defp collect_brace_content([], _depth, _acc), do: :error
+
+  defp collect_brace_content([%Token{type: :rbrace} = rbrace | rest], 1, acc) do
+    {:ok, Enum.reverse(acc), rbrace, rest}
+  end
+
+  defp collect_brace_content([%Token{type: :rbrace} = token | rest], depth, acc) do
+    collect_brace_content(rest, depth - 1, [token | acc])
+  end
+
+  defp collect_brace_content([%Token{type: :lbrace} = token | rest], depth, acc) do
+    collect_brace_content(rest, depth + 1, [token | acc])
+  end
+
+  defp collect_brace_content([%Token{type: type} | _rest], _depth, _acc)
+       when type in [:newline, :semicolon, :pipe, :amp, :and_and, :or_or, :eof] do
+    :error
+  end
+
+  defp collect_brace_content([token | rest], depth, acc) do
+    collect_brace_content(rest, depth, [token | acc])
+  end
+
+  defp is_brace_expansion_content?(content) do
+    String.contains?(content, ",") or String.contains?(content, "..")
   end
 
   # Post-process to handle heredocs

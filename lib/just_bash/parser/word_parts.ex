@@ -114,6 +114,17 @@ defmodule JustBash.Parser.WordParts do
         new_parts = parts ++ [%AST.Glob{pattern: char}]
         parse_unquoted_loop(value, i + 1, "", new_parts, is_assignment)
 
+      char == "{" ->
+        case try_parse_brace_expansion(value, i) do
+          {:ok, brace_exp, end_idx} ->
+            parts = flush_literal(literal, parts)
+            new_parts = parts ++ [brace_exp]
+            parse_unquoted_loop(value, end_idx, "", new_parts, is_assignment)
+
+          :not_brace_expansion ->
+            parse_unquoted_loop(value, i + 1, literal <> char, parts, is_assignment)
+        end
+
       char == "[" ->
         case find_glob_bracket_end(value, i) do
           {:ok, end_idx} ->
@@ -313,6 +324,7 @@ defmodule JustBash.Parser.WordParts do
 
   defp parse_indirection_expansion(value, start) do
     {name, _i} = collect_var_name(value, start)
+    # start points to char after ${!, so brace is at start - 2
     end_idx = find_matching_brace(value, start - 2)
 
     {AST.parameter_expansion(name, %AST.Indirection{}), end_idx + 1}
@@ -323,6 +335,7 @@ defmodule JustBash.Parser.WordParts do
 
     if next && not (next =~ ~r/[}:#%\/]/) do
       {name, _i} = collect_var_name(value, start)
+      # start points to char after ${#, so brace is at start - 2
       end_idx = find_matching_brace(value, start - 2)
       {AST.parameter_expansion(name, %AST.Length{}), end_idx + 1}
     else
@@ -333,14 +346,18 @@ defmodule JustBash.Parser.WordParts do
   defp parse_normal_param_expansion(value, start) do
     {name, i} = collect_var_name(value, start)
 
+    # brace_start should be the position of the opening {, which is start - 1
+    # (start points to the first char after ${)
+    brace_start = start - 1
+
     if String.at(value, i) == "[" do
       bracket_end = find_matching_bracket(value, i)
       subscript = String.slice(value, (i + 1)..(bracket_end - 1)//1)
       name = name <> "[" <> subscript <> "]"
       i = bracket_end + 1
-      parse_param_operation(value, start - 2, name, i)
+      parse_param_operation(value, brace_start, name, i)
     else
-      parse_param_operation(value, start - 2, name, i)
+      parse_param_operation(value, brace_start, name, i)
     end
   end
 
@@ -683,19 +700,32 @@ defmodule JustBash.Parser.WordParts do
   end
 
   defp find_double_paren_end(value, start) do
-    find_dparen_loop(value, start, 1)
+    find_dparen_loop(value, start, 1, 0)
   end
 
-  defp find_dparen_loop(value, i, depth) when depth == 0 or i >= byte_size(value) - 1, do: i - 1
+  defp find_dparen_loop(value, i, outer_depth, _paren_depth)
+       when outer_depth == 0 or i >= byte_size(value) - 1,
+       do: i - 1
 
-  defp find_dparen_loop(value, i, depth) do
+  defp find_dparen_loop(value, i, outer_depth, paren_depth) do
     char = String.at(value, i)
     next = String.at(value, i + 1)
 
     cond do
-      char == "(" and next == "(" -> find_dparen_loop(value, i + 2, depth + 1)
-      char == ")" and next == ")" -> find_dparen_loop(value, i + 2, depth - 1)
-      true -> find_dparen_loop(value, i + 1, depth)
+      char == "(" and next == "(" ->
+        find_dparen_loop(value, i + 2, outer_depth + 1, paren_depth)
+
+      char == ")" and next == ")" and paren_depth == 0 ->
+        find_dparen_loop(value, i + 2, outer_depth - 1, paren_depth)
+
+      char == "(" ->
+        find_dparen_loop(value, i + 1, outer_depth, paren_depth + 1)
+
+      char == ")" and paren_depth > 0 ->
+        find_dparen_loop(value, i + 1, outer_depth, paren_depth - 1)
+
+      true ->
+        find_dparen_loop(value, i + 1, outer_depth, paren_depth)
     end
   end
 
@@ -712,6 +742,128 @@ defmodule JustBash.Parser.WordParts do
       char == "`" -> i
       char == "\\" and i + 1 < String.length(value) -> find_backtick_loop(value, i + 2)
       true -> find_backtick_loop(value, i + 1)
+    end
+  end
+
+  defp try_parse_brace_expansion(value, start) do
+    case find_brace_expansion_end(value, start + 1, 1) do
+      {:ok, end_idx} ->
+        content = String.slice(value, (start + 1)..(end_idx - 1)//1)
+
+        cond do
+          String.contains?(content, "..") ->
+            case parse_brace_range(content) do
+              {:ok, items} -> {:ok, %AST.BraceExpansion{items: items}, end_idx + 1}
+              :error -> :not_brace_expansion
+            end
+
+          String.contains?(content, ",") ->
+            items = parse_brace_list(content)
+            {:ok, %AST.BraceExpansion{items: items}, end_idx + 1}
+
+          true ->
+            :not_brace_expansion
+        end
+
+      :error ->
+        :not_brace_expansion
+    end
+  end
+
+  defp find_brace_expansion_end(value, i, _depth) when i >= byte_size(value), do: :error
+  defp find_brace_expansion_end(_value, i, 0), do: {:ok, i - 1}
+
+  defp find_brace_expansion_end(value, i, depth) do
+    char = String.at(value, i)
+
+    cond do
+      char == "{" ->
+        find_brace_expansion_end(value, i + 1, depth + 1)
+
+      char == "}" ->
+        if depth == 1, do: {:ok, i}, else: find_brace_expansion_end(value, i + 1, depth - 1)
+
+      char == "\\" and i + 1 < String.length(value) ->
+        find_brace_expansion_end(value, i + 2, depth)
+
+      true ->
+        find_brace_expansion_end(value, i + 1, depth)
+    end
+  end
+
+  defp parse_brace_range(content) do
+    case String.split(content, "..") do
+      [start_str, end_str] ->
+        parse_range_parts(start_str, end_str, nil)
+
+      [start_str, end_str, step_str] ->
+        case Integer.parse(step_str) do
+          {step, ""} -> parse_range_parts(start_str, end_str, step)
+          _ -> :error
+        end
+
+      _ ->
+        :error
+    end
+  end
+
+  defp parse_range_parts(start_str, end_str, step) do
+    cond do
+      String.length(start_str) == 1 and String.length(end_str) == 1 ->
+        {:ok, [{:range, start_str, end_str, step}]}
+
+      true ->
+        case {Integer.parse(start_str), Integer.parse(end_str)} do
+          {{start_num, ""}, {end_num, ""}} ->
+            {:ok, [{:range, start_num, end_num, step}]}
+
+          _ ->
+            :error
+        end
+    end
+  end
+
+  defp parse_brace_list(content) do
+    split_brace_items(content)
+    |> Enum.map(fn item ->
+      if String.contains?(item, "..") do
+        case parse_brace_range(item) do
+          {:ok, [{:range, s, e, step}]} -> {:range, s, e, step}
+          :error -> {:word, AST.word(parse(item))}
+        end
+      else
+        {:word, AST.word(parse(item))}
+      end
+    end)
+  end
+
+  defp split_brace_items(content) do
+    split_brace_items_loop(content, 0, 0, "", [])
+  end
+
+  defp split_brace_items_loop(content, i, _depth, acc, items) when i >= byte_size(content) do
+    Enum.reverse([acc | items])
+  end
+
+  defp split_brace_items_loop(content, i, depth, acc, items) do
+    char = String.at(content, i)
+
+    cond do
+      char == "{" ->
+        split_brace_items_loop(content, i + 1, depth + 1, acc <> char, items)
+
+      char == "}" ->
+        split_brace_items_loop(content, i + 1, depth - 1, acc <> char, items)
+
+      char == "," and depth == 0 ->
+        split_brace_items_loop(content, i + 1, depth, "", [acc | items])
+
+      char == "\\" and i + 1 < String.length(content) ->
+        next = String.at(content, i + 1)
+        split_brace_items_loop(content, i + 2, depth, acc <> char <> next, items)
+
+      true ->
+        split_brace_items_loop(content, i + 1, depth, acc <> char, items)
     end
   end
 end

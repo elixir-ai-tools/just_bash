@@ -3,14 +3,21 @@ defmodule JustBash.Commands.Sort do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.FlagParser
   alias JustBash.Fs.InMemoryFs
+
+  @flag_spec %{
+    boolean: [:r, :u, :n],
+    value: [],
+    defaults: %{r: false, u: false, n: false}
+  }
 
   @impl true
   def names, do: ["sort"]
 
   @impl true
   def execute(bash, args, stdin) do
-    {flags, files} = parse_flags(args)
+    {flags, files} = FlagParser.parse(args, @flag_spec)
 
     content =
       case files do
@@ -48,26 +55,4 @@ defmodule JustBash.Commands.Sort do
     output = if sorted != [], do: Enum.join(sorted, "\n") <> "\n", else: ""
     {Command.ok(output), bash}
   end
-
-  defp parse_flags(args), do: parse_flags(args, %{r: false, u: false, n: false}, [])
-
-  defp parse_flags(["-r" | rest], flags, files),
-    do: parse_flags(rest, %{flags | r: true}, files)
-
-  defp parse_flags(["-u" | rest], flags, files),
-    do: parse_flags(rest, %{flags | u: true}, files)
-
-  defp parse_flags(["-n" | rest], flags, files),
-    do: parse_flags(rest, %{flags | n: true}, files)
-
-  defp parse_flags(["-rn" | rest], flags, files),
-    do: parse_flags(rest, %{flags | r: true, n: true}, files)
-
-  defp parse_flags(["-nr" | rest], flags, files),
-    do: parse_flags(rest, %{flags | r: true, n: true}, files)
-
-  defp parse_flags([arg | rest], flags, files),
-    do: parse_flags(rest, flags, files ++ [arg])
-
-  defp parse_flags([], flags, files), do: {flags, files}
 end

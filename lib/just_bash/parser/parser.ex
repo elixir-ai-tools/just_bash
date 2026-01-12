@@ -291,11 +291,89 @@ defmodule JustBash.Parser do
     parser = skip_newlines(parser)
 
     if command_start?(parser) do
+      pending_before = length(parser.pending_heredocs)
       {pipelines, operators, background, parser} = parse_statement_inner(parser)
+      pending_after = length(parser.pending_heredocs)
+
+      {pipelines, parser} =
+        if pending_after > pending_before do
+          fill_heredoc_contents(pipelines, parser)
+        else
+          {pipelines, parser}
+        end
+
       {AST.statement(pipelines, operators, background), parser}
     else
       {nil, parser}
     end
+  end
+
+  defp fill_heredoc_contents(pipelines, parser) do
+    parser = skip_to_heredoc_content(parser)
+    {contents, parser} = consume_all_heredoc_contents(parser, [])
+    {filled_pipelines, _remaining} = fill_heredocs_in_pipelines(pipelines, contents)
+    parser = %{parser | pending_heredocs: []}
+    {filled_pipelines, parser}
+  end
+
+  defp skip_to_heredoc_content(parser) do
+    if check?(parser, :newline) do
+      {_token, parser} = advance(parser)
+      skip_to_heredoc_content(parser)
+    else
+      parser
+    end
+  end
+
+  defp consume_all_heredoc_contents(parser, acc) do
+    if check?(parser, :heredoc_content) do
+      {token, parser} = advance(parser)
+      consume_all_heredoc_contents(parser, acc ++ [token.value])
+    else
+      {acc, parser}
+    end
+  end
+
+  defp fill_heredocs_in_pipelines(pipelines, contents) do
+    {filled, remaining} =
+      Enum.map_reduce(pipelines, contents, fn pipeline, contents ->
+        {filled_commands, remaining} =
+          Enum.map_reduce(pipeline.commands, contents, fn cmd, contents ->
+            fill_heredocs_in_command(cmd, contents)
+          end)
+
+        {%{pipeline | commands: filled_commands}, remaining}
+      end)
+
+    {filled, remaining}
+  end
+
+  defp fill_heredocs_in_command(%AST.SimpleCommand{redirections: redirs} = cmd, contents) do
+    {filled_redirs, remaining} = fill_heredocs_in_redirections(redirs, contents)
+    {%{cmd | redirections: filled_redirs}, remaining}
+  end
+
+  defp fill_heredocs_in_command(cmd, contents) do
+    {cmd, contents}
+  end
+
+  defp fill_heredocs_in_redirections(redirections, contents) do
+    Enum.map_reduce(redirections, contents, fn redir, contents ->
+      case redir.target do
+        %AST.HereDoc{content: nil} = heredoc ->
+          case contents do
+            [content | rest] ->
+              filled_heredoc = %{heredoc | content: AST.word(WordParts.parse(content))}
+              {%{redir | target: filled_heredoc}, rest}
+
+            [] ->
+              {redir, []}
+          end
+
+        _ ->
+          {redir, contents}
+      end
+    end)
   end
 
   defp parse_statement_inner(parser) do
@@ -576,9 +654,23 @@ defmodule JustBash.Parser do
       end
 
     {target_token, parser} = advance(parser)
-    target = AST.word(WordParts.parse(target_token.value))
 
-    {AST.redirection(operator, target, fd), parser}
+    if operator in [:"<<", :"<<-"] do
+      delimiter = target_token.value
+      strip_tabs = operator == :"<<-"
+      quoted = String.starts_with?(delimiter, "'") or String.starts_with?(delimiter, "\"")
+      clean_delimiter = String.trim(delimiter, "'") |> String.trim("\"")
+
+      heredoc = AST.here_doc(clean_delimiter, nil, strip_tabs, quoted)
+      redirection = AST.redirection(operator, heredoc, fd)
+
+      parser = %{parser | pending_heredocs: parser.pending_heredocs ++ [clean_delimiter]}
+
+      {redirection, parser}
+    else
+      target = AST.word(WordParts.parse(target_token.value))
+      {AST.redirection(operator, target, fd), parser}
+    end
   end
 
   defp parse_if(parser) do
@@ -811,13 +903,15 @@ defmodule JustBash.Parser do
   defp parse_arithmetic_command(parser) do
     {_token, parser} = expect(parser, :dparen_start)
 
-    {_expr_str, parser} = collect_until_dparen_end(parser, "")
+    {expr_str, parser} = collect_until_dparen_end(parser, "")
 
     {_token, parser} = expect(parser, :dparen_end, "Expected '))'")
     {redirections, parser} = parse_redirections(parser, [])
 
+    arith_ast = JustBash.Arithmetic.parse(expr_str)
+
     expression = %AST.ArithmeticExpression{
-      expression: %AST.ArithNumber{value: 0}
+      expression: arith_ast
     }
 
     {AST.arithmetic_command(expression, redirections), parser}
@@ -835,23 +929,112 @@ defmodule JustBash.Parser do
   defp parse_conditional_command(parser) do
     {_token, parser} = expect(parser, :dbrack_start)
 
-    {_expr_tokens, parser} = collect_until_dbrack_end(parser, [])
+    {expression, parser} = parse_conditional_expr(parser)
 
     {_token, parser} = expect(parser, :dbrack_end, "Expected ']]'")
     {redirections, parser} = parse_redirections(parser, [])
 
-    expression = %AST.CondWord{word: AST.word([AST.literal("true")])}
-
     {AST.conditional_command(expression, redirections), parser}
   end
 
-  defp collect_until_dbrack_end(parser, acc) do
-    if check?(parser, [:dbrack_end, :eof]) do
-      {Enum.reverse(acc), parser}
+  defp parse_conditional_expr(parser) do
+    parse_cond_or(parser)
+  end
+
+  defp parse_cond_or(parser) do
+    {left, parser} = parse_cond_and(parser)
+    parse_cond_or_loop(parser, left)
+  end
+
+  defp parse_cond_or_loop(parser, left) do
+    if check?(parser, [:dpipe]) do
+      {_token, parser} = advance(parser)
+      {right, parser} = parse_cond_and(parser)
+      parse_cond_or_loop(parser, %AST.CondOr{left: left, right: right})
     else
-      {token, parser} = advance(parser)
-      collect_until_dbrack_end(parser, [token | acc])
+      {left, parser}
     end
+  end
+
+  defp parse_cond_and(parser) do
+    {left, parser} = parse_cond_not(parser)
+    parse_cond_and_loop(parser, left)
+  end
+
+  defp parse_cond_and_loop(parser, left) do
+    if check?(parser, [:damp]) do
+      {_token, parser} = advance(parser)
+      {right, parser} = parse_cond_not(parser)
+      parse_cond_and_loop(parser, %AST.CondAnd{left: left, right: right})
+    else
+      {left, parser}
+    end
+  end
+
+  defp parse_cond_not(parser) do
+    if check_value?(parser, "!") do
+      {_token, parser} = advance(parser)
+      {operand, parser} = parse_cond_not(parser)
+      {%AST.CondNot{operand: operand}, parser}
+    else
+      parse_cond_primary(parser)
+    end
+  end
+
+  defp parse_cond_primary(parser) do
+    cond do
+      check?(parser, [:lparen]) ->
+        {_token, parser} = advance(parser)
+        {expr, parser} = parse_conditional_expr(parser)
+        {_token, parser} = expect(parser, :rparen, "Expected ')' in conditional")
+        {%AST.CondGroup{expression: expr}, parser}
+
+      is_unary_cond_op?(parser) ->
+        {op_token, parser} = advance(parser)
+        {word, parser} = parse_cond_word(parser)
+        operator = String.to_atom(op_token.value)
+        {%AST.CondUnary{operator: operator, operand: word}, parser}
+
+      true ->
+        {left_word, parser} = parse_cond_word(parser)
+
+        cond do
+          check?(parser, [:dbrack_end, :damp, :dpipe, :rparen]) ->
+            {%AST.CondWord{word: left_word}, parser}
+
+          is_binary_cond_op?(parser) ->
+            {op_token, parser} = advance(parser)
+            {right_word, parser} = parse_cond_word(parser)
+            operator = String.to_atom(op_token.value)
+            {%AST.CondBinary{operator: operator, left: left_word, right: right_word}, parser}
+
+          true ->
+            {%AST.CondWord{word: left_word}, parser}
+        end
+    end
+  end
+
+  defp is_unary_cond_op?(parser) do
+    value = current(parser).value
+    value in ~w(-a -e -f -d -r -w -x -s -z -n -L -h -b -c -p -S -t -g -u -k -O -G -N -v)
+  end
+
+  defp is_binary_cond_op?(parser) do
+    value = current(parser).value
+    value in ~w(= == != =~ < > -eq -ne -lt -le -gt -ge -nt -ot -ef)
+  end
+
+  defp parse_cond_word(parser) do
+    if word?(parser) do
+      {token, parser} = advance(parser)
+      {parse_word_from_token(token), parser}
+    else
+      {AST.word([]), parser}
+    end
+  end
+
+  defp check_value?(parser, value) do
+    current(parser).value == value
   end
 
   defp parse_function_def(parser) do

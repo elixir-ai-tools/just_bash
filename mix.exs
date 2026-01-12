@@ -36,9 +36,12 @@ defmodule JustBash.MixProject do
   defp deps do
     [
       {:nimble_parsec, "~> 1.4"},
+      {:req, "~> 0.5"},
+      {:jason, "~> 1.4"},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:stream_data, "~> 1.0", only: [:dev, :test]}
     ]
   end
 

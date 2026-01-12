@@ -3,15 +3,21 @@ defmodule JustBash.Commands.Uniq do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.FlagParser
   alias JustBash.Fs.InMemoryFs
+
+  @flag_spec %{
+    boolean: [:c],
+    value: [],
+    defaults: %{c: false}
+  }
 
   @impl true
   def names, do: ["uniq"]
 
   @impl true
   def execute(bash, args, stdin) do
-    count_flag = "-c" in args
-    files = Enum.reject(args, &String.starts_with?(&1, "-"))
+    {flags, files} = FlagParser.parse(args, @flag_spec)
 
     content =
       case files do
@@ -30,7 +36,7 @@ defmodule JustBash.Commands.Uniq do
     lines = String.split(content, "\n", trim: true)
 
     output =
-      if count_flag do
+      if flags.c do
         lines
         |> Enum.chunk_by(& &1)
         |> Enum.map_join("\n", fn chunk -> "#{length(chunk)} #{hd(chunk)}" end)

@@ -3,14 +3,21 @@ defmodule JustBash.Commands.Head do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.FlagParser
   alias JustBash.Fs.InMemoryFs
+
+  @flag_spec %{
+    boolean: [],
+    value: [:n],
+    defaults: %{n: 10}
+  }
 
   @impl true
   def names, do: ["head"]
 
   @impl true
   def execute(bash, args, stdin) do
-    {flags, files} = parse_flags(args)
+    {flags, files} = FlagParser.parse(args, @flag_spec)
     n = flags.n
 
     case files do
@@ -47,25 +54,4 @@ defmodule JustBash.Commands.Head do
         {Command.ok(output), bash}
     end
   end
-
-  defp parse_flags(args), do: parse_flags(args, %{n: 10}, [])
-
-  defp parse_flags(["-n", n | rest], flags, files) do
-    case Integer.parse(n) do
-      {num, _} -> parse_flags(rest, %{flags | n: num}, files)
-      :error -> parse_flags(rest, flags, files)
-    end
-  end
-
-  defp parse_flags([<<"-", n::binary>> | rest], flags, files) when n != "" do
-    case Integer.parse(n) do
-      {num, _} -> parse_flags(rest, %{flags | n: num}, files)
-      :error -> parse_flags(rest, flags, files ++ ["-" <> n])
-    end
-  end
-
-  defp parse_flags([arg | rest], flags, files),
-    do: parse_flags(rest, flags, files ++ [arg])
-
-  defp parse_flags([], flags, files), do: {flags, files}
 end
