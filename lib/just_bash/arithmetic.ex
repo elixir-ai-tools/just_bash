@@ -25,7 +25,8 @@ defmodule JustBash.Arithmetic do
     if expr_str == "" do
       %AST.ArithNumber{value: 0}
     else
-      {ast, _rest} = parse_expr(expr_str, 0)
+      len = String.length(expr_str)
+      {ast, _rest} = parse_expr(expr_str, len, 0)
       ast
     end
   end
@@ -38,36 +39,36 @@ defmodule JustBash.Arithmetic do
     eval_expr(ast, env)
   end
 
-  defp parse_expr(str, pos) do
-    parse_comma(str, pos)
+  defp parse_expr(str, len, pos) do
+    parse_comma(str, len, pos)
   end
 
-  defp parse_comma(str, pos) do
-    {left, pos} = parse_ternary(str, pos)
-    parse_comma_loop(str, pos, left)
+  defp parse_comma(str, len, pos) do
+    {left, pos} = parse_ternary(str, len, pos)
+    parse_comma_loop(str, len, pos, left)
   end
 
-  defp parse_comma_loop(str, pos, left) do
-    pos = skip_whitespace(str, pos)
+  defp parse_comma_loop(str, len, pos, left) do
+    pos = skip_whitespace(str, len, pos)
 
-    if pos < byte_size(str) and String.at(str, pos) == "," do
-      {right, pos} = parse_ternary(str, pos + 1)
-      parse_comma_loop(str, pos, %AST.ArithBinary{operator: ",", left: left, right: right})
+    if pos < len and String.at(str, pos) == "," do
+      {right, pos} = parse_ternary(str, len, pos + 1)
+      parse_comma_loop(str, len, pos, %AST.ArithBinary{operator: ",", left: left, right: right})
     else
       {left, pos}
     end
   end
 
-  defp parse_ternary(str, pos) do
-    {cond_expr, pos} = parse_logical_or(str, pos)
-    pos = skip_whitespace(str, pos)
+  defp parse_ternary(str, len, pos) do
+    {cond_expr, pos} = parse_logical_or(str, len, pos)
+    pos = skip_whitespace(str, len, pos)
 
-    if pos < byte_size(str) and String.at(str, pos) == "?" do
-      {consequent, pos} = parse_ternary(str, pos + 1)
-      pos = skip_whitespace(str, pos)
+    if pos < len and String.at(str, pos) == "?" do
+      {consequent, pos} = parse_ternary(str, len, pos + 1)
+      pos = skip_whitespace(str, len, pos)
 
-      if pos < byte_size(str) and String.at(str, pos) == ":" do
-        {alternate, pos} = parse_ternary(str, pos + 1)
+      if pos < len and String.at(str, pos) == ":" do
+        {alternate, pos} = parse_ternary(str, len, pos + 1)
 
         {%AST.ArithTernary{condition: cond_expr, consequent: consequent, alternate: alternate},
          pos}
@@ -79,228 +80,293 @@ defmodule JustBash.Arithmetic do
     end
   end
 
-  defp parse_logical_or(str, pos) do
-    {left, pos} = parse_logical_and(str, pos)
-    parse_logical_or_loop(str, pos, left)
+  defp parse_logical_or(str, len, pos) do
+    {left, pos} = parse_logical_and(str, len, pos)
+    parse_logical_or_loop(str, len, pos, left)
   end
 
-  defp parse_logical_or_loop(str, pos, left) do
-    pos = skip_whitespace(str, pos)
+  defp parse_logical_or_loop(str, len, pos, left) do
+    pos = skip_whitespace(str, len, pos)
 
-    if match_op?(str, pos, "||") do
-      {right, pos} = parse_logical_and(str, pos + 2)
-      parse_logical_or_loop(str, pos, %AST.ArithBinary{operator: "||", left: left, right: right})
+    if match_op?(str, len, pos, "||") do
+      {right, pos} = parse_logical_and(str, len, pos + 2)
+
+      parse_logical_or_loop(str, len, pos, %AST.ArithBinary{
+        operator: "||",
+        left: left,
+        right: right
+      })
     else
       {left, pos}
     end
   end
 
-  defp parse_logical_and(str, pos) do
-    {left, pos} = parse_bitwise_or(str, pos)
-    parse_logical_and_loop(str, pos, left)
+  defp parse_logical_and(str, len, pos) do
+    {left, pos} = parse_bitwise_or(str, len, pos)
+    parse_logical_and_loop(str, len, pos, left)
   end
 
-  defp parse_logical_and_loop(str, pos, left) do
-    pos = skip_whitespace(str, pos)
+  defp parse_logical_and_loop(str, len, pos, left) do
+    pos = skip_whitespace(str, len, pos)
 
-    if match_op?(str, pos, "&&") do
-      {right, pos} = parse_bitwise_or(str, pos + 2)
-      parse_logical_and_loop(str, pos, %AST.ArithBinary{operator: "&&", left: left, right: right})
+    if match_op?(str, len, pos, "&&") do
+      {right, pos} = parse_bitwise_or(str, len, pos + 2)
+
+      parse_logical_and_loop(str, len, pos, %AST.ArithBinary{
+        operator: "&&",
+        left: left,
+        right: right
+      })
     else
       {left, pos}
     end
   end
 
-  defp parse_bitwise_or(str, pos) do
-    {left, pos} = parse_bitwise_xor(str, pos)
-    parse_bitwise_or_loop(str, pos, left)
+  defp parse_bitwise_or(str, len, pos) do
+    {left, pos} = parse_bitwise_xor(str, len, pos)
+    parse_bitwise_or_loop(str, len, pos, left)
   end
 
-  defp parse_bitwise_or_loop(str, pos, left) do
-    pos = skip_whitespace(str, pos)
+  defp parse_bitwise_or_loop(str, len, pos, left) do
+    pos = skip_whitespace(str, len, pos)
 
-    if pos < byte_size(str) and String.at(str, pos) == "|" and
-         !match_op?(str, pos, "||") do
-      {right, pos} = parse_bitwise_xor(str, pos + 1)
-      parse_bitwise_or_loop(str, pos, %AST.ArithBinary{operator: "|", left: left, right: right})
+    if pos < len and String.at(str, pos) == "|" and
+         !match_op?(str, len, pos, "||") do
+      {right, pos} = parse_bitwise_xor(str, len, pos + 1)
+
+      parse_bitwise_or_loop(str, len, pos, %AST.ArithBinary{
+        operator: "|",
+        left: left,
+        right: right
+      })
     else
       {left, pos}
     end
   end
 
-  defp parse_bitwise_xor(str, pos) do
-    {left, pos} = parse_bitwise_and(str, pos)
-    parse_bitwise_xor_loop(str, pos, left)
+  defp parse_bitwise_xor(str, len, pos) do
+    {left, pos} = parse_bitwise_and(str, len, pos)
+    parse_bitwise_xor_loop(str, len, pos, left)
   end
 
-  defp parse_bitwise_xor_loop(str, pos, left) do
-    pos = skip_whitespace(str, pos)
+  defp parse_bitwise_xor_loop(str, len, pos, left) do
+    pos = skip_whitespace(str, len, pos)
 
-    if pos < byte_size(str) and String.at(str, pos) == "^" do
-      {right, pos} = parse_bitwise_and(str, pos + 1)
-      parse_bitwise_xor_loop(str, pos, %AST.ArithBinary{operator: "^", left: left, right: right})
+    if pos < len and String.at(str, pos) == "^" do
+      {right, pos} = parse_bitwise_and(str, len, pos + 1)
+
+      parse_bitwise_xor_loop(str, len, pos, %AST.ArithBinary{
+        operator: "^",
+        left: left,
+        right: right
+      })
     else
       {left, pos}
     end
   end
 
-  defp parse_bitwise_and(str, pos) do
-    {left, pos} = parse_equality(str, pos)
-    parse_bitwise_and_loop(str, pos, left)
+  defp parse_bitwise_and(str, len, pos) do
+    {left, pos} = parse_equality(str, len, pos)
+    parse_bitwise_and_loop(str, len, pos, left)
   end
 
-  defp parse_bitwise_and_loop(str, pos, left) do
-    pos = skip_whitespace(str, pos)
+  defp parse_bitwise_and_loop(str, len, pos, left) do
+    pos = skip_whitespace(str, len, pos)
 
-    if pos < byte_size(str) and String.at(str, pos) == "&" and
-         !match_op?(str, pos, "&&") do
-      {right, pos} = parse_equality(str, pos + 1)
-      parse_bitwise_and_loop(str, pos, %AST.ArithBinary{operator: "&", left: left, right: right})
+    if pos < len and String.at(str, pos) == "&" and
+         !match_op?(str, len, pos, "&&") do
+      {right, pos} = parse_equality(str, len, pos + 1)
+
+      parse_bitwise_and_loop(str, len, pos, %AST.ArithBinary{
+        operator: "&",
+        left: left,
+        right: right
+      })
     else
       {left, pos}
     end
   end
 
-  defp parse_equality(str, pos) do
-    {left, pos} = parse_relational(str, pos)
-    parse_equality_loop(str, pos, left)
+  defp parse_equality(str, len, pos) do
+    {left, pos} = parse_relational(str, len, pos)
+    parse_equality_loop(str, len, pos, left)
   end
 
-  defp parse_equality_loop(str, pos, left) do
-    pos = skip_whitespace(str, pos)
+  defp parse_equality_loop(str, len, pos, left) do
+    pos = skip_whitespace(str, len, pos)
 
     cond do
-      match_op?(str, pos, "==") ->
-        {right, pos} = parse_relational(str, pos + 2)
-        parse_equality_loop(str, pos, %AST.ArithBinary{operator: "==", left: left, right: right})
+      match_op?(str, len, pos, "==") ->
+        {right, pos} = parse_relational(str, len, pos + 2)
 
-      match_op?(str, pos, "!=") ->
-        {right, pos} = parse_relational(str, pos + 2)
-        parse_equality_loop(str, pos, %AST.ArithBinary{operator: "!=", left: left, right: right})
+        parse_equality_loop(str, len, pos, %AST.ArithBinary{
+          operator: "==",
+          left: left,
+          right: right
+        })
+
+      match_op?(str, len, pos, "!=") ->
+        {right, pos} = parse_relational(str, len, pos + 2)
+
+        parse_equality_loop(str, len, pos, %AST.ArithBinary{
+          operator: "!=",
+          left: left,
+          right: right
+        })
 
       true ->
         {left, pos}
     end
   end
 
-  defp parse_relational(str, pos) do
-    {left, pos} = parse_shift(str, pos)
-    parse_relational_loop(str, pos, left)
+  defp parse_relational(str, len, pos) do
+    {left, pos} = parse_shift(str, len, pos)
+    parse_relational_loop(str, len, pos, left)
   end
 
-  defp parse_relational_loop(str, pos, left) do
-    pos = skip_whitespace(str, pos)
+  defp parse_relational_loop(str, len, pos, left) do
+    pos = skip_whitespace(str, len, pos)
 
     cond do
-      match_op?(str, pos, "<=") ->
-        {right, pos} = parse_shift(str, pos + 2)
+      match_op?(str, len, pos, "<=") ->
+        {right, pos} = parse_shift(str, len, pos + 2)
 
-        parse_relational_loop(str, pos, %AST.ArithBinary{operator: "<=", left: left, right: right})
+        parse_relational_loop(str, len, pos, %AST.ArithBinary{
+          operator: "<=",
+          left: left,
+          right: right
+        })
 
-      match_op?(str, pos, ">=") ->
-        {right, pos} = parse_shift(str, pos + 2)
+      match_op?(str, len, pos, ">=") ->
+        {right, pos} = parse_shift(str, len, pos + 2)
 
-        parse_relational_loop(str, pos, %AST.ArithBinary{operator: ">=", left: left, right: right})
+        parse_relational_loop(str, len, pos, %AST.ArithBinary{
+          operator: ">=",
+          left: left,
+          right: right
+        })
 
-      pos < byte_size(str) and String.at(str, pos) == "<" and !match_op?(str, pos, "<<") ->
-        {right, pos} = parse_shift(str, pos + 1)
-        parse_relational_loop(str, pos, %AST.ArithBinary{operator: "<", left: left, right: right})
+      pos < len and String.at(str, pos) == "<" and !match_op?(str, len, pos, "<<") ->
+        {right, pos} = parse_shift(str, len, pos + 1)
 
-      pos < byte_size(str) and String.at(str, pos) == ">" and !match_op?(str, pos, ">>") ->
-        {right, pos} = parse_shift(str, pos + 1)
-        parse_relational_loop(str, pos, %AST.ArithBinary{operator: ">", left: left, right: right})
+        parse_relational_loop(str, len, pos, %AST.ArithBinary{
+          operator: "<",
+          left: left,
+          right: right
+        })
+
+      pos < len and String.at(str, pos) == ">" and !match_op?(str, len, pos, ">>") ->
+        {right, pos} = parse_shift(str, len, pos + 1)
+
+        parse_relational_loop(str, len, pos, %AST.ArithBinary{
+          operator: ">",
+          left: left,
+          right: right
+        })
 
       true ->
         {left, pos}
     end
   end
 
-  defp parse_shift(str, pos) do
-    {left, pos} = parse_additive(str, pos)
-    parse_shift_loop(str, pos, left)
+  defp parse_shift(str, len, pos) do
+    {left, pos} = parse_additive(str, len, pos)
+    parse_shift_loop(str, len, pos, left)
   end
 
-  defp parse_shift_loop(str, pos, left) do
-    pos = skip_whitespace(str, pos)
+  defp parse_shift_loop(str, len, pos, left) do
+    pos = skip_whitespace(str, len, pos)
 
     cond do
-      match_op?(str, pos, "<<") ->
-        {right, pos} = parse_additive(str, pos + 2)
-        parse_shift_loop(str, pos, %AST.ArithBinary{operator: "<<", left: left, right: right})
+      match_op?(str, len, pos, "<<") ->
+        {right, pos} = parse_additive(str, len, pos + 2)
 
-      match_op?(str, pos, ">>") ->
-        {right, pos} = parse_additive(str, pos + 2)
-        parse_shift_loop(str, pos, %AST.ArithBinary{operator: ">>", left: left, right: right})
+        parse_shift_loop(str, len, pos, %AST.ArithBinary{operator: "<<", left: left, right: right})
+
+      match_op?(str, len, pos, ">>") ->
+        {right, pos} = parse_additive(str, len, pos + 2)
+
+        parse_shift_loop(str, len, pos, %AST.ArithBinary{operator: ">>", left: left, right: right})
 
       true ->
         {left, pos}
     end
   end
 
-  defp parse_additive(str, pos) do
-    {left, pos} = parse_multiplicative(str, pos)
-    parse_additive_loop(str, pos, left)
+  defp parse_additive(str, len, pos) do
+    {left, pos} = parse_multiplicative(str, len, pos)
+    parse_additive_loop(str, len, pos, left)
   end
 
-  defp parse_additive_loop(str, pos, left) do
-    pos = skip_whitespace(str, pos)
+  defp parse_additive_loop(str, len, pos, left) do
+    pos = skip_whitespace(str, len, pos)
 
     cond do
-      pos < byte_size(str) and String.at(str, pos) == "+" and !match_op?(str, pos, "++") and
-          !match_op?(str, pos, "+=") ->
-        {right, pos} = parse_multiplicative(str, pos + 1)
-        parse_additive_loop(str, pos, %AST.ArithBinary{operator: "+", left: left, right: right})
+      pos < len and String.at(str, pos) == "+" and !match_op?(str, len, pos, "++") and
+          !match_op?(str, len, pos, "+=") ->
+        {right, pos} = parse_multiplicative(str, len, pos + 1)
 
-      pos < byte_size(str) and String.at(str, pos) == "-" and !match_op?(str, pos, "--") and
-          !match_op?(str, pos, "-=") ->
-        {right, pos} = parse_multiplicative(str, pos + 1)
-        parse_additive_loop(str, pos, %AST.ArithBinary{operator: "-", left: left, right: right})
+        parse_additive_loop(str, len, pos, %AST.ArithBinary{
+          operator: "+",
+          left: left,
+          right: right
+        })
+
+      pos < len and String.at(str, pos) == "-" and !match_op?(str, len, pos, "--") and
+          !match_op?(str, len, pos, "-=") ->
+        {right, pos} = parse_multiplicative(str, len, pos + 1)
+
+        parse_additive_loop(str, len, pos, %AST.ArithBinary{
+          operator: "-",
+          left: left,
+          right: right
+        })
 
       true ->
         {left, pos}
     end
   end
 
-  defp parse_multiplicative(str, pos) do
-    {left, pos} = parse_power(str, pos)
-    parse_multiplicative_loop(str, pos, left)
+  defp parse_multiplicative(str, len, pos) do
+    {left, pos} = parse_power(str, len, pos)
+    parse_multiplicative_loop(str, len, pos, left)
   end
 
-  defp parse_multiplicative_loop(str, pos, left) do
-    pos = skip_whitespace(str, pos)
+  defp parse_multiplicative_loop(str, len, pos, left) do
+    pos = skip_whitespace(str, len, pos)
 
     cond do
-      match_op?(str, pos, "**") ->
-        {right, pos} = parse_power(str, pos + 2)
+      match_op?(str, len, pos, "**") ->
+        {right, pos} = parse_power(str, len, pos + 2)
 
-        parse_multiplicative_loop(str, pos, %AST.ArithBinary{
+        parse_multiplicative_loop(str, len, pos, %AST.ArithBinary{
           operator: "**",
           left: left,
           right: right
         })
 
-      pos < byte_size(str) and String.at(str, pos) == "*" ->
-        {right, pos} = parse_power(str, pos + 1)
+      pos < len and String.at(str, pos) == "*" ->
+        {right, pos} = parse_power(str, len, pos + 1)
 
-        parse_multiplicative_loop(str, pos, %AST.ArithBinary{
+        parse_multiplicative_loop(str, len, pos, %AST.ArithBinary{
           operator: "*",
           left: left,
           right: right
         })
 
-      pos < byte_size(str) and String.at(str, pos) == "/" ->
-        {right, pos} = parse_power(str, pos + 1)
+      pos < len and String.at(str, pos) == "/" ->
+        {right, pos} = parse_power(str, len, pos + 1)
 
-        parse_multiplicative_loop(str, pos, %AST.ArithBinary{
+        parse_multiplicative_loop(str, len, pos, %AST.ArithBinary{
           operator: "/",
           left: left,
           right: right
         })
 
-      pos < byte_size(str) and String.at(str, pos) == "%" ->
-        {right, pos} = parse_power(str, pos + 1)
+      pos < len and String.at(str, pos) == "%" ->
+        {right, pos} = parse_power(str, len, pos + 1)
 
-        parse_multiplicative_loop(str, pos, %AST.ArithBinary{
+        parse_multiplicative_loop(str, len, pos, %AST.ArithBinary{
           operator: "%",
           left: left,
           right: right
@@ -311,64 +377,64 @@ defmodule JustBash.Arithmetic do
     end
   end
 
-  defp parse_power(str, pos) do
-    {left, pos} = parse_unary(str, pos)
-    pos = skip_whitespace(str, pos)
+  defp parse_power(str, len, pos) do
+    {left, pos} = parse_unary(str, len, pos)
+    pos = skip_whitespace(str, len, pos)
 
-    if match_op?(str, pos, "**") do
-      {right, pos} = parse_power(str, pos + 2)
+    if match_op?(str, len, pos, "**") do
+      {right, pos} = parse_power(str, len, pos + 2)
       {%AST.ArithBinary{operator: "**", left: left, right: right}, pos}
     else
       {left, pos}
     end
   end
 
-  defp parse_unary(str, pos) do
-    pos = skip_whitespace(str, pos)
+  defp parse_unary(str, len, pos) do
+    pos = skip_whitespace(str, len, pos)
 
     cond do
-      match_op?(str, pos, "++") ->
-        {operand, pos} = parse_unary(str, pos + 2)
+      match_op?(str, len, pos, "++") ->
+        {operand, pos} = parse_unary(str, len, pos + 2)
         {%AST.ArithUnary{operator: "++", operand: operand, prefix: true}, pos}
 
-      match_op?(str, pos, "--") ->
-        {operand, pos} = parse_unary(str, pos + 2)
+      match_op?(str, len, pos, "--") ->
+        {operand, pos} = parse_unary(str, len, pos + 2)
         {%AST.ArithUnary{operator: "--", operand: operand, prefix: true}, pos}
 
-      pos < byte_size(str) and String.at(str, pos) == "!" ->
-        {operand, pos} = parse_unary(str, pos + 1)
+      pos < len and String.at(str, pos) == "!" ->
+        {operand, pos} = parse_unary(str, len, pos + 1)
         {%AST.ArithUnary{operator: "!", operand: operand, prefix: true}, pos}
 
-      pos < byte_size(str) and String.at(str, pos) == "~" ->
-        {operand, pos} = parse_unary(str, pos + 1)
+      pos < len and String.at(str, pos) == "~" ->
+        {operand, pos} = parse_unary(str, len, pos + 1)
         {%AST.ArithUnary{operator: "~", operand: operand, prefix: true}, pos}
 
-      pos < byte_size(str) and String.at(str, pos) == "-" and !match_op?(str, pos, "--") ->
-        {operand, pos} = parse_unary(str, pos + 1)
+      pos < len and String.at(str, pos) == "-" and !match_op?(str, len, pos, "--") ->
+        {operand, pos} = parse_unary(str, len, pos + 1)
         {%AST.ArithUnary{operator: "-", operand: operand, prefix: true}, pos}
 
-      pos < byte_size(str) and String.at(str, pos) == "+" and !match_op?(str, pos, "++") ->
-        {operand, pos} = parse_unary(str, pos + 1)
+      pos < len and String.at(str, pos) == "+" and !match_op?(str, len, pos, "++") ->
+        {operand, pos} = parse_unary(str, len, pos + 1)
         {%AST.ArithUnary{operator: "+", operand: operand, prefix: true}, pos}
 
       true ->
-        parse_postfix(str, pos)
+        parse_postfix(str, len, pos)
     end
   end
 
-  defp parse_postfix(str, pos) do
-    {primary, pos} = parse_primary(str, pos)
-    parse_postfix_ops(str, pos, primary)
+  defp parse_postfix(str, len, pos) do
+    {primary, pos} = parse_primary(str, len, pos)
+    parse_postfix_ops(str, len, pos, primary)
   end
 
-  defp parse_postfix_ops(str, pos, expr) do
-    pos = skip_whitespace(str, pos)
+  defp parse_postfix_ops(str, len, pos, expr) do
+    pos = skip_whitespace(str, len, pos)
 
     cond do
-      match_op?(str, pos, "++") ->
+      match_op?(str, len, pos, "++") ->
         {%AST.ArithUnary{operator: "++", operand: expr, prefix: false}, pos + 2}
 
-      match_op?(str, pos, "--") ->
+      match_op?(str, len, pos, "--") ->
         {%AST.ArithUnary{operator: "--", operand: expr, prefix: false}, pos + 2}
 
       true ->
@@ -376,19 +442,19 @@ defmodule JustBash.Arithmetic do
     end
   end
 
-  defp parse_primary(str, pos) do
-    pos = skip_whitespace(str, pos)
+  defp parse_primary(str, len, pos) do
+    pos = skip_whitespace(str, len, pos)
 
     cond do
-      pos >= byte_size(str) ->
+      pos >= len ->
         {%AST.ArithNumber{value: 0}, pos}
 
       String.at(str, pos) == "(" ->
-        {inner, pos} = parse_expr(str, pos + 1)
-        pos = skip_whitespace(str, pos)
+        {inner, pos} = parse_expr(str, len, pos + 1)
+        pos = skip_whitespace(str, len, pos)
 
         pos =
-          if pos < byte_size(str) and String.at(str, pos) == ")" do
+          if pos < len and String.at(str, pos) == ")" do
             pos + 1
           else
             pos
@@ -397,32 +463,32 @@ defmodule JustBash.Arithmetic do
         {%AST.ArithGroup{expression: inner}, pos}
 
       digit?(str, pos) ->
-        parse_number(str, pos)
+        parse_number(str, len, pos)
 
       var_start?(str, pos) ->
-        parse_variable_or_assignment(str, pos)
+        parse_variable_or_assignment(str, len, pos)
 
       String.at(str, pos) == "$" ->
-        parse_dollar_var(str, pos)
+        parse_dollar_var(str, len, pos)
 
       true ->
         {%AST.ArithNumber{value: 0}, pos}
     end
   end
 
-  defp parse_number(str, pos) do
-    {num_str, pos} = collect_number(str, pos, "")
+  defp parse_number(str, len, pos) do
+    {num_str, pos} = collect_number(str, len, pos, "")
     value = parse_number_value(num_str)
     {%AST.ArithNumber{value: value}, pos}
   end
 
-  defp collect_number(str, pos, acc) when pos >= byte_size(str), do: {acc, pos}
+  defp collect_number(_str, len, pos, acc) when pos >= len, do: {acc, pos}
 
-  defp collect_number(str, pos, acc) do
+  defp collect_number(str, len, pos, acc) do
     char = String.at(str, pos)
 
     if alnum?(char) or char == "#" or char == "x" or char == "X" do
-      collect_number(str, pos + 1, acc <> char)
+      collect_number(str, len, pos + 1, acc <> char)
     else
       {acc, pos}
     end
@@ -487,75 +553,75 @@ defmodule JustBash.Arithmetic do
     end
   end
 
-  defp parse_variable_or_assignment(str, pos) do
-    {name, pos} = collect_var_name(str, pos, "")
-    pos = skip_whitespace(str, pos)
+  defp parse_variable_or_assignment(str, len, pos) do
+    {name, pos} = collect_var_name(str, len, pos, "")
+    pos = skip_whitespace(str, len, pos)
 
-    if match_assignment_op?(str, pos) do
-      {op, op_len} = get_assignment_op(str, pos)
-      {value, pos} = parse_ternary(str, pos + op_len)
+    if match_assignment_op?(str, len, pos) do
+      {op, op_len} = get_assignment_op(str, len, pos)
+      {value, pos} = parse_ternary(str, len, pos + op_len)
       {%AST.ArithAssignment{operator: op, variable: name, value: value}, pos}
     else
       {%AST.ArithVariable{name: name}, pos}
     end
   end
 
-  defp match_assignment_op?(str, pos) do
+  defp match_assignment_op?(str, len, pos) do
     assignment_ops = ["<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "="]
 
     Enum.any?(assignment_ops, fn op ->
-      match_op?(str, pos, op) and not match_op?(str, pos, "==")
+      match_op?(str, len, pos, op) and not match_op?(str, len, pos, "==")
     end)
   end
 
-  defp get_assignment_op(str, pos) do
+  defp get_assignment_op(str, len, pos) do
     cond do
-      match_op?(str, pos, "<<=") -> {"<<=", 3}
-      match_op?(str, pos, ">>=") -> {">>=", 3}
-      match_op?(str, pos, "+=") -> {"+=", 2}
-      match_op?(str, pos, "-=") -> {"-=", 2}
-      match_op?(str, pos, "*=") -> {"*=", 2}
-      match_op?(str, pos, "/=") -> {"/=", 2}
-      match_op?(str, pos, "%=") -> {"%=", 2}
-      match_op?(str, pos, "&=") -> {"&=", 2}
-      match_op?(str, pos, "|=") -> {"|=", 2}
-      match_op?(str, pos, "^=") -> {"^=", 2}
-      match_op?(str, pos, "=") and not match_op?(str, pos, "==") -> {"=", 1}
+      match_op?(str, len, pos, "<<=") -> {"<<=", 3}
+      match_op?(str, len, pos, ">>=") -> {">>=", 3}
+      match_op?(str, len, pos, "+=") -> {"+=", 2}
+      match_op?(str, len, pos, "-=") -> {"-=", 2}
+      match_op?(str, len, pos, "*=") -> {"*=", 2}
+      match_op?(str, len, pos, "/=") -> {"/=", 2}
+      match_op?(str, len, pos, "%=") -> {"%=", 2}
+      match_op?(str, len, pos, "&=") -> {"&=", 2}
+      match_op?(str, len, pos, "|=") -> {"|=", 2}
+      match_op?(str, len, pos, "^=") -> {"^=", 2}
+      match_op?(str, len, pos, "=") and not match_op?(str, len, pos, "==") -> {"=", 1}
       true -> {"=", 1}
     end
   end
 
-  defp parse_dollar_var(str, pos) do
+  defp parse_dollar_var(str, len, pos) do
     pos = pos + 1
 
-    if pos < byte_size(str) and String.at(str, pos) == "{" do
-      {name, pos} = collect_until_brace(str, pos + 1, "")
+    if pos < len and String.at(str, pos) == "{" do
+      {name, pos} = collect_until_brace(str, len, pos + 1, "")
       {%AST.ArithVariable{name: name}, pos}
     else
-      {name, pos} = collect_var_name(str, pos, "")
+      {name, pos} = collect_var_name(str, len, pos, "")
       {%AST.ArithVariable{name: name}, pos}
     end
   end
 
-  defp collect_until_brace(str, pos, acc) when pos >= byte_size(str), do: {acc, pos}
+  defp collect_until_brace(_str, len, pos, acc) when pos >= len, do: {acc, pos}
 
-  defp collect_until_brace(str, pos, acc) do
+  defp collect_until_brace(str, len, pos, acc) do
     char = String.at(str, pos)
 
     if char == "}" do
       {acc, pos + 1}
     else
-      collect_until_brace(str, pos + 1, acc <> char)
+      collect_until_brace(str, len, pos + 1, acc <> char)
     end
   end
 
-  defp collect_var_name(str, pos, acc) when pos >= byte_size(str), do: {acc, pos}
+  defp collect_var_name(_str, len, pos, acc) when pos >= len, do: {acc, pos}
 
-  defp collect_var_name(str, pos, acc) do
+  defp collect_var_name(str, len, pos, acc) do
     char = String.at(str, pos)
 
     if var_char?(char, acc == "") do
-      collect_var_name(str, pos + 1, acc <> char)
+      collect_var_name(str, len, pos + 1, acc <> char)
     else
       {acc, pos}
     end
@@ -587,21 +653,21 @@ defmodule JustBash.Arithmetic do
       (char >= "A" and char <= "Z")
   end
 
-  defp skip_whitespace(str, pos) when pos >= byte_size(str), do: pos
+  defp skip_whitespace(_str, len, pos) when pos >= len, do: pos
 
-  defp skip_whitespace(str, pos) do
+  defp skip_whitespace(str, len, pos) do
     char = String.at(str, pos)
 
     if char in [" ", "\t", "\n", "\r"] do
-      skip_whitespace(str, pos + 1)
+      skip_whitespace(str, len, pos + 1)
     else
       pos
     end
   end
 
-  defp match_op?(str, pos, op) do
-    op_len = byte_size(op)
-    pos + op_len <= byte_size(str) and String.slice(str, pos, op_len) == op
+  defp match_op?(str, len, pos, op) do
+    op_len = String.length(op)
+    pos + op_len <= len and String.slice(str, pos, op_len) == op
   end
 
   defp eval_expr(%AST.ArithNumber{value: value}, env) do

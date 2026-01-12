@@ -43,55 +43,55 @@ defmodule JustBash.Parser.WordParts do
   end
 
   defp parse_unquoted(value, is_assignment) do
-    parse_unquoted_loop(value, 0, "", [], is_assignment)
+    parse_unquoted_loop(value, 0, String.length(value), "", [], is_assignment)
   end
 
-  defp parse_unquoted_loop(value, i, literal, parts, _is_assignment) when i >= byte_size(value) do
+  defp parse_unquoted_loop(_value, i, len, literal, parts, _is_assignment) when i >= len do
     flush_literal(literal, parts)
   end
 
-  defp parse_unquoted_loop(value, i, literal, parts, is_assignment) do
+  defp parse_unquoted_loop(value, i, len, literal, parts, is_assignment) do
     char = String.at(value, i)
 
     cond do
-      char == "\\" and i + 1 < String.length(value) ->
+      char == "\\" and i + 1 < len ->
         next = String.at(value, i + 1)
 
         if next in ["$", "`", "\\", "\"", "\n"] do
-          parse_unquoted_loop(value, i + 2, literal <> next, parts, is_assignment)
+          parse_unquoted_loop(value, i + 2, len, literal <> next, parts, is_assignment)
         else
-          parse_unquoted_loop(value, i + 2, literal <> "\\" <> next, parts, is_assignment)
+          parse_unquoted_loop(value, i + 2, len, literal <> "\\" <> next, parts, is_assignment)
         end
 
       char == "'" ->
         parts = flush_literal(literal, parts)
         {quoted_content, end_idx} = parse_single_quoted(value, i + 1)
         new_parts = parts ++ [AST.single_quoted(quoted_content)]
-        parse_unquoted_loop(value, end_idx, "", new_parts, is_assignment)
+        parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
 
       char == "\"" ->
         parts = flush_literal(literal, parts)
         {inner_parts, end_idx} = parse_double_quoted(value, i + 1)
         new_parts = parts ++ [AST.double_quoted(inner_parts)]
-        parse_unquoted_loop(value, end_idx, "", new_parts, is_assignment)
+        parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
 
       char == "$" and String.at(value, i + 1) == "'" ->
         parts = flush_literal(literal, parts)
         {ansi_content, end_idx} = parse_ansi_c_quoted(value, i + 2)
         new_parts = parts ++ [AST.literal(ansi_content)]
-        parse_unquoted_loop(value, end_idx, "", new_parts, is_assignment)
+        parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
 
       char == "$" ->
         parts = flush_literal(literal, parts)
         {part, end_idx} = parse_expansion(value, i)
         new_parts = if part, do: parts ++ [part], else: parts
-        parse_unquoted_loop(value, end_idx, "", new_parts, is_assignment)
+        parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
 
       char == "`" ->
         parts = flush_literal(literal, parts)
         {part, end_idx} = parse_backtick_substitution(value, i)
         new_parts = parts ++ [part]
-        parse_unquoted_loop(value, end_idx, "", new_parts, is_assignment)
+        parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
 
       char == "~" and (i == 0 or String.at(value, i - 1) in ["=", ":"]) ->
         tilde_end = find_tilde_end(value, i)
@@ -104,25 +104,25 @@ defmodule JustBash.Parser.WordParts do
             if tilde_end > i + 1, do: String.slice(value, (i + 1)..(tilde_end - 1)), else: nil
 
           new_parts = parts ++ [%AST.TildeExpansion{user: user}]
-          parse_unquoted_loop(value, tilde_end, "", new_parts, is_assignment)
+          parse_unquoted_loop(value, tilde_end, len, "", new_parts, is_assignment)
         else
-          parse_unquoted_loop(value, i + 1, literal <> char, parts, is_assignment)
+          parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
         end
 
       char in ["*", "?"] ->
         parts = flush_literal(literal, parts)
         new_parts = parts ++ [%AST.Glob{pattern: char}]
-        parse_unquoted_loop(value, i + 1, "", new_parts, is_assignment)
+        parse_unquoted_loop(value, i + 1, len, "", new_parts, is_assignment)
 
       char == "{" ->
         case try_parse_brace_expansion(value, i) do
           {:ok, brace_exp, end_idx} ->
             parts = flush_literal(literal, parts)
             new_parts = parts ++ [brace_exp]
-            parse_unquoted_loop(value, end_idx, "", new_parts, is_assignment)
+            parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
 
           :not_brace_expansion ->
-            parse_unquoted_loop(value, i + 1, literal <> char, parts, is_assignment)
+            parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
         end
 
       char == "[" ->
@@ -131,14 +131,14 @@ defmodule JustBash.Parser.WordParts do
             parts = flush_literal(literal, parts)
             pattern = String.slice(value, i..end_idx)
             new_parts = parts ++ [%AST.Glob{pattern: pattern}]
-            parse_unquoted_loop(value, end_idx + 1, "", new_parts, is_assignment)
+            parse_unquoted_loop(value, end_idx + 1, len, "", new_parts, is_assignment)
 
           :error ->
-            parse_unquoted_loop(value, i + 1, literal <> char, parts, is_assignment)
+            parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
         end
 
       true ->
-        parse_unquoted_loop(value, i + 1, literal <> char, parts, is_assignment)
+        parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
     end
   end
 
@@ -158,81 +158,83 @@ defmodule JustBash.Parser.WordParts do
   end
 
   defp parse_double_quoted(value, start) do
-    parse_double_quoted_loop(value, start, "", [])
+    len = String.length(value)
+    parse_double_quoted_loop(value, start, len, "", [])
   end
 
-  defp parse_double_quoted_loop(value, i, literal, parts) when i >= byte_size(value) do
+  defp parse_double_quoted_loop(_value, i, len, literal, parts) when i >= len do
     {flush_literal(literal, parts), i}
   end
 
-  defp parse_double_quoted_loop(value, i, literal, parts) do
+  defp parse_double_quoted_loop(value, i, len, literal, parts) do
     char = String.at(value, i)
 
     cond do
       char == "\"" ->
         {flush_literal(literal, parts), i + 1}
 
-      char == "\\" and i + 1 < String.length(value) ->
+      char == "\\" and i + 1 < len ->
         next = String.at(value, i + 1)
 
         if next in ["\"", "\\", "$", "`", "\n"] do
-          parse_double_quoted_loop(value, i + 2, literal <> next, parts)
+          parse_double_quoted_loop(value, i + 2, len, literal <> next, parts)
         else
-          parse_double_quoted_loop(value, i + 1, literal <> char, parts)
+          parse_double_quoted_loop(value, i + 1, len, literal <> char, parts)
         end
 
       char == "$" ->
         parts = flush_literal(literal, parts)
         {part, end_idx} = parse_expansion(value, i)
         new_parts = if part, do: parts ++ [part], else: parts
-        parse_double_quoted_loop(value, end_idx, "", new_parts)
+        parse_double_quoted_loop(value, end_idx, len, "", new_parts)
 
       char == "`" ->
         parts = flush_literal(literal, parts)
         {part, end_idx} = parse_backtick_substitution(value, i)
         new_parts = parts ++ [part]
-        parse_double_quoted_loop(value, end_idx, "", new_parts)
+        parse_double_quoted_loop(value, end_idx, len, "", new_parts)
 
       true ->
-        parse_double_quoted_loop(value, i + 1, literal <> char, parts)
+        parse_double_quoted_loop(value, i + 1, len, literal <> char, parts)
     end
   end
 
   defp parse_double_quoted_content(value) do
-    parse_dq_content_loop(value, 0, "", [])
+    len = String.length(value)
+    parse_dq_content_loop(value, 0, len, "", [])
   end
 
-  defp parse_dq_content_loop(value, i, literal, parts) when i >= byte_size(value) do
+  defp parse_dq_content_loop(_value, i, len, literal, parts) when i >= len do
     flush_literal(literal, parts)
   end
 
-  defp parse_dq_content_loop(value, i, literal, parts) do
+  defp parse_dq_content_loop(value, i, len, literal, parts) do
     char = String.at(value, i)
 
     cond do
-      char == "\\" and i + 1 < String.length(value) ->
+      char == "\\" and i + 1 < len ->
         next = String.at(value, i + 1)
 
         if next in ["$", "`"] do
-          parse_dq_content_loop(value, i + 2, literal <> next, parts)
+          parse_dq_content_loop(value, i + 2, len, literal <> next, parts)
         else
-          parse_dq_content_loop(value, i + 1, literal <> char, parts)
+          parse_dq_content_loop(value, i + 1, len, literal <> char, parts)
         end
 
       char == "$" ->
         parts = flush_literal(literal, parts)
         {part, end_idx} = parse_expansion(value, i)
         new_parts = if part, do: parts ++ [part], else: parts
-        parse_dq_content_loop(value, end_idx, "", new_parts)
+        parse_dq_content_loop(value, end_idx, len, "", new_parts)
 
       char == "`" ->
         parts = flush_literal(literal, parts)
         {part, end_idx} = parse_backtick_substitution(value, i)
         new_parts = parts ++ [part]
-        parse_dq_content_loop(value, end_idx, "", new_parts)
+        parse_dq_content_loop(value, end_idx, len, "", new_parts)
 
       true ->
-        parse_dq_content_loop(value, i + 1, literal <> char, parts)
+        parse_dq_content_loop(value, i + 1, len, literal <> char, parts)
     end
   end
 
@@ -528,28 +530,31 @@ defmodule JustBash.Parser.WordParts do
     {AST.parameter_expansion(name, op), end_brace + 1}
   end
 
-  defp find_pattern_separator(str), do: find_pattern_separator(str, 0, 0)
+  defp find_pattern_separator(str) do
+    len = String.length(str)
+    find_pattern_separator(str, 0, len, 0)
+  end
 
-  defp find_pattern_separator(str, i, _depth) when i >= byte_size(str), do: nil
+  defp find_pattern_separator(_str, i, len, _depth) when i >= len, do: nil
 
-  defp find_pattern_separator(str, i, depth) do
+  defp find_pattern_separator(str, i, len, depth) do
     char = String.at(str, i)
 
     cond do
-      char == "\\" and i + 1 < String.length(str) ->
-        find_pattern_separator(str, i + 2, depth)
+      char == "\\" and i + 1 < len ->
+        find_pattern_separator(str, i + 2, len, depth)
 
       char == "/" and depth == 0 ->
         i
 
       char == "{" ->
-        find_pattern_separator(str, i + 1, depth + 1)
+        find_pattern_separator(str, i + 1, len, depth + 1)
 
       char == "}" ->
-        find_pattern_separator(str, i + 1, depth - 1)
+        find_pattern_separator(str, i + 1, len, depth - 1)
 
       true ->
-        find_pattern_separator(str, i + 1, depth)
+        find_pattern_separator(str, i + 1, len, depth)
     end
   end
 
@@ -577,7 +582,8 @@ defmodule JustBash.Parser.WordParts do
   end
 
   defp parse_arithmetic_expansion(value, start) do
-    end_dparen = find_double_paren_end(value, start + 2)
+    # start points to $, so start+3 is the first char after $((
+    end_dparen = find_double_paren_end(value, start + 3)
     expr_str = String.slice(value, (start + 3)..(end_dparen - 1)//1)
     parsed_expr = JustBash.Arithmetic.parse(expr_str)
     expr = %AST.ArithmeticExpression{expression: parsed_expr}
@@ -599,39 +605,40 @@ defmodule JustBash.Parser.WordParts do
   end
 
   defp parse_ansi_c_quoted(value, start) do
-    parse_ansi_c_loop(value, start, "")
+    len = String.length(value)
+    parse_ansi_c_loop(value, start, len, "")
   end
 
-  defp parse_ansi_c_loop(value, i, acc) when i >= byte_size(value), do: {acc, i}
+  defp parse_ansi_c_loop(_value, i, len, acc) when i >= len, do: {acc, i}
 
-  defp parse_ansi_c_loop(value, i, acc) do
+  defp parse_ansi_c_loop(value, i, len, acc) do
     char = String.at(value, i)
 
     cond do
       char == "'" ->
         {acc, i + 1}
 
-      char == "\\" and i + 1 < String.length(value) ->
+      char == "\\" and i + 1 < len ->
         next = String.at(value, i + 1)
 
         case next do
-          "n" -> parse_ansi_c_loop(value, i + 2, acc <> "\n")
-          "t" -> parse_ansi_c_loop(value, i + 2, acc <> "\t")
-          "r" -> parse_ansi_c_loop(value, i + 2, acc <> "\r")
-          "\\" -> parse_ansi_c_loop(value, i + 2, acc <> "\\")
-          "'" -> parse_ansi_c_loop(value, i + 2, acc <> "'")
-          "\"" -> parse_ansi_c_loop(value, i + 2, acc <> "\"")
-          "a" -> parse_ansi_c_loop(value, i + 2, acc <> "\a")
-          "b" -> parse_ansi_c_loop(value, i + 2, acc <> "\b")
-          "e" -> parse_ansi_c_loop(value, i + 2, acc <> "\e")
-          "E" -> parse_ansi_c_loop(value, i + 2, acc <> "\e")
-          "f" -> parse_ansi_c_loop(value, i + 2, acc <> "\f")
-          "v" -> parse_ansi_c_loop(value, i + 2, acc <> "\v")
-          _ -> parse_ansi_c_loop(value, i + 1, acc <> char)
+          "n" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\n")
+          "t" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\t")
+          "r" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\r")
+          "\\" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\\")
+          "'" -> parse_ansi_c_loop(value, i + 2, len, acc <> "'")
+          "\"" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\"")
+          "a" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\a")
+          "b" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\b")
+          "e" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\e")
+          "E" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\e")
+          "f" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\f")
+          "v" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\v")
+          _ -> parse_ansi_c_loop(value, i + 1, len, acc <> char)
         end
 
       true ->
-        parse_ansi_c_loop(value, i + 1, acc <> char)
+        parse_ansi_c_loop(value, i + 1, len, acc <> char)
     end
   end
 
@@ -650,103 +657,114 @@ defmodule JustBash.Parser.WordParts do
   end
 
   defp find_glob_bracket_end(value, start) do
-    find_glob_bracket_loop(value, start + 1)
+    len = String.length(value)
+    find_glob_bracket_loop(value, start + 1, len)
   end
 
-  defp find_glob_bracket_loop(value, i) when i >= byte_size(value), do: :error
+  defp find_glob_bracket_loop(_value, i, len) when i >= len, do: :error
 
-  defp find_glob_bracket_loop(value, i) do
+  defp find_glob_bracket_loop(value, i, len) do
     char = String.at(value, i)
 
     cond do
       char == "]" -> {:ok, i}
-      char == "\\" and i + 1 < String.length(value) -> find_glob_bracket_loop(value, i + 2)
-      true -> find_glob_bracket_loop(value, i + 1)
+      char == "\\" and i + 1 < len -> find_glob_bracket_loop(value, i + 2, len)
+      true -> find_glob_bracket_loop(value, i + 1, len)
     end
   end
 
   defp find_matching_brace(value, start) do
-    find_matching_bracket_loop(value, start + 1, 1, "{", "}")
+    len = String.length(value)
+    find_matching_bracket_loop(value, start + 1, len, 1, "{", "}")
   end
 
   defp find_matching_paren(value, start) do
-    find_matching_bracket_loop(value, start + 1, 1, "(", ")")
+    len = String.length(value)
+    find_matching_bracket_loop(value, start + 1, len, 1, "(", ")")
   end
 
   defp find_matching_bracket(value, start) do
-    find_matching_bracket_loop(value, start + 1, 1, "[", "]")
+    len = String.length(value)
+    find_matching_bracket_loop(value, start + 1, len, 1, "[", "]")
   end
 
-  defp find_matching_bracket_loop(value, i, depth, _open, _close)
-       when depth == 0 or i >= byte_size(value),
+  defp find_matching_bracket_loop(_value, i, len, depth, _open, _close)
+       when depth == 0 or i >= len,
        do: i - 1
 
-  defp find_matching_bracket_loop(value, i, depth, open, close) do
+  defp find_matching_bracket_loop(value, i, len, depth, open, close) do
     char = String.at(value, i)
 
     cond do
       char == open ->
-        find_matching_bracket_loop(value, i + 1, depth + 1, open, close)
+        find_matching_bracket_loop(value, i + 1, len, depth + 1, open, close)
 
       char == close ->
-        find_matching_bracket_loop(value, i + 1, depth - 1, open, close)
+        find_matching_bracket_loop(value, i + 1, len, depth - 1, open, close)
 
-      char == "\\" and i + 1 < String.length(value) ->
-        find_matching_bracket_loop(value, i + 2, depth, open, close)
+      char == "\\" and i + 1 < len ->
+        find_matching_bracket_loop(value, i + 2, len, depth, open, close)
 
       true ->
-        find_matching_bracket_loop(value, i + 1, depth, open, close)
+        find_matching_bracket_loop(value, i + 1, len, depth, open, close)
     end
   end
 
   defp find_double_paren_end(value, start) do
-    find_dparen_loop(value, start, 1, 0)
+    len = String.length(value)
+    find_dparen_loop(value, start, len, 1, 0)
   end
 
-  defp find_dparen_loop(value, i, outer_depth, _paren_depth)
-       when outer_depth == 0 or i >= byte_size(value) - 1,
-       do: i - 1
+  # When outer_depth reaches 0, i points to the position after ))
+  # Return i - 2 to point to the first ) of ))
+  defp find_dparen_loop(_value, i, _len, 0, _paren_depth), do: i - 2
 
-  defp find_dparen_loop(value, i, outer_depth, paren_depth) do
+  # Hit end of string without finding closing ))
+  defp find_dparen_loop(_value, i, len, _outer_depth, _paren_depth) when i >= len - 1, do: i - 1
+
+  defp find_dparen_loop(value, i, len, outer_depth, paren_depth) do
     char = String.at(value, i)
     next = String.at(value, i + 1)
 
     cond do
       char == "(" and next == "(" ->
-        find_dparen_loop(value, i + 2, outer_depth + 1, paren_depth)
+        find_dparen_loop(value, i + 2, len, outer_depth + 1, paren_depth)
 
       char == ")" and next == ")" and paren_depth == 0 ->
-        find_dparen_loop(value, i + 2, outer_depth - 1, paren_depth)
+        find_dparen_loop(value, i + 2, len, outer_depth - 1, paren_depth)
 
       char == "(" ->
-        find_dparen_loop(value, i + 1, outer_depth, paren_depth + 1)
+        find_dparen_loop(value, i + 1, len, outer_depth, paren_depth + 1)
 
       char == ")" and paren_depth > 0 ->
-        find_dparen_loop(value, i + 1, outer_depth, paren_depth - 1)
+        find_dparen_loop(value, i + 1, len, outer_depth, paren_depth - 1)
 
       true ->
-        find_dparen_loop(value, i + 1, outer_depth, paren_depth)
+        find_dparen_loop(value, i + 1, len, outer_depth, paren_depth)
     end
   end
 
   defp find_backtick_end(value, start) do
-    find_backtick_loop(value, start)
+    len = String.length(value)
+    find_backtick_loop(value, start, len)
   end
 
-  defp find_backtick_loop(value, i) when i >= byte_size(value), do: i
+  defp find_backtick_loop(_value, i, len) when i >= len, do: i
 
-  defp find_backtick_loop(value, i) do
+  defp find_backtick_loop(value, i, len) do
     char = String.at(value, i)
 
     cond do
       char == "`" -> i
-      char == "\\" and i + 1 < String.length(value) -> find_backtick_loop(value, i + 2)
-      true -> find_backtick_loop(value, i + 1)
+      char == "\\" and i + 1 < len -> find_backtick_loop(value, i + 2, len)
+      true -> find_backtick_loop(value, i + 1, len)
     end
   end
 
   defp try_parse_brace_expansion(value, start) do
-    case find_brace_expansion_end(value, start + 1, 1) do
+    len = String.length(value)
+
+    case find_brace_expansion_end(value, start + 1, len, 1) do
       {:ok, end_idx} ->
         content = String.slice(value, (start + 1)..(end_idx - 1)//1)
 
@@ -770,24 +788,24 @@ defmodule JustBash.Parser.WordParts do
     end
   end
 
-  defp find_brace_expansion_end(value, i, _depth) when i >= byte_size(value), do: :error
-  defp find_brace_expansion_end(_value, i, 0), do: {:ok, i - 1}
+  defp find_brace_expansion_end(_value, i, len, _depth) when i >= len, do: :error
+  defp find_brace_expansion_end(_value, i, _len, 0), do: {:ok, i - 1}
 
-  defp find_brace_expansion_end(value, i, depth) do
+  defp find_brace_expansion_end(value, i, len, depth) do
     char = String.at(value, i)
 
     cond do
       char == "{" ->
-        find_brace_expansion_end(value, i + 1, depth + 1)
+        find_brace_expansion_end(value, i + 1, len, depth + 1)
 
       char == "}" ->
-        if depth == 1, do: {:ok, i}, else: find_brace_expansion_end(value, i + 1, depth - 1)
+        if depth == 1, do: {:ok, i}, else: find_brace_expansion_end(value, i + 1, len, depth - 1)
 
-      char == "\\" and i + 1 < String.length(value) ->
-        find_brace_expansion_end(value, i + 2, depth)
+      char == "\\" and i + 1 < len ->
+        find_brace_expansion_end(value, i + 2, len, depth)
 
       true ->
-        find_brace_expansion_end(value, i + 1, depth)
+        find_brace_expansion_end(value, i + 1, len, depth)
     end
   end
 
@@ -838,32 +856,33 @@ defmodule JustBash.Parser.WordParts do
   end
 
   defp split_brace_items(content) do
-    split_brace_items_loop(content, 0, 0, "", [])
+    len = String.length(content)
+    split_brace_items_loop(content, 0, len, 0, "", [])
   end
 
-  defp split_brace_items_loop(content, i, _depth, acc, items) when i >= byte_size(content) do
+  defp split_brace_items_loop(_content, i, len, _depth, acc, items) when i >= len do
     Enum.reverse([acc | items])
   end
 
-  defp split_brace_items_loop(content, i, depth, acc, items) do
+  defp split_brace_items_loop(content, i, len, depth, acc, items) do
     char = String.at(content, i)
 
     cond do
       char == "{" ->
-        split_brace_items_loop(content, i + 1, depth + 1, acc <> char, items)
+        split_brace_items_loop(content, i + 1, len, depth + 1, acc <> char, items)
 
       char == "}" ->
-        split_brace_items_loop(content, i + 1, depth - 1, acc <> char, items)
+        split_brace_items_loop(content, i + 1, len, depth - 1, acc <> char, items)
 
       char == "," and depth == 0 ->
-        split_brace_items_loop(content, i + 1, depth, "", [acc | items])
+        split_brace_items_loop(content, i + 1, len, depth, "", [acc | items])
 
-      char == "\\" and i + 1 < String.length(content) ->
+      char == "\\" and i + 1 < len ->
         next = String.at(content, i + 1)
-        split_brace_items_loop(content, i + 2, depth, acc <> char <> next, items)
+        split_brace_items_loop(content, i + 2, len, depth, acc <> char <> next, items)
 
       true ->
-        split_brace_items_loop(content, i + 1, depth, acc <> char, items)
+        split_brace_items_loop(content, i + 1, len, depth, acc <> char, items)
     end
   end
 end
