@@ -105,50 +105,54 @@ defmodule JustBash.Commands.Ln do
   end
 
   defp create_link(bash, target, link_path, link_name, opts) do
-    fs = bash.fs
+    fs = maybe_force_remove(bash.fs, link_path, opts.force)
+    result = perform_link(bash, fs, target, link_path, opts.symbolic)
+    handle_link_result(bash, result, target, link_name, opts)
+  end
 
-    fs =
-      if opts.force do
-        case InMemoryFs.rm(fs, link_path) do
-          {:ok, new_fs} -> new_fs
-          {:error, _} -> fs
-        end
-      else
-        fs
-      end
-
-    result =
-      if opts.symbolic do
-        InMemoryFs.symlink(fs, target, link_path)
-      else
-        target_path = InMemoryFs.resolve_path(bash.cwd, target)
-
-        case InMemoryFs.stat(fs, target_path) do
-          {:ok, %{is_file: true}} ->
-            InMemoryFs.link(fs, target_path, link_path)
-
-          {:ok, %{is_directory: true}} ->
-            {:error, :eperm}
-
-          {:error, _} ->
-            {:error, :enoent}
-        end
-      end
-
-    case result do
-      {:ok, new_fs} ->
-        output = if opts.verbose, do: "'#{link_name}' -> '#{target}'\n", else: ""
-        {:ok, %{bash | fs: new_fs}, output}
-
-      {:error, :eexist} ->
-        link_type = if opts.symbolic, do: "symbolic ", else: ""
-        {:error, "ln: failed to create #{link_type}link '#{link_name}': File exists\n"}
-
-      {:error, :enoent} ->
-        {:error, "ln: failed to access '#{target}': No such file or directory\n"}
-
-      {:error, :eperm} ->
-        {:error, "ln: '#{target}': hard link not allowed for directory\n"}
+  defp maybe_force_remove(fs, link_path, true) do
+    case InMemoryFs.rm(fs, link_path) do
+      {:ok, new_fs} -> new_fs
+      {:error, _} -> fs
     end
+  end
+
+  defp maybe_force_remove(fs, _link_path, false), do: fs
+
+  defp perform_link(_bash, fs, target, link_path, true) do
+    InMemoryFs.symlink(fs, target, link_path)
+  end
+
+  defp perform_link(bash, fs, target, link_path, false) do
+    target_path = InMemoryFs.resolve_path(bash.cwd, target)
+
+    case InMemoryFs.stat(fs, target_path) do
+      {:ok, %{is_file: true}} ->
+        InMemoryFs.link(fs, target_path, link_path)
+
+      {:ok, %{is_directory: true}} ->
+        {:error, :eperm}
+
+      {:error, _} ->
+        {:error, :enoent}
+    end
+  end
+
+  defp handle_link_result(bash, {:ok, new_fs}, target, link_name, opts) do
+    output = if opts.verbose, do: "'#{link_name}' -> '#{target}'\n", else: ""
+    {:ok, %{bash | fs: new_fs}, output}
+  end
+
+  defp handle_link_result(_bash, {:error, :eexist}, _target, link_name, opts) do
+    link_type = if opts.symbolic, do: "symbolic ", else: ""
+    {:error, "ln: failed to create #{link_type}link '#{link_name}': File exists\n"}
+  end
+
+  defp handle_link_result(_bash, {:error, :enoent}, target, _link_name, _opts) do
+    {:error, "ln: failed to access '#{target}': No such file or directory\n"}
+  end
+
+  defp handle_link_result(_bash, {:error, :eperm}, target, _link_name, _opts) do
+    {:error, "ln: '#{target}': hard link not allowed for directory\n"}
   end
 end

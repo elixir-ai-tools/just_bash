@@ -14,23 +14,24 @@ defmodule JustBash.Commands.Xargs do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        if Map.has_key?(opts, :help) do
-          {Command.ok(opts.help), bash}
-        else
-          items = parse_input(stdin, opts)
-
-          if items == [] do
-            if opts.no_run_if_empty do
-              {Command.ok(""), bash}
-            else
-              {Command.ok(""), bash}
-            end
-          else
-            command = if opts.command == [], do: ["echo"], else: opts.command
-            execute_commands(bash, items, command, opts)
-          end
-        end
+        execute_with_opts(bash, opts, stdin)
     end
+  end
+
+  defp execute_with_opts(bash, %{help: help}, _stdin) do
+    {Command.ok(help), bash}
+  end
+
+  defp execute_with_opts(bash, opts, stdin) do
+    items = parse_input(stdin, opts)
+    run_xargs(bash, items, opts)
+  end
+
+  defp run_xargs(bash, [], _opts), do: {Command.ok(""), bash}
+
+  defp run_xargs(bash, items, opts) do
+    command = if opts.command == [], do: ["echo"], else: opts.command
+    execute_commands(bash, items, command, opts)
   end
 
   defp parse_args(args) do
@@ -110,22 +111,7 @@ defmodule JustBash.Commands.Xargs do
 
   defp parse_args(["-" <> flags | rest], opts) when byte_size(flags) > 0 do
     chars = String.graphemes(flags)
-
-    if Enum.all?(chars, &(&1 in ["0", "t", "r"])) do
-      new_opts =
-        Enum.reduce(chars, opts, fn char, acc ->
-          case char do
-            "0" -> %{acc | null_separator: true}
-            "t" -> %{acc | verbose: true}
-            "r" -> %{acc | no_run_if_empty: true}
-          end
-        end)
-
-      parse_args(rest, new_opts)
-    else
-      unknown = Enum.find(chars, &(&1 not in ["0", "t", "r"]))
-      {:error, "xargs: invalid option -- '#{unknown}'\n"}
-    end
+    parse_combined_flags(chars, rest, opts)
   end
 
   defp parse_args(["--" <> _ = arg | _rest], _opts) do
@@ -134,6 +120,31 @@ defmodule JustBash.Commands.Xargs do
 
   defp parse_args([cmd | rest], opts) do
     {:ok, %{opts | command: [cmd | rest]}}
+  end
+
+  defp parse_combined_flags(chars, rest, opts) do
+    case find_invalid_flag(chars) do
+      nil ->
+        new_opts = apply_flags(chars, opts)
+        parse_args(rest, new_opts)
+
+      unknown ->
+        {:error, "xargs: invalid option -- '#{unknown}'\n"}
+    end
+  end
+
+  defp find_invalid_flag(chars) do
+    Enum.find(chars, &(&1 not in ["0", "t", "r"]))
+  end
+
+  defp apply_flags(chars, opts) do
+    Enum.reduce(chars, opts, fn char, acc ->
+      case char do
+        "0" -> %{acc | null_separator: true}
+        "t" -> %{acc | verbose: true}
+        "r" -> %{acc | no_run_if_empty: true}
+      end
+    end)
   end
 
   defp parse_input(stdin, opts) do

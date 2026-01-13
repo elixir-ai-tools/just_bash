@@ -17,18 +17,7 @@ defmodule JustBash.Commands.Du do
       {:ok, opts} ->
         targets = if opts.files == [], do: ["."], else: opts.files
 
-        {output, stderr, grand_total} =
-          Enum.reduce(targets, {"", "", 0}, fn target, {acc_out, acc_err, acc_total} ->
-            resolved = InMemoryFs.resolve_path(bash.cwd, target)
-
-            case calculate_size(bash.fs, resolved, target, opts, 0) do
-              {:ok, out, size} ->
-                {acc_out <> out, acc_err, acc_total + size}
-
-              {:error, msg} ->
-                {acc_out, acc_err <> msg, acc_total}
-            end
-          end)
+        {output, stderr, grand_total} = process_targets(bash, targets, opts)
 
         output =
           if opts.grand_total and targets != [] do
@@ -39,6 +28,21 @@ defmodule JustBash.Commands.Du do
 
         exit_code = if stderr != "", do: 1, else: 0
         {%{stdout: output, stderr: stderr, exit_code: exit_code}, bash}
+    end
+  end
+
+  defp process_targets(bash, targets, opts) do
+    Enum.reduce(targets, {"", "", 0}, fn target, acc ->
+      process_single_target(bash, target, opts, acc)
+    end)
+  end
+
+  defp process_single_target(bash, target, opts, {acc_out, acc_err, acc_total}) do
+    resolved = InMemoryFs.resolve_path(bash.cwd, target)
+
+    case calculate_size(bash.fs, resolved, target, opts, 0) do
+      {:ok, out, size} -> {acc_out <> out, acc_err, acc_total + size}
+      {:error, msg} -> {acc_out, acc_err <> msg, acc_total}
     end
   end
 
@@ -89,73 +93,93 @@ defmodule JustBash.Commands.Du do
   defp calculate_size(fs, path, display_path, opts, depth) do
     case InMemoryFs.stat(fs, path) do
       {:ok, %{is_directory: false, size: size}} ->
-        output =
-          if opts.all_files or depth == 0 do
-            "#{format_size(size, opts.human_readable)}\t#{display_path}\n"
-          else
-            ""
-          end
-
-        {:ok, output, size}
+        calculate_file_size(size, display_path, opts, depth)
 
       {:ok, %{is_directory: true}} ->
-        case InMemoryFs.readdir(fs, path) do
-          {:ok, entries} ->
-            {output, dir_size} =
-              Enum.reduce(entries, {"", 0}, fn entry, {acc_out, acc_size} ->
-                entry_path = if path == "/", do: "/#{entry}", else: "#{path}/#{entry}"
-
-                entry_display =
-                  if display_path == ".", do: entry, else: "#{display_path}/#{entry}"
-
-                case InMemoryFs.stat(fs, entry_path) do
-                  {:ok, %{is_directory: true}} ->
-                    case calculate_size(fs, entry_path, entry_display, opts, depth + 1) do
-                      {:ok, sub_out, sub_size} ->
-                        out =
-                          if not opts.summarize and
-                               (opts.max_depth == nil or depth + 1 <= opts.max_depth) do
-                            sub_out
-                          else
-                            ""
-                          end
-
-                        {acc_out <> out, acc_size + sub_size}
-
-                      {:error, _} ->
-                        {acc_out, acc_size}
-                    end
-
-                  {:ok, %{is_file: true, size: size}} ->
-                    out =
-                      if opts.all_files and not opts.summarize do
-                        "#{format_size(size, opts.human_readable)}\t#{entry_display}\n"
-                      else
-                        ""
-                      end
-
-                    {acc_out <> out, acc_size + size}
-
-                  _ ->
-                    {acc_out, acc_size}
-                end
-              end)
-
-            final_output =
-              if opts.summarize or opts.max_depth == nil or depth <= opts.max_depth do
-                output <> "#{format_size(dir_size, opts.human_readable)}\t#{display_path}\n"
-              else
-                output
-              end
-
-            {:ok, final_output, dir_size}
-
-          {:error, _} ->
-            {:error, "du: cannot read directory '#{display_path}': Permission denied\n"}
-        end
+        calculate_dir_size(fs, path, display_path, opts, depth)
 
       {:error, _} ->
         {:error, "du: cannot access '#{display_path}': No such file or directory\n"}
+    end
+  end
+
+  defp calculate_file_size(size, display_path, opts, depth) do
+    output =
+      if opts.all_files or depth == 0 do
+        "#{format_size(size, opts.human_readable)}\t#{display_path}\n"
+      else
+        ""
+      end
+
+    {:ok, output, size}
+  end
+
+  defp calculate_dir_size(fs, path, display_path, opts, depth) do
+    case InMemoryFs.readdir(fs, path) do
+      {:ok, entries} ->
+        {output, dir_size} =
+          Enum.reduce(entries, {"", 0}, fn entry, {acc_out, acc_size} ->
+            process_dir_entry(fs, path, display_path, entry, opts, depth, acc_out, acc_size)
+          end)
+
+        final_output = format_dir_output(output, dir_size, display_path, opts, depth)
+        {:ok, final_output, dir_size}
+
+      {:error, _} ->
+        {:error, "du: cannot read directory '#{display_path}': Permission denied\n"}
+    end
+  end
+
+  defp process_dir_entry(fs, path, display_path, entry, opts, depth, acc_out, acc_size) do
+    entry_path = if path == "/", do: "/#{entry}", else: "#{path}/#{entry}"
+    entry_display = if display_path == ".", do: entry, else: "#{display_path}/#{entry}"
+
+    case InMemoryFs.stat(fs, entry_path) do
+      {:ok, %{is_directory: true}} ->
+        process_subdir(fs, entry_path, entry_display, opts, depth, acc_out, acc_size)
+
+      {:ok, %{is_file: true, size: size}} ->
+        process_file_entry(size, entry_display, opts, acc_out, acc_size)
+
+      _ ->
+        {acc_out, acc_size}
+    end
+  end
+
+  defp process_subdir(fs, entry_path, entry_display, opts, depth, acc_out, acc_size) do
+    case calculate_size(fs, entry_path, entry_display, opts, depth + 1) do
+      {:ok, sub_out, sub_size} ->
+        out = subdir_output(sub_out, opts, depth)
+        {acc_out <> out, acc_size + sub_size}
+
+      {:error, _} ->
+        {acc_out, acc_size}
+    end
+  end
+
+  defp subdir_output(sub_out, opts, depth) do
+    show_output = not opts.summarize and (opts.max_depth == nil or depth + 1 <= opts.max_depth)
+    if show_output, do: sub_out, else: ""
+  end
+
+  defp process_file_entry(size, entry_display, opts, acc_out, acc_size) do
+    out =
+      if opts.all_files and not opts.summarize do
+        "#{format_size(size, opts.human_readable)}\t#{entry_display}\n"
+      else
+        ""
+      end
+
+    {acc_out <> out, acc_size + size}
+  end
+
+  defp format_dir_output(output, dir_size, display_path, opts, depth) do
+    show_dir = opts.summarize or opts.max_depth == nil or depth <= opts.max_depth
+
+    if show_dir do
+      output <> "#{format_size(dir_size, opts.human_readable)}\t#{display_path}\n"
+    else
+      output
     end
   end
 

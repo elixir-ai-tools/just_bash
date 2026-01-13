@@ -136,34 +136,41 @@ defmodule JustBash.Commands.Cut do
 
   defp parse_range_part(part) do
     case String.split(part, "-") do
-      [single] ->
-        case Integer.parse(single) do
-          {n, ""} -> [{n, n}]
-          _ -> []
-        end
+      [single] -> parse_single_value(single)
+      [start_str, ""] -> parse_open_end_range(start_str)
+      ["", end_str] -> parse_open_start_range(end_str)
+      [start_str, end_str] -> parse_bounded_range(start_str, end_str)
+      _ -> []
+    end
+  end
 
-      [start_str, ""] ->
-        case Integer.parse(start_str) do
-          {start, ""} -> [{start, :infinity}]
-          _ -> [{1, :infinity}]
-        end
+  defp parse_single_value(single) do
+    case Integer.parse(single) do
+      {n, ""} -> [{n, n}]
+      _ -> []
+    end
+  end
 
-      ["", end_str] ->
-        case Integer.parse(end_str) do
-          {end_n, ""} -> [{1, end_n}]
-          _ -> []
-        end
+  defp parse_open_end_range(start_str) do
+    case Integer.parse(start_str) do
+      {start, ""} -> [{start, :infinity}]
+      _ -> [{1, :infinity}]
+    end
+  end
 
-      [start_str, end_str] ->
-        with {start, ""} <- Integer.parse(start_str),
-             {end_n, ""} <- Integer.parse(end_str) do
-          [{start, end_n}]
-        else
-          _ -> []
-        end
+  defp parse_open_start_range(end_str) do
+    case Integer.parse(end_str) do
+      {end_n, ""} -> [{1, end_n}]
+      _ -> []
+    end
+  end
 
-      _ ->
-        []
+  defp parse_bounded_range(start_str, end_str) do
+    with {start, ""} <- Integer.parse(start_str),
+         {end_n, ""} <- Integer.parse(end_str) do
+      [{start, end_n}]
+    else
+      _ -> []
     end
   end
 

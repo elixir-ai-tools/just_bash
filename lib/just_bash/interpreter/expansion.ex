@@ -146,50 +146,45 @@ defmodule JustBash.Interpreter.Expansion do
 
   defp expand_glob(bash, pattern) do
     dir = if String.starts_with?(pattern, "/"), do: "/", else: bash.cwd
-
-    {dir_pattern, file_pattern} =
-      case String.split(pattern, "/") |> Enum.reverse() do
-        [file] ->
-          {dir, file}
-
-        [file | rest] ->
-          dir_part = rest |> Enum.reverse() |> Enum.join("/")
-
-          resolved_dir =
-            if String.starts_with?(dir_part, "/"),
-              do: dir_part,
-              else: InMemoryFs.resolve_path(bash.cwd, dir_part)
-
-          {resolved_dir, file}
-      end
-
+    {dir_pattern, file_pattern} = split_glob_pattern(bash.cwd, dir, pattern)
     regex_pattern = glob_pattern_to_regex(file_pattern)
 
-    case Regex.compile("^" <> regex_pattern <> "$") do
-      {:ok, regex} ->
-        case InMemoryFs.readdir(bash.fs, dir_pattern) do
-          {:ok, entries} ->
-            matches =
-              entries
-              |> Enum.filter(fn entry ->
-                Regex.match?(regex, entry) and not String.starts_with?(entry, ".")
-              end)
-              |> Enum.sort()
-              |> Enum.map(fn entry ->
-                if dir_pattern == bash.cwd,
-                  do: entry,
-                  else: Path.join(dir_pattern, entry)
-              end)
-
-            if matches == [], do: [pattern], else: matches
-
-          {:error, _} ->
-            [pattern]
-        end
-
-      {:error, _} ->
-        [pattern]
+    with {:ok, regex} <- Regex.compile("^" <> regex_pattern <> "$"),
+         {:ok, entries} <- InMemoryFs.readdir(bash.fs, dir_pattern) do
+      matches = filter_and_format_glob_matches(entries, regex, dir_pattern, bash.cwd)
+      if matches == [], do: [pattern], else: matches
+    else
+      _ -> [pattern]
     end
+  end
+
+  defp split_glob_pattern(cwd, dir, pattern) do
+    case String.split(pattern, "/") |> Enum.reverse() do
+      [file] ->
+        {dir, file}
+
+      [file | rest] ->
+        dir_part = rest |> Enum.reverse() |> Enum.join("/")
+        resolved_dir = resolve_glob_dir(cwd, dir_part)
+        {resolved_dir, file}
+    end
+  end
+
+  defp resolve_glob_dir(cwd, dir_part) do
+    if String.starts_with?(dir_part, "/"),
+      do: dir_part,
+      else: InMemoryFs.resolve_path(cwd, dir_part)
+  end
+
+  defp filter_and_format_glob_matches(entries, regex, dir_pattern, cwd) do
+    entries
+    |> Enum.filter(fn entry ->
+      Regex.match?(regex, entry) and not String.starts_with?(entry, ".")
+    end)
+    |> Enum.sort()
+    |> Enum.map(fn entry ->
+      if dir_pattern == cwd, do: entry, else: Path.join(dir_pattern, entry)
+    end)
   end
 
   defp glob_pattern_to_regex(pattern) do
@@ -427,26 +422,7 @@ defmodule JustBash.Interpreter.Expansion do
          all: all
        }) do
     str = value || ""
-
-    case {direction, all} do
-      {:upper, false} ->
-        case String.graphemes(str) do
-          [first | rest] -> String.upcase(first) <> Enum.join(rest)
-          [] -> ""
-        end
-
-      {:upper, true} ->
-        String.upcase(str)
-
-      {:lower, false} ->
-        case String.graphemes(str) do
-          [first | rest] -> String.downcase(first) <> Enum.join(rest)
-          [] -> ""
-        end
-
-      {:lower, true} ->
-        String.downcase(str)
-    end
+    apply_case_modification(str, direction, all)
   end
 
   defp expand_with_operation(bash, _name, value, %AST.Indirection{}) do
@@ -476,6 +452,20 @@ defmodule JustBash.Interpreter.Expansion do
   defp expand_with_operation(_bash, _name, value, _operation) do
     value || ""
   end
+
+  defp apply_case_modification(str, _direction, true = _all) when str == "", do: ""
+  defp apply_case_modification(str, :upper, true = _all), do: String.upcase(str)
+  defp apply_case_modification(str, :lower, true = _all), do: String.downcase(str)
+
+  defp apply_case_modification(str, direction, false = _all) do
+    case String.graphemes(str) do
+      [first | rest] -> apply_case_to_first(first, rest, direction)
+      [] -> ""
+    end
+  end
+
+  defp apply_case_to_first(first, rest, :upper), do: String.upcase(first) <> Enum.join(rest)
+  defp apply_case_to_first(first, rest, :lower), do: String.downcase(first) <> Enum.join(rest)
 
   defp eval_arith_or_number(%AST.ArithmeticExpression{expression: expr}, env) do
     {value, _} = Arithmetic.evaluate(expr, env)
@@ -508,49 +498,45 @@ defmodule JustBash.Interpreter.Expansion do
   end
 
   defp find_shortest_prefix(str, regex_pattern) do
+    case compile_anchored_regex(regex_pattern) do
+      {:ok, regex} -> find_shortest_prefix_with_regex(str, regex)
+      {:error, _} -> str
+    end
+  end
+
+  defp find_shortest_prefix_with_regex(str, regex) do
     len = String.length(str)
 
-    result =
-      Enum.reduce_while(1..len, str, fn i, _acc ->
-        prefix = String.slice(str, 0, i)
+    Enum.reduce_while(1..len, str, fn i, _acc ->
+      prefix = String.slice(str, 0, i)
 
-        case Regex.compile("^" <> regex_pattern <> "$") do
-          {:ok, regex} ->
-            if Regex.match?(regex, prefix) do
-              {:halt, String.slice(str, i, len)}
-            else
-              {:cont, str}
-            end
-
-          {:error, _} ->
-            {:cont, str}
-        end
-      end)
-
-    result
+      if Regex.match?(regex, prefix) do
+        {:halt, String.slice(str, i, len)}
+      else
+        {:cont, str}
+      end
+    end)
   end
 
   defp find_longest_prefix(str, regex_pattern) do
+    case compile_anchored_regex(regex_pattern) do
+      {:ok, regex} -> find_longest_prefix_with_regex(str, regex)
+      {:error, _} -> str
+    end
+  end
+
+  defp find_longest_prefix_with_regex(str, regex) do
     len = String.length(str)
 
-    result =
-      Enum.reduce(1..len, str, fn i, acc ->
-        prefix = String.slice(str, 0, i)
+    Enum.reduce(1..len, str, fn i, acc ->
+      prefix = String.slice(str, 0, i)
 
-        case Regex.compile("^" <> regex_pattern <> "$") do
-          {:ok, regex} ->
-            if Regex.match?(regex, prefix) do
-              String.slice(str, i, len)
-            else
-              acc
-            end
-
-          {:error, _} ->
-            acc
-        end
-      end)
-
-    result
+      if Regex.match?(regex, prefix) do
+        String.slice(str, i, len)
+      else
+        acc
+      end
+    end)
   end
 
   defp remove_suffix(str, regex_pattern, greedy) do
@@ -562,49 +548,49 @@ defmodule JustBash.Interpreter.Expansion do
   end
 
   defp find_shortest_suffix(str, regex_pattern) do
+    case compile_anchored_regex(regex_pattern) do
+      {:ok, regex} -> find_shortest_suffix_with_regex(str, regex)
+      {:error, _} -> str
+    end
+  end
+
+  defp find_shortest_suffix_with_regex(str, regex) do
     len = String.length(str)
 
-    result =
-      Enum.reduce_while((len - 1)..0//-1, str, fn i, _acc ->
-        suffix = String.slice(str, i, len)
+    Enum.reduce_while((len - 1)..0//-1, str, fn i, _acc ->
+      suffix = String.slice(str, i, len)
 
-        case Regex.compile("^" <> regex_pattern <> "$") do
-          {:ok, regex} ->
-            if Regex.match?(regex, suffix) do
-              {:halt, String.slice(str, 0, i)}
-            else
-              {:cont, str}
-            end
-
-          {:error, _} ->
-            {:cont, str}
-        end
-      end)
-
-    result
+      if Regex.match?(regex, suffix) do
+        {:halt, String.slice(str, 0, i)}
+      else
+        {:cont, str}
+      end
+    end)
   end
 
   defp find_longest_suffix(str, regex_pattern) do
+    case compile_anchored_regex(regex_pattern) do
+      {:ok, regex} -> find_longest_suffix_with_regex(str, regex)
+      {:error, _} -> str
+    end
+  end
+
+  defp find_longest_suffix_with_regex(str, regex) do
     len = String.length(str)
 
-    result =
-      Enum.reduce_while(0..(len - 1), str, fn i, _acc ->
-        suffix = String.slice(str, i, len)
+    Enum.reduce_while(0..(len - 1), str, fn i, _acc ->
+      suffix = String.slice(str, i, len)
 
-        case Regex.compile("^" <> regex_pattern <> "$") do
-          {:ok, regex} ->
-            if Regex.match?(regex, suffix) do
-              {:halt, String.slice(str, 0, i)}
-            else
-              {:cont, str}
-            end
+      if Regex.match?(regex, suffix) do
+        {:halt, String.slice(str, 0, i)}
+      else
+        {:cont, str}
+      end
+    end)
+  end
 
-          {:error, _} ->
-            {:cont, str}
-        end
-      end)
-
-    result
+  defp compile_anchored_regex(regex_pattern) do
+    Regex.compile("^" <> regex_pattern <> "$")
   end
 
   @doc """
@@ -651,34 +637,27 @@ defmodule JustBash.Interpreter.Expansion do
 
   defp expand_for_loop_word_no_brace(bash, parts, ifs) do
     has_unquoted_glob = has_unquoted_glob?(parts)
-
-    expanded_segments =
-      Enum.map(parts, fn part ->
-        expand_for_loop_part(bash, part, ifs)
-      end)
-
+    expanded_segments = Enum.map(parts, &expand_for_loop_part(bash, &1, ifs))
     needs_ifs_split = Enum.any?(expanded_segments, fn {_, split?} -> split? end)
-
     combined = Enum.map_join(expanded_segments, "", fn {str, _} -> str end)
+    results = maybe_split_on_ifs(combined, ifs, needs_ifs_split)
+    maybe_expand_globs(bash, results, has_unquoted_glob)
+  end
 
-    results =
-      if needs_ifs_split and ifs != "" do
-        split_on_ifs(combined, ifs)
-      else
-        [combined]
-      end
+  defp maybe_split_on_ifs(combined, ifs, true = _needs_split) when ifs != "" do
+    split_on_ifs(combined, ifs)
+  end
 
-    if has_unquoted_glob do
-      Enum.flat_map(results, fn word_str ->
-        if has_glob_chars?(word_str) do
-          expand_glob(bash, word_str)
-        else
-          [word_str]
-        end
-      end)
-    else
-      results
-    end
+  defp maybe_split_on_ifs(combined, _ifs, _needs_split), do: [combined]
+
+  defp maybe_expand_globs(_bash, results, false = _has_glob), do: results
+
+  defp maybe_expand_globs(bash, results, true = _has_glob) do
+    Enum.flat_map(results, &expand_if_glob(bash, &1))
+  end
+
+  defp expand_if_glob(bash, word_str) do
+    if has_glob_chars?(word_str), do: expand_glob(bash, word_str), else: [word_str]
   end
 
   defp expand_for_loop_part(_bash, %AST.Literal{value: value}, _ifs) do

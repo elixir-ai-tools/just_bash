@@ -21,40 +21,49 @@ defmodule JustBash.Commands.Ls do
     paths = if paths == [], do: ["."], else: paths
 
     {stdout, stderr, exit_code} =
-      Enum.reduce(paths, {"", "", 0}, fn path, {out_acc, err_acc, code_acc} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, path)
-
-        case InMemoryFs.readdir(bash.fs, resolved) do
-          {:ok, entries} ->
-            filtered =
-              if flags.a do
-                [".", ".." | entries]
-              else
-                Enum.reject(entries, &String.starts_with?(&1, "."))
-              end
-
-            formatted =
-              if flags.l do
-                Enum.map_join(filtered, "\n", &format_entry(bash.fs, resolved, &1))
-              else
-                Enum.join(filtered, "\n")
-              end
-
-            formatted = if formatted != "", do: formatted <> "\n", else: ""
-            {out_acc <> formatted, err_acc, code_acc}
-
-          {:error, :enoent} ->
-            {out_acc, err_acc <> "ls: cannot access '#{path}': No such file or directory\n", 1}
-
-          {:error, :enotdir} ->
-            case InMemoryFs.stat(bash.fs, resolved) do
-              {:ok, _} -> {out_acc <> path <> "\n", err_acc, code_acc}
-              _ -> {out_acc, err_acc <> "ls: cannot access '#{path}': Not a directory\n", 1}
-            end
-        end
+      Enum.reduce(paths, {"", "", 0}, fn path, acc ->
+        list_path(bash, path, flags, acc)
       end)
 
     {Command.result(stdout, stderr, exit_code), bash}
+  end
+
+  defp list_path(bash, path, flags, {out_acc, err_acc, code_acc}) do
+    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+
+    case InMemoryFs.readdir(bash.fs, resolved) do
+      {:ok, entries} ->
+        formatted = format_entries(bash.fs, resolved, entries, flags)
+        {out_acc <> formatted, err_acc, code_acc}
+
+      {:error, :enoent} ->
+        {out_acc, err_acc <> "ls: cannot access '#{path}': No such file or directory\n", 1}
+
+      {:error, :enotdir} ->
+        handle_not_dir(bash.fs, resolved, path, {out_acc, err_acc, code_acc})
+    end
+  end
+
+  defp format_entries(fs, resolved, entries, flags) do
+    filtered = filter_entries(entries, flags.a)
+    formatted = format_filtered(fs, resolved, filtered, flags.l)
+    if formatted != "", do: formatted <> "\n", else: ""
+  end
+
+  defp filter_entries(entries, true), do: [".", ".." | entries]
+  defp filter_entries(entries, false), do: Enum.reject(entries, &String.starts_with?(&1, "."))
+
+  defp format_filtered(fs, resolved, filtered, true) do
+    Enum.map_join(filtered, "\n", &format_entry(fs, resolved, &1))
+  end
+
+  defp format_filtered(_fs, _resolved, filtered, false), do: Enum.join(filtered, "\n")
+
+  defp handle_not_dir(fs, resolved, path, {out_acc, err_acc, code_acc}) do
+    case InMemoryFs.stat(fs, resolved) do
+      {:ok, _} -> {out_acc <> path <> "\n", err_acc, code_acc}
+      _ -> {out_acc, err_acc <> "ls: cannot access '#{path}': Not a directory\n", 1}
+    end
   end
 
   defp format_entry(fs, dir, name) do

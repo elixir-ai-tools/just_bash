@@ -69,23 +69,19 @@ defmodule JustBash.Commands.Curl do
     host = uri.host || ""
 
     Enum.any?(allow_list, fn pattern ->
-      case pattern do
-        "*" ->
-          true
-
-        "**" ->
-          true
-
-        pattern when is_binary(pattern) ->
-          if String.starts_with?(pattern, "*.") do
-            suffix = String.slice(pattern, 1..-1//1)
-            String.ends_with?(host, suffix) or host == String.slice(pattern, 2..-1//1)
-          else
-            host == pattern
-          end
-      end
+      pattern_matches?(pattern, host)
     end)
   end
+
+  defp pattern_matches?("*", _host), do: true
+  defp pattern_matches?("**", _host), do: true
+
+  defp pattern_matches?("*." <> domain, host) do
+    suffix = "." <> domain
+    String.ends_with?(host, suffix) or host == domain
+  end
+
+  defp pattern_matches?(pattern, host), do: host == pattern
 
   defp perform_request(bash, opts) do
     client = bash.http_client || JustBash.HttpClient.Default
@@ -133,20 +129,23 @@ defmodule JustBash.Commands.Curl do
 
   defp handle_response(bash, response, opts) do
     output = build_output(response, opts)
+    write_output(bash, output, opts)
+  end
 
-    if opts.output_file do
-      resolved = InMemoryFs.resolve_path(bash.cwd, opts.output_file)
+  defp write_output(bash, output, %{output_file: nil}) do
+    {Command.ok(output), bash}
+  end
 
-      case InMemoryFs.write_file(bash.fs, resolved, output) do
-        {:ok, new_fs} ->
-          progress = if opts.silent, do: "", else: "  % Total    % Received\n"
-          {Command.ok(progress), %{bash | fs: new_fs}}
+  defp write_output(bash, output, opts) do
+    resolved = InMemoryFs.resolve_path(bash.cwd, opts.output_file)
 
-        {:error, reason} ->
-          {Command.error("curl: #{opts.output_file}: #{reason}\n"), bash}
-      end
-    else
-      {Command.ok(output), bash}
+    case InMemoryFs.write_file(bash.fs, resolved, output) do
+      {:ok, new_fs} ->
+        progress = if opts.silent, do: "", else: "  % Total    % Received\n"
+        {Command.ok(progress), %{bash | fs: new_fs}}
+
+      {:error, reason} ->
+        {Command.error("curl: #{opts.output_file}: #{reason}\n"), bash}
     end
   end
 

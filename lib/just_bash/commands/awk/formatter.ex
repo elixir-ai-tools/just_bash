@@ -22,49 +22,8 @@ defmodule JustBash.Commands.Awk.Formatter do
       Regex.scan(~r/%(-?\d*\.?\d*)?([sdfc%])/, format, return: :index)
       |> Enum.reduce({format, values}, fn matches, {fmt, vals} ->
         [{start, len} | _] = matches
-
         spec = String.slice(fmt, start, len)
-
-        {replacement, new_vals} =
-          case spec do
-            "%" <> rest ->
-              type = String.last(rest)
-              width_spec = String.slice(rest, 0..-2//1)
-
-              case type do
-                "%" ->
-                  {"%", vals}
-
-                "s" ->
-                  [val | rest_vals] = if vals == [], do: [""], else: vals
-                  {apply_width(to_string(val), width_spec), rest_vals}
-
-                "d" ->
-                  [val | rest_vals] = if vals == [], do: [0], else: vals
-                  num = parse_number(val) |> trunc()
-                  {apply_width(to_string(num), width_spec), rest_vals}
-
-                "f" ->
-                  [val | rest_vals] = if vals == [], do: [0.0], else: vals
-                  num = parse_number(val)
-                  {apply_float_width(num, width_spec), rest_vals}
-
-                "c" ->
-                  [val | rest_vals] = if vals == [], do: [""], else: vals
-
-                  char =
-                    case val do
-                      s when is_binary(s) and s != "" -> String.first(s)
-                      _ -> ""
-                    end
-
-                  {char, rest_vals}
-
-                _ ->
-                  [val | rest_vals] = if vals == [], do: [""], else: vals
-                  {to_string(val), rest_vals}
-              end
-          end
+        {replacement, new_vals} = format_single_specifier(spec, vals)
 
         new_fmt =
           String.slice(fmt, 0, start) <>
@@ -75,6 +34,48 @@ defmodule JustBash.Commands.Awk.Formatter do
 
     result
   end
+
+  defp format_single_specifier("%" <> rest, vals) do
+    type = String.last(rest)
+    width_spec = String.slice(rest, 0..-2//1)
+    format_by_type(type, width_spec, vals)
+  end
+
+  defp format_by_type("%", _width_spec, vals), do: {"%", vals}
+
+  defp format_by_type("s", width_spec, vals) do
+    {val, rest_vals} = pop_value(vals, "")
+    {apply_width(to_string(val), width_spec), rest_vals}
+  end
+
+  defp format_by_type("d", width_spec, vals) do
+    {val, rest_vals} = pop_value(vals, 0)
+    num = parse_number(val) |> trunc()
+    {apply_width(to_string(num), width_spec), rest_vals}
+  end
+
+  defp format_by_type("f", width_spec, vals) do
+    {val, rest_vals} = pop_value(vals, 0.0)
+    num = parse_number(val)
+    {apply_float_width(num, width_spec), rest_vals}
+  end
+
+  defp format_by_type("c", _width_spec, vals) do
+    {val, rest_vals} = pop_value(vals, "")
+    char = extract_first_char(val)
+    {char, rest_vals}
+  end
+
+  defp format_by_type(_type, _width_spec, vals) do
+    {val, rest_vals} = pop_value(vals, "")
+    {to_string(val), rest_vals}
+  end
+
+  defp pop_value([], default), do: {default, []}
+  defp pop_value([val | rest], _default), do: {val, rest}
+
+  defp extract_first_char(s) when is_binary(s) and s != "", do: String.first(s)
+  defp extract_first_char(_), do: ""
 
   defp apply_width(str, ""), do: str
 

@@ -16,34 +16,32 @@ defmodule JustBash.Commands.Which do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        if opts.names == [] do
-          {%{stdout: "", stderr: "", exit_code: 1}, bash}
-        else
-          path_env = Map.get(bash.env, "PATH", "/bin:/usr/bin")
-          path_dirs = String.split(path_env, ":")
-
-          {output, all_found} =
-            Enum.reduce(opts.names, {"", true}, fn name, {acc_out, acc_found} ->
-              paths = find_command(bash.fs, path_dirs, name, opts.show_all)
-
-              if paths == [] do
-                {acc_out, false}
-              else
-                new_out =
-                  if opts.silent do
-                    acc_out
-                  else
-                    acc_out <> Enum.join(paths, "\n") <> "\n"
-                  end
-
-                {new_out, acc_found}
-              end
-            end)
-
-          exit_code = if all_found, do: 0, else: 1
-          {%{stdout: output, stderr: "", exit_code: exit_code}, bash}
-        end
+        execute_which(bash, opts)
     end
+  end
+
+  defp execute_which(bash, %{names: []}), do: {%{stdout: "", stderr: "", exit_code: 1}, bash}
+
+  defp execute_which(bash, opts) do
+    path_env = Map.get(bash.env, "PATH", "/bin:/usr/bin")
+    path_dirs = String.split(path_env, ":")
+
+    {output, all_found} =
+      Enum.reduce(opts.names, {"", true}, fn name, {acc_out, acc_found} ->
+        paths = find_command(bash.fs, path_dirs, name, opts.show_all)
+        accumulate_paths(paths, acc_out, acc_found, opts.silent)
+      end)
+
+    exit_code = if all_found, do: 0, else: 1
+    {%{stdout: output, stderr: "", exit_code: exit_code}, bash}
+  end
+
+  defp accumulate_paths([], acc_out, _acc_found, _silent), do: {acc_out, false}
+
+  defp accumulate_paths(_paths, acc_out, acc_found, true = _silent), do: {acc_out, acc_found}
+
+  defp accumulate_paths(paths, acc_out, acc_found, false = _silent) do
+    {acc_out <> Enum.join(paths, "\n") <> "\n", acc_found}
   end
 
   defp parse_args(args) do

@@ -365,23 +365,25 @@ defmodule JustBash.Parser do
   end
 
   defp fill_heredocs_in_redirections(redirections, contents) do
-    Enum.map_reduce(redirections, contents, fn redir, contents ->
-      case redir.target do
-        %AST.HereDoc{content: nil} = heredoc ->
-          case contents do
-            [content | rest] ->
-              filled_heredoc = %{heredoc | content: AST.word(WordParts.parse(content))}
-              {%{redir | target: filled_heredoc}, rest}
-
-            [] ->
-              {redir, []}
-          end
-
-        _ ->
-          {redir, contents}
-      end
-    end)
+    Enum.map_reduce(redirections, contents, &fill_heredoc_in_redirection/2)
   end
+
+  defp fill_heredoc_in_redirection(redir, contents) do
+    case redir.target do
+      %AST.HereDoc{content: nil} = heredoc ->
+        fill_empty_heredoc(redir, heredoc, contents)
+
+      _ ->
+        {redir, contents}
+    end
+  end
+
+  defp fill_empty_heredoc(redir, heredoc, [content | rest]) do
+    filled_heredoc = %{heredoc | content: AST.word(WordParts.parse(content))}
+    {%{redir | target: filled_heredoc}, rest}
+  end
+
+  defp fill_empty_heredoc(redir, _heredoc, []), do: {redir, []}
 
   defp parse_statement_inner(parser) do
     {first_pipeline, parser} = parse_pipeline(parser)
@@ -447,21 +449,46 @@ defmodule JustBash.Parser do
     end
   end
 
+  @command_type_map %{
+    if: :if,
+    for: :for,
+    while: :while,
+    until: :until,
+    case: :case,
+    lparen: :subshell,
+    lbrace: :group,
+    dparen_start: :arithmetic,
+    dbrack_start: :conditional,
+    function: :function
+  }
+
   defp parse_command(parser) do
-    cond do
-      check?(parser, :if) -> parse_if(parser)
-      check?(parser, :for) -> parse_for(parser)
-      check?(parser, :while) -> parse_while(parser)
-      check?(parser, :until) -> parse_until(parser)
-      check?(parser, :case) -> parse_case(parser)
-      check?(parser, :lparen) -> parse_subshell(parser)
-      check?(parser, :lbrace) -> parse_group(parser)
-      check?(parser, :dparen_start) -> parse_arithmetic_command(parser)
-      check?(parser, :dbrack_start) -> parse_conditional_command(parser)
-      check?(parser, :function) -> parse_function_def(parser)
-      function_def?(parser) -> parse_function_def(parser)
-      true -> parse_simple_command(parser)
+    dispatch_command(command_type(parser), parser)
+  end
+
+  defp dispatch_command(:if, parser), do: parse_if(parser)
+  defp dispatch_command(:for, parser), do: parse_for(parser)
+  defp dispatch_command(:while, parser), do: parse_while(parser)
+  defp dispatch_command(:until, parser), do: parse_until(parser)
+  defp dispatch_command(:case, parser), do: parse_case(parser)
+  defp dispatch_command(:subshell, parser), do: parse_subshell(parser)
+  defp dispatch_command(:group, parser), do: parse_group(parser)
+  defp dispatch_command(:arithmetic, parser), do: parse_arithmetic_command(parser)
+  defp dispatch_command(:conditional, parser), do: parse_conditional_command(parser)
+  defp dispatch_command(:function, parser), do: parse_function_def(parser)
+  defp dispatch_command(:simple, parser), do: parse_simple_command(parser)
+
+  defp command_type(parser) do
+    current_type = current(parser).type
+
+    case Map.get(@command_type_map, current_type) do
+      nil -> command_type_fallback(parser)
+      type -> type
     end
+  end
+
+  defp command_type_fallback(parser) do
+    if function_def?(parser), do: :function, else: :simple
   end
 
   defp function_def?(parser) do
@@ -621,63 +648,69 @@ defmodule JustBash.Parser do
   end
 
   defp parse_redirection(parser) do
-    {fd, parser} =
-      if check?(parser, :number) and
-           peek(parser, 1).type in [
-             :less,
-             :great,
-             :dless,
-             :dgreat,
-             :lessand,
-             :greatand,
-             :lessgreat,
-             :dlessdash,
-             :clobber,
-             :and_great,
-             :and_dgreat
-           ] do
-        {token, parser} = advance(parser)
-        {String.to_integer(token.value), parser}
-      else
-        {nil, parser}
-      end
-
+    {fd, parser} = parse_redirection_fd(parser)
     {op_token, parser} = advance(parser)
-
-    operator =
-      case op_token.type do
-        :less -> :<
-        :great -> :>
-        :dless -> :"<<"
-        :dgreat -> :">>"
-        :lessand -> :"<&"
-        :greatand -> :">&"
-        :lessgreat -> :<>
-        :dlessdash -> :"<<-"
-        :clobber -> :">|"
-        :tless -> :<<<
-        :and_great -> :"&>"
-        :and_dgreat -> :"&>>"
-      end
-
+    operator = redirection_operator(op_token.type)
     {target_token, parser} = advance(parser)
 
-    if operator in [:"<<", :"<<-"] do
-      delimiter = target_token.value
-      strip_tabs = operator == :"<<-"
-      quoted = String.starts_with?(delimiter, "'") or String.starts_with?(delimiter, "\"")
-      clean_delimiter = String.trim(delimiter, "'") |> String.trim("\"")
+    build_redirection(parser, operator, target_token, fd)
+  end
 
-      heredoc = AST.here_doc(clean_delimiter, nil, strip_tabs, quoted)
-      redirection = AST.redirection(operator, heredoc, fd)
-
-      parser = %{parser | pending_heredocs: parser.pending_heredocs ++ [clean_delimiter]}
-
-      {redirection, parser}
+  defp parse_redirection_fd(parser) do
+    if check?(parser, :number) and redirection_op?(peek(parser, 1).type) do
+      {token, parser} = advance(parser)
+      {String.to_integer(token.value), parser}
     else
-      target = AST.word(WordParts.parse(target_token.value))
-      {AST.redirection(operator, target, fd), parser}
+      {nil, parser}
     end
+  end
+
+  @redirection_op_types [
+    :less,
+    :great,
+    :dless,
+    :dgreat,
+    :lessand,
+    :greatand,
+    :lessgreat,
+    :dlessdash,
+    :clobber,
+    :and_great,
+    :and_dgreat
+  ]
+
+  defp redirection_op?(type), do: type in @redirection_op_types
+
+  defp redirection_operator(:less), do: :<
+  defp redirection_operator(:great), do: :>
+  defp redirection_operator(:dless), do: :"<<"
+  defp redirection_operator(:dgreat), do: :">>"
+  defp redirection_operator(:lessand), do: :"<&"
+  defp redirection_operator(:greatand), do: :">&"
+  defp redirection_operator(:lessgreat), do: :<>
+  defp redirection_operator(:dlessdash), do: :"<<-"
+  defp redirection_operator(:clobber), do: :">|"
+  defp redirection_operator(:tless), do: :<<<
+  defp redirection_operator(:and_great), do: :"&>"
+  defp redirection_operator(:and_dgreat), do: :"&>>"
+
+  defp build_redirection(parser, operator, target_token, fd)
+       when operator in [:"<<", :"<<-"] do
+    delimiter = target_token.value
+    strip_tabs = operator == :"<<-"
+    quoted = String.starts_with?(delimiter, "'") or String.starts_with?(delimiter, "\"")
+    clean_delimiter = String.trim(delimiter, "'") |> String.trim("\"")
+
+    heredoc = AST.here_doc(clean_delimiter, nil, strip_tabs, quoted)
+    redirection = AST.redirection(operator, heredoc, fd)
+    parser = %{parser | pending_heredocs: parser.pending_heredocs ++ [clean_delimiter]}
+
+    {redirection, parser}
+  end
+
+  defp build_redirection(parser, operator, target_token, fd) do
+    target = AST.word(WordParts.parse(target_token.value))
+    {AST.redirection(operator, target, fd), parser}
   end
 
   defp parse_if(parser) do
@@ -996,7 +1029,7 @@ defmodule JustBash.Parser do
         {_token, parser} = expect(parser, :rparen, "Expected ')' in conditional")
         {%AST.CondGroup{expression: expr}, parser}
 
-      is_unary_cond_op?(parser) ->
+      unary_cond_op?(parser) ->
         {op_token, parser} = advance(parser)
         {word, parser} = parse_cond_word(parser)
         operator = String.to_atom(op_token.value)
@@ -1009,7 +1042,7 @@ defmodule JustBash.Parser do
           check?(parser, [:dbrack_end, :damp, :dpipe, :rparen]) ->
             {%AST.CondWord{word: left_word}, parser}
 
-          is_binary_cond_op?(parser) ->
+          binary_cond_op?(parser) ->
             {op_token, parser} = advance(parser)
             {right_word, parser} = parse_cond_word(parser)
             operator = String.to_atom(op_token.value)
@@ -1021,12 +1054,12 @@ defmodule JustBash.Parser do
     end
   end
 
-  defp is_unary_cond_op?(parser) do
+  defp unary_cond_op?(parser) do
     value = current(parser).value
     value in ~w(-a -e -f -d -r -w -x -s -z -n -L -h -b -c -p -S -t -g -u -k -O -G -N -v)
   end
 
-  defp is_binary_cond_op?(parser) do
+  defp binary_cond_op?(parser) do
     value = current(parser).value
     value in ~w(= == != =~ < > -eq -ne -lt -le -gt -ge -nt -ot -ef)
   end
@@ -1093,45 +1126,49 @@ defmodule JustBash.Parser do
     parse_compound_list_loop(parser, [])
   end
 
-  defp parse_compound_list_loop(parser, statements) do
-    is_end =
-      check?(parser, [
-        :eof,
-        :fi,
-        :else,
-        :elif,
-        :then,
-        :do,
-        :done,
-        :esac,
-        :rparen,
-        :rbrace,
-        :dsemi,
-        :semi_and,
-        :semi_semi_and
-      ])
+  @compound_list_end_tokens [
+    :eof,
+    :fi,
+    :else,
+    :elif,
+    :then,
+    :do,
+    :done,
+    :esac,
+    :rparen,
+    :rbrace,
+    :dsemi,
+    :semi_and,
+    :semi_semi_and
+  ]
 
-    if is_end or not command_start?(parser) do
+  defp parse_compound_list_loop(parser, statements) do
+    if compound_list_end?(parser) do
       {Enum.reverse(statements), parser}
     else
-      parser = check_iteration_limit(parser)
-      pos_before = parser.pos
-
-      {stmt, parser} = parse_statement(parser)
-      parser = skip_separators(parser, false)
-
-      if parser.pos == pos_before and stmt == nil do
-        {Enum.reverse(statements), parser}
-      else
-        new_statements =
-          if stmt do
-            [stmt | statements]
-          else
-            statements
-          end
-
-        parse_compound_list_loop(parser, new_statements)
-      end
+      parse_next_compound_statement(parser, statements)
     end
   end
+
+  defp compound_list_end?(parser) do
+    check?(parser, @compound_list_end_tokens) or not command_start?(parser)
+  end
+
+  defp parse_next_compound_statement(parser, statements) do
+    parser = check_iteration_limit(parser)
+    pos_before = parser.pos
+
+    {stmt, parser} = parse_statement(parser)
+    parser = skip_separators(parser, false)
+
+    if parser.pos == pos_before and stmt == nil do
+      {Enum.reverse(statements), parser}
+    else
+      new_statements = append_statement(statements, stmt)
+      parse_compound_list_loop(parser, new_statements)
+    end
+  end
+
+  defp append_statement(statements, nil), do: statements
+  defp append_statement(statements, stmt), do: [stmt | statements]
 end

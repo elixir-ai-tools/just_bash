@@ -15,25 +15,31 @@ defmodule JustBash.Commands.Paste do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        if opts.files == [] do
-          {Command.error("usage: paste [-s] [-d delimiters] file ...\n"), bash}
-        else
-          case read_all_files(bash, opts.files, stdin) do
-            {:error, msg} ->
-              {Command.error(msg), bash}
-
-            {:ok, file_contents} ->
-              output =
-                if opts.serial do
-                  process_serial(file_contents, opts.delimiter)
-                else
-                  process_parallel(file_contents, opts.delimiter)
-                end
-
-              {Command.ok(output), bash}
-          end
-        end
+        execute_paste(bash, opts, stdin)
     end
+  end
+
+  defp execute_paste(bash, %{files: []}, _stdin) do
+    {Command.error("usage: paste [-s] [-d delimiters] file ...\n"), bash}
+  end
+
+  defp execute_paste(bash, opts, stdin) do
+    case read_all_files(bash, opts.files, stdin) do
+      {:error, msg} ->
+        {Command.error(msg), bash}
+
+      {:ok, file_contents} ->
+        output = merge_file_contents(file_contents, opts)
+        {Command.ok(output), bash}
+    end
+  end
+
+  defp merge_file_contents(file_contents, %{serial: true, delimiter: delimiter}) do
+    process_serial(file_contents, delimiter)
+  end
+
+  defp merge_file_contents(file_contents, %{serial: false, delimiter: delimiter}) do
+    process_parallel(file_contents, delimiter)
   end
 
   defp parse_args(args) do

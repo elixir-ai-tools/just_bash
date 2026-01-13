@@ -39,18 +39,19 @@ defmodule JustBash.Commands.Jq do
         {Command.ok(help_text()), bash}
 
       {:ok, opts} ->
-        input = get_input(bash, opts, stdin)
+        execute_jq(bash, opts, stdin)
+    end
+  end
 
-        case input do
-          {:error, msg} ->
-            {Command.error(msg), bash}
+  defp execute_jq(bash, opts, stdin) do
+    case get_input(bash, opts, stdin) do
+      {:error, msg} ->
+        {Command.error(msg), bash}
 
-          {:ok, json_input} ->
-            process_jq(json_input, opts)
-            |> case do
-              {:ok, output} -> {Command.ok(output), bash}
-              {:error, msg} -> {Command.error(msg), bash}
-            end
+      {:ok, json_input} ->
+        case process_jq(json_input, opts) do
+          {:ok, output} -> {Command.ok(output), bash}
+          {:error, msg} -> {Command.error(msg), bash}
         end
     end
   end
@@ -61,15 +62,19 @@ defmodule JustBash.Commands.Jq do
         {:ok, nil}
 
       opts.file ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, opts.file)
-
-        case InMemoryFs.read_file(bash.fs, resolved) do
-          {:ok, content} -> {:ok, content}
-          {:error, _} -> {:error, "jq: #{opts.file}: No such file or directory\n"}
-        end
+        read_file_input(bash, opts.file)
 
       true ->
         {:ok, stdin}
+    end
+  end
+
+  defp read_file_input(bash, file) do
+    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+
+    case InMemoryFs.read_file(bash.fs, resolved) do
+      {:ok, content} -> {:ok, content}
+      {:error, _} -> {:error, "jq: #{file}: No such file or directory\n"}
     end
   end
 
@@ -79,21 +84,19 @@ defmodule JustBash.Commands.Jq do
         {:error, "jq: #{msg}\n"}
 
       {:ok, ast} ->
-        parsed_input = parse_input(input, opts)
+        evaluate_parsed(ast, input, opts)
+    end
+  end
 
-        case parsed_input do
-          {:error, msg} ->
-            {:error, msg}
+  defp evaluate_parsed(ast, input, opts) do
+    case parse_input(input, opts) do
+      {:error, msg} ->
+        {:error, msg}
 
-          {:ok, data} ->
-            case Evaluator.evaluate(ast, data, opts) do
-              {:ok, results} ->
-                output = format_output(results, opts)
-                {:ok, output}
-
-              {:error, msg} ->
-                {:error, "jq: #{msg}\n"}
-            end
+      {:ok, data} ->
+        case Evaluator.evaluate(ast, data, opts) do
+          {:ok, results} -> {:ok, format_output(results, opts)}
+          {:error, msg} -> {:error, "jq: #{msg}\n"}
         end
     end
   end
@@ -107,13 +110,17 @@ defmodule JustBash.Commands.Jq do
     if input == "" do
       {:ok, nil}
     else
-      if opts.slurp do
-        parse_slurp_input(input)
-      else
-        case Jason.decode(input) do
-          {:ok, data} -> {:ok, data}
-          {:error, _} -> {:error, "jq: parse error: Invalid JSON\n"}
-        end
+      parse_non_empty_input(input, opts)
+    end
+  end
+
+  defp parse_non_empty_input(input, opts) do
+    if opts.slurp do
+      parse_slurp_input(input)
+    else
+      case Jason.decode(input) do
+        {:ok, data} -> {:ok, data}
+        {:error, _} -> {:error, "jq: parse error: Invalid JSON\n"}
       end
     end
   end

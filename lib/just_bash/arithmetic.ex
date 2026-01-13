@@ -227,46 +227,37 @@ defmodule JustBash.Arithmetic do
   defp parse_relational_loop(str, len, pos, left) do
     pos = skip_whitespace(str, len, pos)
 
-    cond do
-      match_op?(str, len, pos, "<=") ->
-        {right, pos} = parse_shift(str, len, pos + 2)
+    case detect_relational_op(str, len, pos) do
+      {op, op_len} ->
+        {right, pos} = parse_shift(str, len, pos + op_len)
 
         parse_relational_loop(str, len, pos, %AST.ArithBinary{
-          operator: "<=",
+          operator: op,
           left: left,
           right: right
         })
 
-      match_op?(str, len, pos, ">=") ->
-        {right, pos} = parse_shift(str, len, pos + 2)
-
-        parse_relational_loop(str, len, pos, %AST.ArithBinary{
-          operator: ">=",
-          left: left,
-          right: right
-        })
-
-      pos < len and String.at(str, pos) == "<" and !match_op?(str, len, pos, "<<") ->
-        {right, pos} = parse_shift(str, len, pos + 1)
-
-        parse_relational_loop(str, len, pos, %AST.ArithBinary{
-          operator: "<",
-          left: left,
-          right: right
-        })
-
-      pos < len and String.at(str, pos) == ">" and !match_op?(str, len, pos, ">>") ->
-        {right, pos} = parse_shift(str, len, pos + 1)
-
-        parse_relational_loop(str, len, pos, %AST.ArithBinary{
-          operator: ">",
-          left: left,
-          right: right
-        })
-
-      true ->
+      nil ->
         {left, pos}
     end
+  end
+
+  defp detect_relational_op(str, len, pos) do
+    cond do
+      match_op?(str, len, pos, "<=") -> {"<=", 2}
+      match_op?(str, len, pos, ">=") -> {">=", 2}
+      less_than_op?(str, len, pos) -> {"<", 1}
+      greater_than_op?(str, len, pos) -> {">", 1}
+      true -> nil
+    end
+  end
+
+  defp less_than_op?(str, len, pos) do
+    pos < len and String.at(str, pos) == "<" and not match_op?(str, len, pos, "<<")
+  end
+
+  defp greater_than_op?(str, len, pos) do
+    pos < len and String.at(str, pos) == ">" and not match_op?(str, len, pos, ">>")
   end
 
   defp parse_shift(str, len, pos) do
@@ -301,30 +292,37 @@ defmodule JustBash.Arithmetic do
   defp parse_additive_loop(str, len, pos, left) do
     pos = skip_whitespace(str, len, pos)
 
-    cond do
-      pos < len and String.at(str, pos) == "+" and !match_op?(str, len, pos, "++") and
-          !match_op?(str, len, pos, "+=") ->
+    case detect_additive_op(str, len, pos) do
+      op when op != nil ->
         {right, pos} = parse_multiplicative(str, len, pos + 1)
 
         parse_additive_loop(str, len, pos, %AST.ArithBinary{
-          operator: "+",
+          operator: op,
           left: left,
           right: right
         })
 
-      pos < len and String.at(str, pos) == "-" and !match_op?(str, len, pos, "--") and
-          !match_op?(str, len, pos, "-=") ->
-        {right, pos} = parse_multiplicative(str, len, pos + 1)
-
-        parse_additive_loop(str, len, pos, %AST.ArithBinary{
-          operator: "-",
-          left: left,
-          right: right
-        })
-
-      true ->
+      nil ->
         {left, pos}
     end
+  end
+
+  defp detect_additive_op(str, len, pos) do
+    cond do
+      additive_plus_op?(str, len, pos) -> "+"
+      additive_minus_op?(str, len, pos) -> "-"
+      true -> nil
+    end
+  end
+
+  defp additive_plus_op?(str, len, pos) do
+    pos < len and String.at(str, pos) == "+" and
+      not match_op?(str, len, pos, "++") and not match_op?(str, len, pos, "+=")
+  end
+
+  defp additive_minus_op?(str, len, pos) do
+    pos < len and String.at(str, pos) == "-" and
+      not match_op?(str, len, pos, "--") and not match_op?(str, len, pos, "-=")
   end
 
   defp parse_multiplicative(str, len, pos) do
@@ -392,34 +390,38 @@ defmodule JustBash.Arithmetic do
   defp parse_unary(str, len, pos) do
     pos = skip_whitespace(str, len, pos)
 
-    cond do
-      match_op?(str, len, pos, "++") ->
-        {operand, pos} = parse_unary(str, len, pos + 2)
-        {%AST.ArithUnary{operator: "++", operand: operand, prefix: true}, pos}
+    case detect_unary_op(str, len, pos) do
+      {op, op_len} ->
+        {operand, pos} = parse_unary(str, len, pos + op_len)
+        {%AST.ArithUnary{operator: op, operand: operand, prefix: true}, pos}
 
-      match_op?(str, len, pos, "--") ->
-        {operand, pos} = parse_unary(str, len, pos + 2)
-        {%AST.ArithUnary{operator: "--", operand: operand, prefix: true}, pos}
-
-      pos < len and String.at(str, pos) == "!" ->
-        {operand, pos} = parse_unary(str, len, pos + 1)
-        {%AST.ArithUnary{operator: "!", operand: operand, prefix: true}, pos}
-
-      pos < len and String.at(str, pos) == "~" ->
-        {operand, pos} = parse_unary(str, len, pos + 1)
-        {%AST.ArithUnary{operator: "~", operand: operand, prefix: true}, pos}
-
-      pos < len and String.at(str, pos) == "-" and !match_op?(str, len, pos, "--") ->
-        {operand, pos} = parse_unary(str, len, pos + 1)
-        {%AST.ArithUnary{operator: "-", operand: operand, prefix: true}, pos}
-
-      pos < len and String.at(str, pos) == "+" and !match_op?(str, len, pos, "++") ->
-        {operand, pos} = parse_unary(str, len, pos + 1)
-        {%AST.ArithUnary{operator: "+", operand: operand, prefix: true}, pos}
-
-      true ->
+      nil ->
         parse_postfix(str, len, pos)
     end
+  end
+
+  defp detect_unary_op(str, len, pos) do
+    cond do
+      match_op?(str, len, pos, "++") -> {"++", 2}
+      match_op?(str, len, pos, "--") -> {"--", 2}
+      single_char_unary?(str, len, pos, "!") -> {"!", 1}
+      single_char_unary?(str, len, pos, "~") -> {"~", 1}
+      unary_minus_op?(str, len, pos) -> {"-", 1}
+      unary_plus_op?(str, len, pos) -> {"+", 1}
+      true -> nil
+    end
+  end
+
+  defp single_char_unary?(str, len, pos, char) do
+    pos < len and String.at(str, pos) == char
+  end
+
+  defp unary_minus_op?(str, len, pos) do
+    pos < len and String.at(str, pos) == "-" and not match_op?(str, len, pos, "--")
+  end
+
+  defp unary_plus_op?(str, len, pos) do
+    pos < len and String.at(str, pos) == "+" and not match_op?(str, len, pos, "++")
   end
 
   defp parse_postfix(str, len, pos) do
@@ -494,37 +496,38 @@ defmodule JustBash.Arithmetic do
     end
   end
 
+  defp parse_number_value("0x" <> hex_digits), do: parse_int_with_base(hex_digits, 16)
+  defp parse_number_value("0X" <> hex_digits), do: parse_int_with_base(hex_digits, 16)
+
+  defp parse_number_value("0" <> rest = num_str) when byte_size(rest) > 0 do
+    if String.contains?(num_str, "#") do
+      parse_custom_base(num_str)
+    else
+      parse_int_with_base(rest, 8)
+    end
+  end
+
   defp parse_number_value(num_str) do
-    cond do
-      String.starts_with?(num_str, "0x") or String.starts_with?(num_str, "0X") ->
-        case Integer.parse(String.slice(num_str, 2..-1//1), 16) do
-          {val, _} -> val
-          :error -> 0
-        end
+    if String.contains?(num_str, "#") do
+      parse_custom_base(num_str)
+    else
+      parse_int_with_base(num_str, 10)
+    end
+  end
 
-      String.starts_with?(num_str, "0") and byte_size(num_str) > 1 and
-          !String.contains?(num_str, "#") ->
-        case Integer.parse(String.slice(num_str, 1..-1//1), 8) do
-          {val, _} -> val
-          :error -> 0
-        end
+  defp parse_int_with_base(str, base) do
+    case Integer.parse(str, base) do
+      {val, _} -> val
+      :error -> 0
+    end
+  end
 
-      String.contains?(num_str, "#") ->
-        [base_str, val_str] = String.split(num_str, "#", parts: 2)
+  defp parse_custom_base(num_str) do
+    [base_str, val_str] = String.split(num_str, "#", parts: 2)
 
-        case Integer.parse(base_str) do
-          {base, _} when base >= 2 and base <= 64 ->
-            parse_base_n(val_str, base)
-
-          _ ->
-            0
-        end
-
-      true ->
-        case Integer.parse(num_str) do
-          {val, _} -> val
-          :error -> 0
-        end
+    case Integer.parse(base_str) do
+      {base, _} when base >= 2 and base <= 64 -> parse_base_n(val_str, base)
+      _ -> 0
     end
   end
 
@@ -542,16 +545,12 @@ defmodule JustBash.Arithmetic do
     end)
   end
 
-  defp digit_value(char) do
-    cond do
-      char >= "0" and char <= "9" -> String.to_integer(char)
-      char >= "a" and char <= "z" -> :binary.first(char) - ?a + 10
-      char >= "A" and char <= "Z" -> :binary.first(char) - ?A + 36
-      char == "@" -> 62
-      char == "_" -> 63
-      true -> 999
-    end
-  end
+  defp digit_value(<<c>>) when c >= ?0 and c <= ?9, do: c - ?0
+  defp digit_value(<<c>>) when c >= ?a and c <= ?z, do: c - ?a + 10
+  defp digit_value(<<c>>) when c >= ?A and c <= ?Z, do: c - ?A + 36
+  defp digit_value("@"), do: 62
+  defp digit_value("_"), do: 63
+  defp digit_value(_), do: 999
 
   defp parse_variable_or_assignment(str, len, pos) do
     {name, pos} = collect_var_name(str, len, pos, "")
@@ -574,20 +573,32 @@ defmodule JustBash.Arithmetic do
     end)
   end
 
+  @assignment_ops_by_length [
+    {"<<=", 3},
+    {">>=", 3},
+    {"+=", 2},
+    {"-=", 2},
+    {"*=", 2},
+    {"/=", 2},
+    {"%=", 2},
+    {"&=", 2},
+    {"|=", 2},
+    {"^=", 2}
+  ]
+
   defp get_assignment_op(str, len, pos) do
-    cond do
-      match_op?(str, len, pos, "<<=") -> {"<<=", 3}
-      match_op?(str, len, pos, ">>=") -> {">>=", 3}
-      match_op?(str, len, pos, "+=") -> {"+=", 2}
-      match_op?(str, len, pos, "-=") -> {"-=", 2}
-      match_op?(str, len, pos, "*=") -> {"*=", 2}
-      match_op?(str, len, pos, "/=") -> {"/=", 2}
-      match_op?(str, len, pos, "%=") -> {"%=", 2}
-      match_op?(str, len, pos, "&=") -> {"&=", 2}
-      match_op?(str, len, pos, "|=") -> {"|=", 2}
-      match_op?(str, len, pos, "^=") -> {"^=", 2}
-      match_op?(str, len, pos, "=") and not match_op?(str, len, pos, "==") -> {"=", 1}
-      true -> {"=", 1}
+    Enum.find(@assignment_ops_by_length, fn {op, _len} -> match_op?(str, len, pos, op) end)
+    |> case do
+      {op, op_len} -> {op, op_len}
+      nil -> get_simple_assignment(str, len, pos)
+    end
+  end
+
+  defp get_simple_assignment(str, len, pos) do
+    if match_op?(str, len, pos, "=") and not match_op?(str, len, pos, "==") do
+      {"=", 1}
+    else
+      {"=", 1}
     end
   end
 
@@ -627,15 +638,11 @@ defmodule JustBash.Arithmetic do
     end
   end
 
-  defp var_char?(char, is_first) do
-    cond do
-      char >= "a" and char <= "z" -> true
-      char >= "A" and char <= "Z" -> true
-      char == "_" -> true
-      not is_first and char >= "0" and char <= "9" -> true
-      true -> false
-    end
-  end
+  defp var_char?(<<c>>, _is_first) when c >= ?a and c <= ?z, do: true
+  defp var_char?(<<c>>, _is_first) when c >= ?A and c <= ?Z, do: true
+  defp var_char?("_", _is_first), do: true
+  defp var_char?(<<c>>, false) when c >= ?0 and c <= ?9, do: true
+  defp var_char?(_, _), do: false
 
   defp var_start?(str, pos) do
     char = String.at(str, pos)
@@ -787,29 +794,46 @@ defmodule JustBash.Arithmetic do
     end
   end
 
-  defp apply_binary_op(op, left, right) do
-    case op do
-      "+" -> left + right
-      "-" -> left - right
-      "*" -> left * right
-      "/" -> if right != 0, do: div(left, right), else: 0
-      "%" -> if right != 0, do: rem(left, right), else: 0
-      "**" -> if right >= 0, do: trunc(:math.pow(left, right)), else: 0
-      "<<" -> Bitwise.bsl(left, right)
-      ">>" -> Bitwise.bsr(left, right)
-      "<" -> if left < right, do: 1, else: 0
-      "<=" -> if left <= right, do: 1, else: 0
-      ">" -> if left > right, do: 1, else: 0
-      ">=" -> if left >= right, do: 1, else: 0
-      "==" -> if left == right, do: 1, else: 0
-      "!=" -> if left != right, do: 1, else: 0
-      "&" -> Bitwise.band(left, right)
-      "|" -> Bitwise.bor(left, right)
-      "^" -> Bitwise.bxor(left, right)
-      "," -> right
-      _ -> 0
-    end
+  defp apply_binary_op(op, left, right) when op in ["+", "-", "*", "/", "%", "**"] do
+    apply_arithmetic_op(op, left, right)
   end
+
+  defp apply_binary_op(op, left, right) when op in ["<", "<=", ">", ">=", "==", "!="] do
+    apply_comparison_op(op, left, right)
+  end
+
+  defp apply_binary_op(op, left, right) when op in ["&", "|", "^", "<<", ">>"] do
+    apply_bitwise_op(op, left, right)
+  end
+
+  defp apply_binary_op(",", _left, right), do: right
+  defp apply_binary_op(_op, _left, _right), do: 0
+
+  defp apply_arithmetic_op("+", left, right), do: left + right
+  defp apply_arithmetic_op("-", left, right), do: left - right
+  defp apply_arithmetic_op("*", left, right), do: left * right
+  defp apply_arithmetic_op("/", _left, 0), do: 0
+  defp apply_arithmetic_op("/", left, right), do: div(left, right)
+  defp apply_arithmetic_op("%", _left, 0), do: 0
+  defp apply_arithmetic_op("%", left, right), do: rem(left, right)
+  defp apply_arithmetic_op("**", _left, right) when right < 0, do: 0
+  defp apply_arithmetic_op("**", left, right), do: trunc(:math.pow(left, right))
+
+  defp apply_comparison_op("<", left, right), do: bool_to_int(left < right)
+  defp apply_comparison_op("<=", left, right), do: bool_to_int(left <= right)
+  defp apply_comparison_op(">", left, right), do: bool_to_int(left > right)
+  defp apply_comparison_op(">=", left, right), do: bool_to_int(left >= right)
+  defp apply_comparison_op("==", left, right), do: bool_to_int(left == right)
+  defp apply_comparison_op("!=", left, right), do: bool_to_int(left != right)
+
+  defp bool_to_int(true), do: 1
+  defp bool_to_int(false), do: 0
+
+  defp apply_bitwise_op("&", left, right), do: Bitwise.band(left, right)
+  defp apply_bitwise_op("|", left, right), do: Bitwise.bor(left, right)
+  defp apply_bitwise_op("^", left, right), do: Bitwise.bxor(left, right)
+  defp apply_bitwise_op("<<", left, right), do: Bitwise.bsl(left, right)
+  defp apply_bitwise_op(">>", left, right), do: Bitwise.bsr(left, right)
 
   defp apply_unary_op(op, val) do
     case op do
@@ -821,20 +845,18 @@ defmodule JustBash.Arithmetic do
     end
   end
 
-  defp apply_assignment_op(op, current, value) do
-    case op do
-      "=" -> value
-      "+=" -> current + value
-      "-=" -> current - value
-      "*=" -> current * value
-      "/=" -> if value != 0, do: div(current, value), else: 0
-      "%=" -> if value != 0, do: rem(current, value), else: 0
-      "<<=" -> Bitwise.bsl(current, value)
-      ">>=" -> Bitwise.bsr(current, value)
-      "&=" -> Bitwise.band(current, value)
-      "|=" -> Bitwise.bor(current, value)
-      "^=" -> Bitwise.bxor(current, value)
-      _ -> value
-    end
-  end
+  defp apply_assignment_op("=", _current, value), do: value
+  defp apply_assignment_op("+=", current, value), do: current + value
+  defp apply_assignment_op("-=", current, value), do: current - value
+  defp apply_assignment_op("*=", current, value), do: current * value
+  defp apply_assignment_op("/=", _current, 0), do: 0
+  defp apply_assignment_op("/=", current, value), do: div(current, value)
+  defp apply_assignment_op("%=", _current, 0), do: 0
+  defp apply_assignment_op("%=", current, value), do: rem(current, value)
+  defp apply_assignment_op("<<=", current, value), do: Bitwise.bsl(current, value)
+  defp apply_assignment_op(">>=", current, value), do: Bitwise.bsr(current, value)
+  defp apply_assignment_op("&=", current, value), do: Bitwise.band(current, value)
+  defp apply_assignment_op("|=", current, value), do: Bitwise.bor(current, value)
+  defp apply_assignment_op("^=", current, value), do: Bitwise.bxor(current, value)
+  defp apply_assignment_op(_op, _current, value), do: value
 end

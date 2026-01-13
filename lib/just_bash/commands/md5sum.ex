@@ -96,26 +96,38 @@ defmodule JustBash.Commands.Md5sum do
     lines = String.split(content, "\n", trim: true)
 
     Enum.reduce(lines, {acc_out, acc_failed}, fn line, {out, failed} ->
-      case Regex.run(~r/^([a-fA-F0-9]+)\s+[* ]?(.+)$/, line) do
-        [_, expected_hash, target_file] ->
-          case read_file(bash, target_file, stdin) do
-            {:ok, target_content} ->
-              actual_hash = md5(target_content)
-
-              if String.downcase(actual_hash) == String.downcase(expected_hash) do
-                {out <> "#{target_file}: OK\n", failed}
-              else
-                {out <> "#{target_file}: FAILED\n", failed + 1}
-              end
-
-            {:error, _} ->
-              {out <> "#{target_file}: FAILED open or read\n", failed + 1}
-          end
-
-        _ ->
-          {out, failed}
-      end
+      verify_checksum_line(bash, stdin, line, out, failed)
     end)
+  end
+
+  defp verify_checksum_line(bash, stdin, line, out, failed) do
+    case Regex.run(~r/^([a-fA-F0-9]+)\s+[* ]?(.+)$/, line) do
+      [_, expected_hash, target_file] ->
+        verify_file_checksum(bash, stdin, expected_hash, target_file, out, failed)
+
+      _ ->
+        {out, failed}
+    end
+  end
+
+  defp verify_file_checksum(bash, stdin, expected_hash, target_file, out, failed) do
+    case read_file(bash, target_file, stdin) do
+      {:ok, target_content} ->
+        compare_hashes(target_content, expected_hash, target_file, out, failed)
+
+      {:error, _} ->
+        {out <> "#{target_file}: FAILED open or read\n", failed + 1}
+    end
+  end
+
+  defp compare_hashes(content, expected_hash, target_file, out, failed) do
+    actual_hash = md5(content)
+
+    if String.downcase(actual_hash) == String.downcase(expected_hash) do
+      {out <> "#{target_file}: OK\n", failed}
+    else
+      {out <> "#{target_file}: FAILED\n", failed + 1}
+    end
   end
 
   defp read_file(_bash, "-", stdin), do: {:ok, stdin}

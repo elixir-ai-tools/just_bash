@@ -23,15 +23,21 @@ defmodule JustBash.Commands.Env do
             |> Map.merge(Map.new(opts.set))
           end
 
-        output =
-          new_env
-          |> Enum.sort()
-          |> Enum.map_join("\n", fn {k, v} -> "#{k}=#{v}" end)
-          |> then(fn s -> if s == "", do: "", else: s <> "\n" end)
+        output = format_env(new_env)
 
         {Command.ok(output), bash}
     end
   end
+
+  defp format_env(env) do
+    env
+    |> Enum.sort()
+    |> Enum.map_join("\n", fn {k, v} -> "#{k}=#{v}" end)
+    |> append_newline()
+  end
+
+  defp append_newline(""), do: ""
+  defp append_newline(s), do: s <> "\n"
 
   defp parse_args(args) do
     parse_args(args, %{ignore_env: false, unset: [], set: []})

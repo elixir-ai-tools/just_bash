@@ -518,58 +518,87 @@ defmodule JustBash.Parser.Lexer do
     case collect_brace_content(tokens, 1, []) do
       {:ok, content_tokens, rbrace, remaining} ->
         content = Enum.map_join(content_tokens, "", & &1.value)
-
         merged_value = "{" <> content <> "}"
+        {prefix_token, new_acc} = extract_prefix_token(acc, lbrace)
+        {suffix_token, final_remaining} = extract_suffix_token(remaining, rbrace)
 
-        {prefix_token, new_acc} =
-          case acc do
-            [%Token{type: t} = prev | rest]
-            when t in [:word, :name, :number] and prev.end == lbrace.start ->
-              {prev, rest}
-
-            _ ->
-              {nil, acc}
-          end
-
-        {suffix_token, final_remaining} =
-          case remaining do
-            [%Token{type: t} = next | rest2]
-            when t in [:word, :name, :number] and rbrace.end == next.start ->
-              {next, rest2}
-
-            _ ->
-              {nil, remaining}
-          end
-
-        has_adjacent = prefix_token != nil or suffix_token != nil
-        is_brace_exp = is_brace_expansion_content?(content)
-        is_word_like = not String.contains?(content, " ") and not String.contains?(content, "\t")
-
-        if has_adjacent or is_brace_exp or is_word_like do
-          final_value =
-            if(prefix_token, do: prefix_token.value, else: "") <>
-              merged_value <>
-              if(suffix_token, do: suffix_token.value, else: "")
-
-          new_token = %Token{
-            type: :word,
-            value: final_value,
-            start: (prefix_token || lbrace).start,
-            end: (suffix_token || rbrace).end,
-            line: (prefix_token || lbrace).line,
-            column: (prefix_token || lbrace).column,
-            quoted: false,
-            single_quoted: false
-          }
-
-          {:merged, new_token, final_remaining, new_acc}
-        else
-          :not_brace_expansion
-        end
+        maybe_build_merged_token(
+          content,
+          merged_value,
+          prefix_token,
+          suffix_token,
+          lbrace,
+          rbrace,
+          final_remaining,
+          new_acc
+        )
 
       :error ->
         :not_brace_expansion
     end
+  end
+
+  defp extract_prefix_token(acc, lbrace) do
+    case acc do
+      [%Token{type: t} = prev | rest]
+      when t in [:word, :name, :number] and prev.end == lbrace.start ->
+        {prev, rest}
+
+      _ ->
+        {nil, acc}
+    end
+  end
+
+  defp extract_suffix_token(remaining, rbrace) do
+    case remaining do
+      [%Token{type: t} = next | rest]
+      when t in [:word, :name, :number] and rbrace.end == next.start ->
+        {next, rest}
+
+      _ ->
+        {nil, remaining}
+    end
+  end
+
+  defp maybe_build_merged_token(
+         content,
+         merged_value,
+         prefix_token,
+         suffix_token,
+         lbrace,
+         rbrace,
+         final_remaining,
+         new_acc
+       ) do
+    has_adjacent = prefix_token != nil or suffix_token != nil
+    is_brace_exp = brace_expansion_content?(content)
+    is_word_like = not String.contains?(content, " ") and not String.contains?(content, "\t")
+
+    if has_adjacent or is_brace_exp or is_word_like do
+      new_token =
+        build_merged_brace_token(merged_value, prefix_token, suffix_token, lbrace, rbrace)
+
+      {:merged, new_token, final_remaining, new_acc}
+    else
+      :not_brace_expansion
+    end
+  end
+
+  defp build_merged_brace_token(merged_value, prefix_token, suffix_token, lbrace, rbrace) do
+    prefix_value = if prefix_token, do: prefix_token.value, else: ""
+    suffix_value = if suffix_token, do: suffix_token.value, else: ""
+    final_value = prefix_value <> merged_value <> suffix_value
+
+    %Token{
+      type: :word,
+      value: final_value,
+      start: (prefix_token || lbrace).start,
+      end: (suffix_token || rbrace).end,
+      line: (prefix_token || lbrace).line,
+      column: (prefix_token || lbrace).column,
+      quoted: false,
+      single_quoted: false
+    }
   end
 
   defp collect_brace_content([], _depth, _acc), do: :error
@@ -595,7 +624,7 @@ defmodule JustBash.Parser.Lexer do
     collect_brace_content(rest, depth, [token | acc])
   end
 
-  defp is_brace_expansion_content?(content) do
+  defp brace_expansion_content?(content) do
     String.contains?(content, ",") or String.contains?(content, "..")
   end
 
@@ -670,33 +699,66 @@ defmodule JustBash.Parser.Lexer do
       {content, pos}
     else
       {line, end_pos} = read_line_at(input, pos)
+      line_to_check = maybe_strip_leading_tabs(line, strip_tabs)
 
-      line_to_check =
-        if strip_tabs do
-          String.replace(line, ~r/^\t+/, "")
-        else
-          line
-        end
-
-      if line_to_check == delimiter do
-        # Consume the delimiter line and newline
-        new_pos = consume_line_and_newline(input, pos)
-        {content, new_pos}
-      else
-        new_content = content <> line
-
-        new_content =
-          if end_pos < byte_size(input) and :binary.at(input, end_pos) == ?\n do
-            new_content <> "\n"
-          else
-            new_content
-          end
-
-        # Move past the newline
-        new_pos = if end_pos < byte_size(input), do: end_pos + 1, else: end_pos
-        read_heredoc_lines(input, new_pos, delimiter, strip_tabs, new_content)
-      end
+      process_heredoc_line(
+        input,
+        pos,
+        end_pos,
+        delimiter,
+        strip_tabs,
+        content,
+        line,
+        line_to_check
+      )
     end
+  end
+
+  defp maybe_strip_leading_tabs(line, true), do: String.replace(line, ~r/^\t+/, "")
+  defp maybe_strip_leading_tabs(line, false), do: line
+
+  defp process_heredoc_line(
+         input,
+         pos,
+         _end_pos,
+         delimiter,
+         _strip_tabs,
+         content,
+         _line,
+         line_to_check
+       )
+       when line_to_check == delimiter do
+    new_pos = consume_line_and_newline(input, pos)
+    {content, new_pos}
+  end
+
+  defp process_heredoc_line(
+         input,
+         _pos,
+         end_pos,
+         delimiter,
+         strip_tabs,
+         content,
+         line,
+         _line_to_check
+       ) do
+    new_content = append_line_with_newline(content, line, input, end_pos)
+    new_pos = advance_past_newline(input, end_pos)
+    read_heredoc_lines(input, new_pos, delimiter, strip_tabs, new_content)
+  end
+
+  defp append_line_with_newline(content, line, input, end_pos) do
+    has_newline = end_pos < byte_size(input) and :binary.at(input, end_pos) == ?\n
+
+    if has_newline do
+      content <> line <> "\n"
+    else
+      content <> line
+    end
+  end
+
+  defp advance_past_newline(input, end_pos) do
+    if end_pos < byte_size(input), do: end_pos + 1, else: end_pos
   end
 
   defp read_line_at(input, pos) do

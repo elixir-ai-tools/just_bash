@@ -14,22 +14,26 @@ defmodule JustBash.Commands.Cat do
       {Command.ok(stdin), bash}
     else
       {stdout, stderr, exit_code} =
-        Enum.reduce(args, {"", "", 0}, fn path, {out_acc, err_acc, code_acc} ->
-          resolved = InMemoryFs.resolve_path(bash.cwd, path)
-
-          case InMemoryFs.read_file(bash.fs, resolved) do
-            {:ok, content} ->
-              {out_acc <> content, err_acc, code_acc}
-
-            {:error, :enoent} ->
-              {out_acc, err_acc <> "cat: #{path}: No such file or directory\n", 1}
-
-            {:error, :eisdir} ->
-              {out_acc, err_acc <> "cat: #{path}: Is a directory\n", 1}
-          end
+        Enum.reduce(args, {"", "", 0}, fn path, acc ->
+          read_and_accumulate(bash, path, acc)
         end)
 
       {Command.result(stdout, stderr, exit_code), bash}
+    end
+  end
+
+  defp read_and_accumulate(bash, path, {out_acc, err_acc, code_acc}) do
+    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+
+    case InMemoryFs.read_file(bash.fs, resolved) do
+      {:ok, content} ->
+        {out_acc <> content, err_acc, code_acc}
+
+      {:error, :enoent} ->
+        {out_acc, err_acc <> "cat: #{path}: No such file or directory\n", 1}
+
+      {:error, :eisdir} ->
+        {out_acc, err_acc <> "cat: #{path}: Is a directory\n", 1}
     end
   end
 end

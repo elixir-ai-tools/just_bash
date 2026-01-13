@@ -57,39 +57,45 @@ defmodule JustBash.Commands.Date do
 
   defp parse_date_string(str) do
     cond do
-      str =~ ~r/^\d{4}-\d{2}-\d{2}$/ ->
-        case Date.from_iso8601(str) do
-          {:ok, date} -> {:ok, DateTime.new!(date, ~T[00:00:00], "Etc/UTC")}
-          error -> error
-        end
-
-      str =~ ~r/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/ ->
-        case DateTime.from_iso8601(str) do
-          {:ok, dt, _offset} -> {:ok, dt}
-          _ -> {:error, :invalid_format}
-        end
-
-      str =~ ~r/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/ ->
-        iso_str = String.replace(str, " ", "T") <> "Z"
-
-        case DateTime.from_iso8601(iso_str) do
-          {:ok, dt, _offset} -> {:ok, dt}
-          _ -> {:error, :invalid_format}
-        end
-
-      str == "now" ->
-        {:ok, DateTime.utc_now()}
-
-      str == "yesterday" ->
-        {:ok, DateTime.utc_now() |> DateTime.add(-86400, :second)}
-
-      str == "tomorrow" ->
-        {:ok, DateTime.utc_now() |> DateTime.add(86400, :second)}
-
-      true ->
-        {:error, :invalid_format}
+      str =~ ~r/^\d{4}-\d{2}-\d{2}$/ -> parse_date_only(str)
+      str =~ ~r/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/ -> parse_iso_datetime(str)
+      str =~ ~r/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/ -> parse_space_datetime(str)
+      true -> parse_relative_date(str)
     end
   end
+
+  defp parse_date_only(str) do
+    case Date.from_iso8601(str) do
+      {:ok, date} -> {:ok, DateTime.new!(date, ~T[00:00:00], "Etc/UTC")}
+      error -> error
+    end
+  end
+
+  defp parse_iso_datetime(str) do
+    case DateTime.from_iso8601(str) do
+      {:ok, dt, _offset} -> {:ok, dt}
+      _ -> {:error, :invalid_format}
+    end
+  end
+
+  defp parse_space_datetime(str) do
+    iso_str = String.replace(str, " ", "T") <> "Z"
+
+    case DateTime.from_iso8601(iso_str) do
+      {:ok, dt, _offset} -> {:ok, dt}
+      _ -> {:error, :invalid_format}
+    end
+  end
+
+  defp parse_relative_date("now"), do: {:ok, DateTime.utc_now()}
+
+  defp parse_relative_date("yesterday"),
+    do: {:ok, DateTime.utc_now() |> DateTime.add(-86_400, :second)}
+
+  defp parse_relative_date("tomorrow"),
+    do: {:ok, DateTime.utc_now() |> DateTime.add(86_400, :second)}
+
+  defp parse_relative_date(_), do: {:error, :invalid_format}
 
   defp format_datetime(datetime, format) do
     format

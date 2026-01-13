@@ -106,10 +106,8 @@ defmodule JustBash.Commands.Jq.Parser do
   defp parse_not(input) do
     if String.starts_with?(input, "not") and not_ident_cont?(String.slice(input, 3..-1//1)) do
       rest = String.trim(String.slice(input, 3..-1//1))
-      # If rest is empty or starts with a pipe/comma/closing bracket, treat as function
-      if rest == "" or String.starts_with?(rest, "|") or String.starts_with?(rest, ",") or
-           String.starts_with?(rest, ")") or String.starts_with?(rest, "]") or
-           String.starts_with?(rest, "}") do
+
+      if not_as_function?(rest) do
         {{:func, :not, []}, rest}
       else
         {expr, rest2} = parse_not(rest)
@@ -120,44 +118,29 @@ defmodule JustBash.Commands.Jq.Parser do
     end
   end
 
+  defp not_as_function?(rest) do
+    rest == "" or String.starts_with?(rest, "|") or String.starts_with?(rest, ",") or
+      String.starts_with?(rest, ")") or String.starts_with?(rest, "]") or
+      String.starts_with?(rest, "}")
+  end
+
   defp parse_comparison(input) do
     {left, rest} = parse_additive(input)
     rest = String.trim(rest)
+    parse_comparison_op(left, rest)
+  end
 
-    cond do
-      String.starts_with?(rest, "==") ->
-        rest2 = String.slice(rest, 2..-1//1)
-        {right, rest3} = parse_additive(String.trim(rest2))
-        {{:comparison, :eq, left, right}, rest3}
+  defp parse_comparison_op(left, "==" <> rest), do: parse_comparison_rhs(:eq, left, rest)
+  defp parse_comparison_op(left, "!=" <> rest), do: parse_comparison_rhs(:neq, left, rest)
+  defp parse_comparison_op(left, "<=" <> rest), do: parse_comparison_rhs(:lte, left, rest)
+  defp parse_comparison_op(left, ">=" <> rest), do: parse_comparison_rhs(:gte, left, rest)
+  defp parse_comparison_op(left, "<" <> rest), do: parse_comparison_rhs(:lt, left, rest)
+  defp parse_comparison_op(left, ">" <> rest), do: parse_comparison_rhs(:gt, left, rest)
+  defp parse_comparison_op(left, rest), do: {left, rest}
 
-      String.starts_with?(rest, "!=") ->
-        rest2 = String.slice(rest, 2..-1//1)
-        {right, rest3} = parse_additive(String.trim(rest2))
-        {{:comparison, :neq, left, right}, rest3}
-
-      String.starts_with?(rest, "<=") ->
-        rest2 = String.slice(rest, 2..-1//1)
-        {right, rest3} = parse_additive(String.trim(rest2))
-        {{:comparison, :lte, left, right}, rest3}
-
-      String.starts_with?(rest, ">=") ->
-        rest2 = String.slice(rest, 2..-1//1)
-        {right, rest3} = parse_additive(String.trim(rest2))
-        {{:comparison, :gte, left, right}, rest3}
-
-      String.starts_with?(rest, "<") ->
-        rest2 = String.slice(rest, 1..-1//1)
-        {right, rest3} = parse_additive(String.trim(rest2))
-        {{:comparison, :lt, left, right}, rest3}
-
-      String.starts_with?(rest, ">") ->
-        rest2 = String.slice(rest, 1..-1//1)
-        {right, rest3} = parse_additive(String.trim(rest2))
-        {{:comparison, :gt, left, right}, rest3}
-
-      true ->
-        {left, rest}
-    end
+  defp parse_comparison_rhs(op, left, rest) do
+    {right, rest2} = parse_additive(String.trim(rest))
+    {{:comparison, op, left, right}, rest2}
   end
 
   defp parse_additive(input) do
@@ -201,45 +184,40 @@ defmodule JustBash.Commands.Jq.Parser do
 
   defp parse_primary(input) do
     input = String.trim(input)
-
-    cond do
-      String.starts_with?(input, ".") ->
-        parse_dot_expr(String.slice(input, 1..-1//1))
-
-      String.starts_with?(input, "[") ->
-        parse_array_construction(String.slice(input, 1..-1//1))
-
-      String.starts_with?(input, "{") ->
-        parse_object_construction(String.slice(input, 1..-1//1))
-
-      String.starts_with?(input, "(") ->
-        parse_parenthesized(String.slice(input, 1..-1//1))
-
-      String.starts_with?(input, "\"") ->
-        parse_string_literal(input)
-
-      String.starts_with?(input, "null") and not_ident_cont?(String.slice(input, 4..-1//1)) ->
-        {{:literal, nil}, String.slice(input, 4..-1//1)}
-
-      String.starts_with?(input, "true") and not_ident_cont?(String.slice(input, 4..-1//1)) ->
-        {{:literal, true}, String.slice(input, 4..-1//1)}
-
-      String.starts_with?(input, "false") and not_ident_cont?(String.slice(input, 5..-1//1)) ->
-        {{:literal, false}, String.slice(input, 5..-1//1)}
-
-      String.starts_with?(input, "empty") and not_ident_cont?(String.slice(input, 5..-1//1)) ->
-        {:empty, String.slice(input, 5..-1//1)}
-
-      String.starts_with?(input, "if") and not_ident_cont?(String.slice(input, 2..-1//1)) ->
-        parse_if_expr(String.slice(input, 2..-1//1))
-
-      String.starts_with?(input, "try") and not_ident_cont?(String.slice(input, 3..-1//1)) ->
-        parse_try_expr(String.slice(input, 3..-1//1))
-
-      true ->
-        parse_number_or_func(input)
-    end
+    parse_primary_token(input)
   end
+
+  defp parse_primary_token("." <> rest), do: parse_dot_expr(rest)
+  defp parse_primary_token("[" <> rest), do: parse_array_construction(rest)
+  defp parse_primary_token("{" <> rest), do: parse_object_construction(rest)
+  defp parse_primary_token("(" <> rest), do: parse_parenthesized(rest)
+  defp parse_primary_token("\"" <> _ = input), do: parse_string_literal(input)
+
+  defp parse_primary_token("null" <> rest = input) do
+    if not_ident_cont?(rest), do: {{:literal, nil}, rest}, else: parse_number_or_func(input)
+  end
+
+  defp parse_primary_token("true" <> rest = input) do
+    if not_ident_cont?(rest), do: {{:literal, true}, rest}, else: parse_number_or_func(input)
+  end
+
+  defp parse_primary_token("false" <> rest = input) do
+    if not_ident_cont?(rest), do: {{:literal, false}, rest}, else: parse_number_or_func(input)
+  end
+
+  defp parse_primary_token("empty" <> rest = input) do
+    if not_ident_cont?(rest), do: {:empty, rest}, else: parse_number_or_func(input)
+  end
+
+  defp parse_primary_token("if" <> rest = input) do
+    if not_ident_cont?(rest), do: parse_if_expr(rest), else: parse_number_or_func(input)
+  end
+
+  defp parse_primary_token("try" <> rest = input) do
+    if not_ident_cont?(rest), do: parse_try_expr(rest), else: parse_number_or_func(input)
+  end
+
+  defp parse_primary_token(input), do: parse_number_or_func(input)
 
   defp not_ident_cont?(""), do: true
 
@@ -277,31 +255,38 @@ defmodule JustBash.Commands.Jq.Parser do
 
   defp parse_suffix(input) do
     input = String.trim(input)
+    parse_suffix_token(input)
+  end
 
-    cond do
-      String.starts_with?(input, "?") ->
-        {more_suffix, rest2} = parse_suffix(String.slice(input, 1..-1//1))
-        {[:optional | more_suffix], rest2}
+  defp parse_suffix_token("?" <> rest) do
+    {more_suffix, rest2} = parse_suffix(rest)
+    {[:optional | more_suffix], rest2}
+  end
 
-      String.starts_with?(input, "[") ->
-        {index_expr, rest2} = parse_index_expr(String.slice(input, 1..-1//1))
+  defp parse_suffix_token("[" <> rest) do
+    {index_expr, rest2} = parse_index_expr(rest)
+    {more_suffix, rest3} = parse_suffix(rest2)
+    {[index_expr | more_suffix], rest3}
+  end
+
+  defp parse_suffix_token("." <> _ = input) do
+    if String.starts_with?(input, "..") do
+      {[], input}
+    else
+      parse_suffix_field(String.slice(input, 1..-1//1))
+    end
+  end
+
+  defp parse_suffix_token(input), do: {[], input}
+
+  defp parse_suffix_field(rest) do
+    case parse_identifier(rest) do
+      {"", _} ->
+        {[], "." <> rest}
+
+      {name, rest2} ->
         {more_suffix, rest3} = parse_suffix(rest2)
-        {[index_expr | more_suffix], rest3}
-
-      String.starts_with?(input, ".") and not String.starts_with?(input, "..") ->
-        rest = String.slice(input, 1..-1//1)
-
-        case parse_identifier(rest) do
-          {"", _} ->
-            {[], input}
-
-          {name, rest2} ->
-            {more_suffix, rest3} = parse_suffix(rest2)
-            {[{:field, name} | more_suffix], rest3}
-        end
-
-      true ->
-        {[], input}
+        {[{:field, name} | more_suffix], rest3}
     end
   end
 
@@ -321,49 +306,50 @@ defmodule JustBash.Commands.Jq.Parser do
     if String.starts_with?(input, "]") do
       {:iterate, String.slice(input, 1..-1//1)}
     else
-      case parse_slice_or_index(input) do
-        {:index, n, rest} ->
-          rest = String.trim(rest)
-          "]" <> rest2 = rest
-          {{:index, n}, rest2}
+      parse_index_or_slice(input)
+    end
+  end
 
-        {:slice, start_idx, end_idx, rest} ->
-          rest = String.trim(rest)
-          "]" <> rest2 = rest
-          {{:slice, start_idx, end_idx}, rest2}
-      end
+  defp parse_index_or_slice(input) do
+    case parse_slice_or_index(input) do
+      {:index, n, rest} ->
+        rest = String.trim(rest)
+        "]" <> rest2 = rest
+        {{:index, n}, rest2}
+
+      {:slice, start_idx, end_idx, rest} ->
+        rest = String.trim(rest)
+        "]" <> rest2 = rest
+        {{:slice, start_idx, end_idx}, rest2}
+    end
+  end
+
+  defp parse_slice_or_index(":" <> rest) do
+    case parse_optional_int(String.trim(rest)) do
+      {nil, rest2} -> {:slice, nil, nil, rest2}
+      {n, rest2} -> {:slice, nil, n, rest2}
     end
   end
 
   defp parse_slice_or_index(input) do
-    if String.starts_with?(input, ":") do
-      rest = String.slice(input, 1..-1//1)
+    case parse_int(input) do
+      {:ok, n, rest} ->
+        rest = String.trim(rest)
+        maybe_parse_slice_end(n, rest)
 
-      case parse_optional_int(String.trim(rest)) do
-        {nil, rest2} -> {:slice, nil, nil, rest2}
-        {n, rest2} -> {:slice, nil, n, rest2}
-      end
-    else
-      case parse_int(input) do
-        {:ok, n, rest} ->
-          rest = String.trim(rest)
-
-          if String.starts_with?(rest, ":") do
-            rest2 = String.slice(rest, 1..-1//1)
-
-            case parse_optional_int(String.trim(rest2)) do
-              {nil, rest3} -> {:slice, n, nil, rest3}
-              {m, rest3} -> {:slice, n, m, rest3}
-            end
-          else
-            {:index, n, rest}
-          end
-
-        :error ->
-          throw({:parse_error, "expected index or slice"})
-      end
+      :error ->
+        throw({:parse_error, "expected index or slice"})
     end
   end
+
+  defp maybe_parse_slice_end(n, ":" <> rest) do
+    case parse_optional_int(String.trim(rest)) do
+      {nil, rest2} -> {:slice, n, nil, rest2}
+      {m, rest2} -> {:slice, n, m, rest2}
+    end
+  end
+
+  defp maybe_parse_slice_end(n, rest), do: {:index, n, rest}
 
   defp parse_optional_int(input) do
     case parse_int(input) do
@@ -413,45 +399,45 @@ defmodule JustBash.Commands.Jq.Parser do
   defp parse_object_pairs(input) do
     {pair, rest} = parse_object_pair(input)
     rest = String.trim(rest)
+    parse_object_pairs_tail(pair, rest)
+  end
 
-    cond do
-      String.starts_with?(rest, ",") ->
-        {more_pairs, rest3} = parse_object_pairs(String.trim(String.slice(rest, 1..-1//1)))
-        {[pair | more_pairs], rest3}
+  defp parse_object_pairs_tail(pair, "," <> rest) do
+    {more_pairs, rest2} = parse_object_pairs(String.trim(rest))
+    {[pair | more_pairs], rest2}
+  end
 
-      String.starts_with?(rest, "}") ->
-        {[pair], String.slice(rest, 1..-1//1)}
+  defp parse_object_pairs_tail(pair, "}" <> rest) do
+    {[pair], rest}
+  end
 
-      true ->
-        throw({:parse_error, "expected ',' or '}' in object, got: #{String.slice(rest, 0..20)}"})
-    end
+  defp parse_object_pairs_tail(_pair, rest) do
+    throw({:parse_error, "expected ',' or '}' in object, got: #{String.slice(rest, 0..20)}"})
   end
 
   defp parse_object_pair(input) do
     input = String.trim(input)
-
-    {key, rest} =
-      cond do
-        String.starts_with?(input, "(") ->
-          {expr, rest2} = parse_pipe(String.slice(input, 1..-1//1))
-          rest2 = String.trim(rest2)
-          ")" <> rest3 = rest2
-          {expr, rest3}
-
-        String.starts_with?(input, "\"") ->
-          parse_string_literal(input)
-
-        true ->
-          case parse_identifier(input) do
-            {"", _} -> throw({:parse_error, "expected object key"})
-            {name, rest} -> {{:literal, name}, rest}
-          end
-      end
-
+    {key, rest} = parse_object_key(input)
     rest = String.trim(rest)
     ":" <> rest2 = rest
     {value, rest3} = parse_or(String.trim(rest2))
     {{key, value}, rest3}
+  end
+
+  defp parse_object_key("(" <> rest) do
+    {expr, rest2} = parse_pipe(rest)
+    rest2 = String.trim(rest2)
+    ")" <> rest3 = rest2
+    {expr, rest3}
+  end
+
+  defp parse_object_key("\"" <> _ = input), do: parse_string_literal(input)
+
+  defp parse_object_key(input) do
+    case parse_identifier(input) do
+      {"", _} -> throw({:parse_error, "expected object key"})
+      {name, rest} -> {{:literal, name}, rest}
+    end
   end
 
   defp parse_parenthesized(input) do
@@ -479,25 +465,26 @@ defmodule JustBash.Commands.Jq.Parser do
   defp parse_number_or_func(input) do
     case Float.parse(input) do
       {n, rest} ->
-        if rest == "" or is_number_terminator?(rest) do
-          n = if n == trunc(n), do: trunc(n), else: n
-          {{:literal, n}, rest}
-        else
-          parse_identifier_or_func(input)
-        end
+        parse_number_result(n, rest, input)
 
       :error ->
         parse_identifier_or_func(input)
     end
   end
 
-  defp is_number_terminator?(<<c, _::binary>>)
-       when c == ?\s or c == ?\t or c == ?\n or c == ?\r or
-              c == ?) or c == ?] or c == ?, or c == ?} or
-              c == ?| or c == ?;,
-       do: true
+  defp parse_number_result(n, rest, input) do
+    if rest == "" or number_terminator?(rest) do
+      n = if n == trunc(n), do: trunc(n), else: n
+      {{:literal, n}, rest}
+    else
+      parse_identifier_or_func(input)
+    end
+  end
 
-  defp is_number_terminator?(_), do: false
+  @number_terminators [?\s, ?\t, ?\n, ?\r, ?), ?], ?,, ?}, ?|, ?;]
+
+  defp number_terminator?(<<c, _::binary>>) when c in @number_terminators, do: true
+  defp number_terminator?(_), do: false
 
   defp parse_identifier_or_func(input) do
     case parse_identifier(input) do
@@ -542,18 +529,18 @@ defmodule JustBash.Commands.Jq.Parser do
     "then" <> rest3 = rest2
     {then_expr, rest4} = parse_pipe(String.trim(rest3))
     rest4 = String.trim(rest4)
+    parse_if_else(cond_expr, then_expr, rest4)
+  end
 
-    cond do
-      String.starts_with?(rest4, "else") ->
-        rest5 = String.slice(rest4, 4..-1//1)
-        {else_expr, rest6} = parse_pipe(String.trim(rest5))
-        rest6 = String.trim(rest6)
-        "end" <> rest7 = rest6
-        {{:if, cond_expr, then_expr, else_expr}, rest7}
+  defp parse_if_else(cond_expr, then_expr, "else" <> rest) do
+    {else_expr, rest2} = parse_pipe(String.trim(rest))
+    rest2 = String.trim(rest2)
+    "end" <> rest3 = rest2
+    {{:if, cond_expr, then_expr, else_expr}, rest3}
+  end
 
-      String.starts_with?(rest4, "end") ->
-        {{:if, cond_expr, then_expr, {:literal, nil}}, String.slice(rest4, 3..-1//1)}
-    end
+  defp parse_if_else(cond_expr, then_expr, "end" <> rest) do
+    {{:if, cond_expr, then_expr, {:literal, nil}}, rest}
   end
 
   defp parse_try_expr(rest) do

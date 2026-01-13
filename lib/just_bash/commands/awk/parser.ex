@@ -125,38 +125,54 @@ defmodule JustBash.Commands.Awk.Parser do
 
     cond do
       String.starts_with?(program, "{") ->
-        case extract_action(program) do
-          {:ok, action, rest} ->
-            [{nil, parse_action(action)} | parse_main_rules(rest)]
-
-          :error ->
-            []
-        end
+        parse_bare_action_rule(program)
 
       String.starts_with?(program, "/") ->
-        case parse_regex_rule(program) do
-          {:ok, pattern, action, rest} ->
-            action = if action == "", do: "print", else: action
-            [{{:regex, pattern}, parse_action(action)} | parse_main_rules(rest)]
-
-          :error ->
-            []
-        end
+        parse_main_regex_rule(program)
 
       true ->
-        case parse_pattern_rule(program) do
-          {:ok, pattern, action, rest} ->
-            [{parse_pattern(pattern), parse_action(action)} | parse_main_rules(rest)]
+        parse_main_pattern_rule(program)
+    end
+  end
 
-          :error ->
-            case extract_action_new(program) do
-              {:ok, action, rest} ->
-                [{nil, parse_action(action)} | parse_main_rules(rest)]
+  defp parse_bare_action_rule(program) do
+    case extract_action(program) do
+      {:ok, action, rest} ->
+        [{nil, parse_action(action)} | parse_main_rules(rest)]
 
-              :error ->
-                []
-            end
-        end
+      :error ->
+        []
+    end
+  end
+
+  defp parse_main_regex_rule(program) do
+    case parse_regex_rule(program) do
+      {:ok, pattern, action, rest} ->
+        action = if action == "", do: "print", else: action
+        [{{:regex, pattern}, parse_action(action)} | parse_main_rules(rest)]
+
+      :error ->
+        []
+    end
+  end
+
+  defp parse_main_pattern_rule(program) do
+    case parse_pattern_rule(program) do
+      {:ok, pattern, action, rest} ->
+        [{parse_pattern(pattern), parse_action(action)} | parse_main_rules(rest)]
+
+      :error ->
+        parse_main_fallback_rule(program)
+    end
+  end
+
+  defp parse_main_fallback_rule(program) do
+    case extract_action_new(program) do
+      {:ok, action, rest} ->
+        [{nil, parse_action(action)} | parse_main_rules(rest)]
+
+      :error ->
+        []
     end
   end
 
@@ -258,38 +274,58 @@ defmodule JustBash.Commands.Awk.Parser do
   defp parse_statement(stmt) do
     cond do
       String.starts_with?(stmt, "print ") or stmt == "print" ->
-        args = String.trim_leading(stmt, "print") |> String.trim()
-
-        if args == "" do
-          {:print, [{:field, 0}]}
-        else
-          {:print, parse_print_args(args)}
-        end
+        parse_print_statement(stmt)
 
       String.starts_with?(stmt, "printf ") ->
-        args = String.trim_leading(stmt, "printf") |> String.trim()
-        {:printf, parse_printf_args(args)}
+        parse_printf_statement(stmt)
 
       stmt =~ ~r/^\w+\s*=/ ->
-        case Regex.run(~r/^(\w+)\s*=\s*(.+)$/, stmt) do
-          [_, var, expr] -> {:assign, var, parse_expression(expr)}
-          nil -> nil
-        end
+        parse_assign_statement(stmt)
 
       stmt =~ ~r/^\w+\s*\+=/ ->
-        case Regex.run(~r/^(\w+)\s*\+=\s*(.+)$/, stmt) do
-          [_, var, expr] -> {:add_assign, var, parse_expression(expr)}
-          nil -> nil
-        end
+        parse_add_assign_statement(stmt)
 
       stmt =~ ~r/^\w+\+\+$/ ->
-        case Regex.run(~r/^(\w+)\+\+$/, stmt) do
-          [_, var] -> {:increment, var}
-          nil -> nil
-        end
+        parse_increment_statement(stmt)
 
       true ->
         nil
+    end
+  end
+
+  defp parse_print_statement(stmt) do
+    args = String.trim_leading(stmt, "print") |> String.trim()
+
+    if args == "" do
+      {:print, [{:field, 0}]}
+    else
+      {:print, parse_print_args(args)}
+    end
+  end
+
+  defp parse_printf_statement(stmt) do
+    args = String.trim_leading(stmt, "printf") |> String.trim()
+    {:printf, parse_printf_args(args)}
+  end
+
+  defp parse_assign_statement(stmt) do
+    case Regex.run(~r/^(\w+)\s*=\s*(.+)$/, stmt) do
+      [_, var, expr] -> {:assign, var, parse_expression(expr)}
+      nil -> nil
+    end
+  end
+
+  defp parse_add_assign_statement(stmt) do
+    case Regex.run(~r/^(\w+)\s*\+=\s*(.+)$/, stmt) do
+      [_, var, expr] -> {:add_assign, var, parse_expression(expr)}
+      nil -> nil
+    end
+  end
+
+  defp parse_increment_statement(stmt) do
+    case Regex.run(~r/^(\w+)\+\+$/, stmt) do
+      [_, var] -> {:increment, var}
+      nil -> nil
     end
   end
 
@@ -334,48 +370,63 @@ defmodule JustBash.Commands.Awk.Parser do
   @spec parse_expression(String.t()) :: expr()
   def parse_expression(expr) do
     expr = String.trim(expr)
+    dispatch_expression(expr)
+  end
 
+  defp dispatch_expression(""), do: {:literal, ""}
+
+  defp dispatch_expression(expr) do
     cond do
-      expr == "" ->
-        {:literal, ""}
+      quoted_string?(expr) -> parse_string_literal(expr)
+      String.starts_with?(expr, "$") -> parse_field_expression(expr)
+      number_pattern?(expr) -> parse_number_literal(expr)
+      word_pattern?(expr) -> {:variable, expr}
+      word_addition_pattern?(expr) -> parse_word_addition(expr)
+      field_addition_pattern?(expr) -> parse_field_addition(expr)
+      true -> {:literal, expr}
+    end
+  end
 
-      String.starts_with?(expr, "\"") and String.ends_with?(expr, "\"") ->
-        {:literal, String.slice(expr, 1..-2//1) |> unescape_string()}
+  defp quoted_string?(s), do: String.starts_with?(s, "\"") and String.ends_with?(s, "\"")
+  defp number_pattern?(s), do: s =~ ~r/^\d+(\.\d+)?$/
+  defp word_pattern?(s), do: s =~ ~r/^\w+$/
+  defp word_addition_pattern?(s), do: s =~ ~r/^\w+\s*\+\s*/
+  defp field_addition_pattern?(s), do: s =~ ~r/^\$\d+\s*\+\s*/
 
-      String.starts_with?(expr, "$") ->
-        field_str = String.slice(expr, 1..-1//1)
+  defp parse_string_literal(expr) do
+    {:literal, String.slice(expr, 1..-2//1) |> unescape_string()}
+  end
 
-        case Integer.parse(field_str) do
-          {n, ""} -> {:field, n}
-          _ -> {:field_var, field_str}
-        end
+  defp parse_field_expression(expr) do
+    field_str = String.slice(expr, 1..-1//1)
 
-      expr =~ ~r/^\d+(\.\d+)?$/ ->
-        {n, _} = Float.parse(expr)
-        {:number, n}
+    case Integer.parse(field_str) do
+      {n, ""} -> {:field, n}
+      _ -> {:field_var, field_str}
+    end
+  end
 
-      expr =~ ~r/^\w+$/ ->
-        {:variable, expr}
+  defp parse_number_literal(expr) do
+    {n, _} = Float.parse(expr)
+    {:number, n}
+  end
 
-      expr =~ ~r/^\w+\s*\+\s*/ ->
-        case Regex.run(~r/^(\w+|\$\d+)\s*\+\s*(.+)$/, expr) do
-          [_, left, right] ->
-            {:add, parse_expression(left), parse_expression(right)}
+  defp parse_word_addition(expr) do
+    case Regex.run(~r/^(\w+|\$\d+)\s*\+\s*(.+)$/, expr) do
+      [_, left, right] ->
+        {:add, parse_expression(left), parse_expression(right)}
 
-          nil ->
-            {:literal, expr}
-        end
+      nil ->
+        {:literal, expr}
+    end
+  end
 
-      expr =~ ~r/^\$\d+\s*\+\s*/ ->
-        case Regex.run(~r/^(\$\d+)\s*\+\s*(.+)$/, expr) do
-          [_, left, right] ->
-            {:add, parse_expression(left), parse_expression(right)}
+  defp parse_field_addition(expr) do
+    case Regex.run(~r/^(\$\d+)\s*\+\s*(.+)$/, expr) do
+      [_, left, right] ->
+        {:add, parse_expression(left), parse_expression(right)}
 
-          nil ->
-            {:literal, expr}
-        end
-
-      true ->
+      nil ->
         {:literal, expr}
     end
   end

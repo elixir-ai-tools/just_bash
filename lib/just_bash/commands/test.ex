@@ -26,84 +26,58 @@ defmodule JustBash.Commands.Test do
   defp evaluate(_bash, []), do: 1
 
   defp evaluate(_bash, [arg]) do
-    if arg != "", do: 0, else: 1
+    bool_to_exit(arg != "")
   end
 
   defp evaluate(bash, [op, arg]) do
-    case op do
-      "-z" -> if arg == "", do: 0, else: 1
-      "-n" -> if arg != "", do: 0, else: 1
-      "-e" -> if file_exists?(bash, arg), do: 0, else: 1
-      "-f" -> if file?(bash, arg), do: 0, else: 1
-      "-d" -> if directory?(bash, arg), do: 0, else: 1
-      "-r" -> if file_exists?(bash, arg), do: 0, else: 1
-      "-w" -> if file_exists?(bash, arg), do: 0, else: 1
-      "-x" -> if file_exists?(bash, arg), do: 0, else: 1
-      "-s" -> if file_has_size?(bash, arg), do: 0, else: 1
-      "-L" -> if symlink?(bash, arg), do: 0, else: 1
-      "-h" -> if symlink?(bash, arg), do: 0, else: 1
-      "!" -> if arg == "", do: 0, else: 1
-      _ -> 1
-    end
+    evaluate_unary(bash, op, arg)
   end
 
   defp evaluate(bash, [left, op, right]) do
-    case op do
-      "=" ->
-        if left == right, do: 0, else: 1
-
-      "==" ->
-        if left == right, do: 0, else: 1
-
-      "!=" ->
-        if left != right, do: 0, else: 1
-
-      "-eq" ->
-        numeric_compare(left, right, &==/2)
-
-      "-ne" ->
-        numeric_compare(left, right, &!=/2)
-
-      "-lt" ->
-        numeric_compare(left, right, &</2)
-
-      "-le" ->
-        numeric_compare(left, right, &<=/2)
-
-      "-gt" ->
-        numeric_compare(left, right, &>/2)
-
-      "-ge" ->
-        numeric_compare(left, right, &>=/2)
-
-      "<" ->
-        if left < right, do: 0, else: 1
-
-      ">" ->
-        if left > right, do: 0, else: 1
-
-      "-a" ->
-        if left != "" and right != "", do: 0, else: 1
-
-      "-o" ->
-        if left != "" or right != "", do: 0, else: 1
-
-      _ ->
-        if left == "!" do
-          result = evaluate(bash, [op, right])
-          if result == 0, do: 1, else: 0
-        else
-          1
-        end
-    end
+    evaluate_binary(bash, left, op, right)
   end
 
   defp evaluate(bash, ["!" | rest]) do
-    result = evaluate(bash, rest)
-    if result == 0, do: 1, else: 0
+    negate(evaluate(bash, rest))
   end
 
   defp evaluate(_bash, _args), do: 1
+
+  defp evaluate_unary(_bash, "-z", arg), do: bool_to_exit(arg == "")
+  defp evaluate_unary(_bash, "-n", arg), do: bool_to_exit(arg != "")
+  defp evaluate_unary(bash, "-e", arg), do: bool_to_exit(file_exists?(bash, arg))
+  defp evaluate_unary(bash, "-f", arg), do: bool_to_exit(file?(bash, arg))
+  defp evaluate_unary(bash, "-d", arg), do: bool_to_exit(directory?(bash, arg))
+  defp evaluate_unary(bash, "-r", arg), do: bool_to_exit(file_exists?(bash, arg))
+  defp evaluate_unary(bash, "-w", arg), do: bool_to_exit(file_exists?(bash, arg))
+  defp evaluate_unary(bash, "-x", arg), do: bool_to_exit(file_exists?(bash, arg))
+  defp evaluate_unary(bash, "-s", arg), do: bool_to_exit(file_has_size?(bash, arg))
+  defp evaluate_unary(bash, "-L", arg), do: bool_to_exit(symlink?(bash, arg))
+  defp evaluate_unary(bash, "-h", arg), do: bool_to_exit(symlink?(bash, arg))
+  defp evaluate_unary(_bash, "!", arg), do: bool_to_exit(arg == "")
+  defp evaluate_unary(_bash, _op, _arg), do: 1
+
+  defp evaluate_binary(_bash, left, "=", right), do: bool_to_exit(left == right)
+  defp evaluate_binary(_bash, left, "==", right), do: bool_to_exit(left == right)
+  defp evaluate_binary(_bash, left, "!=", right), do: bool_to_exit(left != right)
+  defp evaluate_binary(_bash, left, "-eq", right), do: numeric_compare(left, right, &==/2)
+  defp evaluate_binary(_bash, left, "-ne", right), do: numeric_compare(left, right, &!=/2)
+  defp evaluate_binary(_bash, left, "-lt", right), do: numeric_compare(left, right, &</2)
+  defp evaluate_binary(_bash, left, "-le", right), do: numeric_compare(left, right, &<=/2)
+  defp evaluate_binary(_bash, left, "-gt", right), do: numeric_compare(left, right, &>/2)
+  defp evaluate_binary(_bash, left, "-ge", right), do: numeric_compare(left, right, &>=/2)
+  defp evaluate_binary(_bash, left, "<", right), do: bool_to_exit(left < right)
+  defp evaluate_binary(_bash, left, ">", right), do: bool_to_exit(left > right)
+  defp evaluate_binary(_bash, left, "-a", right), do: bool_to_exit(left != "" and right != "")
+  defp evaluate_binary(_bash, left, "-o", right), do: bool_to_exit(left != "" or right != "")
+  defp evaluate_binary(bash, "!", op, right), do: negate(evaluate(bash, [op, right]))
+  defp evaluate_binary(_bash, _left, _op, _right), do: 1
+
+  defp bool_to_exit(true), do: 0
+  defp bool_to_exit(false), do: 1
+
+  defp negate(0), do: 1
+  defp negate(_), do: 0
 
   defp numeric_compare(left, right, compare_fn) do
     case {Integer.parse(left), Integer.parse(right)} do

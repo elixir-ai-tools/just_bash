@@ -84,13 +84,15 @@ defmodule JustBash.Commands.Awk.Evaluator do
     if rules == [] do
       state
     else
-      Enum.reduce(rules, state, fn {pattern, action}, s ->
-        if pattern_matches?(pattern, s) do
-          execute_statements(action, s)
-        else
-          s
-        end
-      end)
+      Enum.reduce(rules, state, &apply_rule/2)
+    end
+  end
+
+  defp apply_rule({pattern, action}, state) do
+    if pattern_matches?(pattern, state) do
+      execute_statements(action, state)
+    else
+      state
     end
   end
 
@@ -116,44 +118,67 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   defp evaluate_condition(condition, state) do
+    case evaluate_nr_condition(condition, state) do
+      nil -> evaluate_field_or_default(condition, state)
+      result -> result
+    end
+  end
+
+  defp evaluate_field_or_default(condition, state) do
+    case evaluate_field_condition(condition, state) do
+      nil -> true
+      result -> result
+    end
+  end
+
+  defp evaluate_nr_condition(condition, state) do
+    nr_patterns = [
+      {~r/^NR\s*==\s*(\d+)$/, &==/2},
+      {~r/^NR\s*>\s*(\d+)$/, &>/2},
+      {~r/^NR\s*<\s*(\d+)$/, &</2},
+      {~r/^NR\s*>=\s*(\d+)$/, &>=/2},
+      {~r/^NR\s*<=\s*(\d+)$/, &<=/2}
+    ]
+
+    Enum.find_value(nr_patterns, fn {pattern, op} ->
+      case Regex.run(pattern, condition) do
+        [_, n] -> {:matched, op.(state.nr, String.to_integer(n))}
+        nil -> nil
+      end
+    end)
+    |> case do
+      {:matched, result} -> result
+      nil -> nil
+    end
+  end
+
+  defp evaluate_field_condition(condition, state) do
     cond do
-      condition =~ ~r/^NR\s*==\s*(\d+)$/ ->
-        [_, n] = Regex.run(~r/^NR\s*==\s*(\d+)$/, condition)
-        state.nr == String.to_integer(n)
-
-      condition =~ ~r/^NR\s*>\s*(\d+)$/ ->
-        [_, n] = Regex.run(~r/^NR\s*>\s*(\d+)$/, condition)
-        state.nr > String.to_integer(n)
-
-      condition =~ ~r/^NR\s*<\s*(\d+)$/ ->
-        [_, n] = Regex.run(~r/^NR\s*<\s*(\d+)$/, condition)
-        state.nr < String.to_integer(n)
-
-      condition =~ ~r/^NR\s*>=\s*(\d+)$/ ->
-        [_, n] = Regex.run(~r/^NR\s*>=\s*(\d+)$/, condition)
-        state.nr >= String.to_integer(n)
-
-      condition =~ ~r/^NR\s*<=\s*(\d+)$/ ->
-        [_, n] = Regex.run(~r/^NR\s*<=\s*(\d+)$/, condition)
-        state.nr <= String.to_integer(n)
-
       condition =~ ~r/^\$(\d+)\s*==\s*"([^"]*)"$/ ->
-        [_, field_str, value] = Regex.run(~r/^\$(\d+)\s*==\s*"([^"]*)"$/, condition)
-        field = String.to_integer(field_str)
-        get_field(state, field) == value
+        evaluate_field_equality(condition, state)
 
       condition =~ ~r/^\$(\d+)\s*~\s*\/([^\/]*)\/\s*$/ ->
-        [_, field_str, pattern] = Regex.run(~r/^\$(\d+)\s*~\s*\/([^\/]*)\/\s*$/, condition)
-        field = String.to_integer(field_str)
-        field_value = get_field(state, field)
-
-        case Regex.compile(pattern) do
-          {:ok, regex} -> Regex.match?(regex, field_value)
-          {:error, _} -> false
-        end
+        evaluate_field_regex(condition, state)
 
       true ->
-        true
+        nil
+    end
+  end
+
+  defp evaluate_field_equality(condition, state) do
+    [_, field_str, value] = Regex.run(~r/^\$(\d+)\s*==\s*"([^"]*)"$/, condition)
+    field = String.to_integer(field_str)
+    get_field(state, field) == value
+  end
+
+  defp evaluate_field_regex(condition, state) do
+    [_, field_str, pattern] = Regex.run(~r/^\$(\d+)\s*~\s*\/([^\/]*)\/\s*$/, condition)
+    field = String.to_integer(field_str)
+    field_value = get_field(state, field)
+
+    case Regex.compile(pattern) do
+      {:ok, regex} -> Regex.match?(regex, field_value)
+      {:error, _} -> false
     end
   end
 

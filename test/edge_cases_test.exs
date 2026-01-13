@@ -127,14 +127,14 @@ defmodule JustBash.EdgeCasesTest do
 
   describe "very long lines" do
     test "cat handles long line" do
-      long_line = String.duplicate("a", 10000)
+      long_line = String.duplicate("a", 10_000)
       bash = JustBash.new(files: %{"/long.txt" => long_line})
       {result, _} = JustBash.exec(bash, "cat /long.txt")
       assert result.stdout == long_line
     end
 
     test "grep handles long line" do
-      long_line = String.duplicate("a", 10000) <> "needle" <> String.duplicate("b", 10000)
+      long_line = String.duplicate("a", 10_000) <> "needle" <> String.duplicate("b", 10_000)
       bash = JustBash.new(files: %{"/long.txt" => long_line <> "\n"})
       {result, _} = JustBash.exec(bash, "grep needle /long.txt")
       assert result.stdout == long_line <> "\n"

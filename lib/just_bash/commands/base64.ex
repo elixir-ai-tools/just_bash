@@ -15,35 +15,33 @@ defmodule JustBash.Commands.Base64 do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        content =
-          if opts.files == [] or opts.files == ["-"] do
-            stdin
-          else
-            case read_files(bash, opts.files) do
-              {:ok, data} -> data
-              {:error, msg} -> {:error, msg}
-            end
-          end
-
-        case content do
-          {:error, msg} ->
-            {Command.error(msg), bash}
-
-          data ->
-            result =
-              if opts.decode do
-                decode_base64(data)
-              else
-                encode_base64(data, opts.wrap)
-              end
-
-            case result do
-              {:ok, output} -> {Command.ok(output), bash}
-              {:error, msg} -> {Command.error(msg), bash}
-            end
-        end
+        opts
+        |> get_content(bash, stdin)
+        |> process_content(opts)
+        |> build_result(bash)
     end
   end
+
+  defp get_content(opts, bash, stdin) do
+    if opts.files == [] or opts.files == ["-"] do
+      {:ok, stdin}
+    else
+      read_files(bash, opts.files)
+    end
+  end
+
+  defp process_content({:error, msg}, _opts), do: {:error, msg}
+
+  defp process_content({:ok, data}, opts) do
+    if opts.decode do
+      decode_base64(data)
+    else
+      encode_base64(data, opts.wrap)
+    end
+  end
+
+  defp build_result({:ok, output}, bash), do: {Command.ok(output), bash}
+  defp build_result({:error, msg}, bash), do: {Command.error(msg), bash}
 
   defp parse_args(args) do
     parse_args(args, %{decode: false, wrap: 76, files: []})
@@ -83,35 +81,39 @@ defmodule JustBash.Commands.Base64 do
 
   defp read_files(bash, files) do
     Enum.reduce_while(files, {:ok, ""}, fn file, {:ok, acc} ->
-      if file == "-" do
-        {:cont, {:ok, acc}}
-      else
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
-
-        case InMemoryFs.read_file(bash.fs, resolved) do
-          {:ok, data} -> {:cont, {:ok, acc <> data}}
-          {:error, _} -> {:halt, {:error, "base64: #{file}: No such file or directory\n"}}
-        end
-      end
+      read_single_file(bash, file, acc)
     end)
+  end
+
+  defp read_single_file(_bash, "-", acc), do: {:cont, {:ok, acc}}
+
+  defp read_single_file(bash, file, acc) do
+    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+
+    case InMemoryFs.read_file(bash.fs, resolved) do
+      {:ok, data} -> {:cont, {:ok, acc <> data}}
+      {:error, _} -> {:halt, {:error, "base64: #{file}: No such file or directory\n"}}
+    end
   end
 
   defp encode_base64(data, wrap) do
     encoded = Base.encode64(data)
-
-    output =
-      if wrap > 0 do
-        encoded
-        |> String.graphemes()
-        |> Enum.chunk_every(wrap)
-        |> Enum.map_join("\n", &Enum.join/1)
-        |> then(fn s -> if s == "", do: "", else: s <> "\n" end)
-      else
-        encoded
-      end
-
+    output = wrap_encoded(encoded, wrap)
     {:ok, output}
   end
+
+  defp wrap_encoded(encoded, 0), do: encoded
+
+  defp wrap_encoded(encoded, wrap) do
+    encoded
+    |> String.graphemes()
+    |> Enum.chunk_every(wrap)
+    |> Enum.map_join("\n", &Enum.join/1)
+    |> add_trailing_newline()
+  end
+
+  defp add_trailing_newline(""), do: ""
+  defp add_trailing_newline(s), do: s <> "\n"
 
   defp decode_base64(data) do
     cleaned = String.replace(data, ~r/\s/, "")

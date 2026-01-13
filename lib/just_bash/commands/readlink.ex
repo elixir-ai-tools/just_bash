@@ -15,24 +15,32 @@ defmodule JustBash.Commands.Readlink do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        if opts.files == [] do
-          {Command.error("readlink: missing operand\n"), bash}
-        else
-          {output, any_error} =
-            Enum.reduce(opts.files, {"", false}, fn file, {acc_out, acc_err} ->
-              resolved = InMemoryFs.resolve_path(bash.cwd, file)
-              result = process_file(bash.fs, resolved, file, opts.canonicalize)
-
-              case result do
-                {:ok, path} -> {acc_out <> path <> "\n", acc_err}
-                {:error, _} -> {acc_out, true}
-              end
-            end)
-
-          exit_code = if any_error, do: 1, else: 0
-          {%{stdout: output, stderr: "", exit_code: exit_code}, bash}
-        end
+        execute_readlink(bash, opts)
     end
+  end
+
+  defp execute_readlink(bash, %{files: []}) do
+    {Command.error("readlink: missing operand\n"), bash}
+  end
+
+  defp execute_readlink(bash, opts) do
+    {output, any_error} =
+      Enum.reduce(opts.files, {"", false}, fn file, acc ->
+        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+        result = process_file(bash.fs, resolved, file, opts.canonicalize)
+        accumulate_readlink_result(result, acc)
+      end)
+
+    exit_code = if any_error, do: 1, else: 0
+    {%{stdout: output, stderr: "", exit_code: exit_code}, bash}
+  end
+
+  defp accumulate_readlink_result({:ok, path}, {acc_out, acc_err}) do
+    {acc_out <> path <> "\n", acc_err}
+  end
+
+  defp accumulate_readlink_result({:error, _}, {acc_out, _acc_err}) do
+    {acc_out, true}
   end
 
   defp parse_args(args) do
@@ -76,21 +84,25 @@ defmodule JustBash.Commands.Readlink do
     if MapSet.member?(seen, path) do
       {:ok, path}
     else
-      case InMemoryFs.readlink(fs, path) do
-        {:ok, target} ->
-          new_path =
-            if String.starts_with?(target, "/") do
-              target
-            else
-              dir = Path.dirname(path)
-              InMemoryFs.resolve_path(dir, target)
-            end
-
-          resolve_path(fs, new_path, MapSet.put(seen, path))
-
-        {:error, _} ->
-          {:ok, path}
-      end
+      resolve_path_uncached(fs, path, seen)
     end
+  end
+
+  defp resolve_path_uncached(fs, path, seen) do
+    case InMemoryFs.readlink(fs, path) do
+      {:ok, target} ->
+        new_path = resolve_target(path, target)
+        resolve_path(fs, new_path, MapSet.put(seen, path))
+
+      {:error, _} ->
+        {:ok, path}
+    end
+  end
+
+  defp resolve_target(_path, "/" <> _ = target), do: target
+
+  defp resolve_target(path, target) do
+    dir = Path.dirname(path)
+    InMemoryFs.resolve_path(dir, target)
   end
 end

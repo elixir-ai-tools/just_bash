@@ -26,28 +26,44 @@ defmodule JustBash.Commands.Sed do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        if Map.has_key?(opts, :help) do
-          {Command.ok(opts.help), bash}
-        else
-          case Parser.parse(opts.scripts, opts.extended_regex) do
-            {:error, msg} ->
-              {Command.error("sed: #{msg}\n"), bash}
+        execute_with_opts(bash, opts, stdin)
+    end
+  end
 
-            {:ok, commands} ->
-              if opts.files == [] do
-                output = Executor.execute(stdin, commands, opts.silent)
-                {Command.ok(output), bash}
-              else
-                case read_and_process_files(bash, opts.files, commands, opts) do
-                  {:ok, output, new_bash} ->
-                    {Command.ok(output), new_bash}
+  defp execute_with_opts(bash, opts, stdin) do
+    if Map.has_key?(opts, :help) do
+      {Command.ok(opts.help), bash}
+    else
+      execute_scripts(bash, opts, stdin)
+    end
+  end
 
-                  {:error, msg} ->
-                    {Command.error(msg), bash}
-                end
-              end
-          end
-        end
+  defp execute_scripts(bash, opts, stdin) do
+    case Parser.parse(opts.scripts, opts.extended_regex) do
+      {:error, msg} ->
+        {Command.error("sed: #{msg}\n"), bash}
+
+      {:ok, commands} ->
+        execute_commands(bash, commands, opts, stdin)
+    end
+  end
+
+  defp execute_commands(bash, commands, opts, stdin) do
+    if opts.files == [] do
+      output = Executor.execute(stdin, commands, opts.silent)
+      {Command.ok(output), bash}
+    else
+      execute_on_files(bash, commands, opts)
+    end
+  end
+
+  defp execute_on_files(bash, commands, opts) do
+    case read_and_process_files(bash, opts.files, commands, opts) do
+      {:ok, output, new_bash} ->
+        {Command.ok(output), new_bash}
+
+      {:error, msg} ->
+        {Command.error(msg), bash}
     end
   end
 
@@ -114,20 +130,10 @@ defmodule JustBash.Commands.Sed do
 
   defp parse_args(["-" <> flags | rest], opts) when byte_size(flags) > 0 do
     chars = String.graphemes(flags)
-
     valid_flags = ["n", "i", "E", "r"]
 
     if Enum.all?(chars, &(&1 in valid_flags)) do
-      new_opts =
-        Enum.reduce(chars, opts, fn char, acc ->
-          case char do
-            "n" -> %{acc | silent: true}
-            "i" -> %{acc | in_place: true}
-            "E" -> %{acc | extended_regex: true}
-            "r" -> %{acc | extended_regex: true}
-          end
-        end)
-
+      new_opts = apply_combined_flags(chars, opts)
       parse_args(rest, new_opts)
     else
       unknown = Enum.find(chars, &(&1 not in valid_flags))
@@ -142,6 +148,15 @@ defmodule JustBash.Commands.Sed do
       parse_args(rest, %{opts | files: opts.files ++ [arg]})
     end
   end
+
+  defp apply_combined_flags(chars, opts) do
+    Enum.reduce(chars, opts, &apply_single_flag/2)
+  end
+
+  defp apply_single_flag("n", acc), do: %{acc | silent: true}
+  defp apply_single_flag("i", acc), do: %{acc | in_place: true}
+  defp apply_single_flag("E", acc), do: %{acc | extended_regex: true}
+  defp apply_single_flag("r", acc), do: %{acc | extended_regex: true}
 
   defp read_and_process_files(bash, files, commands, opts) do
     if opts.in_place do
@@ -175,28 +190,36 @@ defmodule JustBash.Commands.Sed do
   defp process_files_in_place(bash, files, commands, opts) do
     result =
       Enum.reduce_while(files, {:ok, bash}, fn file, {:ok, b} ->
-        resolved = InMemoryFs.resolve_path(b.cwd, file)
-
-        case InMemoryFs.read_file(b.fs, resolved) do
-          {:ok, content} ->
-            output = Executor.execute(content, commands, opts.silent)
-
-            case InMemoryFs.write_file(b.fs, resolved, output) do
-              {:ok, new_fs} ->
-                {:cont, {:ok, %{b | fs: new_fs}}}
-
-              {:error, _} ->
-                {:halt, {:error, "sed: #{file}: cannot write\n"}}
-            end
-
-          {:error, _} ->
-            {:halt, {:error, "sed: #{file}: No such file or directory\n"}}
-        end
+        process_single_file_in_place(b, file, commands, opts)
       end)
 
     case result do
       {:ok, new_bash} -> {:ok, "", new_bash}
       {:error, msg} -> {:error, msg}
+    end
+  end
+
+  defp process_single_file_in_place(bash, file, commands, opts) do
+    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+
+    case InMemoryFs.read_file(bash.fs, resolved) do
+      {:ok, content} ->
+        write_processed_content(bash, resolved, file, content, commands, opts)
+
+      {:error, _} ->
+        {:halt, {:error, "sed: #{file}: No such file or directory\n"}}
+    end
+  end
+
+  defp write_processed_content(bash, resolved, file, content, commands, opts) do
+    output = Executor.execute(content, commands, opts.silent)
+
+    case InMemoryFs.write_file(bash.fs, resolved, output) do
+      {:ok, new_fs} ->
+        {:cont, {:ok, %{bash | fs: new_fs}}}
+
+      {:error, _} ->
+        {:halt, {:error, "sed: #{file}: cannot write\n"}}
     end
   end
 end

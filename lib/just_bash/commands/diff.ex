@@ -156,19 +156,19 @@ defmodule JustBash.Commands.Diff do
     dp =
       Enum.reduce(1..m, dp, fn i, dp_acc ->
         Enum.reduce(1..n, dp_acc, fn j, dp_inner ->
-          if Enum.at(list1, i - 1) == Enum.at(list2, j - 1) do
-            Map.put(dp_inner, {i, j}, Map.get(dp_inner, {i - 1, j - 1}) + 1)
-          else
-            Map.put(
-              dp_inner,
-              {i, j},
-              max(Map.get(dp_inner, {i - 1, j}), Map.get(dp_inner, {i, j - 1}))
-            )
-          end
+          update_dp_cell(dp_inner, list1, list2, i, j)
         end)
       end)
 
     backtrack_lcs(dp, list1, list2, m, n, [])
+  end
+
+  defp update_dp_cell(dp, list1, list2, i, j) do
+    if Enum.at(list1, i - 1) == Enum.at(list2, j - 1) do
+      Map.put(dp, {i, j}, Map.get(dp, {i - 1, j - 1}) + 1)
+    else
+      Map.put(dp, {i, j}, max(Map.get(dp, {i - 1, j}), Map.get(dp, {i, j - 1})))
+    end
   end
 
   defp backtrack_lcs(_dp, _list1, _list2, 0, _j, acc), do: acc
@@ -208,34 +208,29 @@ defmodule JustBash.Commands.Diff do
     removed ++ added
   end
 
+  defp format_hunks([], _lines1, _lines2), do: []
+
   defp format_hunks(changes, lines1, lines2) do
-    if changes == [] do
-      []
-    else
-      start1 = 1
-      start2 = 1
-      count1 = length(lines1)
-      count2 = length(lines2)
+    count1 = length(lines1)
+    count2 = length(lines2)
+    hunk_header = "@@ -1,#{count1} +1,#{count2} @@\n"
 
-      hunk_header = "@@ -#{start1},#{count1} +#{start2},#{count2} @@\n"
+    removed_indices = MapSet.new(for {:remove, i, _} <- changes, do: i)
+    lines = format_original_lines(lines1, removed_indices)
 
-      removed_indices = MapSet.new(for {:remove, i, _} <- changes, do: i)
-      _added_indices = MapSet.new(for {:add, j, _} <- changes, do: j)
+    added_lines =
+      for {:add, _, line} <- Enum.sort_by(changes, fn {_, idx, _} -> idx end),
+          do: "+#{line}\n"
 
-      lines =
-        Enum.map(Enum.with_index(lines1), fn {line, i} ->
-          if MapSet.member?(removed_indices, i) do
-            "-#{line}\n"
-          else
-            " #{line}\n"
-          end
-        end)
-
-      added_lines =
-        for {:add, _, line} <- Enum.sort_by(changes, fn {_, idx, _} -> idx end),
-            do: "+#{line}\n"
-
-      [hunk_header | lines ++ added_lines]
-    end
+    [hunk_header | lines ++ added_lines]
   end
+
+  defp format_original_lines(lines1, removed_indices) do
+    Enum.map(Enum.with_index(lines1), fn {line, i} ->
+      format_line_with_prefix(line, MapSet.member?(removed_indices, i))
+    end)
+  end
+
+  defp format_line_with_prefix(line, true), do: "-#{line}\n"
+  defp format_line_with_prefix(line, false), do: " #{line}\n"
 end

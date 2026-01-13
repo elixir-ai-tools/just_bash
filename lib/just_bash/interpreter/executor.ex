@@ -261,34 +261,7 @@ defmodule JustBash.Interpreter.Executor do
   defp evaluate_conditional(bash, %AST.CondUnary{operator: op, operand: word}) do
     path = Expansion.expand_word_parts(bash, word.parts)
     resolved = JustBash.Fs.InMemoryFs.resolve_path(bash.cwd, path)
-
-    case op do
-      :"-e" -> file_exists?(bash, resolved)
-      :"-a" -> file_exists?(bash, resolved)
-      :"-f" -> regular_file?(bash, resolved)
-      :"-d" -> directory?(bash, resolved)
-      :"-r" -> file_exists?(bash, resolved)
-      :"-w" -> file_exists?(bash, resolved)
-      :"-x" -> file_exists?(bash, resolved)
-      :"-s" -> file_size_gt_zero?(bash, resolved)
-      :"-z" -> path == ""
-      :"-n" -> path != ""
-      :"-L" -> is_symlink?(bash, resolved)
-      :"-h" -> is_symlink?(bash, resolved)
-      :"-b" -> false
-      :"-c" -> false
-      :"-p" -> false
-      :"-S" -> false
-      :"-t" -> false
-      :"-g" -> false
-      :"-u" -> false
-      :"-k" -> false
-      :"-O" -> file_exists?(bash, resolved)
-      :"-G" -> file_exists?(bash, resolved)
-      :"-N" -> file_exists?(bash, resolved)
-      :"-v" -> Map.has_key?(bash.env, path)
-      _ -> false
-    end
+    evaluate_unary_conditional(bash, op, path, resolved)
   end
 
   defp evaluate_conditional(bash, %AST.CondBinary{
@@ -298,26 +271,109 @@ defmodule JustBash.Interpreter.Executor do
        }) do
     left = Expansion.expand_word_parts(bash, left_word.parts)
     right = Expansion.expand_word_parts(bash, right_word.parts)
+    evaluate_binary_conditional(bash, op, left, right)
+  end
 
-    case op do
-      :"-eq" -> parse_int(left) == parse_int(right)
-      :"-ne" -> parse_int(left) != parse_int(right)
-      :"-lt" -> parse_int(left) < parse_int(right)
-      :"-le" -> parse_int(left) <= parse_int(right)
-      :"-gt" -> parse_int(left) > parse_int(right)
-      :"-ge" -> parse_int(left) >= parse_int(right)
-      :"-nt" -> file_newer?(bash, left, right)
-      :"-ot" -> file_newer?(bash, right, left)
-      :"-ef" -> same_file?(bash, left, right)
-      := -> left == right
-      :== -> pattern_match?(left, right)
-      :!= -> not pattern_match?(left, right)
-      :=~ -> regex_match?(left, right)
-      :< -> left < right
-      :> -> left > right
-      _ -> false
+  defp evaluate_unary_conditional(bash, op, path, resolved) do
+    evaluate_unary_by_type(unary_op_type(op), bash, path, resolved)
+  end
+
+  defp evaluate_unary_by_type(:file_exists, bash, _path, resolved),
+    do: file_exists?(bash, resolved)
+
+  defp evaluate_unary_by_type(:regular_file, bash, _path, resolved),
+    do: regular_file?(bash, resolved)
+
+  defp evaluate_unary_by_type(:directory, bash, _path, resolved),
+    do: directory?(bash, resolved)
+
+  defp evaluate_unary_by_type(:file_size, bash, _path, resolved),
+    do: file_size_gt_zero?(bash, resolved)
+
+  defp evaluate_unary_by_type(:string_empty, _bash, path, _resolved),
+    do: path == ""
+
+  defp evaluate_unary_by_type(:string_non_empty, _bash, path, _resolved),
+    do: path != ""
+
+  defp evaluate_unary_by_type(:symlink, bash, _path, resolved),
+    do: symlink?(bash, resolved)
+
+  defp evaluate_unary_by_type(:always_false, _bash, _path, _resolved),
+    do: false
+
+  defp evaluate_unary_by_type(:var_set, bash, path, _resolved),
+    do: Map.has_key?(bash.env, path)
+
+  defp unary_op_type(:"-e"), do: :file_exists
+  defp unary_op_type(:"-a"), do: :file_exists
+  defp unary_op_type(:"-f"), do: :regular_file
+  defp unary_op_type(:"-d"), do: :directory
+  defp unary_op_type(:"-r"), do: :file_exists
+  defp unary_op_type(:"-w"), do: :file_exists
+  defp unary_op_type(:"-x"), do: :file_exists
+  defp unary_op_type(:"-s"), do: :file_size
+  defp unary_op_type(:"-z"), do: :string_empty
+  defp unary_op_type(:"-n"), do: :string_non_empty
+  defp unary_op_type(:"-L"), do: :symlink
+  defp unary_op_type(:"-h"), do: :symlink
+  defp unary_op_type(:"-O"), do: :file_exists
+  defp unary_op_type(:"-G"), do: :file_exists
+  defp unary_op_type(:"-N"), do: :file_exists
+  defp unary_op_type(:"-v"), do: :var_set
+  defp unary_op_type(:"-b"), do: :always_false
+  defp unary_op_type(:"-c"), do: :always_false
+  defp unary_op_type(:"-p"), do: :always_false
+  defp unary_op_type(:"-S"), do: :always_false
+  defp unary_op_type(:"-t"), do: :always_false
+  defp unary_op_type(:"-g"), do: :always_false
+  defp unary_op_type(:"-u"), do: :always_false
+  defp unary_op_type(:"-k"), do: :always_false
+  defp unary_op_type(_), do: :always_false
+
+  defp evaluate_binary_conditional(bash, op, left, right) do
+    case binary_op_type(op) do
+      :integer_comparison -> evaluate_integer_comparison(op, left, right)
+      :file_comparison -> evaluate_file_comparison(bash, op, left, right)
+      :string_comparison -> evaluate_string_comparison(op, left, right)
     end
   end
+
+  defp binary_op_type(op) when op in [:"-eq", :"-ne", :"-lt", :"-le", :"-gt", :"-ge"],
+    do: :integer_comparison
+
+  defp binary_op_type(op) when op in [:"-nt", :"-ot", :"-ef"], do: :file_comparison
+  defp binary_op_type(_), do: :string_comparison
+
+  defp evaluate_integer_comparison(:"-eq", left, right),
+    do: parse_int(left) == parse_int(right)
+
+  defp evaluate_integer_comparison(:"-ne", left, right),
+    do: parse_int(left) != parse_int(right)
+
+  defp evaluate_integer_comparison(:"-lt", left, right),
+    do: parse_int(left) < parse_int(right)
+
+  defp evaluate_integer_comparison(:"-le", left, right),
+    do: parse_int(left) <= parse_int(right)
+
+  defp evaluate_integer_comparison(:"-gt", left, right),
+    do: parse_int(left) > parse_int(right)
+
+  defp evaluate_integer_comparison(:"-ge", left, right),
+    do: parse_int(left) >= parse_int(right)
+
+  defp evaluate_file_comparison(bash, :"-nt", left, right), do: file_newer?(bash, left, right)
+  defp evaluate_file_comparison(bash, :"-ot", left, right), do: file_newer?(bash, right, left)
+  defp evaluate_file_comparison(bash, :"-ef", left, right), do: same_file?(bash, left, right)
+
+  defp evaluate_string_comparison(:=, left, right), do: left == right
+  defp evaluate_string_comparison(:==, left, right), do: pattern_match?(left, right)
+  defp evaluate_string_comparison(:!=, left, right), do: not pattern_match?(left, right)
+  defp evaluate_string_comparison(:=~, left, right), do: regex_match?(left, right)
+  defp evaluate_string_comparison(:<, left, right), do: left < right
+  defp evaluate_string_comparison(:>, left, right), do: left > right
+  defp evaluate_string_comparison(_, _left, _right), do: false
 
   defp parse_int(s) do
     case Integer.parse(s) do
@@ -374,7 +430,7 @@ defmodule JustBash.Interpreter.Executor do
     end
   end
 
-  defp is_symlink?(bash, path) do
+  defp symlink?(bash, path) do
     case JustBash.Fs.InMemoryFs.lstat(bash.fs, path) do
       {:ok, stat} -> stat.is_symlink
       {:error, _} -> false
@@ -594,26 +650,23 @@ defmodule JustBash.Interpreter.Executor do
         match?(%AST.Redirection{operator: op} when op in [:"<<", :"<<-"], redir)
       end)
 
-    heredoc_content =
-      case heredocs do
-        [%AST.Redirection{target: %AST.HereDoc{content: content, quoted: quoted}} | _] ->
-          if content do
-            raw = Expansion.expand_word_parts(bash, content.parts)
-
-            if quoted do
-              raw
-            else
-              raw
-            end
-          else
-            ""
-          end
-
-        _ ->
-          nil
-      end
-
+    heredoc_content = extract_heredoc_content(bash, heredocs)
     {heredoc_content, others}
+  end
+
+  defp extract_heredoc_content(bash, [
+         %AST.Redirection{target: %AST.HereDoc{content: content}} | _
+       ])
+       when not is_nil(content) do
+    Expansion.expand_word_parts(bash, content.parts)
+  end
+
+  defp extract_heredoc_content(_bash, [%AST.Redirection{target: %AST.HereDoc{}} | _]) do
+    ""
+  end
+
+  defp extract_heredoc_content(_bash, _heredocs) do
+    nil
   end
 
   defp apply_redirections(result, bash, []) do
@@ -632,39 +685,55 @@ defmodule JustBash.Interpreter.Executor do
        }) do
     target_path = Expansion.expand_redirect_target(bash, target)
     resolved = InMemoryFs.resolve_path(bash.cwd, target_path)
+    redir_type = classify_redirection(fd, operator, target_path)
+    apply_classified_redirection(redir_type, result, bash, resolved)
+  end
 
-    cond do
-      target_path == "/dev/null" ->
-        case fd do
-          2 -> {%{result | stderr: ""}, bash}
-          _ -> {%{result | stdout: ""}, bash}
-        end
+  defp classify_redirection(_fd, _operator, "/dev/null"), do: :dev_null
+  defp classify_redirection(2, :>, _target), do: :stderr_write
+  defp classify_redirection(2, :">>", _target), do: :stderr_append
+  defp classify_redirection(_fd, :>, _target), do: :stdout_write
+  defp classify_redirection(_fd, :">>", _target), do: :stdout_append
+  defp classify_redirection(1, :">&", "2"), do: :stdout_to_stderr
+  defp classify_redirection(2, :">&", "1"), do: :stderr_to_stdout
+  defp classify_redirection(_fd, :"&>", _target), do: :combined_write
+  defp classify_redirection(_fd, _operator, _target), do: :noop
 
-      fd == 2 and operator == :> ->
-        write_to_file(bash, resolved, result.stderr, result, :stderr)
+  defp apply_classified_redirection(:dev_null, result, bash, _resolved) do
+    {%{result | stdout: ""}, bash}
+  end
 
-      fd == 2 and operator == :">>" ->
-        append_to_file(bash, resolved, result.stderr, result, :stderr)
+  defp apply_classified_redirection(:stderr_write, result, bash, resolved) do
+    write_to_file(bash, resolved, result.stderr, result, :stderr)
+  end
 
-      operator == :> ->
-        write_to_file(bash, resolved, result.stdout, result, :stdout)
+  defp apply_classified_redirection(:stderr_append, result, bash, resolved) do
+    append_to_file(bash, resolved, result.stderr, result, :stderr)
+  end
 
-      operator == :">>" ->
-        append_to_file(bash, resolved, result.stdout, result, :stdout)
+  defp apply_classified_redirection(:stdout_write, result, bash, resolved) do
+    write_to_file(bash, resolved, result.stdout, result, :stdout)
+  end
 
-      fd == 1 and operator == :">&" and target_path == "2" ->
-        {%{result | stderr: result.stderr <> result.stdout, stdout: ""}, bash}
+  defp apply_classified_redirection(:stdout_append, result, bash, resolved) do
+    append_to_file(bash, resolved, result.stdout, result, :stdout)
+  end
 
-      fd == 2 and operator == :">&" and target_path == "1" ->
-        {%{result | stdout: result.stdout <> result.stderr, stderr: ""}, bash}
+  defp apply_classified_redirection(:stdout_to_stderr, result, bash, _resolved) do
+    {%{result | stderr: result.stderr <> result.stdout, stdout: ""}, bash}
+  end
 
-      operator == :"&>" ->
-        combined = result.stdout <> result.stderr
-        write_combined_to_file(bash, resolved, combined, result)
+  defp apply_classified_redirection(:stderr_to_stdout, result, bash, _resolved) do
+    {%{result | stdout: result.stdout <> result.stderr, stderr: ""}, bash}
+  end
 
-      true ->
-        {result, bash}
-    end
+  defp apply_classified_redirection(:combined_write, result, bash, resolved) do
+    combined = result.stdout <> result.stderr
+    write_combined_to_file(bash, resolved, combined, result)
+  end
+
+  defp apply_classified_redirection(:noop, result, bash, _resolved) do
+    {result, bash}
   end
 
   defp write_to_file(bash, path, content, result, stream) do

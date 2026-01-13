@@ -15,25 +15,29 @@ defmodule JustBash.Commands.Expand do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        content =
-          if opts.files == [] do
-            stdin
-          else
-            case read_files(bash, opts.files) do
-              {:ok, data} -> data
-              {:error, msg} -> {:error, msg}
-            end
-          end
-
-        case content do
-          {:error, msg} ->
-            {Command.error(msg), bash}
-
-          data ->
-            output = process_content(data, opts)
-            {Command.ok(output), bash}
-        end
+        execute_with_opts(bash, opts, stdin)
     end
+  end
+
+  defp execute_with_opts(bash, opts, stdin) do
+    content = get_content(bash, opts, stdin)
+    process_and_return(bash, content, opts)
+  end
+
+  defp get_content(_bash, %{files: []}, stdin), do: stdin
+
+  defp get_content(bash, %{files: files}, _stdin) do
+    case read_files(bash, files) do
+      {:ok, data} -> data
+      {:error, msg} -> {:error, msg}
+    end
+  end
+
+  defp process_and_return(bash, {:error, msg}, _opts), do: {Command.error(msg), bash}
+
+  defp process_and_return(bash, data, opts) do
+    output = process_content(data, opts)
+    {Command.ok(output), bash}
   end
 
   defp parse_args(args) do

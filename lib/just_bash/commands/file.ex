@@ -18,30 +18,38 @@ defmodule JustBash.Commands.File do
         if opts.files == [] do
           {Command.error("Usage: file [-bLi] FILE...\n"), bash}
         else
-          {output, exit_code} =
-            Enum.reduce(opts.files, {"", 0}, fn file, {acc_out, acc_code} ->
-              resolved = InMemoryFs.resolve_path(bash.cwd, file)
-
-              case detect_type(bash.fs, resolved, file) do
-                {:ok, type_info} ->
-                  result = if opts.mime, do: type_info.mime, else: type_info.description
-                  line = if opts.brief, do: "#{result}\n", else: "#{file}: #{result}\n"
-                  {acc_out <> line, acc_code}
-
-                {:error, _} ->
-                  line =
-                    if opts.brief do
-                      "cannot open\n"
-                    else
-                      "#{file}: cannot open (No such file or directory)\n"
-                    end
-
-                  {acc_out <> line, 1}
-              end
-            end)
-
+          {output, exit_code} = process_files(bash, opts)
           {%{stdout: output, stderr: "", exit_code: exit_code}, bash}
         end
+    end
+  end
+
+  defp process_files(bash, opts) do
+    Enum.reduce(opts.files, {"", 0}, fn file, {acc_out, acc_code} ->
+      resolved = InMemoryFs.resolve_path(bash.cwd, file)
+
+      case detect_type(bash.fs, resolved, file) do
+        {:ok, type_info} ->
+          line = format_success_line(opts, file, type_info)
+          {acc_out <> line, acc_code}
+
+        {:error, _} ->
+          line = format_error_line(opts, file)
+          {acc_out <> line, 1}
+      end
+    end)
+  end
+
+  defp format_success_line(opts, file, type_info) do
+    result = if opts.mime, do: type_info.mime, else: type_info.description
+    if opts.brief, do: "#{result}\n", else: "#{file}: #{result}\n"
+  end
+
+  defp format_error_line(opts, file) do
+    if opts.brief do
+      "cannot open\n"
+    else
+      "#{file}: cannot open (No such file or directory)\n"
     end
   end
 
@@ -163,40 +171,41 @@ defmodule JustBash.Commands.File do
     end
   end
 
+  @extension_types %{
+    ".js" => %{description: "JavaScript source", mime: "text/javascript"},
+    ".ts" => %{description: "TypeScript source", mime: "text/typescript"},
+    ".py" => %{description: "Python script", mime: "text/x-python"},
+    ".rb" => %{description: "Ruby script", mime: "text/x-ruby"},
+    ".sh" => %{description: "Bourne-Again shell script", mime: "text/x-shellscript"},
+    ".json" => %{description: "JSON data", mime: "application/json"},
+    ".yaml" => %{description: "YAML data", mime: "text/yaml"},
+    ".yml" => %{description: "YAML data", mime: "text/yaml"},
+    ".xml" => %{description: "XML document", mime: "application/xml"},
+    ".html" => %{description: "HTML document", mime: "text/html"},
+    ".htm" => %{description: "HTML document", mime: "text/html"},
+    ".css" => %{description: "CSS stylesheet", mime: "text/css"},
+    ".md" => %{description: "Markdown document", mime: "text/markdown"},
+    ".txt" => %{description: "ASCII text", mime: "text/plain"},
+    ".c" => %{description: "C source", mime: "text/x-c"},
+    ".h" => %{description: "C header", mime: "text/x-c"},
+    ".ex" => %{description: "Elixir source", mime: "text/x-elixir"},
+    ".exs" => %{description: "Elixir script", mime: "text/x-elixir"}
+  }
+
   defp detect_text_type(content, filename) do
     ext = Path.extname(filename) |> String.downcase()
 
-    type =
-      case ext do
-        ".js" -> %{description: "JavaScript source", mime: "text/javascript"}
-        ".ts" -> %{description: "TypeScript source", mime: "text/typescript"}
-        ".py" -> %{description: "Python script", mime: "text/x-python"}
-        ".rb" -> %{description: "Ruby script", mime: "text/x-ruby"}
-        ".sh" -> %{description: "Bourne-Again shell script", mime: "text/x-shellscript"}
-        ".json" -> %{description: "JSON data", mime: "application/json"}
-        ".yaml" -> %{description: "YAML data", mime: "text/yaml"}
-        ".yml" -> %{description: "YAML data", mime: "text/yaml"}
-        ".xml" -> %{description: "XML document", mime: "application/xml"}
-        ".html" -> %{description: "HTML document", mime: "text/html"}
-        ".htm" -> %{description: "HTML document", mime: "text/html"}
-        ".css" -> %{description: "CSS stylesheet", mime: "text/css"}
-        ".md" -> %{description: "Markdown document", mime: "text/markdown"}
-        ".txt" -> %{description: "ASCII text", mime: "text/plain"}
-        ".c" -> %{description: "C source", mime: "text/x-c"}
-        ".h" -> %{description: "C header", mime: "text/x-c"}
-        ".ex" -> %{description: "Elixir source", mime: "text/x-elixir"}
-        ".exs" -> %{description: "Elixir script", mime: "text/x-elixir"}
-        _ -> nil
-      end
+    case Map.get(@extension_types, ext) do
+      nil -> detect_fallback_type(content)
+      type -> type
+    end
+  end
 
-    if type do
-      type
+  defp detect_fallback_type(content) do
+    if String.printable?(content) do
+      %{description: "ASCII text", mime: "text/plain"}
     else
-      if String.printable?(content) do
-        %{description: "ASCII text", mime: "text/plain"}
-      else
-        %{description: "data", mime: "application/octet-stream"}
-      end
+      %{description: "data", mime: "application/octet-stream"}
     end
   end
 

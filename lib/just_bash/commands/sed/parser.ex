@@ -71,46 +71,42 @@ defmodule JustBash.Commands.Sed.Parser do
   defp parse_addresses(cmd, extended) do
     case cmd do
       "$" <> rest ->
-        rest = String.trim_leading(rest)
-
-        if String.starts_with?(rest, ",") do
-          {addr2, rest2} = parse_second_address(String.slice(rest, 1..-1//1), extended)
-          {:last, addr2, rest2}
-        else
-          {:last, nil, rest}
-        end
+        parse_address_with_optional_range(:last, String.trim_leading(rest), extended)
 
       "/" <> _rest ->
-        case parse_regex_address(cmd, extended) do
-          {:ok, regex, rest} ->
-            rest = String.trim_leading(rest)
-
-            if String.starts_with?(rest, ",") do
-              {addr2, rest2} = parse_second_address(String.slice(rest, 1..-1//1), extended)
-              {{:regex, regex}, addr2, rest2}
-            else
-              {{:regex, regex}, nil, rest}
-            end
-
-          {:error, _} ->
-            {nil, nil, cmd}
-        end
+        parse_regex_first_address(cmd, extended)
 
       _ ->
-        case Integer.parse(cmd) do
-          {n, rest} ->
-            rest = String.trim_leading(rest)
+        parse_line_number_address(cmd, extended)
+    end
+  end
 
-            if String.starts_with?(rest, ",") do
-              {addr2, rest2} = parse_second_address(String.slice(rest, 1..-1//1), extended)
-              {{:line, n}, addr2, rest2}
-            else
-              {{:line, n}, nil, rest}
-            end
+  defp parse_address_with_optional_range(addr1, rest, extended) do
+    if String.starts_with?(rest, ",") do
+      {addr2, rest2} = parse_second_address(String.slice(rest, 1..-1//1), extended)
+      {addr1, addr2, rest2}
+    else
+      {addr1, nil, rest}
+    end
+  end
 
-          :error ->
-            {nil, nil, cmd}
-        end
+  defp parse_regex_first_address(cmd, extended) do
+    case parse_regex_address(cmd, extended) do
+      {:ok, regex, rest} ->
+        parse_address_with_optional_range({:regex, regex}, String.trim_leading(rest), extended)
+
+      {:error, _} ->
+        {nil, nil, cmd}
+    end
+  end
+
+  defp parse_line_number_address(cmd, extended) do
+    case Integer.parse(cmd) do
+      {n, rest} ->
+        parse_address_with_optional_range({:line, n}, String.trim_leading(rest), extended)
+
+      :error ->
+        {nil, nil, cmd}
     end
   end
 
@@ -166,22 +162,29 @@ defmodule JustBash.Commands.Sed.Parser do
     else
       delimiter = String.first(rest)
       rest = String.slice(rest, 1..-1//1)
+      parse_substitute_parts(rest, delimiter, extended)
+    end
+  end
 
-      case split_by_delimiter(rest, delimiter) do
-        {:ok, pattern, replacement, flags_str} ->
-          flags = parse_substitute_flags(flags_str)
+  defp parse_substitute_parts(rest, delimiter, extended) do
+    case split_by_delimiter(rest, delimiter) do
+      {:ok, pattern, replacement, flags_str} ->
+        build_substitute_command(pattern, replacement, flags_str, extended)
 
-          case compile_regex(pattern, flags, extended) do
-            {:ok, regex} ->
-              {:ok, {:substitute, regex, replacement, flags}}
+      {:error, msg} ->
+        {:error, msg}
+    end
+  end
 
-            {:error, msg} ->
-              {:error, msg}
-          end
+  defp build_substitute_command(pattern, replacement, flags_str, extended) do
+    flags = parse_substitute_flags(flags_str)
 
-        {:error, msg} ->
-          {:error, msg}
-      end
+    case compile_regex(pattern, flags, extended) do
+      {:ok, regex} ->
+        {:ok, {:substitute, regex, replacement, flags}}
+
+      {:error, msg} ->
+        {:error, msg}
     end
   end
 

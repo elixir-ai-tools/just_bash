@@ -53,91 +53,235 @@ defmodule JustBash.Parser.WordParts do
   defp parse_unquoted_loop(value, i, len, literal, parts, is_assignment) do
     char = String.at(value, i)
 
-    cond do
-      char == "\\" and i + 1 < len ->
-        next = String.at(value, i + 1)
+    ctx = %{
+      value: value,
+      i: i,
+      len: len,
+      literal: literal,
+      parts: parts,
+      is_assignment: is_assignment
+    }
 
-        if next in ["$", "`", "\\", "\"", "\n"] do
-          parse_unquoted_loop(value, i + 2, len, literal <> next, parts, is_assignment)
-        else
-          parse_unquoted_loop(value, i + 2, len, literal <> "\\" <> next, parts, is_assignment)
-        end
+    dispatch_unquoted_char(char, ctx)
+  end
 
-      char == "'" ->
+  defp dispatch_unquoted_char("\\", %{i: i, len: len} = ctx) when i + 1 < len do
+    handle_unquoted_escape(ctx)
+  end
+
+  defp dispatch_unquoted_char("'", ctx), do: handle_single_quote(ctx)
+  defp dispatch_unquoted_char("\"", ctx), do: handle_double_quote(ctx)
+
+  defp dispatch_unquoted_char("$", %{value: value, i: i} = ctx) do
+    if String.at(value, i + 1) == "'" do
+      handle_ansi_c_quote(ctx)
+    else
+      handle_dollar_expansion(ctx)
+    end
+  end
+
+  defp dispatch_unquoted_char("`", ctx), do: handle_backtick(ctx)
+
+  defp dispatch_unquoted_char("~", %{value: value, i: i} = ctx) do
+    if i == 0 or String.at(value, i - 1) in ["=", ":"] do
+      handle_tilde(ctx, "~")
+    else
+      append_char_and_continue(ctx, "~")
+    end
+  end
+
+  defp dispatch_unquoted_char("*", ctx), do: handle_glob_char(ctx, "*")
+  defp dispatch_unquoted_char("?", ctx), do: handle_glob_char(ctx, "?")
+  defp dispatch_unquoted_char("{", ctx), do: handle_brace(ctx, "{")
+  defp dispatch_unquoted_char("[", ctx), do: handle_bracket(ctx, "[")
+  defp dispatch_unquoted_char(char, ctx), do: append_char_and_continue(ctx, char)
+
+  defp append_char_and_continue(
+         %{
+           value: value,
+           i: i,
+           len: len,
+           literal: literal,
+           parts: parts,
+           is_assignment: is_assignment
+         },
+         char
+       ) do
+    parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
+  end
+
+  defp handle_unquoted_escape(%{
+         value: value,
+         i: i,
+         len: len,
+         literal: literal,
+         parts: parts,
+         is_assignment: is_assignment
+       }) do
+    next = String.at(value, i + 1)
+
+    if next in ["$", "`", "\\", "\"", "\n"] do
+      parse_unquoted_loop(value, i + 2, len, literal <> next, parts, is_assignment)
+    else
+      parse_unquoted_loop(value, i + 2, len, literal <> "\\" <> next, parts, is_assignment)
+    end
+  end
+
+  defp handle_single_quote(%{
+         value: value,
+         i: i,
+         len: len,
+         literal: literal,
+         parts: parts,
+         is_assignment: is_assignment
+       }) do
+    parts = flush_literal(literal, parts)
+    {quoted_content, end_idx} = parse_single_quoted(value, i + 1)
+    new_parts = parts ++ [AST.single_quoted(quoted_content)]
+    parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
+  end
+
+  defp handle_double_quote(%{
+         value: value,
+         i: i,
+         len: len,
+         literal: literal,
+         parts: parts,
+         is_assignment: is_assignment
+       }) do
+    parts = flush_literal(literal, parts)
+    {inner_parts, end_idx} = parse_double_quoted(value, i + 1)
+    new_parts = parts ++ [AST.double_quoted(inner_parts)]
+    parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
+  end
+
+  defp handle_ansi_c_quote(%{
+         value: value,
+         i: i,
+         len: len,
+         literal: literal,
+         parts: parts,
+         is_assignment: is_assignment
+       }) do
+    parts = flush_literal(literal, parts)
+    {ansi_content, end_idx} = parse_ansi_c_quoted(value, i + 2)
+    new_parts = parts ++ [AST.literal(ansi_content)]
+    parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
+  end
+
+  defp handle_dollar_expansion(%{
+         value: value,
+         i: i,
+         len: len,
+         literal: literal,
+         parts: parts,
+         is_assignment: is_assignment
+       }) do
+    parts = flush_literal(literal, parts)
+    {part, end_idx} = parse_expansion(value, i)
+    new_parts = parts ++ [part]
+    parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
+  end
+
+  defp handle_backtick(%{
+         value: value,
+         i: i,
+         len: len,
+         literal: literal,
+         parts: parts,
+         is_assignment: is_assignment
+       }) do
+    parts = flush_literal(literal, parts)
+    {part, end_idx} = parse_backtick_substitution(value, i)
+    new_parts = parts ++ [part]
+    parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
+  end
+
+  defp handle_tilde(
+         %{
+           value: value,
+           i: i,
+           len: len,
+           literal: literal,
+           parts: parts,
+           is_assignment: is_assignment
+         },
+         char
+       ) do
+    tilde_end = find_tilde_end(value, i)
+    after_tilde = String.at(value, tilde_end)
+
+    if after_tilde in [nil, "/", ":"] do
+      parts = flush_literal(literal, parts)
+      user = extract_tilde_user(value, i, tilde_end)
+      new_parts = parts ++ [%AST.TildeExpansion{user: user}]
+      parse_unquoted_loop(value, tilde_end, len, "", new_parts, is_assignment)
+    else
+      parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
+    end
+  end
+
+  defp extract_tilde_user(value, i, tilde_end) do
+    if tilde_end > i + 1, do: String.slice(value, (i + 1)..(tilde_end - 1)), else: nil
+  end
+
+  defp handle_glob_char(
+         %{
+           value: value,
+           i: i,
+           len: len,
+           literal: literal,
+           parts: parts,
+           is_assignment: is_assignment
+         },
+         char
+       ) do
+    parts = flush_literal(literal, parts)
+    new_parts = parts ++ [%AST.Glob{pattern: char}]
+    parse_unquoted_loop(value, i + 1, len, "", new_parts, is_assignment)
+  end
+
+  defp handle_brace(
+         %{
+           value: value,
+           i: i,
+           len: len,
+           literal: literal,
+           parts: parts,
+           is_assignment: is_assignment
+         },
+         char
+       ) do
+    case try_parse_brace_expansion(value, i) do
+      {:ok, brace_exp, end_idx} ->
         parts = flush_literal(literal, parts)
-        {quoted_content, end_idx} = parse_single_quoted(value, i + 1)
-        new_parts = parts ++ [AST.single_quoted(quoted_content)]
+        new_parts = parts ++ [brace_exp]
         parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
 
-      char == "\"" ->
+      :not_brace_expansion ->
+        parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
+    end
+  end
+
+  defp handle_bracket(
+         %{
+           value: value,
+           i: i,
+           len: len,
+           literal: literal,
+           parts: parts,
+           is_assignment: is_assignment
+         },
+         char
+       ) do
+    case find_glob_bracket_end(value, i) do
+      {:ok, end_idx} ->
         parts = flush_literal(literal, parts)
-        {inner_parts, end_idx} = parse_double_quoted(value, i + 1)
-        new_parts = parts ++ [AST.double_quoted(inner_parts)]
-        parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
+        pattern = String.slice(value, i..end_idx)
+        new_parts = parts ++ [%AST.Glob{pattern: pattern}]
+        parse_unquoted_loop(value, end_idx + 1, len, "", new_parts, is_assignment)
 
-      char == "$" and String.at(value, i + 1) == "'" ->
-        parts = flush_literal(literal, parts)
-        {ansi_content, end_idx} = parse_ansi_c_quoted(value, i + 2)
-        new_parts = parts ++ [AST.literal(ansi_content)]
-        parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
-
-      char == "$" ->
-        parts = flush_literal(literal, parts)
-        {part, end_idx} = parse_expansion(value, i)
-        new_parts = parts ++ [part]
-        parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
-
-      char == "`" ->
-        parts = flush_literal(literal, parts)
-        {part, end_idx} = parse_backtick_substitution(value, i)
-        new_parts = parts ++ [part]
-        parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
-
-      char == "~" and (i == 0 or String.at(value, i - 1) in ["=", ":"]) ->
-        tilde_end = find_tilde_end(value, i)
-        after_tilde = String.at(value, tilde_end)
-
-        if after_tilde in [nil, "/", ":"] do
-          parts = flush_literal(literal, parts)
-
-          user =
-            if tilde_end > i + 1, do: String.slice(value, (i + 1)..(tilde_end - 1)), else: nil
-
-          new_parts = parts ++ [%AST.TildeExpansion{user: user}]
-          parse_unquoted_loop(value, tilde_end, len, "", new_parts, is_assignment)
-        else
-          parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
-        end
-
-      char in ["*", "?"] ->
-        parts = flush_literal(literal, parts)
-        new_parts = parts ++ [%AST.Glob{pattern: char}]
-        parse_unquoted_loop(value, i + 1, len, "", new_parts, is_assignment)
-
-      char == "{" ->
-        case try_parse_brace_expansion(value, i) do
-          {:ok, brace_exp, end_idx} ->
-            parts = flush_literal(literal, parts)
-            new_parts = parts ++ [brace_exp]
-            parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
-
-          :not_brace_expansion ->
-            parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
-        end
-
-      char == "[" ->
-        case find_glob_bracket_end(value, i) do
-          {:ok, end_idx} ->
-            parts = flush_literal(literal, parts)
-            pattern = String.slice(value, i..end_idx)
-            new_parts = parts ++ [%AST.Glob{pattern: pattern}]
-            parse_unquoted_loop(value, end_idx + 1, len, "", new_parts, is_assignment)
-
-          :error ->
-            parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
-        end
-
-      true ->
+      :error ->
         parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
     end
   end
@@ -367,43 +511,56 @@ defmodule JustBash.Parser.WordParts do
     end_brace = find_matching_brace(value, brace_start)
     char = String.at(value, i)
 
-    cond do
-      char == "}" or char == nil ->
-        {AST.parameter_expansion(name), end_brace + 1}
+    dispatch_param_operation(char, value, brace_start, name, i, end_brace)
+  end
 
-      char == ":" ->
-        parse_colon_operation(value, brace_start, name, i)
+  defp dispatch_param_operation(char, _value, _brace_start, name, _i, end_brace)
+       when char == "}" or char == nil do
+    {AST.parameter_expansion(name), end_brace + 1}
+  end
 
-      char == "-" ->
-        parse_default_operation(value, brace_start, name, i, false)
+  defp dispatch_param_operation(":", value, brace_start, name, i, _end_brace) do
+    parse_colon_operation(value, brace_start, name, i)
+  end
 
-      char == "=" ->
-        parse_assign_default_operation(value, brace_start, name, i, false)
+  defp dispatch_param_operation("-", value, brace_start, name, i, _end_brace) do
+    parse_default_operation(value, brace_start, name, i, false)
+  end
 
-      char == "?" ->
-        parse_error_operation(value, brace_start, name, i, false)
+  defp dispatch_param_operation("=", value, brace_start, name, i, _end_brace) do
+    parse_assign_default_operation(value, brace_start, name, i, false)
+  end
 
-      char == "+" ->
-        parse_alternative_operation(value, brace_start, name, i, false)
+  defp dispatch_param_operation("?", value, brace_start, name, i, _end_brace) do
+    parse_error_operation(value, brace_start, name, i, false)
+  end
 
-      char == "#" ->
-        parse_pattern_removal(value, brace_start, name, i, :prefix)
+  defp dispatch_param_operation("+", value, brace_start, name, i, _end_brace) do
+    parse_alternative_operation(value, brace_start, name, i, false)
+  end
 
-      char == "%" ->
-        parse_pattern_removal(value, brace_start, name, i, :suffix)
+  defp dispatch_param_operation("#", value, brace_start, name, i, _end_brace) do
+    parse_pattern_removal(value, brace_start, name, i, :prefix)
+  end
 
-      char == "/" ->
-        parse_pattern_replacement(value, brace_start, name, i)
+  defp dispatch_param_operation("%", value, brace_start, name, i, _end_brace) do
+    parse_pattern_removal(value, brace_start, name, i, :suffix)
+  end
 
-      char == "^" ->
-        parse_case_modification(value, brace_start, name, i, :upper)
+  defp dispatch_param_operation("/", value, brace_start, name, i, _end_brace) do
+    parse_pattern_replacement(value, brace_start, name, i)
+  end
 
-      char == "," ->
-        parse_case_modification(value, brace_start, name, i, :lower)
+  defp dispatch_param_operation("^", value, brace_start, name, i, _end_brace) do
+    parse_case_modification(value, brace_start, name, i, :upper)
+  end
 
-      true ->
-        {AST.parameter_expansion(name), end_brace + 1}
-    end
+  defp dispatch_param_operation(",", value, brace_start, name, i, _end_brace) do
+    parse_case_modification(value, brace_start, name, i, :lower)
+  end
+
+  defp dispatch_param_operation(_char, _value, _brace_start, name, _i, end_brace) do
+    {AST.parameter_expansion(name), end_brace + 1}
   end
 
   defp parse_colon_operation(value, brace_start, name, i) do
@@ -620,26 +777,31 @@ defmodule JustBash.Parser.WordParts do
 
       char == "\\" and i + 1 < len ->
         next = String.at(value, i + 1)
-
-        case next do
-          "n" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\n")
-          "t" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\t")
-          "r" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\r")
-          "\\" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\\")
-          "'" -> parse_ansi_c_loop(value, i + 2, len, acc <> "'")
-          "\"" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\"")
-          "a" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\a")
-          "b" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\b")
-          "e" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\e")
-          "E" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\e")
-          "f" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\f")
-          "v" -> parse_ansi_c_loop(value, i + 2, len, acc <> "\v")
-          _ -> parse_ansi_c_loop(value, i + 1, len, acc <> char)
-        end
+        expanded = ansi_escape_char(next)
+        parse_ansi_c_loop(value, i + 2, len, acc <> expanded)
 
       true ->
         parse_ansi_c_loop(value, i + 1, len, acc <> char)
     end
+  end
+
+  @ansi_escape_map %{
+    "n" => "\n",
+    "t" => "\t",
+    "r" => "\r",
+    "\\" => "\\",
+    "'" => "'",
+    "\"" => "\"",
+    "a" => "\a",
+    "b" => "\b",
+    "e" => "\e",
+    "E" => "\e",
+    "f" => "\f",
+    "v" => "\v"
+  }
+
+  defp ansi_escape_char(char) do
+    Map.get(@ansi_escape_map, char, "\\" <> char)
   end
 
   defp find_tilde_end(value, start) do
@@ -719,29 +881,33 @@ defmodule JustBash.Parser.WordParts do
   # Return i - 2 to point to the first ) of ))
   defp find_dparen_loop(_value, i, _len, 0, _paren_depth), do: i - 2
 
-  # Hit end of string without finding closing ))
   defp find_dparen_loop(_value, i, len, _outer_depth, _paren_depth) when i >= len - 1, do: i - 1
 
   defp find_dparen_loop(value, i, len, outer_depth, paren_depth) do
     char = String.at(value, i)
     next = String.at(value, i + 1)
+    {new_i, new_outer, new_paren} = handle_dparen_char(char, next, i, outer_depth, paren_depth)
+    find_dparen_loop(value, new_i, len, new_outer, new_paren)
+  end
 
-    cond do
-      char == "(" and next == "(" ->
-        find_dparen_loop(value, i + 2, len, outer_depth + 1, paren_depth)
+  defp handle_dparen_char("(", "(", i, outer_depth, paren_depth) do
+    {i + 2, outer_depth + 1, paren_depth}
+  end
 
-      char == ")" and next == ")" and paren_depth == 0 ->
-        find_dparen_loop(value, i + 2, len, outer_depth - 1, paren_depth)
+  defp handle_dparen_char(")", ")", i, outer_depth, 0) do
+    {i + 2, outer_depth - 1, 0}
+  end
 
-      char == "(" ->
-        find_dparen_loop(value, i + 1, len, outer_depth, paren_depth + 1)
+  defp handle_dparen_char("(", _next, i, outer_depth, paren_depth) do
+    {i + 1, outer_depth, paren_depth + 1}
+  end
 
-      char == ")" and paren_depth > 0 ->
-        find_dparen_loop(value, i + 1, len, outer_depth, paren_depth - 1)
+  defp handle_dparen_char(")", _next, i, outer_depth, paren_depth) when paren_depth > 0 do
+    {i + 1, outer_depth, paren_depth - 1}
+  end
 
-      true ->
-        find_dparen_loop(value, i + 1, len, outer_depth, paren_depth)
-    end
+  defp handle_dparen_char(_char, _next, i, outer_depth, paren_depth) do
+    {i + 1, outer_depth, paren_depth}
   end
 
   defp find_backtick_end(value, start) do
@@ -767,24 +933,31 @@ defmodule JustBash.Parser.WordParts do
     case find_brace_expansion_end(value, start + 1, len, 1) do
       {:ok, end_idx} ->
         content = String.slice(value, (start + 1)..(end_idx - 1)//1)
-
-        cond do
-          String.contains?(content, "..") ->
-            case parse_brace_range(content) do
-              {:ok, items} -> {:ok, %AST.BraceExpansion{items: items}, end_idx + 1}
-              :error -> :not_brace_expansion
-            end
-
-          String.contains?(content, ",") ->
-            items = parse_brace_list(content)
-            {:ok, %AST.BraceExpansion{items: items}, end_idx + 1}
-
-          true ->
-            :not_brace_expansion
-        end
+        parse_brace_content(content, end_idx)
 
       :error ->
         :not_brace_expansion
+    end
+  end
+
+  defp parse_brace_content(content, end_idx) do
+    cond do
+      String.contains?(content, "..") ->
+        try_parse_brace_range_expansion(content, end_idx)
+
+      String.contains?(content, ",") ->
+        items = parse_brace_list(content)
+        {:ok, %AST.BraceExpansion{items: items}, end_idx + 1}
+
+      true ->
+        :not_brace_expansion
+    end
+  end
+
+  defp try_parse_brace_range_expansion(content, end_idx) do
+    case parse_brace_range(content) do
+      {:ok, items} -> {:ok, %AST.BraceExpansion{items: items}, end_idx + 1}
+      :error -> :not_brace_expansion
     end
   end
 
@@ -826,33 +999,37 @@ defmodule JustBash.Parser.WordParts do
   end
 
   defp parse_range_parts(start_str, end_str, step) do
-    cond do
-      String.length(start_str) == 1 and String.length(end_str) == 1 ->
-        {:ok, [{:range, start_str, end_str, step}]}
+    if String.length(start_str) == 1 and String.length(end_str) == 1 do
+      {:ok, [{:range, start_str, end_str, step}]}
+    else
+      case {Integer.parse(start_str), Integer.parse(end_str)} do
+        {{start_num, ""}, {end_num, ""}} ->
+          {:ok, [{:range, start_num, end_num, step}]}
 
-      true ->
-        case {Integer.parse(start_str), Integer.parse(end_str)} do
-          {{start_num, ""}, {end_num, ""}} ->
-            {:ok, [{:range, start_num, end_num, step}]}
-
-          _ ->
-            :error
-        end
+        _ ->
+          :error
+      end
     end
   end
 
   defp parse_brace_list(content) do
     split_brace_items(content)
-    |> Enum.map(fn item ->
-      if String.contains?(item, "..") do
-        case parse_brace_range(item) do
-          {:ok, [{:range, s, e, step}]} -> {:range, s, e, step}
-          :error -> {:word, AST.word(parse(item))}
-        end
-      else
-        {:word, AST.word(parse(item))}
-      end
-    end)
+    |> Enum.map(&parse_brace_item/1)
+  end
+
+  defp parse_brace_item(item) do
+    if String.contains?(item, "..") do
+      parse_brace_item_as_range(item)
+    else
+      {:word, AST.word(parse(item))}
+    end
+  end
+
+  defp parse_brace_item_as_range(item) do
+    case parse_brace_range(item) do
+      {:ok, [{:range, s, e, step}]} -> {:range, s, e, step}
+      :error -> {:word, AST.word(parse(item))}
+    end
   end
 
   defp split_brace_items(content) do

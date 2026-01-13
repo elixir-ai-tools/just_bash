@@ -21,27 +21,33 @@ defmodule JustBash.Commands.Tail do
     n = flags.n
 
     case files do
-      [file] ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
-
-        case InMemoryFs.read_file(bash.fs, resolved) do
-          {:ok, content} ->
-            lines = String.split(content, "\n", trim: true)
-            output = lines |> Enum.take(-n) |> Enum.join("\n")
-            output = if output != "", do: output <> "\n", else: output
-            {Command.ok(output), bash}
-
-          {:error, _} ->
-            {Command.error(
-               "tail: cannot open '#{file}' for reading: No such file or directory\n"
-             ), bash}
-        end
-
-      [] ->
-        lines = String.split(stdin, "\n", trim: true)
-        output = lines |> Enum.take(-n) |> Enum.join("\n")
-        output = if output != "", do: output <> "\n", else: output
-        {Command.ok(output), bash}
+      [file] -> tail_file(bash, file, n)
+      [] -> tail_stdin(bash, stdin, n)
     end
+  end
+
+  defp tail_file(bash, file, n) do
+    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+
+    case InMemoryFs.read_file(bash.fs, resolved) do
+      {:ok, content} ->
+        output = format_tail_output(content, n)
+        {Command.ok(output), bash}
+
+      {:error, _} ->
+        {Command.error("tail: cannot open '#{file}' for reading: No such file or directory\n"),
+         bash}
+    end
+  end
+
+  defp tail_stdin(bash, stdin, n) do
+    output = format_tail_output(stdin, n)
+    {Command.ok(output), bash}
+  end
+
+  defp format_tail_output(content, n) do
+    lines = String.split(content, "\n", trim: true)
+    output = lines |> Enum.take(-n) |> Enum.join("\n")
+    if output != "", do: output <> "\n", else: output
   end
 end

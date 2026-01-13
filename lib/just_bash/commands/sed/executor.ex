@@ -113,30 +113,40 @@ defmodule JustBash.Commands.Sed.Executor do
     in_range = Map.get(range_state, cmd_idx, false)
 
     if in_range do
-      # We're in the range, check if this line ends it
-      if single_address_matches?(addr2, state) do
-        # End pattern matched - include this line, then deactivate range
-        {true, Map.put(range_state, cmd_idx, false)}
-      else
-        # Still in range
-        {true, range_state}
-      end
+      check_range_end(addr2, state, cmd_idx, range_state)
     else
-      # Not in range, check if this line starts it
-      if single_address_matches?(addr1, state) do
-        # Start pattern matched - activate range
-        # Also check if end pattern matches on same line
-        if single_address_matches?(addr2, state) do
-          # Both start and end match on same line - include but don't stay in range
-          {true, range_state}
-        else
-          # Start matched, end didn't - enter range
-          {true, Map.put(range_state, cmd_idx, true)}
-        end
-      else
-        # Not matching start pattern
-        {false, range_state}
-      end
+      check_range_start(addr1, addr2, state, cmd_idx, range_state)
+    end
+  end
+
+  defp check_range_end(addr2, state, cmd_idx, range_state) do
+    if single_address_matches?(addr2, state) do
+      # End pattern matched - include this line, then deactivate range
+      {true, Map.put(range_state, cmd_idx, false)}
+    else
+      # Still in range
+      {true, range_state}
+    end
+  end
+
+  defp check_range_start(addr1, addr2, state, cmd_idx, range_state) do
+    if single_address_matches?(addr1, state) do
+      # Start pattern matched - activate range
+      # Also check if end pattern matches on same line
+      check_same_line_end(addr2, state, cmd_idx, range_state)
+    else
+      # Not matching start pattern
+      {false, range_state}
+    end
+  end
+
+  defp check_same_line_end(addr2, state, cmd_idx, range_state) do
+    if single_address_matches?(addr2, state) do
+      # Both start and end match on same line - include but don't stay in range
+      {true, range_state}
+    else
+      # Start matched, end didn't - enter range
+      {true, Map.put(range_state, cmd_idx, true)}
     end
   end
 
@@ -166,24 +176,7 @@ defmodule JustBash.Commands.Sed.Executor do
 
         {result, had_match}
       else
-        case Regex.run(regex, state.pattern_space, return: :index) do
-          nil ->
-            {state.pattern_space, false}
-
-          [{start, len} | groups] ->
-            pre = String.slice(state.pattern_space, 0, start)
-
-            post =
-              String.slice(state.pattern_space, start + len, String.length(state.pattern_space))
-
-            group_values =
-              Enum.map(groups, fn {s, l} -> String.slice(state.pattern_space, s, l) end)
-
-            replaced =
-              expand_backreferences(replacement, state.pattern_space, start, len, group_values)
-
-            {pre <> replaced <> post, true}
-        end
+        single_substitute(regex, state.pattern_space, replacement)
       end
 
     new_state = %{state | pattern_space: new_pattern_space}
@@ -192,6 +185,20 @@ defmodule JustBash.Commands.Sed.Executor do
       %{new_state | printed: true}
     else
       new_state
+    end
+  end
+
+  defp single_substitute(regex, pattern_space, replacement) do
+    case Regex.run(regex, pattern_space, return: :index) do
+      nil ->
+        {pattern_space, false}
+
+      [{start, len} | groups] ->
+        pre = String.slice(pattern_space, 0, start)
+        post = String.slice(pattern_space, start + len, String.length(pattern_space))
+        group_values = Enum.map(groups, fn {s, l} -> String.slice(pattern_space, s, l) end)
+        replaced = expand_backreferences(replacement, pattern_space, start, len, group_values)
+        {pre <> replaced <> post, true}
     end
   end
 
@@ -219,25 +226,29 @@ defmodule JustBash.Commands.Sed.Executor do
         matches
         |> Enum.reverse()
         |> Enum.reduce(string, fn match_indices, acc ->
-          [{start, len} | group_indices] = match_indices
-          full_match = String.slice(acc, start, len)
-
-          group_values =
-            Enum.map(group_indices, fn {s, l} ->
-              if s >= 0, do: String.slice(acc, s, l), else: ""
-            end)
-
-          # Expand & to full match
-          expanded = String.replace(replacement, "&", full_match)
-          # Expand numbered backrefs
-          expanded = expand_numbered_backrefs(expanded, group_values)
-
-          # Replace in string
-          String.slice(acc, 0, start) <>
-            expanded <>
-            String.slice(acc, start + len, String.length(acc))
+          apply_single_match(match_indices, acc, replacement)
         end)
     end
+  end
+
+  defp apply_single_match(match_indices, acc, replacement) do
+    [{start, len} | group_indices] = match_indices
+    full_match = String.slice(acc, start, len)
+    group_values = extract_group_values(group_indices, acc)
+
+    # Expand & to full match
+    expanded = String.replace(replacement, "&", full_match)
+    # Expand numbered backrefs
+    expanded = expand_numbered_backrefs(expanded, group_values)
+
+    # Replace in string
+    String.slice(acc, 0, start) <> expanded <> String.slice(acc, start + len, String.length(acc))
+  end
+
+  defp extract_group_values(group_indices, acc) do
+    Enum.map(group_indices, fn {s, l} ->
+      if s >= 0, do: String.slice(acc, s, l), else: ""
+    end)
   end
 
   defp process_replacement(replacement) do

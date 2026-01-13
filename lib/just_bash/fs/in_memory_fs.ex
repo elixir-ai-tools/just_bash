@@ -415,19 +415,24 @@ defmodule JustBash.Fs.InMemoryFs do
         {:ok, fs}
 
       nil ->
-        parent = dirname(normalized)
+        mkdir_with_parent(fs, data, normalized, recursive)
+    end
+  end
 
-        cond do
-          parent != "/" and not Map.has_key?(data, parent) and not recursive ->
-            {:error, :enoent}
+  defp mkdir_with_parent(fs, data, normalized, recursive) do
+    parent = dirname(normalized)
+    parent_exists = parent == "/" or Map.has_key?(data, parent)
 
-          parent != "/" and not Map.has_key?(data, parent) ->
-            {:ok, fs} = mkdir(fs, parent, recursive: true)
-            do_mkdir(fs, normalized)
+    case {parent_exists, recursive} do
+      {false, false} ->
+        {:error, :enoent}
 
-          true ->
-            do_mkdir(fs, normalized)
-        end
+      {false, true} ->
+        {:ok, fs} = mkdir(fs, parent, recursive: true)
+        do_mkdir(fs, normalized)
+
+      {true, _} ->
+        do_mkdir(fs, normalized)
     end
   end
 
@@ -509,16 +514,7 @@ defmodule JustBash.Fs.InMemoryFs do
             {:ok, %{fs | data: Map.delete(data, normalized)}}
 
           {:ok, children} when recursive ->
-            fs =
-              Enum.reduce(children, fs, fn child, acc_fs ->
-                child_path =
-                  if normalized == "/", do: "/" <> child, else: normalized <> "/" <> child
-
-                {:ok, new_fs} = rm(acc_fs, child_path, opts)
-                new_fs
-              end)
-
-            {:ok, %{fs | data: Map.delete(fs.data, normalized)}}
+            rm_children_and_dir(fs, normalized, children, opts)
 
           {:ok, _} ->
             {:error, :enotempty}
@@ -527,6 +523,17 @@ defmodule JustBash.Fs.InMemoryFs do
       _ ->
         {:ok, %{fs | data: Map.delete(data, normalized)}}
     end
+  end
+
+  defp rm_children_and_dir(fs, normalized, children, opts) do
+    fs =
+      Enum.reduce(children, fs, fn child, acc_fs ->
+        child_path = join_path(normalized, child)
+        {:ok, new_fs} = rm(acc_fs, child_path, opts)
+        new_fs
+      end)
+
+    {:ok, %{fs | data: Map.delete(fs.data, normalized)}}
   end
 
   @doc """
@@ -561,17 +568,22 @@ defmodule JustBash.Fs.InMemoryFs do
 
       %{type: :directory} ->
         {:ok, fs} = mkdir(fs, dest_norm, recursive: true)
-
-        case readdir(fs, src_norm) do
-          {:ok, children} ->
-            Enum.reduce(children, {:ok, fs}, fn child, {:ok, acc_fs} ->
-              src_child = if src_norm == "/", do: "/" <> child, else: src_norm <> "/" <> child
-              dest_child = if dest_norm == "/", do: "/" <> child, else: dest_norm <> "/" <> child
-              cp(acc_fs, src_child, dest_child, opts)
-            end)
-        end
+        cp_children(fs, src_norm, dest_norm, opts)
     end
   end
+
+  defp cp_children(fs, src_norm, dest_norm, opts) do
+    {:ok, children} = readdir(fs, src_norm)
+
+    Enum.reduce(children, {:ok, fs}, fn child, {:ok, acc_fs} ->
+      src_child = join_path(src_norm, child)
+      dest_child = join_path(dest_norm, child)
+      cp(acc_fs, src_child, dest_child, opts)
+    end)
+  end
+
+  defp join_path("/", child), do: "/" <> child
+  defp join_path(parent, child), do: parent <> "/" <> child
 
   @doc """
   Move/rename a file or directory.

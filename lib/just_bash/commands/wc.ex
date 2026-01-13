@@ -32,19 +32,23 @@ defmodule JustBash.Commands.Wc do
   end
 
   defp format_output(content, file, flags) do
-    lines = length(String.split(content, "\n", trim: true))
-    words = length(String.split(content, ~r/\s+/, trim: true))
-    bytes = byte_size(content)
-
+    counts = count_content(content)
     suffix = if file, do: " #{file}\n", else: "\n"
-
-    cond do
-      flags.l and not flags.w and not flags.c -> "#{lines}#{suffix}"
-      flags.w and not flags.l and not flags.c -> "#{words}#{suffix}"
-      flags.c and not flags.l and not flags.w -> "#{bytes}#{suffix}"
-      true -> "#{lines} #{words} #{bytes}#{suffix}"
-    end
+    format_counts(counts, flags) <> suffix
   end
+
+  defp count_content(content) do
+    %{
+      lines: length(String.split(content, "\n", trim: true)),
+      words: length(String.split(content, ~r/\s+/, trim: true)),
+      bytes: byte_size(content)
+    }
+  end
+
+  defp format_counts(counts, %{l: true, w: false, c: false}), do: "#{counts.lines}"
+  defp format_counts(counts, %{l: false, w: true, c: false}), do: "#{counts.words}"
+  defp format_counts(counts, %{l: false, w: false, c: true}), do: "#{counts.bytes}"
+  defp format_counts(counts, _flags), do: "#{counts.lines} #{counts.words} #{counts.bytes}"
 
   defp parse_flags(args), do: parse_flags(args, %{l: false, w: false, c: false}, [])
 

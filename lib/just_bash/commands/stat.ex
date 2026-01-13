@@ -15,28 +15,32 @@ defmodule JustBash.Commands.Stat do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        if opts.files == [] do
-          {Command.error("stat: missing operand\n"), bash}
-        else
-          {output, stderr, has_error} =
-            Enum.reduce(opts.files, {"", "", false}, fn file, {acc_out, acc_err, acc_has_err} ->
-              resolved = InMemoryFs.resolve_path(bash.cwd, file)
-
-              case InMemoryFs.stat(bash.fs, resolved) do
-                {:ok, stat_info} ->
-                  out = format_stat(file, stat_info, opts.format)
-                  {acc_out <> out, acc_err, acc_has_err}
-
-                {:error, _} ->
-                  err = "stat: cannot stat '#{file}': No such file or directory\n"
-                  {acc_out, acc_err <> err, true}
-              end
-            end)
-
-          exit_code = if has_error, do: 1, else: 0
-          {%{stdout: output, stderr: stderr, exit_code: exit_code}, bash}
-        end
+        execute_stat(bash, opts)
     end
+  end
+
+  defp execute_stat(bash, %{files: []}), do: {Command.error("stat: missing operand\n"), bash}
+
+  defp execute_stat(bash, opts) do
+    {output, stderr, has_error} =
+      Enum.reduce(opts.files, {"", "", false}, fn file, acc ->
+        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+        stat_result = InMemoryFs.stat(bash.fs, resolved)
+        accumulate_stat_result(stat_result, file, opts.format, acc)
+      end)
+
+    exit_code = if has_error, do: 1, else: 0
+    {%{stdout: output, stderr: stderr, exit_code: exit_code}, bash}
+  end
+
+  defp accumulate_stat_result({:ok, stat_info}, file, format, {acc_out, acc_err, acc_has_err}) do
+    out = format_stat(file, stat_info, format)
+    {acc_out <> out, acc_err, acc_has_err}
+  end
+
+  defp accumulate_stat_result({:error, _}, file, _format, {acc_out, acc_err, _acc_has_err}) do
+    err = "stat: cannot stat '#{file}': No such file or directory\n"
+    {acc_out, acc_err <> err, true}
   end
 
   defp parse_args(args) do
@@ -94,18 +98,24 @@ defmodule JustBash.Commands.Stat do
   defp format_mode_string(mode, is_directory) do
     type_char = if is_directory, do: "d", else: "-"
 
-    perms = [
-      if(Bitwise.band(mode, 0o400) != 0, do: "r", else: "-"),
-      if(Bitwise.band(mode, 0o200) != 0, do: "w", else: "-"),
-      if(Bitwise.band(mode, 0o100) != 0, do: "x", else: "-"),
-      if(Bitwise.band(mode, 0o040) != 0, do: "r", else: "-"),
-      if(Bitwise.band(mode, 0o020) != 0, do: "w", else: "-"),
-      if(Bitwise.band(mode, 0o010) != 0, do: "x", else: "-"),
-      if(Bitwise.band(mode, 0o004) != 0, do: "r", else: "-"),
-      if(Bitwise.band(mode, 0o002) != 0, do: "w", else: "-"),
-      if(Bitwise.band(mode, 0o001) != 0, do: "x", else: "-")
+    perm_bits = [
+      {0o400, "r"},
+      {0o200, "w"},
+      {0o100, "x"},
+      {0o040, "r"},
+      {0o020, "w"},
+      {0o010, "x"},
+      {0o004, "r"},
+      {0o002, "w"},
+      {0o001, "x"}
     ]
 
+    perms = Enum.map(perm_bits, fn {bit, char} -> perm_char(mode, bit, char) end)
+
     type_char <> Enum.join(perms)
+  end
+
+  defp perm_char(mode, bit, char) do
+    if Bitwise.band(mode, bit) != 0, do: char, else: "-"
   end
 end

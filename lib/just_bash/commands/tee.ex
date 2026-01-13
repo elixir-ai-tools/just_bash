@@ -55,25 +55,36 @@ defmodule JustBash.Commands.Tee do
   defp write_files(fs, cwd, files, content, append) do
     Enum.reduce(files, {fs, "", 0}, fn file, {acc_fs, acc_stderr, acc_code} ->
       resolved = InMemoryFs.resolve_path(cwd, file)
-      parent = Path.dirname(resolved)
-
-      case InMemoryFs.stat(acc_fs, parent) do
-        {:ok, %{is_directory: true}} ->
-          result =
-            if append do
-              InMemoryFs.append_file(acc_fs, resolved, content)
-            else
-              InMemoryFs.write_file(acc_fs, resolved, content)
-            end
-
-          case result do
-            {:ok, new_fs} -> {new_fs, acc_stderr, acc_code}
-            {:error, _} -> {acc_fs, acc_stderr <> "tee: #{file}: Is a directory\n", 1}
-          end
-
-        _ ->
-          {acc_fs, acc_stderr <> "tee: #{file}: No such file or directory\n", 1}
-      end
+      write_single_file(acc_fs, resolved, file, content, append, acc_stderr, acc_code)
     end)
+  end
+
+  defp write_single_file(fs, resolved, file, content, append, acc_stderr, acc_code) do
+    parent = Path.dirname(resolved)
+
+    case InMemoryFs.stat(fs, parent) do
+      {:ok, %{is_directory: true}} ->
+        do_write_file(fs, resolved, file, content, append, acc_stderr, acc_code)
+
+      _ ->
+        {fs, acc_stderr <> "tee: #{file}: No such file or directory\n", 1}
+    end
+  end
+
+  defp do_write_file(fs, resolved, file, content, append, acc_stderr, acc_code) do
+    result = write_or_append(fs, resolved, content, append)
+
+    case result do
+      {:ok, new_fs} -> {new_fs, acc_stderr, acc_code}
+      {:error, _} -> {fs, acc_stderr <> "tee: #{file}: Is a directory\n", 1}
+    end
+  end
+
+  defp write_or_append(fs, resolved, content, true) do
+    InMemoryFs.append_file(fs, resolved, content)
+  end
+
+  defp write_or_append(fs, resolved, content, false) do
+    InMemoryFs.write_file(fs, resolved, content)
   end
 end

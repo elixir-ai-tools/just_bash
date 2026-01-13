@@ -36,65 +36,88 @@ defmodule JustBash.Commands.Grep do
 
     case rest do
       [pattern | files] when files != [] ->
-        regex = compile_pattern(pattern, flags)
-        show_filename = flags.with_filename or (length(files) > 1 and not flags.no_filename)
-
-        {results, any_match} =
-          Enum.reduce(files, {[], false}, fn file, {acc, had_match} ->
-            resolved = InMemoryFs.resolve_path(bash.cwd, file)
-
-            case InMemoryFs.read_file(bash.fs, resolved) do
-              {:ok, content} ->
-                prefix = if show_filename, do: "#{file}:", else: ""
-                lines = process_content(content, regex, flags, prefix)
-                matched = lines != []
-
-                result =
-                  cond do
-                    flags.q -> nil
-                    flags.l and matched -> file
-                    flags.c -> "#{prefix}#{length(lines)}"
-                    matched -> Enum.join(lines, "\n")
-                    true -> nil
-                  end
-
-                {if(result, do: [result | acc], else: acc), had_match or matched}
-
-              {:error, _} ->
-                {acc, had_match}
-            end
-          end)
-
-        if flags.q do
-          {Command.result("", "", if(any_match, do: 0, else: 1)), bash}
-        else
-          output = results |> Enum.reverse() |> Enum.join("\n")
-          output = if output != "", do: output <> "\n", else: ""
-          {Command.result(output, "", if(any_match, do: 0, else: 1)), bash}
-        end
+        execute_with_files(bash, pattern, files, flags)
 
       [pattern] ->
-        regex = compile_pattern(pattern, flags)
-        lines = process_content(stdin, regex, flags, "")
-        matched = lines != []
-
-        cond do
-          flags.q ->
-            {Command.result("", "", if(matched, do: 0, else: 1)), bash}
-
-          flags.c ->
-            {Command.ok("#{length(lines)}\n"), bash}
-
-          matched ->
-            output = Enum.join(lines, "\n") <> "\n"
-            {Command.ok(output), bash}
-
-          true ->
-            {Command.result("", "", 1), bash}
-        end
+        execute_with_stdin(bash, pattern, stdin, flags)
 
       _ ->
         {Command.error("grep: missing pattern\n", 2), bash}
+    end
+  end
+
+  defp execute_with_files(bash, pattern, files, flags) do
+    regex = compile_pattern(pattern, flags)
+    show_filename = flags.with_filename or (length(files) > 1 and not flags.no_filename)
+
+    {results, any_match} =
+      Enum.reduce(files, {[], false}, fn file, {acc, had_match} ->
+        process_file(bash, file, regex, flags, show_filename, acc, had_match)
+      end)
+
+    build_files_result(bash, results, any_match, flags)
+  end
+
+  defp process_file(bash, file, regex, flags, show_filename, acc, had_match) do
+    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+
+    case InMemoryFs.read_file(bash.fs, resolved) do
+      {:ok, content} ->
+        prefix = if show_filename, do: "#{file}:", else: ""
+        lines = process_content(content, regex, flags, prefix)
+        matched = lines != []
+        result = format_file_result(file, prefix, lines, matched, flags)
+        {if(result, do: [result | acc], else: acc), had_match or matched}
+
+      {:error, _} ->
+        {acc, had_match}
+    end
+  end
+
+  defp format_file_result(file, prefix, lines, matched, flags) do
+    cond do
+      flags.q -> nil
+      flags.l and matched -> file
+      flags.c -> "#{prefix}#{length(lines)}"
+      matched -> Enum.join(lines, "\n")
+      true -> nil
+    end
+  end
+
+  defp build_files_result(bash, results, any_match, flags) do
+    exit_code = if any_match, do: 0, else: 1
+
+    if flags.q do
+      {Command.result("", "", exit_code), bash}
+    else
+      output = results |> Enum.reverse() |> Enum.join("\n")
+      output = if output != "", do: output <> "\n", else: ""
+      {Command.result(output, "", exit_code), bash}
+    end
+  end
+
+  defp execute_with_stdin(bash, pattern, stdin, flags) do
+    regex = compile_pattern(pattern, flags)
+    lines = process_content(stdin, regex, flags, "")
+    matched = lines != []
+
+    build_stdin_result(bash, lines, matched, flags)
+  end
+
+  defp build_stdin_result(bash, lines, matched, flags) do
+    cond do
+      flags.q ->
+        {Command.result("", "", if(matched, do: 0, else: 1)), bash}
+
+      flags.c ->
+        {Command.ok("#{length(lines)}\n"), bash}
+
+      matched ->
+        output = Enum.join(lines, "\n") <> "\n"
+        {Command.ok(output), bash}
+
+      true ->
+        {Command.result("", "", 1), bash}
     end
   end
 
@@ -127,23 +150,30 @@ defmodule JustBash.Commands.Grep do
     should_output = if flags.v, do: not matches, else: matches
 
     if should_output do
-      cond do
-        flags.o ->
-          Regex.scan(regex, line)
-          |> List.flatten()
-          |> Enum.map(fn match ->
-            add_prefix(match, prefix, flags.n, line_num)
-          end)
-
-        flags.n ->
-          [add_prefix(line, prefix, true, line_num)]
-
-        true ->
-          [add_prefix(line, prefix, false, line_num)]
-      end
+      format_matched_line(line, regex, flags, line_num, prefix)
     else
       []
     end
+  end
+
+  defp format_matched_line(line, regex, flags, line_num, prefix) do
+    cond do
+      flags.o ->
+        format_only_matches(regex, line, prefix, flags.n, line_num)
+
+      flags.n ->
+        [add_prefix(line, prefix, true, line_num)]
+
+      true ->
+        [add_prefix(line, prefix, false, line_num)]
+    end
+  end
+
+  defp format_only_matches(regex, line, prefix, with_line_num, line_num) do
+    regex
+    |> Regex.scan(line)
+    |> List.flatten()
+    |> Enum.map(&add_prefix(&1, prefix, with_line_num, line_num))
   end
 
   defp add_prefix(content, prefix, with_line_num, line_num) do

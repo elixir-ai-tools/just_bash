@@ -80,22 +80,7 @@ defmodule JustBash.Commands.Jq.Evaluator do
 
   defp eval({:pipe, left, right}, data, opts) do
     left_result = eval(left, data, opts)
-
-    case left_result do
-      {:multi, results} ->
-        multi_results =
-          Enum.flat_map(results, fn item ->
-            case eval(right, item, opts) do
-              {:multi, inner} -> inner
-              other -> [other]
-            end
-          end)
-
-        {:multi, multi_results}
-
-      _ ->
-        eval(right, left_result, opts)
-    end
+    eval_pipe_right(left_result, right, opts)
   end
 
   defp eval({:comma, exprs}, data, opts) do
@@ -112,12 +97,7 @@ defmodule JustBash.Commands.Jq.Evaluator do
 
   defp eval({:array, [expr]}, data, opts) do
     result = eval(expr, data, opts)
-
-    case result do
-      {:multi, items} -> Enum.reject(items, &(&1 == :empty))
-      :empty -> []
-      other -> [other]
-    end
+    array_from_result(result)
   end
 
   defp eval({:array, []}, _data, _opts), do: []
@@ -201,6 +181,26 @@ defmodule JustBash.Commands.Jq.Evaluator do
   defp eval(other, _data, _opts) do
     throw({:eval_error, "unsupported expression: #{inspect(other)}"})
   end
+
+  defp eval_pipe_right({:multi, results}, right, opts) do
+    multi_results =
+      Enum.flat_map(results, fn item ->
+        case eval(right, item, opts) do
+          {:multi, inner} -> inner
+          other -> [other]
+        end
+      end)
+
+    {:multi, multi_results}
+  end
+
+  defp eval_pipe_right(left_result, right, opts) do
+    eval(right, left_result, opts)
+  end
+
+  defp array_from_result({:multi, items}), do: Enum.reject(items, &(&1 == :empty))
+  defp array_from_result(:empty), do: []
+  defp array_from_result(other), do: [other]
 
   defp arith_add(l, r) when is_number(l) and is_number(r), do: l + r
   defp arith_add(l, r) when is_binary(l) and is_binary(r), do: l <> r

@@ -26,40 +26,44 @@ defmodule JustBash.Commands.Awk do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        if Map.has_key?(opts, :help) do
-          {Command.ok(opts.help), bash}
-        else
-          case Parser.parse(opts.program) do
-            {:error, msg} ->
-              {Command.error("awk: #{msg}\n"), bash}
-
-            {:ok, program} ->
-              content =
-                if opts.files == [] do
-                  stdin
-                else
-                  case read_files(bash, opts.files) do
-                    {:ok, data} -> data
-                    {:error, msg} -> {:error, msg}
-                  end
-                end
-
-              case content do
-                {:error, msg} ->
-                  {Command.error(msg), bash}
-
-                data ->
-                  eval_opts = %{
-                    field_separator: opts.field_separator,
-                    variables: opts.variables
-                  }
-
-                  output = Evaluator.execute(data, program, eval_opts)
-                  {Command.ok(output), bash}
-              end
-          end
-        end
+        execute_with_opts(bash, opts, stdin)
     end
+  end
+
+  defp execute_with_opts(bash, %{help: help}, _stdin) do
+    {Command.ok(help), bash}
+  end
+
+  defp execute_with_opts(bash, opts, stdin) do
+    case Parser.parse(opts.program) do
+      {:error, msg} ->
+        {Command.error("awk: #{msg}\n"), bash}
+
+      {:ok, program} ->
+        execute_program(bash, opts, stdin, program)
+    end
+  end
+
+  defp execute_program(bash, opts, stdin, program) do
+    case get_content(bash, opts.files, stdin) do
+      {:error, msg} ->
+        {Command.error(msg), bash}
+
+      {:ok, data} ->
+        eval_opts = %{
+          field_separator: opts.field_separator,
+          variables: opts.variables
+        }
+
+        output = Evaluator.execute(data, program, eval_opts)
+        {Command.ok(output), bash}
+    end
+  end
+
+  defp get_content(_bash, [], stdin), do: {:ok, stdin}
+
+  defp get_content(bash, files, _stdin) do
+    read_files(bash, files)
   end
 
   defp parse_args(args) do
