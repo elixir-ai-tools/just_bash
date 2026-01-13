@@ -1,196 +1,49 @@
-# JustBash
+<p align="center">
+  <h1 align="center">JustBash</h1>
+  <p align="center">
+    A sandboxed bash interpreter with virtual filesystem, written in pure Elixir.
+    <br />
+    <strong>60+ commands | Full shell syntax | Data pipelines | Zero system access</strong>
+  </p>
+</p>
 
-[![CI](https://github.com/ivarvong/just_bash/actions/workflows/ci.yml/badge.svg)](https://github.com/ivarvong/just_bash/actions/workflows/ci.yml)
-[![License](https://img.shields.io/hexpm/l/just_bash.svg)](LICENSE)
+<p align="center">
+  <a href="https://github.com/ivarvong/just_bash/actions/workflows/ci.yml"><img src="https://github.com/ivarvong/just_bash/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/hexpm/l/just_bash.svg" alt="License"></a>
+</p>
 
-A sandboxed bash interpreter with virtual filesystem, written in pure Elixir. Execute bash scripts safely in memory with no access to the real filesystem or network.
+> **Note**: This is an experimental project. The entire codebase—parser, interpreter, 60+ commands, and 1100+ tests—was generated with OpenCode using Claude Opus 4.5 through conversational prompting.
 
-> **Alpha Quality** - This project is 100% LLM-generated code (Claude) and should be considered experimental. Use at your own risk.
+---
 
-## Features
+## What is this?
 
-- **Sandboxed execution** - All commands run in memory, isolated from the real system
-- **Virtual filesystem** - Complete in-memory filesystem with files, directories, and symlinks
-- **50+ commands** - Core utilities, text processing, data tools
-- **Full bash syntax** - Pipes, redirections, variables, loops, conditionals, functions
-- **Data pipelines** - curl, sqlite3, jq integration for fetching and transforming data
-- **Network control** - Optional HTTP access with allowlist filtering
+JustBash executes bash scripts entirely in memory. No filesystem access. No network by default. No process spawning. Perfect for:
 
-## Quick Start
-
-```elixir
-bash = JustBash.new()
-
-# Simple command
-{result, _} = JustBash.exec(bash, "echo 'Hello, World!'")
-result.stdout  # "Hello, World!\n"
-
-# Pipelines
-{result, _} = JustBash.exec(bash, "echo 'banana\napple\ncherry' | sort | head -2")
-result.stdout  # "apple\nbanana\n"
-
-# Variables and arithmetic
-{result, _} = JustBash.exec(bash, "x=5; echo $((x * x))")
-result.stdout  # "25\n"
-```
-
-## Data Pipelines
-
-Fetch data, load into SQLite, query, and transform with jq:
-
-```elixir
-bash = JustBash.new(
-  network: %{enabled: true, allow_list: ["api.example.com"]}
-)
-
-script = ~S"""
-# Fetch CSV and load into SQLite
-curl -s https://api.example.com/users.csv | sqlite3 db ".import /dev/stdin users"
-
-# Query and transform with jq
-sqlite3 db "SELECT * FROM users WHERE active = 1" --json | jq -r '.[].email'
-"""
-
-{result, _} = JustBash.exec(bash, script)
-```
-
-## Supported Commands
-
-### File Operations
-`cat`, `ls`, `cp`, `mv`, `rm`, `mkdir`, `touch`, `ln`, `readlink`, `stat`, `du`, `find`, `tree`, `file`
-
-### Text Processing
-`grep`, `sed`, `awk`, `sort`, `uniq`, `head`, `tail`, `wc`, `cut`, `tr`, `paste`, `fold`, `nl`, `tac`, `rev`, `expand`, `comm`, `diff`
-
-### Data Tools
-`curl` - HTTP client with network sandboxing
-`jq` - JSON processor
-`sqlite3` - In-memory SQL database with `.import` for CSV
-`liquid` - Liquid template engine (via Solid)
-`markdown` / `md` - Markdown to HTML (via Earmark)
-
-### Utilities
-`echo`, `printf`, `pwd`, `cd`, `env`, `export`, `unset`, `test`, `[`, `seq`, `date`, `sleep`, `basename`, `dirname`, `which`, `xargs`, `tee`, `base64`, `md5sum`
-
-## Shell Features
-
-- **Pipes** - `cmd1 | cmd2 | cmd3`
-- **Redirections** - `>`, `>>`, `2>&1`, `/dev/null`
-- **Variables** - `$VAR`, `${VAR:-default}`, `${VAR:=set}`, `${VAR:+alt}`, `${#VAR}`
-- **Command substitution** - `$(cmd)` and backticks
-- **Arithmetic** - `$((x + y))`, `$((x ** 2))`, comparisons, ternary
-- **Control flow** - `if/elif/else/fi`, `for/do/done`, `while/until`, `case/esac`
-- **Logical operators** - `&&`, `||` with short-circuit evaluation
-- **Functions** - `function name() { ... }` or `name() { ... }`
-- **Brace expansion** - `{a,b,c}`, `{1..5}`
-
-## Liquid Templates
-
-Render Liquid templates with JSON data:
-
-```elixir
-bash = JustBash.new(
-  files: %{
-    "/templates/post.html" => """
-    <article>
-      <h1>{{ title }}</h1>
-      <p>By {{ author }} on {{ date }}</p>
-      {{ content }}
-    </article>
-    """
-  }
-)
-
-# Pipe JSON data to template
-{result, _} = JustBash.exec(bash, ~S"""
-echo '{"title": "Hello", "author": "Alice", "date": "2024-01-15", "content": "<p>Welcome!</p>"}' \
-  | liquid /templates/post.html
-""")
-
-# Use with sqlite for a blog
-{result, _} = JustBash.exec(bash, ~S"""
-sqlite3 blog "SELECT * FROM posts" --json | jq '{posts: .}' | liquid /templates/index.html
-""")
-```
-
-Supports loops, conditionals, filters, and all standard Liquid tags.
-
-## Markdown
-
-Convert Markdown to HTML with GitHub Flavored Markdown support:
+- **AI agents** that need safe bash execution
+- **Testing** bash scripts without side effects  
+- **Sandboxed environments** where system access is prohibited
+- **Educational tools** for learning bash
 
 ```elixir
 bash = JustBash.new()
-
-# Simple conversion
-{result, _} = JustBash.exec(bash, "echo '# Hello **World**' | markdown")
-# <h1>Hello <strong>World</strong></h1>
-
-# From file
-{result, _} = JustBash.exec(bash, "markdown README.md > readme.html")
-
-# GFM features: tables, strikethrough, task lists
-{result, _} = JustBash.exec(bash, "echo '~~deleted~~' | md")
-# <del>deleted</del>
+{result, _} = JustBash.exec(bash, "echo 'Hello from the sandbox!'")
+result.stdout  #=> "Hello from the sandbox!\n"
 ```
 
-## SQLite Integration
+---
 
-Named databases persist across commands:
+## Features at a Glance
 
-```elixir
-bash = JustBash.new()
+| Category | Capabilities |
+|----------|-------------|
+| **Commands** | 60+ built-in commands including `grep`, `sed`, `awk`, `jq`, `curl`, `sqlite3` |
+| **Shell Syntax** | Pipes, redirections, variables, loops, conditionals, functions, subshells |
+| **Data Tools** | JSON processing, SQL queries, HTTP requests, Markdown, Liquid templates |
+| **Filesystem** | In-memory virtual FS with files, directories, symlinks, permissions |
+| **Security** | Complete isolation from host system, optional network with allowlists |
 
-# Create and populate
-{_, bash} = JustBash.exec(bash, ~S"""
-sqlite3 mydb "CREATE TABLE users (id INTEGER, name TEXT, email TEXT)"
-sqlite3 mydb "INSERT INTO users VALUES (1, 'alice', 'alice@example.com')"
-sqlite3 mydb "INSERT INTO users VALUES (2, 'bob', 'bob@example.com')"
-""")
-
-# Query with different output formats
-{result, _} = JustBash.exec(bash, "sqlite3 mydb 'SELECT * FROM users' --json")
-# [{"id":1,"name":"alice","email":"alice@example.com"},{"id":2,"name":"bob","email":"bob@example.com"}]
-
-{result, _} = JustBash.exec(bash, "sqlite3 mydb 'SELECT * FROM users' --csv")
-# id,name,email
-# 1,alice,alice@example.com
-# 2,bob,bob@example.com
-
-# Import CSV (auto-creates table from headers)
-{_, bash} = JustBash.exec(bash, ~S"""
-echo "name,score
-alice,100
-bob,85" | sqlite3 mydb ".import /dev/stdin scores"
-""")
-```
-
-## Network Access
-
-Network is disabled by default. Enable with allowlist:
-
-```elixir
-# Allow specific hosts
-bash = JustBash.new(network: %{
-  enabled: true,
-  allow_list: ["api.github.com", "*.example.com"]
-})
-
-# Or allow all (use with caution)
-bash = JustBash.new(network: %{enabled: true})
-```
-
-## Configuration
-
-```elixir
-JustBash.new(
-  files: %{"/data/config.json" => ~s({"key": "value"})},  # Initial files
-  env: %{"API_KEY" => "secret"},                          # Environment variables  
-  cwd: "/app",                                            # Working directory
-  network: %{enabled: true, allow_list: ["*.api.com"]},   # Network access
-  http_client: MyMockClient                               # Custom HTTP client for testing
-)
-```
+---
 
 ## Installation
 
@@ -200,27 +53,426 @@ def deps do
 end
 ```
 
-## Testing
+---
 
-```bash
-mix test              # Run tests
-mix dialyzer          # Type checking
-mix credo --strict    # Linting
+## Quick Examples
+
+### Basic Usage
+
+```elixir
+bash = JustBash.new()
+
+# Simple commands
+{result, _} = JustBash.exec(bash, "echo 'Hello World'")
+
+# Pipelines
+{result, _} = JustBash.exec(bash, "echo 'cherry\napple\nbanana' | sort | head -2")
+#=> "apple\nbanana\n"
+
+# Variables and arithmetic  
+{result, _} = JustBash.exec(bash, "x=42; echo $((x * 2))")
+#=> "84\n"
+
+# Loops
+{result, _} = JustBash.exec(bash, "for i in 1 2 3; do echo $i; done")
+#=> "1\n2\n3\n"
 ```
 
-## Known Limitations
+### Initialize with Files
+
+```elixir
+bash = JustBash.new(
+  files: %{
+    "/data/users.csv" => "name,email\nalice,alice@example.com\nbob,bob@example.com",
+    "/app/config.json" => ~s({"debug": true, "port": 3000})
+  },
+  env: %{"APP_ENV" => "production"},
+  cwd: "/app"
+)
+
+{result, _} = JustBash.exec(bash, "cat /data/users.csv | wc -l")
+#=> "3\n"
+```
+
+---
+
+## Data Pipeline: The Killer Feature
+
+JustBash shines when processing data. Chain `curl`, `sqlite3`, `jq`, `liquid`, and `markdown` together:
+
+```elixir
+bash = JustBash.new(
+  network: %{enabled: true, allow_list: ["api.example.com"]},
+  files: %{
+    "/templates/report.html" => """
+    <html>
+    <body>
+      <h1>{{ title }}</h1>
+      {% for user in users %}
+        <div>{{ user.name }} - {{ user.email }}</div>
+      {% endfor %}
+    </body>
+    </html>
+    """
+  }
+)
+
+script = ~S"""
+# Fetch CSV data and load into SQLite
+curl -s https://api.example.com/users.csv | sqlite3 db ".import /dev/stdin users"
+
+# Query with SQL, output as JSON, render with Liquid
+sqlite3 db "SELECT * FROM users WHERE active = 1" --json \
+  | jq '{title: "Active Users", users: .}' \
+  | liquid /templates/report.html
+"""
+
+{result, _} = JustBash.exec(bash, script)
+```
+
+### More Pipeline Examples
+
+```bash
+# ETL: Fetch -> Transform -> Query
+curl -s https://api.example.com/orders.json \
+  | jq '.[] | select(.total > 100)' \
+  | sqlite3 db ".import /dev/stdin big_orders"
+
+# Generate static site from database
+sqlite3 blog "SELECT * FROM posts" --json \
+  | jq -c '.[]' \
+  | while read post; do
+      slug=$(echo "$post" | jq -r '.slug')
+      echo "$post" | liquid /templates/post.html > "/site/$slug.html"
+    done
+
+# Markdown blog post rendering
+sqlite3 blog "SELECT content FROM posts WHERE slug='hello'" \
+  | markdown \
+  | liquid -d /data/layout.json /templates/layout.html
+
+# API response analysis  
+curl -s https://api.github.com/repos/elixir-lang/elixir/commits \
+  | jq '[.[] | {sha: .sha[:7], author: .commit.author.name}] | .[0:5]'
+```
+
+---
+
+## Commands Reference
+
+### File Operations
+
+| Command | Description | Key Flags |
+|---------|-------------|-----------|
+| `cat` | Concatenate files | `-n` line numbers |
+| `ls` | List directory | `-l` `-a` `-R` `-h` |
+| `cp` | Copy files | `-r` recursive |
+| `mv` | Move/rename | |
+| `rm` | Remove files | `-r` `-f` |
+| `mkdir` | Create directory | `-p` parents |
+| `touch` | Create/update file | |
+| `ln` | Create links | `-s` symbolic |
+| `find` | Search files | `-name` `-type` `-maxdepth` |
+| `stat` | File information | |
+| `du` | Disk usage | `-h` `-s` |
+| `tree` | Directory tree | |
+
+### Text Processing
+
+| Command | Description | Key Flags |
+|---------|-------------|-----------|
+| `grep` | Pattern search | `-i` `-v` `-c` `-n` `-o` `-E` `-w` |
+| `sed` | Stream editor | `-i` `-E`, `s///` `d` `p` |
+| `awk` | Pattern processing | `-F` `-v`, `$1` `NR` `NF` |
+| `cut` | Extract columns | `-d` `-f` `-c` |
+| `sort` | Sort lines | `-r` `-n` `-u` `-k` |
+| `uniq` | Remove duplicates | `-c` `-d` |
+| `head` | First N lines | `-n` `-c` |
+| `tail` | Last N lines | `-n` `-c` |
+| `wc` | Count lines/words | `-l` `-w` `-c` |
+| `tr` | Translate chars | `-d` |
+| `fold` | Wrap lines | `-w` |
+| `nl` | Number lines | |
+
+### Data Tools
+
+| Command | Description | Key Flags |
+|---------|-------------|-----------|
+| `jq` | JSON processor | `-r` `-c` `-s` — full jq syntax |
+| `sqlite3` | SQL database | `--json` `--csv` `.import` `.tables` |
+| `curl` | HTTP client | `-X` `-H` `-d` `-o` `-s` `-L` |
+| `liquid` | Template engine | `-e` `-d` |
+| `markdown` | Markdown → HTML | `--gfm` `--smartypants` |
+| `base64` | Encode/decode | `-d` |
+| `md5sum` | Hash files | |
+
+### Shell Builtins
+
+| Command | Description |
+|---------|-------------|
+| `echo` | Print text (`-n` `-e`) |
+| `printf` | Formatted output |
+| `cd` / `pwd` | Change/print directory |
+| `export` / `unset` | Manage variables |
+| `test` / `[` | Conditionals |
+| `read` | Read input |
+| `source` / `.` | Execute script |
+| `set` | Shell options (`-e` `-u` `-o pipefail`) |
+
+### Utilities
+
+`basename`, `dirname`, `date`, `seq`, `sleep`, `which`, `env`, `printenv`, `hostname`, `xargs`, `tee`, `comm`, `diff`, `expand`, `paste`, `rev`, `tac`
+
+---
+
+## Shell Syntax Support
+
+### Pipes & Operators
+
+```bash
+cmd1 | cmd2 | cmd3          # Pipeline
+cmd1 && cmd2                # AND (run cmd2 if cmd1 succeeds)
+cmd1 || cmd2                # OR (run cmd2 if cmd1 fails)
+! cmd                       # Negate exit status
+```
+
+### Redirections
+
+```bash
+cmd > file                  # Stdout to file
+cmd >> file                 # Append stdout
+cmd 2> file                 # Stderr to file  
+cmd &> file                 # Both stdout and stderr
+cmd < file                  # Stdin from file
+cmd <<< "string"            # Here-string
+cmd << 'EOF'                # Here-document
+content
+EOF
+```
+
+### Variables
+
+```bash
+$VAR                        # Simple expansion
+${VAR}                      # Braced expansion
+${VAR:-default}             # Default if unset/empty
+${VAR:=default}             # Assign default if unset/empty
+${VAR:+alternate}           # Alternate if set
+${VAR:?error}               # Error if unset/empty
+${#VAR}                     # String length
+${VAR:2:5}                  # Substring
+${VAR#pattern}              # Remove prefix
+${VAR%pattern}              # Remove suffix
+${VAR/old/new}              # Replace first
+${VAR//old/new}             # Replace all
+${VAR^^}                    # Uppercase
+${VAR,,}                    # Lowercase
+```
+
+### Brace Expansion
+
+```bash
+{a,b,c}                     # a b c
+{1..5}                      # 1 2 3 4 5
+{a..z}                      # alphabet
+file{1,2,3}.txt             # file1.txt file2.txt file3.txt
+```
+
+### Arithmetic
+
+```bash
+$((x + y))                  # Arithmetic expansion
+$((x ** 2))                 # Exponentiation
+$((x > y ? x : y))          # Ternary
+$((0xFF))                   # Hex
+$((2#1010))                 # Binary
+((x++))                     # Increment
+```
+
+### Control Flow
+
+```bash
+# If statement
+if [ condition ]; then
+  commands
+elif [ condition ]; then
+  commands  
+else
+  commands
+fi
+
+# For loop
+for item in list; do
+  commands
+done
+
+# While/Until
+while [ condition ]; do
+  commands
+done
+
+# Case
+case $var in
+  pattern1) commands ;;
+  pattern2|pattern3) commands ;;
+  *) default ;;
+esac
+
+# Functions
+function greet() {
+  echo "Hello, $1!"
+}
+greet "World"
+```
+
+### Compound Commands
+
+```bash
+(cmd1; cmd2)                # Subshell
+{ cmd1; cmd2; }             # Group
+[[ $x =~ ^[0-9]+$ ]]        # Extended test with regex
+```
+
+---
+
+## jq Examples
+
+JustBash includes a comprehensive jq implementation:
+
+```bash
+# Basic access
+echo '{"name":"alice"}' | jq '.name'                    # "alice"
+echo '[1,2,3]' | jq '.[0]'                              # 1
+echo '[1,2,3]' | jq '.[]'                               # 1 2 3
+
+# Filtering
+echo '[{"a":1},{"a":2}]' | jq '.[] | select(.a > 1)'   # {"a":2}
+echo '[1,2,3,4,5]' | jq 'map(. * 2)'                   # [2,4,6,8,10]
+
+# Transformation  
+echo '{"a":1,"b":2}' | jq 'keys'                       # ["a","b"]
+echo '[3,1,2]' | jq 'sort'                             # [1,2,3]
+echo '[[1,2],[3,4]]' | jq 'flatten'                    # [1,2,3,4]
+
+# Construction
+echo '{"first":"a","last":"b"}' | jq '{name: .first}'  # {"name":"a"}
+echo 'null' | jq '{x: 1, y: 2}'                        # {"x":1,"y":2}
+
+# String operations
+echo '"hello"' | jq 'ascii_upcase'                     # "HELLO"
+echo '"hello world"' | jq 'split(" ")'                 # ["hello","world"]
+
+# Conditionals
+echo '5' | jq 'if . > 3 then "big" else "small" end'  # "big"
+```
+
+---
+
+## SQLite Integration
+
+Each named database persists across commands:
+
+```bash
+# Create and populate
+sqlite3 mydb "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)"
+sqlite3 mydb "INSERT INTO users VALUES (1, 'alice', 'alice@example.com')"
+sqlite3 mydb "INSERT INTO users VALUES (2, 'bob', 'bob@example.com')"
+
+# Query with different output formats
+sqlite3 mydb "SELECT * FROM users"                    # 1|alice|alice@example.com
+sqlite3 mydb "SELECT * FROM users" --json             # [{"id":1,"name":"alice",...}]
+sqlite3 mydb "SELECT * FROM users" --csv              # id,name,email\n1,alice,...
+
+# Import CSV (auto-creates table from headers)
+cat data.csv | sqlite3 mydb ".import /dev/stdin tablename"
+
+# Introspection
+sqlite3 mydb ".tables"                                # List tables
+sqlite3 mydb ".schema users"                          # Show CREATE statement
+```
+
+---
+
+## Network Configuration
+
+Network access is disabled by default:
+
+```elixir
+# Enable for all hosts (use with caution)
+bash = JustBash.new(network: %{enabled: true})
+
+# Enable with allowlist
+bash = JustBash.new(network: %{
+  enabled: true,
+  allow_list: ["api.github.com", "*.example.com"]
+})
+
+# Custom HTTP client for testing
+bash = JustBash.new(
+  network: %{enabled: true},
+  http_client: MyMockHttpClient
+)
+```
+
+---
+
+## API Reference
+
+```elixir
+# Create environment
+bash = JustBash.new(
+  files: %{path => content},        # Initial files
+  env: %{name => value},            # Environment variables
+  cwd: "/path",                     # Working directory
+  network: %{enabled: bool, allow_list: [patterns]}
+)
+
+# Execute commands
+{result, bash} = JustBash.exec(bash, "command")
+result.stdout      # String
+result.stderr      # String  
+result.exit_code   # Integer
+result.env         # Updated environment map
+
+# Parse without executing
+{:ok, ast} = JustBash.parse("echo hello")
+
+# Tokenize
+tokens = JustBash.tokenize("echo hello")
+```
+
+---
+
+## Limitations
 
 - No real filesystem access (by design)
 - No process spawning or job control
-- No arrays or associative arrays (variables are strings)
+- No arrays (variables are strings)
 - No process substitution `<(cmd)`
-- Limited glob expansion
+- Limited glob patterns
 - SQLite databases are in-memory only
+
+---
+
+## Development
+
+```bash
+mix deps.get
+mix test                    # 1100+ tests
+mix dialyzer                # Type checking
+mix credo --strict          # Linting
+```
+
+Tested on Elixir 1.15–1.19, OTP 25–28.
+
+---
 
 ## License
 
 MIT
 
-## Acknowledgments
+---
 
-This project was 100% generated by Claude (Anthropic) as an experiment in LLM-assisted development. The entire codebase—including the parser, interpreter, 50+ commands, and test suite—was written through conversational prompting without human-written code.
+<p align="center">
+  <sub>Built with OpenCode using Claude Opus 4.5</sub>
+</p>
