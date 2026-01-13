@@ -1,251 +1,174 @@
 # JustBash
 
-[![Hex.pm](https://img.shields.io/hexpm/v/just_bash.svg)](https://hex.pm/packages/just_bash)
-[![Docs](https://img.shields.io/badge/docs-hexdocs-blue.svg)](https://hexdocs.pm/just_bash)
 [![CI](https://github.com/ivarvong/just_bash/actions/workflows/ci.yml/badge.svg)](https://github.com/ivarvong/just_bash/actions/workflows/ci.yml)
 [![License](https://img.shields.io/hexpm/l/just_bash.svg)](LICENSE)
 
-A simulated bash environment with a virtual filesystem, written in Elixir. Designed for AI agents and other use cases that need safe, sandboxed bash execution.
+A sandboxed bash interpreter with virtual filesystem, written in pure Elixir. Execute bash scripts safely in memory with no access to the real filesystem or network.
 
-## Why JustBash?
-
-- **Safe execution** - All commands run in memory with no access to the real filesystem
-- **Deterministic** - Same input always produces the same output (except `date`)
-- **Portable** - Pure Elixir, no external dependencies or shell required
-- **AI-friendly** - Perfect for LLM agents that need to execute bash commands safely
+> **Alpha Quality** - This project is 100% LLM-generated code (Claude) and should be considered experimental. Use at your own risk.
 
 ## Features
 
-- **In-memory virtual filesystem** - All file operations happen in memory
-- **Full bash parsing** - Lexer and recursive descent parser for bash syntax
-- **Pipes** - `cmd1 | cmd2 | cmd3` with stdout flowing to stdin
-- **Redirections** - `>`, `>>`, redirect to `/dev/null`
-- **Variable expansion** - `$VAR`, `${VAR}`, `${VAR:-default}`, `${VAR:=default}`, `${VAR:+alt}`, `${#VAR}`
-- **Command substitution** - `$(cmd)` and backticks
-- **Arithmetic expansion** - `$((expr))` with full operator support (+, -, *, /, %, **, comparisons, bitwise, ternary)
-- **Control flow** - `if/elif/else/fi`, `for x in ...; do; done`, `while/until`
-- **Logical operators** - `&&`, `||`, `!` with short-circuit evaluation
-- **Test command** - `[ ]` and `test` with string, numeric, and file tests
-
-## Installation
-
-Add `just_bash` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:just_bash, "~> 0.1.0"}
-  ]
-end
-```
+- **Sandboxed execution** - All commands run in memory, isolated from the real system
+- **Virtual filesystem** - Complete in-memory filesystem with files, directories, and symlinks
+- **50+ commands** - Core utilities, text processing, data tools
+- **Full bash syntax** - Pipes, redirections, variables, loops, conditionals, functions
+- **Data pipelines** - curl, sqlite3, jq integration for fetching and transforming data
+- **Network control** - Optional HTTP access with allowlist filtering
 
 ## Quick Start
 
 ```elixir
-# Create a new bash environment
 bash = JustBash.new()
 
-# Execute a command
-{result, bash} = JustBash.exec(bash, "echo 'Hello, World!'")
-IO.puts(result.stdout)  # "Hello, World!\n"
+# Simple command
+{result, _} = JustBash.exec(bash, "echo 'Hello, World!'")
+result.stdout  # "Hello, World!\n"
 
-# Create with initial files
-bash = JustBash.new(files: %{
-  "/data/users.txt" => "alice\nbob\ncharlie"
-})
+# Pipelines
+{result, _} = JustBash.exec(bash, "echo 'banana\napple\ncherry' | sort | head -2")
+result.stdout  # "apple\nbanana\n"
 
-# Pipelines work!
-{result, _} = JustBash.exec(bash, "cat /data/users.txt | sort | uniq -c")
-IO.puts(result.stdout)
-# 1 alice
-# 1 bob
-# 1 charlie
+# Variables and arithmetic
+{result, _} = JustBash.exec(bash, "x=5; echo $((x * x))")
+result.stdout  # "25\n"
+```
 
-# Environment variables
-bash = JustBash.new(env: %{"MY_VAR" => "hello"})
-{result, _} = JustBash.exec(bash, "echo $MY_VAR")
-# "hello\n"
+## Data Pipelines
+
+Fetch data, load into SQLite, query, and transform with jq:
+
+```elixir
+bash = JustBash.new(
+  network: %{enabled: true, allow_list: ["api.example.com"]}
+)
+
+script = ~S"""
+# Fetch CSV and load into SQLite
+curl -s https://api.example.com/users.csv | sqlite3 db ".import /dev/stdin users"
+
+# Query and transform with jq
+sqlite3 db "SELECT * FROM users WHERE active = 1" --json | jq -r '.[].email'
+"""
+
+{result, _} = JustBash.exec(bash, script)
 ```
 
 ## Supported Commands
 
 ### File Operations
-| Command | Description | Flags |
-|---------|-------------|-------|
-| `cat` | Concatenate and display files | stdin support |
-| `ls` | List directory contents | `-l`, `-a` |
-| `cp` | Copy files | |
-| `mv` | Move/rename files | |
-| `rm` | Remove files | `-r`, `-f` |
-| `mkdir` | Create directories | `-p` |
-| `touch` | Create empty files | |
+`cat`, `ls`, `cp`, `mv`, `rm`, `mkdir`, `touch`, `ln`, `readlink`, `stat`, `du`, `find`, `tree`, `file`
 
 ### Text Processing
-| Command | Description | Flags |
-|---------|-------------|-------|
-| `grep` | Search for patterns | `-i`, `-v`, stdin |
-| `sort` | Sort lines | `-r`, `-n`, `-u`, stdin |
-| `uniq` | Filter duplicate lines | `-c`, stdin |
-| `head` | Output first lines | `-n`, stdin |
-| `tail` | Output last lines | `-n`, stdin |
-| `wc` | Count lines/words/chars | `-l`, `-w`, `-c`, stdin |
-| `tr` | Translate characters | ranges like `a-z` |
+`grep`, `sed`, `awk`, `sort`, `uniq`, `head`, `tail`, `wc`, `cut`, `tr`, `paste`, `fold`, `nl`, `tac`, `rev`, `expand`, `comm`, `diff`
+
+### Data Tools
+`curl` - HTTP client with network sandboxing
+`jq` - JSON processor
+`sqlite3` - In-memory SQL database with `.import` for CSV
 
 ### Utilities
-| Command | Description |
-|---------|-------------|
-| `echo` | Display text (`-n`, `-e` flags) |
-| `printf` | Formatted output |
-| `pwd` | Print working directory |
-| `cd` | Change directory |
-| `export` | Set environment variables |
-| `unset` | Remove environment variables |
-| `test` / `[` | Evaluate conditional expressions |
-| `true` / `false` / `:` | Return exit codes |
-| `seq` | Generate number sequences |
-| `date` | Display current date/time |
-| `basename` / `dirname` | Extract path components |
-| `read` | Read input into variable |
-| `exit` | Exit with code |
+`echo`, `printf`, `pwd`, `cd`, `env`, `export`, `unset`, `test`, `[`, `seq`, `date`, `sleep`, `basename`, `dirname`, `which`, `xargs`, `tee`, `base64`, `md5sum`
 
-## Examples
+## Shell Features
 
-### FizzBuzz
+- **Pipes** - `cmd1 | cmd2 | cmd3`
+- **Redirections** - `>`, `>>`, `2>&1`, `/dev/null`
+- **Variables** - `$VAR`, `${VAR:-default}`, `${VAR:=set}`, `${VAR:+alt}`, `${#VAR}`
+- **Command substitution** - `$(cmd)` and backticks
+- **Arithmetic** - `$((x + y))`, `$((x ** 2))`, comparisons, ternary
+- **Control flow** - `if/elif/else/fi`, `for/do/done`, `while/until`, `case/esac`
+- **Logical operators** - `&&`, `||` with short-circuit evaluation
+- **Functions** - `function name() { ... }` or `name() { ... }`
+- **Brace expansion** - `{a,b,c}`, `{1..5}`
+
+## SQLite Integration
+
+Named databases persist across commands:
 
 ```elixir
 bash = JustBash.new()
-{result, _} = JustBash.exec(bash, ~S"""
-for i in $(seq 1 15); do
-  if [ $((i % 15)) -eq 0 ]; then
-    echo "FizzBuzz"
-  elif [ $((i % 3)) -eq 0 ]; then
-    echo "Fizz"
-  elif [ $((i % 5)) -eq 0 ]; then
-    echo "Buzz"
-  else
-    echo $i
-  fi
-done
+
+# Create and populate
+{_, bash} = JustBash.exec(bash, ~S"""
+sqlite3 mydb "CREATE TABLE users (id INTEGER, name TEXT, email TEXT)"
+sqlite3 mydb "INSERT INTO users VALUES (1, 'alice', 'alice@example.com')"
+sqlite3 mydb "INSERT INTO users VALUES (2, 'bob', 'bob@example.com')"
 """)
-IO.puts(result.stdout)
+
+# Query with different output formats
+{result, _} = JustBash.exec(bash, "sqlite3 mydb 'SELECT * FROM users' --json")
+# [{"id":1,"name":"alice","email":"alice@example.com"},{"id":2,"name":"bob","email":"bob@example.com"}]
+
+{result, _} = JustBash.exec(bash, "sqlite3 mydb 'SELECT * FROM users' --csv")
+# id,name,email
+# 1,alice,alice@example.com
+# 2,bob,bob@example.com
+
+# Import CSV (auto-creates table from headers)
+{_, bash} = JustBash.exec(bash, ~S"""
+echo "name,score
+alice,100
+bob,85" | sqlite3 mydb ".import /dev/stdin scores"
+""")
 ```
 
-### Data Processing Pipeline
+## Network Access
+
+Network is disabled by default. Enable with allowlist:
 
 ```elixir
-bash = JustBash.new(files: %{
-  "/data/users.txt" => "alice\nbob\nalice\ncharlie\nbob\nalice"
+# Allow specific hosts
+bash = JustBash.new(network: %{
+  enabled: true,
+  allow_list: ["api.github.com", "*.example.com"]
 })
 
-{result, _} = JustBash.exec(bash, "cat /data/users.txt | sort | uniq -c | sort -rn")
-IO.puts(result.stdout)
-# 3 alice
-# 2 bob
-# 1 charlie
+# Or allow all (use with caution)
+bash = JustBash.new(network: %{enabled: true})
 ```
 
-### Arithmetic
+## Configuration
 
 ```elixir
-bash = JustBash.new()
-{result, _} = JustBash.exec(bash, ~S"""
-x=42
-echo "x squared = $((x ** 2))"
-echo "Is even? $((x % 2 == 0 ? 1 : 0))"
-""")
-IO.puts(result.stdout)
-# x squared = 1764
-# Is even? 1
+JustBash.new(
+  files: %{"/data/config.json" => ~s({"key": "value"})},  # Initial files
+  env: %{"API_KEY" => "secret"},                          # Environment variables  
+  cwd: "/app",                                            # Working directory
+  network: %{enabled: true, allow_list: ["*.api.com"]},   # Network access
+  http_client: MyMockClient                               # Custom HTTP client for testing
+)
 ```
 
-### File Manipulation
+## Installation
 
 ```elixir
-bash = JustBash.new()
-{_, bash} = JustBash.exec(bash, "mkdir -p /app/src")
-{_, bash} = JustBash.exec(bash, "echo 'console.log(\"hello\")' > /app/src/index.js")
-{result, _} = JustBash.exec(bash, "cat /app/src/index.js")
-IO.puts(result.stdout)
-# console.log("hello")
+def deps do
+  [{:just_bash, "~> 0.1.0"}]
+end
 ```
 
-## API Reference
+## Testing
 
-### `JustBash.new(opts \\ [])`
-
-Creates a new bash environment.
-
-**Options:**
-- `:files` - Map of path => content for initial files
-- `:env` - Map of environment variables
-- `:cwd` - Starting working directory (default: `"/home/user"`)
-
-**Returns:** A `%JustBash{}` struct
-
-### `JustBash.exec(bash, command)`
-
-Executes a bash command string.
-
-**Parameters:**
-- `bash` - A `%JustBash{}` struct
-- `command` - A string containing the bash command(s) to execute
-
-**Returns:** `{result, updated_bash}` where result is a map containing:
-- `:stdout` - Standard output as a string
-- `:stderr` - Standard error as a string
-- `:exit_code` - Exit code (0 = success)
-- `:env` - Final environment variables
-
-## Use Cases
-
-- **AI Agents** - Safe bash execution for LLM-powered coding assistants
-- **Testing** - Test bash scripts without touching the real filesystem
-- **Education** - Learn bash in a safe sandbox
-- **CI/CD Simulation** - Prototype build scripts
-- **Demos** - Show bash examples in documentation without side effects
-
-## Architecture
-
-JustBash consists of several components:
-
-- **Lexer** (`JustBash.Parser.Lexer`) - Tokenizes bash source code
-- **Parser** (`JustBash.Parser`) - Recursive descent parser producing an AST
-- **AST** (`JustBash.AST`) - Abstract syntax tree node definitions
-- **Interpreter** (`JustBash`) - Executes AST nodes
-- **Virtual Filesystem** (`JustBash.Fs.InMemoryFs`) - In-memory filesystem implementation
-- **Arithmetic** (`JustBash.Arithmetic`) - Arithmetic expression parser and evaluator
+```bash
+mix test              # Run tests
+mix dialyzer          # Type checking
+mix credo --strict    # Linting
+```
 
 ## Known Limitations
 
 - No real filesystem access (by design)
-- No network access
 - No process spawning or job control
-- No arrays or associative arrays
-- No process substitution (`<(cmd)`)
-- No here documents (`<<EOF`)
-- No glob expansion (`*`, `?`, `[...]`)
-- Functions are parsed but not executed
-
-## Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Running Tests
-
-```bash
-mix test
-```
-
-### Running the Demo
-
-```bash
-mix run demo.exs
-```
+- No arrays or associative arrays (variables are strings)
+- No process substitution `<(cmd)`
+- Limited glob expansion
+- SQLite databases are in-memory only
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT
 
 ## Acknowledgments
 
-This project was inspired by the need for safe bash execution in AI agent environments.
+This project was 100% generated by Claude (Anthropic) as an experiment in LLM-assisted development. The entire codebase—including the parser, interpreter, 50+ commands, and test suite—was written through conversational prompting without human-written code.
