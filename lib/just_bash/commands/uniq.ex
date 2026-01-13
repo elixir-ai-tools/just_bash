@@ -41,7 +41,7 @@ defmodule JustBash.Commands.Uniq do
           lines
           |> Enum.chunk_by(& &1)
           |> Enum.map_join("\n", fn chunk ->
-            # Real uniq pads count to 4 characters
+            # Real uniq pads count to 4 characters (right-aligned)
             count = String.pad_leading(Integer.to_string(length(chunk)), 4)
             "#{count} #{hd(chunk)}"
           end)
