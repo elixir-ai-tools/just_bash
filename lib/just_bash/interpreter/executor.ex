@@ -432,7 +432,7 @@ defmodule JustBash.Interpreter.Executor do
 
   defp symlink?(bash, path) do
     case JustBash.Fs.InMemoryFs.lstat(bash.fs, path) do
-      {:ok, stat} -> stat.is_symlink
+      {:ok, stat} -> stat.is_symbolic_link
       {:error, _} -> false
     end
   end

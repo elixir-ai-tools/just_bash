@@ -77,10 +77,11 @@ defmodule JustBash.Commands.Readlink do
   end
 
   defp process_file(fs, path, _original, true) do
-    resolve_path(fs, path, MapSet.new())
+    do_resolve_path(fs, path, MapSet.new())
   end
 
-  defp resolve_path(fs, path, seen) do
+  @dialyzer {:nowarn_function, do_resolve_path: 3}
+  defp do_resolve_path(fs, path, seen) do
     if MapSet.member?(seen, path) do
       {:ok, path}
     else
@@ -92,7 +93,7 @@ defmodule JustBash.Commands.Readlink do
     case InMemoryFs.readlink(fs, path) do
       {:ok, target} ->
         new_path = resolve_target(path, target)
-        resolve_path(fs, new_path, MapSet.put(seen, path))
+        do_resolve_path(fs, new_path, MapSet.put(seen, path))
 
       {:error, _} ->
         {:ok, path}

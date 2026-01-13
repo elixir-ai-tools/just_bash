@@ -18,12 +18,12 @@ defmodule JustBash.MixProject do
       dialyzer: [plt_add_apps: [:mix]],
       name: "JustBash",
       source_url: @source_url,
-      homepage_url: @source_url,
-      preferred_cli_env: [
-        dialyzer: :dev,
-        credo: :dev
-      ]
+      homepage_url: @source_url
     ]
+  end
+
+  def cli do
+    [preferred_envs: [dialyzer: :dev, credo: :dev]]
   end
 
   def application do
@@ -38,6 +38,7 @@ defmodule JustBash.MixProject do
       {:nimble_parsec, "~> 1.4"},
       {:req, "~> 0.5"},
       {:jason, "~> 1.4"},
+      {:exqlite, "~> 0.27"},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

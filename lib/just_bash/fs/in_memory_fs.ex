@@ -699,7 +699,12 @@ defmodule JustBash.Fs.InMemoryFs do
     end
   end
 
-  defp get_entry_following_symlinks(%__MODULE__{data: data} = fs, path, seen \\ MapSet.new()) do
+  defp get_entry_following_symlinks(fs, path) do
+    do_get_entry_following_symlinks(fs, path, MapSet.new())
+  end
+
+  @dialyzer {:nowarn_function, do_get_entry_following_symlinks: 3}
+  defp do_get_entry_following_symlinks(%__MODULE__{data: data} = fs, path, seen) do
     case Map.get(data, path) do
       nil ->
         {:error, :enoent}
@@ -709,7 +714,7 @@ defmodule JustBash.Fs.InMemoryFs do
           {:error, :eloop}
         else
           resolved = resolve_symlink_target(path, target)
-          get_entry_following_symlinks(fs, resolved, MapSet.put(seen, path))
+          do_get_entry_following_symlinks(fs, resolved, MapSet.put(seen, path))
         end
 
       entry ->

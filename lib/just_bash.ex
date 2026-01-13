@@ -40,7 +40,8 @@ defmodule JustBash do
             last_exit_code: 0,
             network: %{enabled: false, allow_list: []},
             shell_opts: %{errexit: false, nounset: false, pipefail: false},
-            http_client: nil
+            http_client: nil,
+            databases: %{}
 
   @type exec_result :: %{
           stdout: String.t(),
@@ -68,7 +69,8 @@ defmodule JustBash do
           exit_code: non_neg_integer(),
           last_exit_code: non_neg_integer(),
           network: network_config(),
-          shell_opts: shell_opts()
+          shell_opts: shell_opts(),
+          databases: map()
         }
 
   @doc """

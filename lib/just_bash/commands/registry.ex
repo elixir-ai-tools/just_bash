@@ -70,7 +70,8 @@ defmodule JustBash.Commands.Registry do
     "jq" => Commands.Jq,
     "set" => Commands.Set,
     "source" => Commands.Source,
-    "." => Commands.Source
+    "." => Commands.Source,
+    "sqlite3" => Commands.Sqlite3
   }
 
   @doc """
