@@ -557,9 +557,14 @@ defmodule JustBash.PropertyTest do
       end
     end
 
+    # Reserved words that would confuse the parser
+    @reserved_words ~w(if then else elif fi do done case esac while until for in function)
+
     property "prefix with list expansion produces correct count" do
       check all(
-              prefix <- string(:alphanumeric, min_length: 1, max_length: 5),
+              prefix <-
+                string(:alphanumeric, min_length: 1, max_length: 5)
+                |> filter(&(&1 not in @reserved_words)),
               items <-
                 list_of(string(:alphanumeric, min_length: 1, max_length: 3),
                   min_length: 2,
@@ -577,7 +582,9 @@ defmodule JustBash.PropertyTest do
 
     property "suffix with list expansion produces correct count" do
       check all(
-              suffix <- string(:alphanumeric, min_length: 1, max_length: 5),
+              suffix <-
+                string(:alphanumeric, min_length: 1, max_length: 5)
+                |> filter(&(&1 not in @reserved_words)),
               items <-
                 list_of(string(:alphanumeric, min_length: 1, max_length: 3),
                   min_length: 2,
