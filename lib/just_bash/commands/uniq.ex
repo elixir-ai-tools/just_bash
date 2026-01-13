@@ -51,16 +51,14 @@ defmodule JustBash.Commands.Uniq do
           lines
           |> Enum.chunk_by(& &1)
           |> Enum.filter(fn chunk -> length(chunk) > 1 end)
-          |> Enum.map(&hd/1)
-          |> Enum.join("\n")
+          |> Enum.map_join("\n", &hd/1)
 
         flags.u ->
           # Only print unique lines (lines that appear exactly once)
           lines
           |> Enum.chunk_by(& &1)
           |> Enum.filter(fn chunk -> length(chunk) == 1 end)
-          |> Enum.map(&hd/1)
-          |> Enum.join("\n")
+          |> Enum.map_join("\n", &hd/1)
 
         true ->
           lines

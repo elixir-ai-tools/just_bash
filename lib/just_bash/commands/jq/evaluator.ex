@@ -238,15 +238,11 @@ defmodule JustBash.Commands.Jq.Evaluator do
   defp eval({:func, name, args}, data, opts), do: eval_func(name, args, data, opts)
 
   defp eval({:format, :csv}, data, _opts) when is_list(data) do
-    data
-    |> Enum.map(&format_csv_field/1)
-    |> Enum.join(",")
+    Enum.map_join(data, ",", &format_csv_field/1)
   end
 
   defp eval({:format, :tsv}, data, _opts) when is_list(data) do
-    data
-    |> Enum.map(&format_tsv_field/1)
-    |> Enum.join("\t")
+    Enum.map_join(data, "\t", &format_tsv_field/1)
   end
 
   defp eval({:format, :json}, data, _opts), do: Jason.encode!(data)
@@ -714,7 +710,7 @@ defmodule JustBash.Commands.Jq.Evaluator do
 
   # implode - [65,66,67] -> "ABC"
   defp eval_func(:implode, [], data, _opts) when is_list(data) do
-    data |> Enum.map(&<<&1::utf8>>) |> Enum.join()
+    Enum.map_join(data, &<<&1::utf8>>)
   end
 
   # explode - "ABC" -> [65,66,67]
@@ -907,7 +903,8 @@ defmodule JustBash.Commands.Jq.Evaluator do
   end
 
   # isnan, isinfinite, isfinite, isnormal
-  defp eval_func(:isnan, [], data, _opts) when is_float(data), do: data != data
+  # Note: Elixir floats can't be NaN, so isnan is always false for actual floats
+  defp eval_func(:isnan, [], :nan, _opts), do: true
   defp eval_func(:isnan, [], _data, _opts), do: false
 
   # Elixir doesn't have infinity/NaN, so we use special atoms and handle them
@@ -925,6 +922,7 @@ defmodule JustBash.Commands.Jq.Evaluator do
   defp eval_func(:isnormal, [], _data, _opts), do: false
 
   # infinite/nan - we can't truly represent these in Elixir, return large numbers
+  # credo:disable-for-next-line Credo.Check.Readability.LargeNumbers
   defp eval_func(:infinite, [], _data, _opts), do: 1.7976931348623157e308
   defp eval_func(:nan, [], _data, _opts), do: nil
 

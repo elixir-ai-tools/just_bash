@@ -149,7 +149,6 @@ defmodule JustBash.Commands.Printf do
   defp parse_precision(p, _default), do: String.to_integer(p)
 
   defp apply_width(str, _left_align, _zero_pad, ""), do: str
-  defp apply_width(str, _left_align, _zero_pad, nil), do: str
 
   defp apply_width(str, left_align, zero_pad, width_str) do
     width = String.to_integer(width_str)

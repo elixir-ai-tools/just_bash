@@ -15,7 +15,10 @@ defmodule JustBash.MixProject do
       description: @description,
       package: package(),
       docs: docs(),
-      dialyzer: [plt_add_apps: [:mix]],
+      dialyzer: [
+        plt_add_apps: [:mix],
+        ignore_warnings: ".dialyzer_ignore.exs"
+      ],
       name: "JustBash",
       source_url: @source_url,
       homepage_url: @source_url

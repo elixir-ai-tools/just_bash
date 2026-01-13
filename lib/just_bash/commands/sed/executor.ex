@@ -191,8 +191,7 @@ defmodule JustBash.Commands.Sed.Executor do
     new_pattern_space =
       state.pattern_space
       |> String.graphemes()
-      |> Enum.map(fn char -> Map.get(translation, char, char) end)
-      |> Enum.join()
+      |> Enum.map_join(fn char -> Map.get(translation, char, char) end)
 
     %{state | pattern_space: new_pattern_space}
   end

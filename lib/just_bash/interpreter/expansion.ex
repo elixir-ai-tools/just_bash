@@ -355,8 +355,7 @@ defmodule JustBash.Interpreter.Expansion do
       {String.to_integer(idx), value}
     end)
     |> Enum.sort_by(&elem(&1, 0))
-    |> Enum.map(&elem(&1, 1))
-    |> Enum.join(" ")
+    |> Enum.map_join(" ", &elem(&1, 1))
   end
 
   defp expand_array_index(bash, arr_name, index_str) do

@@ -9,7 +9,8 @@ defmodule JustBash.Commands.Command do
   alias JustBash.Fs.InMemoryFs
 
   @type bash :: JustBash.t()
-  @type result :: %{stdout: String.t(), stderr: String.t(), exit_code: non_neg_integer()}
+  # Result map - may include control flow signals (__break__, __continue__, __return__)
+  @type result :: map()
   @type execution_result :: {result(), bash()}
 
   @doc """

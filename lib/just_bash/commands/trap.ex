@@ -58,10 +58,9 @@ defmodule JustBash.Commands.Trap do
 
     output =
       traps
-      |> Enum.map(fn {signal, cmd} ->
+      |> Enum.map_join("\n", fn {signal, cmd} ->
         "trap -- '#{escape_single_quotes(cmd)}' #{signal}"
       end)
-      |> Enum.join("\n")
 
     output = if output == "", do: "", else: output <> "\n"
     {Command.ok(output), bash}
@@ -74,11 +73,10 @@ defmodule JustBash.Commands.Trap do
       signals
       |> Enum.map(&normalize_signal/1)
       |> Enum.filter(&Map.has_key?(traps, &1))
-      |> Enum.map(fn signal ->
+      |> Enum.map_join("\n", fn signal ->
         cmd = Map.get(traps, signal)
         "trap -- '#{escape_single_quotes(cmd)}' #{signal}"
       end)
-      |> Enum.join("\n")
 
     output = if output == "", do: "", else: output <> "\n"
     {Command.ok(output), bash}

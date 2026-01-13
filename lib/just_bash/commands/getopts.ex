@@ -106,10 +106,10 @@ defmodule JustBash.Commands.Getopts do
           |> Map.put("OPTIND", to_string(optind + 1))
 
         stderr =
-          if not String.starts_with?(optstring, ":") do
-            "getopts: illegal option -- #{opt_char}\n"
-          else
+          if String.starts_with?(optstring, ":") do
             ""
+          else
+            "getopts: illegal option -- #{opt_char}\n"
           end
 
         {%{stdout: "", stderr: stderr, exit_code: 0}, %{bash | env: env}}
@@ -177,10 +177,10 @@ defmodule JustBash.Commands.Getopts do
           |> Map.put("OPTIND", to_string(optind + 1))
 
         stderr =
-          if not String.starts_with?(optstring, ":") do
-            "getopts: option requires an argument -- #{opt_char}\n"
-          else
+          if String.starts_with?(optstring, ":") do
             ""
+          else
+            "getopts: option requires an argument -- #{opt_char}\n"
           end
 
         {%{stdout: "", stderr: stderr, exit_code: 0}, %{bash | env: env}}

@@ -564,37 +564,34 @@ defmodule JustBash.Commands.Awk.Parser do
   # Parse ternary operator: condition ? true_val : false_val
   defp parse_ternary(expr) do
     # Handle parenthesized condition: (condition) ? true : false
-    cond do
-      String.starts_with?(expr, "(") ->
-        case find_matching_paren(expr, 0) do
-          {:ok, end_pos} ->
-            condition = String.slice(expr, 1..(end_pos - 1)//1)
-            rest = String.slice(expr, (end_pos + 1)..-1//1) |> String.trim()
+    if String.starts_with?(expr, "(") do
+      case find_matching_paren(expr, 0) do
+        {:ok, end_pos} ->
+          condition = String.slice(expr, 1..(end_pos - 1)//1)
+          rest = String.slice(expr, (end_pos + 1)..-1//1) |> String.trim()
 
-            case Regex.run(~r/^\?\s*(.+?)\s*:\s*(.+)$/, rest) do
-              [_, true_val, false_val] ->
-                {:ternary, parse_condition_expr(String.trim(condition)),
-                 parse_expression(String.trim(true_val)),
-                 parse_expression(String.trim(false_val))}
+          case Regex.run(~r/^\?\s*(.+?)\s*:\s*(.+)$/, rest) do
+            [_, true_val, false_val] ->
+              {:ternary, parse_condition_expr(String.trim(condition)),
+               parse_expression(String.trim(true_val)), parse_expression(String.trim(false_val))}
 
-              nil ->
-                {:literal, expr}
-            end
+            nil ->
+              {:literal, expr}
+          end
 
-          :error ->
-            {:literal, expr}
-        end
-
+        :error ->
+          {:literal, expr}
+      end
+    else
       # Non-parenthesized condition
-      true ->
-        case Regex.run(~r/^(.+?)\s*\?\s*(.+?)\s*:\s*(.+)$/, expr) do
-          [_, condition, true_val, false_val] ->
-            {:ternary, parse_condition_expr(String.trim(condition)),
-             parse_expression(String.trim(true_val)), parse_expression(String.trim(false_val))}
+      case Regex.run(~r/^(.+?)\s*\?\s*(.+?)\s*:\s*(.+)$/, expr) do
+        [_, condition, true_val, false_val] ->
+          {:ternary, parse_condition_expr(String.trim(condition)),
+           parse_expression(String.trim(true_val)), parse_expression(String.trim(false_val))}
 
-          nil ->
-            {:literal, expr}
-        end
+        nil ->
+          {:literal, expr}
+      end
     end
   end
 
