@@ -40,6 +40,7 @@ defmodule JustBash.MixProject do
       {:jason, "~> 1.4"},
       {:exqlite, "~> 0.27"},
       {:solid, "~> 1.2"},
+      {:earmark, "~> 1.4"},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

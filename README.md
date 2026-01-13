@@ -67,6 +67,7 @@ sqlite3 db "SELECT * FROM users WHERE active = 1" --json | jq -r '.[].email'
 `jq` - JSON processor
 `sqlite3` - In-memory SQL database with `.import` for CSV
 `liquid` - Liquid template engine (via Solid)
+`markdown` / `md` - Markdown to HTML (via Earmark)
 
 ### Utilities
 `echo`, `printf`, `pwd`, `cd`, `env`, `export`, `unset`, `test`, `[`, `seq`, `date`, `sleep`, `basename`, `dirname`, `which`, `xargs`, `tee`, `base64`, `md5sum`
@@ -113,6 +114,25 @@ sqlite3 blog "SELECT * FROM posts" --json | jq '{posts: .}' | liquid /templates/
 ```
 
 Supports loops, conditionals, filters, and all standard Liquid tags.
+
+## Markdown
+
+Convert Markdown to HTML with GitHub Flavored Markdown support:
+
+```elixir
+bash = JustBash.new()
+
+# Simple conversion
+{result, _} = JustBash.exec(bash, "echo '# Hello **World**' | markdown")
+# <h1>Hello <strong>World</strong></h1>
+
+# From file
+{result, _} = JustBash.exec(bash, "markdown README.md > readme.html")
+
+# GFM features: tables, strikethrough, task lists
+{result, _} = JustBash.exec(bash, "echo '~~deleted~~' | md")
+# <del>deleted</del>
+```
 
 ## SQLite Integration
 
