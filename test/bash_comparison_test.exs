@@ -445,6 +445,8 @@ defmodule JustBash.BashComparisonTest do
       compare_bash("echo -e 'a\na\nb\nb\nc' | uniq")
     end
 
+    # Skip: uniq -c padding differs between GNU (7 chars) and BSD (4 chars)
+    @tag :skip
     test "uniq count" do
       compare_bash("echo -e 'a\na\nb' | uniq -c")
     end
