@@ -30,10 +30,22 @@ defmodule JustBash.Commands.Jq.Evaluator do
   defp wrap_results({:multi, list}) when is_list(list), do: list
   defp wrap_results(other), do: [other]
 
+  defp eval_to_list(expr, data, opts) do
+    case eval(expr, data, opts) do
+      {:multi, items} -> items
+      item -> [item]
+    end
+  end
+
   defp eval(:identity, data, _opts), do: data
   defp eval(:empty, _data, _opts), do: :empty
 
   defp eval({:literal, value}, _data, _opts), do: value
+
+  defp eval({:var, name}, _data, opts) do
+    bindings = Map.get(opts, :bindings, %{})
+    Map.get(bindings, name) || throw({:eval_error, "variable $#{name} not defined"})
+  end
 
   defp eval({:string_interp, parts}, data, opts) do
     Enum.map_join(parts, fn
@@ -133,6 +145,15 @@ defmodule JustBash.Commands.Jq.Evaluator do
     if truthy?(left_val), do: left_val, else: eval(right, data, opts)
   end
 
+  defp eval({:alternative, left, right}, data, opts) do
+    try do
+      left_val = eval(left, data, opts)
+      if left_val == nil or left_val == false, do: eval(right, data, opts), else: left_val
+    catch
+      {:eval_error, _} -> eval(right, data, opts)
+    end
+  end
+
   defp eval({:not, expr}, data, opts) do
     val = eval(expr, data, opts)
     not truthy?(val)
@@ -149,6 +170,37 @@ defmodule JustBash.Commands.Jq.Evaluator do
     catch
       {:eval_error, _} -> nil
     end
+  end
+
+  # reduce EXPR as $VAR (INIT; UPDATE)
+  defp eval({:reduce, expr, var_name, init, update}, data, opts) do
+    items = eval_to_list(expr, data, opts)
+    init_val = eval(init, data, opts)
+
+    Enum.reduce(items, init_val, fn item, acc ->
+      bindings = Map.get(opts, :bindings, %{})
+      new_bindings = Map.put(bindings, var_name, item)
+      new_opts = Map.put(opts, :bindings, new_bindings)
+      eval(update, acc, new_opts)
+    end)
+  end
+
+  # foreach EXPR as $VAR (INIT; UPDATE; EXTRACT) or (INIT; UPDATE)
+  defp eval({:foreach, expr, var_name, init, update, extract}, data, opts) do
+    items = eval_to_list(expr, data, opts)
+    init_val = eval(init, data, opts)
+
+    {results, _} =
+      Enum.map_reduce(items, init_val, fn item, acc ->
+        bindings = Map.get(opts, :bindings, %{})
+        new_bindings = Map.put(bindings, var_name, item)
+        new_opts = Map.put(opts, :bindings, new_bindings)
+        new_acc = eval(update, acc, new_opts)
+        extracted = eval(extract, new_acc, new_opts)
+        {extracted, new_acc}
+      end)
+
+    {:multi, results}
   end
 
   defp eval({:recursive_descent}, data, _opts), do: {:multi, recursive_descent(data)}
@@ -505,6 +557,494 @@ defmodule JustBash.Commands.Jq.Evaluator do
   defp eval_func(:fabs, [], data, _opts) when is_number(data), do: abs(data)
   defp eval_func(:sqrt, [], data, _opts) when is_number(data), do: :math.sqrt(data)
 
+  # to_entries: {a:1,b:2} -> [{key:"a",value:1},{key:"b",value:2}]
+  defp eval_func(:to_entries, [], data, _opts) when is_map(data) do
+    Enum.map(data, fn {k, v} -> %{"key" => k, "value" => v} end)
+  end
+
+  # from_entries: [{key:"a",value:1}] -> {a:1}
+  defp eval_func(:from_entries, [], data, _opts) when is_list(data) do
+    Enum.reduce(data, %{}, fn entry, acc ->
+      key = Map.get(entry, "key") || Map.get(entry, "k") || Map.get(entry, "name")
+      value = Map.get(entry, "value") || Map.get(entry, "v")
+      if key, do: Map.put(acc, to_string(key), value), else: acc
+    end)
+  end
+
+  # with_entries(f): to_entries | map(f) | from_entries
+  defp eval_func(:with_entries, [expr], data, opts) when is_map(data) do
+    entries = Enum.map(data, fn {k, v} -> %{"key" => k, "value" => v} end)
+    transformed = Enum.map(entries, fn entry -> eval(expr, entry, opts) end)
+
+    Enum.reduce(transformed, %{}, fn entry, acc ->
+      key = Map.get(entry, "key") || Map.get(entry, "k") || Map.get(entry, "name")
+      value = Map.get(entry, "value") || Map.get(entry, "v")
+      if key, do: Map.put(acc, to_string(key), value), else: acc
+    end)
+  end
+
+  # any - true if any element is truthy
+  defp eval_func(:any, [], data, _opts) when is_list(data) do
+    Enum.any?(data, &truthy?/1)
+  end
+
+  defp eval_func(:any, [expr], data, opts) when is_list(data) do
+    Enum.any?(data, fn item -> truthy?(eval(expr, item, opts)) end)
+  end
+
+  # all - true if all elements are truthy
+  defp eval_func(:all, [], data, _opts) when is_list(data) do
+    Enum.all?(data, &truthy?/1)
+  end
+
+  defp eval_func(:all, [expr], data, opts) when is_list(data) do
+    Enum.all?(data, fn item -> truthy?(eval(expr, item, opts)) end)
+  end
+
+  # range - generate sequence
+  defp eval_func(:range, [n_expr], data, opts) do
+    n = eval(n_expr, data, opts)
+    {:multi, Enum.to_list(0..(n - 1))}
+  end
+
+  defp eval_func(:range, [from_expr, to_expr], data, opts) do
+    from = eval(from_expr, data, opts)
+    to = eval(to_expr, data, opts)
+    {:multi, Enum.to_list(from..(to - 1))}
+  end
+
+  defp eval_func(:range, [from_expr, to_expr, step_expr], data, opts) do
+    from = eval(from_expr, data, opts)
+    to = eval(to_expr, data, opts)
+    step = eval(step_expr, data, opts)
+    {:multi, Enum.to_list(from..(to - 1)//step)}
+  end
+
+  # limit(n; expr) - take first n results from expr
+  defp eval_func(:limit, [n_expr, expr], data, opts) do
+    n = eval(n_expr, data, opts)
+    results = eval_to_list(expr, data, opts)
+    {:multi, Enum.take(results, n)}
+  end
+
+  # until(cond; update) - loop until condition true
+  defp eval_func(:until, [cond_expr, update_expr], data, opts) do
+    do_until(data, cond_expr, update_expr, opts)
+  end
+
+  # while(cond; update) - loop while condition true
+  defp eval_func(:while, [cond_expr, update_expr], data, opts) do
+    do_while(data, cond_expr, update_expr, opts, [])
+  end
+
+  # repeat(expr) - infinite repetition (use with limit)
+  defp eval_func(:repeat, [expr], data, opts) do
+    # We can't do infinite, but we'll do a reasonable limit
+    results =
+      Stream.repeatedly(fn -> eval(expr, data, opts) end)
+      |> Enum.take(1000)
+
+    {:multi, results}
+  end
+
+  # recurse - recursively apply filter
+  defp eval_func(:recurse, [], data, opts) do
+    eval_func(:recurse, [{:func, :recurse_default, []}], data, opts)
+  end
+
+  defp eval_func(:recurse, [expr], data, opts) do
+    {:multi, do_recurse(data, expr, opts, [])}
+  end
+
+  defp eval_func(:recurse_default, [], data, opts) do
+    # Default recurse filter: .[]?
+    eval({:optional, :iterate}, data, opts)
+  end
+
+  # walk(f) - recursively transform
+  defp eval_func(:walk, [expr], data, opts) do
+    do_walk(data, expr, opts)
+  end
+
+  # indices(s) - find all indices of substring/element
+  defp eval_func(:indices, [s_expr], data, opts) when is_binary(data) do
+    s = eval(s_expr, data, opts)
+    find_string_indices(data, s, 0, [])
+  end
+
+  defp eval_func(:indices, [s_expr], data, opts) when is_list(data) do
+    s = eval(s_expr, data, opts)
+
+    data
+    |> Enum.with_index()
+    |> Enum.filter(fn {item, _} -> item == s end)
+    |> Enum.map(fn {_, i} -> i end)
+  end
+
+  # index(s) - first index
+  defp eval_func(:index, [s_expr], data, opts) when is_binary(data) do
+    s = eval(s_expr, data, opts)
+
+    case :binary.match(data, s) do
+      {pos, _} -> pos
+      :nomatch -> nil
+    end
+  end
+
+  defp eval_func(:index, [s_expr], data, opts) when is_list(data) do
+    s = eval(s_expr, data, opts)
+    Enum.find_index(data, &(&1 == s))
+  end
+
+  # rindex(s) - last index
+  defp eval_func(:rindex, [s_expr], data, opts) when is_binary(data) do
+    s = eval(s_expr, data, opts)
+    indices = find_string_indices(data, s, 0, [])
+    List.last(indices)
+  end
+
+  defp eval_func(:rindex, [s_expr], data, opts) when is_list(data) do
+    s = eval(s_expr, data, opts)
+
+    data
+    |> Enum.with_index()
+    |> Enum.reverse()
+    |> Enum.find_value(fn {item, i} -> if item == s, do: i end)
+  end
+
+  # implode - [65,66,67] -> "ABC"
+  defp eval_func(:implode, [], data, _opts) when is_list(data) do
+    data |> Enum.map(&<<&1::utf8>>) |> Enum.join()
+  end
+
+  # explode - "ABC" -> [65,66,67]
+  defp eval_func(:explode, [], data, _opts) when is_binary(data) do
+    data |> String.to_charlist()
+  end
+
+  # setpath(path; value)
+  defp eval_func(:setpath, [path_expr, value_expr], data, opts) do
+    path = eval(path_expr, data, opts)
+    value = eval(value_expr, data, opts)
+    set_path(data, path, value)
+  end
+
+  # delpaths(paths)
+  defp eval_func(:delpaths, [paths_expr], data, opts) do
+    paths = eval(paths_expr, data, opts)
+    Enum.reduce(paths, data, &delete_path(&2, &1))
+  end
+
+  # test(regex) - regex match test
+  defp eval_func(:test, [regex_expr], data, opts) when is_binary(data) do
+    pattern = eval(regex_expr, data, opts)
+
+    case Regex.compile(pattern) do
+      {:ok, regex} -> Regex.match?(regex, data)
+      {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
+    end
+  end
+
+  defp eval_func(:test, [regex_expr, flags_expr], data, opts) when is_binary(data) do
+    pattern = eval(regex_expr, data, opts)
+    flags = eval(flags_expr, data, opts)
+    regex_opts = parse_regex_flags(flags)
+
+    case Regex.compile(pattern, regex_opts) do
+      {:ok, regex} -> Regex.match?(regex, data)
+      {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
+    end
+  end
+
+  # match(regex) - regex match with captures
+  defp eval_func(:match, [regex_expr], data, opts) when is_binary(data) do
+    pattern = eval(regex_expr, data, opts)
+
+    case Regex.compile(pattern) do
+      {:ok, regex} ->
+        case Regex.run(regex, data, return: :index) do
+          nil ->
+            nil
+
+          [{offset, length} | captures] ->
+            %{
+              "offset" => offset,
+              "length" => length,
+              "string" => String.slice(data, offset, length),
+              "captures" =>
+                Enum.map(captures, fn {o, l} ->
+                  %{"offset" => o, "length" => l, "string" => String.slice(data, o, l)}
+                end)
+            }
+        end
+
+      {:error, _} ->
+        throw({:eval_error, "invalid regex: #{pattern}"})
+    end
+  end
+
+  # capture(regex) - named captures
+  defp eval_func(:capture, [regex_expr], data, opts) when is_binary(data) do
+    pattern = eval(regex_expr, data, opts)
+
+    case Regex.compile(pattern) do
+      {:ok, regex} ->
+        case Regex.named_captures(regex, data) do
+          nil -> nil
+          captures -> captures
+        end
+
+      {:error, _} ->
+        throw({:eval_error, "invalid regex: #{pattern}"})
+    end
+  end
+
+  # gsub(regex; replacement) - global substitution
+  defp eval_func(:gsub, [regex_expr, repl_expr], data, opts) when is_binary(data) do
+    pattern = eval(regex_expr, data, opts)
+    replacement = eval(repl_expr, data, opts)
+
+    case Regex.compile(pattern) do
+      {:ok, regex} -> Regex.replace(regex, data, replacement)
+      {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
+    end
+  end
+
+  # sub(regex; replacement) - single substitution
+  defp eval_func(:sub, [regex_expr, repl_expr], data, opts) when is_binary(data) do
+    pattern = eval(regex_expr, data, opts)
+    replacement = eval(repl_expr, data, opts)
+
+    case Regex.compile(pattern) do
+      {:ok, regex} -> Regex.replace(regex, data, replacement, global: false)
+      {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
+    end
+  end
+
+  # scan(regex) - all matches
+  defp eval_func(:scan, [regex_expr], data, opts) when is_binary(data) do
+    pattern = eval(regex_expr, data, opts)
+
+    case Regex.compile(pattern) do
+      {:ok, regex} ->
+        Regex.scan(regex, data)
+        |> Enum.map(fn
+          [match] -> match
+          [_match | groups] -> groups
+        end)
+
+      {:error, _} ->
+        throw({:eval_error, "invalid regex: #{pattern}"})
+    end
+  end
+
+  # splits(regex) - split keeping empty strings
+  defp eval_func(:splits, [regex_expr], data, opts) when is_binary(data) do
+    pattern = eval(regex_expr, data, opts)
+
+    case Regex.compile(pattern) do
+      {:ok, regex} -> {:multi, Regex.split(regex, data)}
+      {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
+    end
+  end
+
+  # ascii - check if string is ASCII
+  defp eval_func(:ascii, [], data, _opts) when is_binary(data) do
+    String.valid?(data) and data == String.replace(data, ~r/[^\x00-\x7F]/, "")
+  end
+
+  # numbers - filter for numbers (used with recursive descent)
+  defp eval_func(:numbers, [], data, _opts) when is_number(data), do: data
+  defp eval_func(:numbers, [], _data, _opts), do: :empty
+
+  # strings - filter for strings
+  defp eval_func(:strings, [], data, _opts) when is_binary(data), do: data
+  defp eval_func(:strings, [], _data, _opts), do: :empty
+
+  # booleans - filter for booleans
+  defp eval_func(:booleans, [], data, _opts) when is_boolean(data), do: data
+  defp eval_func(:booleans, [], _data, _opts), do: :empty
+
+  # nulls - filter for null
+  defp eval_func(:nulls, [], nil, _opts), do: nil
+  defp eval_func(:nulls, [], _data, _opts), do: :empty
+
+  # arrays - filter for arrays
+  defp eval_func(:arrays, [], data, _opts) when is_list(data), do: data
+  defp eval_func(:arrays, [], _data, _opts), do: :empty
+
+  # objects - filter for objects
+  defp eval_func(:objects, [], data, _opts) when is_map(data), do: data
+  defp eval_func(:objects, [], _data, _opts), do: :empty
+
+  # iterables - filter for arrays and objects
+  defp eval_func(:iterables, [], data, _opts) when is_list(data) or is_map(data), do: data
+  defp eval_func(:iterables, [], _data, _opts), do: :empty
+
+  # scalars - filter for non-iterables
+  defp eval_func(:scalars, [], data, _opts)
+       when not is_list(data) and not is_map(data),
+       do: data
+
+  defp eval_func(:scalars, [], _data, _opts), do: :empty
+
+  # values - filter out null
+  defp eval_func(:values, [], nil, _opts), do: :empty
+  defp eval_func(:values, [], data, _opts) when is_map(data), do: Map.values(data)
+  defp eval_func(:values, [], data, _opts) when is_list(data), do: data
+  defp eval_func(:values, [], data, _opts), do: data
+
+  # min_by/max_by - fix for empty arrays
+  defp eval_func(:min_by, [_expr], [], _opts), do: nil
+  defp eval_func(:max_by, [_expr], [], _opts), do: nil
+
+  defp eval_func(:min_by, [expr], data, opts) when is_list(data) and data != [] do
+    Enum.min_by(data, fn item -> eval(expr, item, opts) end)
+  end
+
+  defp eval_func(:max_by, [expr], data, opts) when is_list(data) and data != [] do
+    Enum.max_by(data, fn item -> eval(expr, item, opts) end)
+  end
+
+  # isnan, isinfinite, isfinite, isnormal
+  defp eval_func(:isnan, [], data, _opts) when is_float(data), do: data != data
+  defp eval_func(:isnan, [], _data, _opts), do: false
+
+  # Elixir doesn't have infinity/NaN, so we use special atoms and handle them
+  defp eval_func(:isinfinite, [], :infinity, _opts), do: true
+  defp eval_func(:isinfinite, [], :neg_infinity, _opts), do: true
+  defp eval_func(:isinfinite, [], _data, _opts), do: false
+
+  defp eval_func(:isfinite, [], :infinity, _opts), do: false
+  defp eval_func(:isfinite, [], :neg_infinity, _opts), do: false
+  defp eval_func(:isfinite, [], :nan, _opts), do: false
+  defp eval_func(:isfinite, [], data, _opts) when is_number(data), do: true
+  defp eval_func(:isfinite, [], _data, _opts), do: false
+
+  defp eval_func(:isnormal, [], data, _opts) when is_number(data) and data != 0, do: true
+  defp eval_func(:isnormal, [], _data, _opts), do: false
+
+  # infinite/nan - we can't truly represent these in Elixir, return large numbers
+  defp eval_func(:infinite, [], _data, _opts), do: 1.7976931348623157e308
+  defp eval_func(:nan, [], _data, _opts), do: nil
+
+  # builtins - list all builtin functions
+  defp eval_func(:builtins, [], _data, _opts) do
+    [
+      "add",
+      "all",
+      "any",
+      "arrays",
+      "ascii",
+      "ascii_downcase",
+      "ascii_upcase",
+      "booleans",
+      "builtins",
+      "capture",
+      "ceil",
+      "contains",
+      "delpaths",
+      "empty",
+      "endswith",
+      "env",
+      "error",
+      "explode",
+      "fabs",
+      "first",
+      "flatten",
+      "floor",
+      "from_entries",
+      "fromjson",
+      "getpath",
+      "group_by",
+      "gsub",
+      "has",
+      "implode",
+      "in",
+      "index",
+      "indices",
+      "infinite",
+      "inside",
+      "isfinite",
+      "isinfinite",
+      "isnan",
+      "isnormal",
+      "iterables",
+      "join",
+      "keys",
+      "last",
+      "leaf_paths",
+      "length",
+      "limit",
+      "ltrimstr",
+      "map",
+      "match",
+      "max",
+      "max_by",
+      "min",
+      "min_by",
+      "nan",
+      "not",
+      "now",
+      "nth",
+      "nulls",
+      "numbers",
+      "objects",
+      "paths",
+      "range",
+      "recurse",
+      "repeat",
+      "reverse",
+      "rindex",
+      "round",
+      "rtrimstr",
+      "scalars",
+      "scan",
+      "select",
+      "setpath",
+      "sort",
+      "sort_by",
+      "split",
+      "splits",
+      "sqrt",
+      "startswith",
+      "strings",
+      "sub",
+      "test",
+      "to_entries",
+      "tojson",
+      "tonumber",
+      "tostring",
+      "type",
+      "unique",
+      "unique_by",
+      "until",
+      "values",
+      "walk",
+      "while",
+      "with_entries"
+    ]
+  end
+
+  # debug - pass through with debug output (we just pass through)
+  defp eval_func(:debug, [], data, _opts), do: data
+
+  defp eval_func(:debug, [msg_expr], data, opts) do
+    _msg = eval(msg_expr, data, opts)
+    data
+  end
+
+  # input/inputs - these are tricky in our context, stub them
+  defp eval_func(:input, [], _data, _opts), do: :empty
+  defp eval_func(:inputs, [], _data, _opts), do: {:multi, []}
+
+  # $ENV access as a function
+  defp eval_func(:env, [name_expr], data, opts) do
+    name = eval(name_expr, data, opts)
+    env_map = Map.get(opts, :env, %{})
+    Map.get(env_map, name)
+  end
+
   defp eval_func(name, _args, _data, _opts) do
     throw({:eval_error, "unknown function: #{name}"})
   end
@@ -628,4 +1168,125 @@ defmodule JustBash.Commands.Jq.Evaluator do
   defp stringify(true), do: "true"
   defp stringify(false), do: "false"
   defp stringify(other), do: Jason.encode!(other)
+
+  # Helper for until loop
+  defp do_until(data, cond_expr, update_expr, opts) do
+    if truthy?(eval(cond_expr, data, opts)) do
+      data
+    else
+      new_data = eval(update_expr, data, opts)
+      do_until(new_data, cond_expr, update_expr, opts)
+    end
+  end
+
+  # Helper for while loop
+  defp do_while(data, cond_expr, update_expr, opts, acc) do
+    if truthy?(eval(cond_expr, data, opts)) do
+      new_data = eval(update_expr, data, opts)
+      do_while(new_data, cond_expr, update_expr, opts, [data | acc])
+    else
+      {:multi, Enum.reverse([data | acc])}
+    end
+  end
+
+  # Helper for recurse
+  defp do_recurse(data, expr, opts, acc) do
+    results = eval_to_list(expr, data, opts)
+    results = Enum.reject(results, &(&1 == :empty))
+
+    case results do
+      [] ->
+        [data | acc]
+
+      _ ->
+        nested = Enum.flat_map(results, &do_recurse(&1, expr, opts, []))
+        [data | nested] ++ acc
+    end
+  end
+
+  # Helper for walk - recursively transform bottom-up
+  defp do_walk(data, expr, opts) when is_map(data) do
+    transformed = Map.new(data, fn {k, v} -> {k, do_walk(v, expr, opts)} end)
+    eval(expr, transformed, opts)
+  end
+
+  defp do_walk(data, expr, opts) when is_list(data) do
+    transformed = Enum.map(data, &do_walk(&1, expr, opts))
+    eval(expr, transformed, opts)
+  end
+
+  defp do_walk(data, expr, opts) do
+    eval(expr, data, opts)
+  end
+
+  # Helper for finding string indices
+  defp find_string_indices(string, pattern, offset, acc) do
+    case :binary.match(string, pattern) do
+      {pos, _len} ->
+        new_offset = offset + pos + 1
+        rest = :binary.part(string, pos + 1, byte_size(string) - pos - 1)
+        find_string_indices(rest, pattern, new_offset, [offset + pos | acc])
+
+      :nomatch ->
+        Enum.reverse(acc)
+    end
+  end
+
+  # Helper for setpath
+  defp set_path(_data, [], value), do: value
+
+  defp set_path(data, [key | rest], value) when is_map(data) and is_binary(key) do
+    Map.put(data, key, set_path(Map.get(data, key, %{}), rest, value))
+  end
+
+  defp set_path(data, [idx | rest], value) when is_list(data) and is_integer(idx) do
+    List.update_at(data, idx, fn existing -> set_path(existing || %{}, rest, value) end)
+  end
+
+  defp set_path(nil, [key | rest], value) when is_binary(key) do
+    %{key => set_path(nil, rest, value)}
+  end
+
+  defp set_path(nil, [idx | rest], value) when is_integer(idx) do
+    list = List.duplicate(nil, idx + 1)
+    List.update_at(list, idx, fn _ -> set_path(nil, rest, value) end)
+  end
+
+  defp set_path(data, _, _), do: data
+
+  # Helper for deletepath
+  defp delete_path(_data, []), do: nil
+
+  defp delete_path(data, [key]) when is_map(data) and is_binary(key) do
+    Map.delete(data, key)
+  end
+
+  defp delete_path(data, [idx]) when is_list(data) and is_integer(idx) do
+    List.delete_at(data, idx)
+  end
+
+  defp delete_path(data, [key | rest]) when is_map(data) and is_binary(key) do
+    Map.update(data, key, nil, &delete_path(&1, rest))
+  end
+
+  defp delete_path(data, [idx | rest]) when is_list(data) and is_integer(idx) do
+    List.update_at(data, idx, &delete_path(&1, rest))
+  end
+
+  defp delete_path(data, _), do: data
+
+  # Helper for regex flags
+  defp parse_regex_flags(flags) when is_binary(flags) do
+    flags
+    |> String.graphemes()
+    |> Enum.reduce([], fn
+      "i", acc -> [:caseless | acc]
+      "x", acc -> [:extended | acc]
+      "s", acc -> [:dotall | acc]
+      "m", acc -> [:multiline | acc]
+      _, acc -> acc
+    end)
+  end
+
+  defp parse_regex_flags(_), do: []
 end

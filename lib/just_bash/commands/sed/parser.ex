@@ -13,6 +13,10 @@ defmodule JustBash.Commands.Sed.Parser do
           | :delete
           | :print
           | {:substitute, Regex.t(), String.t(), substitute_flags()}
+          | {:append, String.t()}
+          | {:insert, String.t()}
+          | {:change, String.t()}
+          | {:translate, String.t(), String.t()}
   @type sed_command :: %{
           address1: address(),
           address2: address(),
@@ -150,6 +154,41 @@ defmodule JustBash.Commands.Sed.Parser do
 
   defp parse_single_command("s" <> rest, extended) do
     parse_substitute_command(rest, extended)
+  end
+
+  # a\ - append text after current line
+  defp parse_single_command("a\\" <> rest, _extended) do
+    text = String.trim_leading(rest)
+    {:ok, {:append, unescape_text(text)}}
+  end
+
+  defp parse_single_command("a " <> rest, _extended) do
+    {:ok, {:append, unescape_text(rest)}}
+  end
+
+  # i\ - insert text before current line
+  defp parse_single_command("i\\" <> rest, _extended) do
+    text = String.trim_leading(rest)
+    {:ok, {:insert, unescape_text(text)}}
+  end
+
+  defp parse_single_command("i " <> rest, _extended) do
+    {:ok, {:insert, unescape_text(rest)}}
+  end
+
+  # c\ - change (replace) current line with text
+  defp parse_single_command("c\\" <> rest, _extended) do
+    text = String.trim_leading(rest)
+    {:ok, {:change, unescape_text(text)}}
+  end
+
+  defp parse_single_command("c " <> rest, _extended) do
+    {:ok, {:change, unescape_text(rest)}}
+  end
+
+  # y/source/dest/ - transliterate characters
+  defp parse_single_command("y" <> rest, _extended) do
+    parse_translate_command(rest)
   end
 
   defp parse_single_command(other, _extended) do
@@ -328,5 +367,38 @@ defmodule JustBash.Commands.Sed.Parser do
 
   defp do_convert_bre(<<c, rest::binary>>, acc, false) do
     do_convert_bre(rest, acc <> <<c>>, false)
+  end
+
+  defp unescape_text(text) do
+    text
+    |> String.replace("\\n", "\n")
+    |> String.replace("\\t", "\t")
+    |> String.replace("\\\\", "\\")
+  end
+
+  defp parse_translate_command(rest) do
+    if String.length(rest) < 1 do
+      {:error, "unterminated `y' command"}
+    else
+      delimiter = String.first(rest)
+      rest = String.slice(rest, 1..-1//1)
+      parse_translate_parts(rest, delimiter)
+    end
+  end
+
+  defp parse_translate_parts(rest, delimiter) do
+    parts = String.split(rest, delimiter, parts: 3)
+
+    case parts do
+      [source, dest | _] when byte_size(source) == byte_size(dest) ->
+        {:ok, {:translate, source, dest}}
+
+      [source, dest | _] ->
+        {:error,
+         "y command requires source and dest of same length (#{byte_size(source)} vs #{byte_size(dest)})"}
+
+      _ ->
+        {:error, "unterminated `y' command"}
+    end
   end
 end

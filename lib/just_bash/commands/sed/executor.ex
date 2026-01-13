@@ -11,6 +11,9 @@ defmodule JustBash.Commands.Sed.Executor do
           pattern_space: String.t(),
           deleted: boolean(),
           printed: boolean(),
+          appended: String.t() | nil,
+          inserted: String.t() | nil,
+          changed: String.t() | nil,
           line_num: pos_integer(),
           total_lines: pos_integer()
         }
@@ -52,6 +55,9 @@ defmodule JustBash.Commands.Sed.Executor do
       pattern_space: line,
       deleted: false,
       printed: false,
+      appended: nil,
+      inserted: nil,
+      changed: nil,
       line_num: line_num,
       total_lines: total_lines
     }
@@ -65,21 +71,36 @@ defmodule JustBash.Commands.Sed.Executor do
 
     new_output =
       cond do
+        final_line_state.changed != nil ->
+          # c command: replace line entirely, ignore deleted/printed
+          inserted = if final_line_state.inserted, do: final_line_state.inserted <> "\n", else: ""
+          appended = if final_line_state.appended, do: final_line_state.appended <> "\n", else: ""
+          output <> inserted <> final_line_state.changed <> "\n" <> appended
+
         final_line_state.deleted ->
-          output
+          # Still output inserted/appended even if line deleted
+          inserted = if final_line_state.inserted, do: final_line_state.inserted <> "\n", else: ""
+          appended = if final_line_state.appended, do: final_line_state.appended <> "\n", else: ""
+          output <> inserted <> appended
 
         silent ->
+          inserted = if final_line_state.inserted, do: final_line_state.inserted <> "\n", else: ""
+          appended = if final_line_state.appended, do: final_line_state.appended <> "\n", else: ""
+
           if final_line_state.printed do
-            output <> final_line_state.pattern_space <> "\n"
+            output <> inserted <> final_line_state.pattern_space <> "\n" <> appended
           else
-            output
+            output <> inserted <> appended
           end
 
         true ->
           extra =
             if final_line_state.printed, do: final_line_state.pattern_space <> "\n", else: ""
 
-          output <> final_line_state.pattern_space <> "\n" <> extra
+          inserted = if final_line_state.inserted, do: final_line_state.inserted <> "\n", else: ""
+          appended = if final_line_state.appended, do: final_line_state.appended <> "\n", else: ""
+
+          output <> inserted <> final_line_state.pattern_space <> "\n" <> appended <> extra
       end
 
     {new_output, new_range_state}
@@ -160,6 +181,21 @@ defmodule JustBash.Commands.Sed.Executor do
   defp execute_command(:noop, state), do: state
   defp execute_command(:delete, state), do: %{state | deleted: true}
   defp execute_command(:print, state), do: %{state | printed: true}
+  defp execute_command({:append, text}, state), do: %{state | appended: text}
+  defp execute_command({:insert, text}, state), do: %{state | inserted: text}
+  defp execute_command({:change, text}, state), do: %{state | changed: text}
+
+  defp execute_command({:translate, source, dest}, state) do
+    translation = Enum.zip(String.graphemes(source), String.graphemes(dest)) |> Map.new()
+
+    new_pattern_space =
+      state.pattern_space
+      |> String.graphemes()
+      |> Enum.map(fn char -> Map.get(translation, char, char) end)
+      |> Enum.join()
+
+    %{state | pattern_space: new_pattern_space}
+  end
 
   defp execute_command({:substitute, regex, replacement, flags}, state) do
     global = :global in flags

@@ -78,7 +78,7 @@ defmodule JustBash.Commands.Jq.Parser do
   defp parse_comma_tail(acc, rest), do: {{:comma, acc}, rest}
 
   defp parse_or(input) do
-    {left, rest} = parse_and(input)
+    {left, rest} = parse_alternative(input)
     rest = String.trim(rest)
 
     if String.starts_with?(rest, "or") and not_ident_cont?(String.slice(rest, 2..-1//1)) do
@@ -87,6 +87,21 @@ defmodule JustBash.Commands.Jq.Parser do
       {{:boolean, :or, left, right}, rest3}
     else
       {left, rest}
+    end
+  end
+
+  # // (alternative operator) - returns left if not false/null, else right
+  defp parse_alternative(input) do
+    {left, rest} = parse_and(input)
+    rest = String.trim(rest)
+
+    case rest do
+      "//" <> rest2 ->
+        {right, rest3} = parse_alternative(String.trim(rest2))
+        {{:alternative, left, right}, rest3}
+
+      _ ->
+        {left, rest}
     end
   end
 
@@ -170,6 +185,9 @@ defmodule JustBash.Commands.Jq.Parser do
     parse_multiplicative_tail({:arith, :mul, left, right}, String.trim(rest2))
   end
 
+  # Don't match // (alternative operator) as division
+  defp parse_multiplicative_tail(left, "//" <> _rest = input), do: {left, input}
+
   defp parse_multiplicative_tail(left, "/" <> rest) do
     {right, rest2} = parse_primary(String.trim(rest))
     parse_multiplicative_tail({:arith, :div, left, right}, String.trim(rest2))
@@ -217,6 +235,16 @@ defmodule JustBash.Commands.Jq.Parser do
   defp parse_primary_token("try" <> rest = input) do
     if not_ident_cont?(rest), do: parse_try_expr(rest), else: parse_number_or_func(input)
   end
+
+  defp parse_primary_token("reduce" <> rest = input) do
+    if not_ident_cont?(rest), do: parse_reduce_expr(rest), else: parse_number_or_func(input)
+  end
+
+  defp parse_primary_token("foreach" <> rest = input) do
+    if not_ident_cont?(rest), do: parse_foreach_expr(rest), else: parse_number_or_func(input)
+  end
+
+  defp parse_primary_token("$" <> rest), do: parse_variable(rest)
 
   defp parse_primary_token(input), do: parse_number_or_func(input)
 
@@ -583,5 +611,61 @@ defmodule JustBash.Commands.Jq.Parser do
       {name, rest} ->
         {{:format, String.to_atom(name)}, rest}
     end
+  end
+
+  # reduce EXPR as $VAR (INIT; UPDATE)
+  defp parse_reduce_expr(rest) do
+    rest = String.trim(rest)
+    {expr, rest2} = parse_pipe(rest)
+    rest2 = String.trim(rest2)
+    "as" <> rest3 = rest2
+    rest3 = String.trim(rest3)
+    "$" <> rest4 = rest3
+    {var_name, rest5} = parse_identifier(rest4)
+    rest5 = String.trim(rest5)
+    "(" <> rest6 = rest5
+    {init, rest7} = parse_pipe(String.trim(rest6))
+    rest7 = String.trim(rest7)
+    ";" <> rest8 = rest7
+    {update, rest9} = parse_pipe(String.trim(rest8))
+    rest9 = String.trim(rest9)
+    ")" <> rest10 = rest9
+    {{:reduce, expr, var_name, init, update}, rest10}
+  end
+
+  # foreach EXPR as $VAR (INIT; UPDATE) - like reduce but outputs intermediate
+  defp parse_foreach_expr(rest) do
+    rest = String.trim(rest)
+    {expr, rest2} = parse_pipe(rest)
+    rest2 = String.trim(rest2)
+    "as" <> rest3 = rest2
+    rest3 = String.trim(rest3)
+    "$" <> rest4 = rest3
+    {var_name, rest5} = parse_identifier(rest4)
+    rest5 = String.trim(rest5)
+    "(" <> rest6 = rest5
+    {init, rest7} = parse_pipe(String.trim(rest6))
+    rest7 = String.trim(rest7)
+    ";" <> rest8 = rest7
+    {update, rest9} = parse_pipe(String.trim(rest8))
+    rest9 = String.trim(rest9)
+
+    case rest9 do
+      ";" <> rest10 ->
+        {extract, rest11} = parse_pipe(String.trim(rest10))
+        rest11 = String.trim(rest11)
+        ")" <> rest12 = rest11
+        {{:foreach, expr, var_name, init, update, extract}, rest12}
+
+      ")" <> rest10 ->
+        {{:foreach, expr, var_name, init, update, :identity}, rest10}
+    end
+  end
+
+  # $var - variable reference
+  defp parse_variable(rest) do
+    {name, rest2} = parse_identifier(rest)
+    if name == "", do: throw({:parse_error, "expected variable name after $"})
+    {{:var, name}, rest2}
   end
 end
