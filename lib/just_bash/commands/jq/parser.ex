@@ -192,6 +192,7 @@ defmodule JustBash.Commands.Jq.Parser do
   defp parse_primary_token("{" <> rest), do: parse_object_construction(rest)
   defp parse_primary_token("(" <> rest), do: parse_parenthesized(rest)
   defp parse_primary_token("\"" <> _ = input), do: parse_string_literal(input)
+  defp parse_primary_token("@" <> rest), do: parse_format_string(rest)
 
   defp parse_primary_token("null" <> rest = input) do
     if not_ident_cont?(rest), do: {{:literal, nil}, rest}, else: parse_number_or_func(input)
@@ -448,19 +449,45 @@ defmodule JustBash.Commands.Jq.Parser do
   end
 
   defp parse_string_literal("\"" <> rest) do
-    {str, rest2} = parse_string_content(rest, "")
-    {{:literal, str}, rest2}
+    {parts, rest2} = parse_string_content(rest, [])
+    ast = build_string_ast(parts)
+    {ast, rest2}
   end
 
-  defp parse_string_content("\"" <> rest, acc), do: {acc, rest}
-  defp parse_string_content("\\\"" <> rest, acc), do: parse_string_content(rest, acc <> "\"")
-  defp parse_string_content("\\n" <> rest, acc), do: parse_string_content(rest, acc <> "\n")
-  defp parse_string_content("\\t" <> rest, acc), do: parse_string_content(rest, acc <> "\t")
-  defp parse_string_content("\\\\" <> rest, acc), do: parse_string_content(rest, acc <> "\\")
+  defp parse_string_content("\"" <> rest, acc), do: {Enum.reverse(acc), rest}
+
+  defp parse_string_content("\\(" <> rest, acc) do
+    {expr, rest2} = parse_pipe(rest)
+    rest2 = String.trim(rest2)
+    ")" <> rest3 = rest2
+    parse_string_content(rest3, [{:interp, expr} | acc])
+  end
+
+  defp parse_string_content("\\\"" <> rest, acc),
+    do: parse_string_content(rest, add_char(acc, "\""))
+
+  defp parse_string_content("\\n" <> rest, acc),
+    do: parse_string_content(rest, add_char(acc, "\n"))
+
+  defp parse_string_content("\\t" <> rest, acc),
+    do: parse_string_content(rest, add_char(acc, "\t"))
+
+  defp parse_string_content("\\r" <> rest, acc),
+    do: parse_string_content(rest, add_char(acc, "\r"))
+
+  defp parse_string_content("\\\\" <> rest, acc),
+    do: parse_string_content(rest, add_char(acc, "\\"))
 
   defp parse_string_content(<<c::utf8, rest::binary>>, acc) do
-    parse_string_content(rest, acc <> <<c::utf8>>)
+    parse_string_content(rest, add_char(acc, <<c::utf8>>))
   end
+
+  defp add_char([{:str, s} | rest], c), do: [{:str, s <> c} | rest]
+  defp add_char(acc, c), do: [{:str, c} | acc]
+
+  defp build_string_ast([{:str, s}]), do: {:literal, s}
+  defp build_string_ast([]), do: {:literal, ""}
+  defp build_string_ast(parts), do: {:string_interp, parts}
 
   defp parse_number_or_func(input) do
     case Float.parse(input) do
@@ -546,5 +573,15 @@ defmodule JustBash.Commands.Jq.Parser do
   defp parse_try_expr(rest) do
     {expr, rest2} = parse_primary(String.trim(rest))
     {{:try, expr}, rest2}
+  end
+
+  defp parse_format_string(input) do
+    case parse_identifier(input) do
+      {"", _} ->
+        throw({:parse_error, "expected format name after @"})
+
+      {name, rest} ->
+        {{:format, String.to_atom(name)}, rest}
+    end
   end
 end

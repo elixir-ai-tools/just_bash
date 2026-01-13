@@ -35,6 +35,13 @@ defmodule JustBash.Commands.Jq.Evaluator do
 
   defp eval({:literal, value}, _data, _opts), do: value
 
+  defp eval({:string_interp, parts}, data, opts) do
+    Enum.map_join(parts, fn
+      {:str, s} -> s
+      {:interp, expr} -> stringify(eval(expr, data, opts))
+    end)
+  end
+
   defp eval({:field, name}, data, _opts) when is_map(data) do
     Map.get(data, name)
   end
@@ -177,6 +184,47 @@ defmodule JustBash.Commands.Jq.Evaluator do
   end
 
   defp eval({:func, name, args}, data, opts), do: eval_func(name, args, data, opts)
+
+  defp eval({:format, :csv}, data, _opts) when is_list(data) do
+    data
+    |> Enum.map(&format_csv_field/1)
+    |> Enum.join(",")
+  end
+
+  defp eval({:format, :tsv}, data, _opts) when is_list(data) do
+    data
+    |> Enum.map(&format_tsv_field/1)
+    |> Enum.join("\t")
+  end
+
+  defp eval({:format, :json}, data, _opts), do: Jason.encode!(data)
+
+  defp eval({:format, :text}, data, _opts) when is_binary(data), do: data
+  defp eval({:format, :text}, data, _opts), do: to_string(data)
+
+  defp eval({:format, :base64}, data, _opts) when is_binary(data), do: Base.encode64(data)
+
+  defp eval({:format, :base64d}, data, _opts) when is_binary(data) do
+    case Base.decode64(data) do
+      {:ok, decoded} -> decoded
+      :error -> throw({:eval_error, "invalid base64"})
+    end
+  end
+
+  defp eval({:format, :uri}, data, _opts) when is_binary(data), do: URI.encode(data)
+
+  defp eval({:format, :html}, data, _opts) when is_binary(data) do
+    data
+    |> String.replace("&", "&amp;")
+    |> String.replace("<", "&lt;")
+    |> String.replace(">", "&gt;")
+    |> String.replace("\"", "&quot;")
+    |> String.replace("'", "&#39;")
+  end
+
+  defp eval({:format, name}, _data, _opts) do
+    throw({:eval_error, "unknown format: @#{name}"})
+  end
 
   defp eval(other, _data, _opts) do
     throw({:eval_error, "unsupported expression: #{inspect(other)}"})
@@ -543,4 +591,41 @@ defmodule JustBash.Commands.Jq.Evaluator do
   end
 
   defp get_all_paths(_, _), do: []
+
+  defp format_csv_field(nil), do: ""
+  defp format_csv_field(true), do: "true"
+  defp format_csv_field(false), do: "false"
+  defp format_csv_field(n) when is_number(n), do: to_string(n)
+
+  defp format_csv_field(s) when is_binary(s) do
+    if String.contains?(s, [",", "\"", "\n", "\r"]) do
+      "\"" <> String.replace(s, "\"", "\"\"") <> "\""
+    else
+      s
+    end
+  end
+
+  defp format_csv_field(other), do: Jason.encode!(other)
+
+  defp format_tsv_field(nil), do: ""
+  defp format_tsv_field(true), do: "true"
+  defp format_tsv_field(false), do: "false"
+  defp format_tsv_field(n) when is_number(n), do: to_string(n)
+
+  defp format_tsv_field(s) when is_binary(s) do
+    s
+    |> String.replace("\\", "\\\\")
+    |> String.replace("\t", "\\t")
+    |> String.replace("\r", "\\r")
+    |> String.replace("\n", "\\n")
+  end
+
+  defp format_tsv_field(other), do: Jason.encode!(other)
+
+  defp stringify(nil), do: "null"
+  defp stringify(s) when is_binary(s), do: s
+  defp stringify(n) when is_number(n), do: to_string(n)
+  defp stringify(true), do: "true"
+  defp stringify(false), do: "false"
+  defp stringify(other), do: Jason.encode!(other)
 end
