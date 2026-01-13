@@ -44,7 +44,8 @@ defmodule JustBash.HttpClient do
         connect_options: connect_options(req),
         receive_timeout: req.timeout,
         redirect: req.follow_redirects,
-        max_redirects: @max_redirects
+        max_redirects: @max_redirects,
+        decode_body: false
       ]
 
       case Req.request(req_opts) do
