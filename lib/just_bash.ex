@@ -230,4 +230,80 @@ defmodule JustBash do
   """
   @spec tokenize(String.t()) :: [Lexer.Token.t()]
   def tokenize(input), do: Lexer.tokenize(input)
+
+  @doc """
+  Execute a bash script from a file on the real filesystem.
+
+  Reads the script from disk and executes it in the JustBash sandbox.
+  This is useful for development and testing scripts stored in real files.
+
+  ## Options
+
+  All options from `new/1` are supported, plus:
+  - `:print` - Print stdout/stderr to console (default: true)
+
+  ## Examples
+
+      # Run a script file
+      JustBash.exec_file("~/scripts/test.sh")
+
+      # Run with initial files in the sandbox
+      JustBash.exec_file("script.sh", files: %{"/data/input.txt" => "hello"})
+
+      # Run with network enabled
+      JustBash.exec_file("fetch_data.sh", network: %{enabled: true})
+
+      # Get result without printing
+      {result, bash} = JustBash.exec_file("script.sh", print: false)
+
+  ## CLI Usage
+
+      mix run -e 'JustBash.exec_file("script.sh")'
+  """
+  @spec exec_file(String.t(), keyword()) :: {exec_result(), t()}
+  def exec_file(path, opts \\ []) do
+    {print, opts} = Keyword.pop(opts, :print, true)
+    expanded_path = Path.expand(path)
+
+    case File.read(expanded_path) do
+      {:ok, script} ->
+        bash = new(opts)
+        {result, bash} = exec(bash, script)
+
+        if print do
+          if result.stdout != "", do: IO.write(result.stdout)
+          if result.stderr != "", do: IO.write(:stderr, result.stderr)
+
+          if result.exit_code != 0 do
+            IO.puts(:stderr, "\n[exit code: #{result.exit_code}]")
+          end
+        end
+
+        {result, bash}
+
+      {:error, reason} ->
+        error_msg = "Cannot read file '#{path}': #{:file.format_error(reason)}\n"
+
+        if print do
+          IO.write(:stderr, error_msg)
+        end
+
+        {%{stdout: "", stderr: error_msg, exit_code: 1, env: %{}}, new(opts)}
+    end
+  end
+
+  @doc """
+  Execute a bash script file, raising on file read errors.
+
+  ## Examples
+
+      {result, bash} = JustBash.exec_file!("script.sh")
+  """
+  @spec exec_file!(String.t(), keyword()) :: {exec_result(), t()}
+  def exec_file!(path, opts \\ []) do
+    expanded_path = Path.expand(path)
+    script = File.read!(expanded_path)
+    bash = new(opts)
+    exec(bash, script)
+  end
 end
