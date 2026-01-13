@@ -133,21 +133,18 @@ defmodule JustBash.Commands.Paste do
 
   defp process_serial(file_contents, delimiter) do
     file_contents
-    |> Enum.map(fn lines ->
+    |> Enum.map_join(fn lines ->
       join_with_delimiters(lines, delimiter) <> "\n"
     end)
-    |> Enum.join()
   end
 
   defp process_parallel(file_contents, delimiter) do
     max_lines = file_contents |> Enum.map(&length/1) |> Enum.max(fn -> 0 end)
 
-    0..(max_lines - 1)
-    |> Enum.map(fn idx ->
+    Enum.map_join(0..(max_lines - 1), fn idx ->
       parts = Enum.map(file_contents, fn lines -> Enum.at(lines, idx, "") end)
       join_with_delimiters(parts, delimiter) <> "\n"
     end)
-    |> Enum.join()
   end
 
   defp join_with_delimiters([], _delimiters), do: ""
@@ -158,7 +155,7 @@ defmodule JustBash.Commands.Paste do
 
     parts
     |> Enum.with_index()
-    |> Enum.map(fn {part, idx} ->
+    |> Enum.map_join(fn {part, idx} ->
       if idx == 0 do
         part
       else
@@ -166,6 +163,5 @@ defmodule JustBash.Commands.Paste do
         Enum.at(delim_chars, delim_idx) <> part
       end
     end)
-    |> Enum.join()
   end
 end

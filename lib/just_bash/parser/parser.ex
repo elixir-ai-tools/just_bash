@@ -25,6 +25,13 @@ defmodule JustBash.Parser do
     @moduledoc "Parse error with position information"
     defexception [:message, :line, :column, :token]
 
+    @type t :: %__MODULE__{
+            message: String.t(),
+            line: non_neg_integer(),
+            column: non_neg_integer(),
+            token: any()
+          }
+
     @impl true
     def message(%{message: msg, line: line, column: col}) do
       "Parse error at line #{line}, column #{col}: #{msg}"

@@ -308,18 +308,20 @@ defmodule JustBash.Commands.Awk.Parser do
 
   defp parse_printf_args(args) do
     case Regex.run(~r/^"([^"]*)"(?:,\s*(.*))?$/, args) do
-      [_, format, rest] ->
+      [_, format, rest] when rest != "" ->
         rest_args =
-          if rest && rest != "" do
-            rest
-            |> String.split(",")
-            |> Enum.map(&String.trim/1)
-            |> Enum.map(&parse_expression/1)
-          else
-            []
-          end
+          rest
+          |> String.split(",")
+          |> Enum.map(&String.trim/1)
+          |> Enum.map(&parse_expression/1)
 
         {format, rest_args}
+
+      [_, format, _] ->
+        {format, []}
+
+      [_, format] ->
+        {format, []}
 
       nil ->
         {args, []}

@@ -84,7 +84,7 @@ defmodule JustBash.Parser.WordParts do
       char == "$" ->
         parts = flush_literal(literal, parts)
         {part, end_idx} = parse_expansion(value, i)
-        new_parts = if part, do: parts ++ [part], else: parts
+        new_parts = parts ++ [part]
         parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
 
       char == "`" ->
@@ -185,7 +185,7 @@ defmodule JustBash.Parser.WordParts do
       char == "$" ->
         parts = flush_literal(literal, parts)
         {part, end_idx} = parse_expansion(value, i)
-        new_parts = if part, do: parts ++ [part], else: parts
+        new_parts = parts ++ [part]
         parse_double_quoted_loop(value, end_idx, len, "", new_parts)
 
       char == "`" ->
@@ -224,7 +224,7 @@ defmodule JustBash.Parser.WordParts do
       char == "$" ->
         parts = flush_literal(literal, parts)
         {part, end_idx} = parse_expansion(value, i)
-        new_parts = if part, do: parts ++ [part], else: parts
+        new_parts = parts ++ [part]
         parse_dq_content_loop(value, end_idx, len, "", new_parts)
 
       char == "`" ->

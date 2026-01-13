@@ -28,9 +28,10 @@ defmodule JustBash.FlagParser do
   """
 
   @type flag_spec :: %{
-          boolean: [atom()],
-          value: [atom()],
-          defaults: map()
+          :boolean => [atom()],
+          :value => [atom()],
+          :defaults => map(),
+          optional(:aliases) => map()
         }
 
   @type parse_result :: {map(), [String.t()]}
@@ -80,7 +81,9 @@ defmodule JustBash.FlagParser do
   end
 
   defp parse_flag(flag_str, remaining, spec, flags) do
-    flag_atom = String.to_atom(flag_str)
+    # Check for aliases first
+    aliases = Map.get(spec, :aliases, %{})
+    flag_atom = Map.get(aliases, flag_str, String.to_atom(flag_str))
 
     cond do
       flag_atom in spec.boolean ->

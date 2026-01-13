@@ -31,7 +31,7 @@ defmodule JustBash.Commands.Du do
           end)
 
         output =
-          if opts.grand_total and length(targets) > 0 do
+          if opts.grand_total and targets != [] do
             output <> "#{format_size(grand_total, opts.human_readable)}\ttotal\n"
           else
             output

@@ -10,28 +10,22 @@ defmodule JustBash.Commands.Ln do
 
   @impl true
   def execute(bash, args, _stdin) do
-    case parse_args(args) do
-      {:error, msg} ->
-        {Command.error(msg), bash}
+    {:ok, opts} = parse_args(args)
 
-      {:ok, opts} ->
-        if length(opts.files) < 2 do
-          {Command.error("ln: missing file operand\n"), bash}
-        else
-          [target | rest] = opts.files
-          link_name = List.last(rest)
-          link_path = InMemoryFs.resolve_path(bash.cwd, link_name)
+    if opts.files == [] or length(opts.files) < 2 do
+      {Command.error("ln: missing file operand\n"), bash}
+    else
+      [target | rest] = opts.files
+      link_name = List.last(rest)
+      link_path = InMemoryFs.resolve_path(bash.cwd, link_name)
 
-          result = create_link(bash, target, link_path, link_name, opts)
+      case create_link(bash, target, link_path, link_name, opts) do
+        {:ok, new_bash, output} ->
+          {Command.ok(output), new_bash}
 
-          case result do
-            {:ok, new_bash, output} ->
-              {Command.ok(output), new_bash}
-
-            {:error, msg} ->
-              {Command.error(msg), bash}
-          end
-        end
+        {:error, msg} ->
+          {Command.error(msg), bash}
+      end
     end
   end
 

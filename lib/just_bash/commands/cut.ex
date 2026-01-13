@@ -82,8 +82,7 @@ defmodule JustBash.Commands.Cut do
   defp get_content(_bash, [], stdin), do: stdin
 
   defp get_content(bash, files, _stdin) do
-    files
-    |> Enum.map(fn file ->
+    Enum.map_join(files, "", fn file ->
       resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
       case InMemoryFs.read_file(bash.fs, resolved) do
@@ -91,7 +90,6 @@ defmodule JustBash.Commands.Cut do
         {:error, _} -> ""
       end
     end)
-    |> Enum.join("")
   end
 
   defp process_content(content, opts) do

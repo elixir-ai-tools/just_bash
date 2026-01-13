@@ -79,7 +79,6 @@ defmodule JustBash.Commands.Printf do
   defp do_format("s", arg, precision) do
     case precision do
       "" -> arg
-      nil -> arg
       p -> String.slice(arg, 0, String.to_integer(p))
     end
   end
@@ -145,10 +144,8 @@ defmodule JustBash.Commands.Printf do
   end
 
   defp parse_precision("", default), do: default
-  defp parse_precision(nil, default), do: default
   defp parse_precision(p, _default), do: String.to_integer(p)
 
-  defp apply_width(str, _left_align, nil), do: str
   defp apply_width(str, _left_align, ""), do: str
 
   defp apply_width(str, left_align, width_str) do

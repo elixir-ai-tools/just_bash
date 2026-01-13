@@ -104,8 +104,7 @@ defmodule JustBash.Commands.Base64 do
         encoded
         |> String.graphemes()
         |> Enum.chunk_every(wrap)
-        |> Enum.map(&Enum.join/1)
-        |> Enum.join("\n")
+        |> Enum.map_join("\n", &Enum.join/1)
         |> then(fn s -> if s == "", do: "", else: s <> "\n" end)
       else
         encoded

@@ -49,7 +49,12 @@ defmodule JustBash.Commands.Awk do
                   {Command.error(msg), bash}
 
                 data ->
-                  output = Evaluator.execute(data, program, opts)
+                  eval_opts = %{
+                    field_separator: opts.field_separator,
+                    variables: opts.variables
+                  }
+
+                  output = Evaluator.execute(data, program, eval_opts)
                   {Command.ok(output), bash}
               end
           end

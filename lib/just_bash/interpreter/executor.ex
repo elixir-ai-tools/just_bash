@@ -8,7 +8,12 @@ defmodule JustBash.Interpreter.Executor do
   alias JustBash.Fs.InMemoryFs
   alias JustBash.Interpreter.Expansion
 
-  @type result :: %{stdout: String.t(), stderr: String.t(), exit_code: non_neg_integer()}
+  @type result :: %{
+          :stdout => String.t(),
+          :stderr => String.t(),
+          :exit_code => non_neg_integer(),
+          optional(:env) => map()
+        }
 
   @doc """
   Execute a parsed script AST.
@@ -706,9 +711,5 @@ defmodule JustBash.Interpreter.Executor do
   defp clear_stream(result, :stdout), do: %{result | stdout: ""}
   defp clear_stream(result, :stderr), do: %{result | stderr: ""}
 
-  defp format_redirection_error(path, :enoent), do: "bash: #{path}: No such file or directory\n"
-  defp format_redirection_error(path, :enotdir), do: "bash: #{path}: Not a directory\n"
   defp format_redirection_error(path, :eisdir), do: "bash: #{path}: Is a directory\n"
-  defp format_redirection_error(path, :eacces), do: "bash: #{path}: Permission denied\n"
-  defp format_redirection_error(path, reason), do: "bash: #{path}: #{inspect(reason)}\n"
 end

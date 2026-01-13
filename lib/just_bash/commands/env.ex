@@ -26,8 +26,7 @@ defmodule JustBash.Commands.Env do
         output =
           new_env
           |> Enum.sort()
-          |> Enum.map(fn {k, v} -> "#{k}=#{v}" end)
-          |> Enum.join("\n")
+          |> Enum.map_join("\n", fn {k, v} -> "#{k}=#{v}" end)
           |> then(fn s -> if s == "", do: "", else: s <> "\n" end)
 
         {Command.ok(output), bash}

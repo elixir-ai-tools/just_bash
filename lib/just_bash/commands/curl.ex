@@ -180,9 +180,7 @@ defmodule JustBash.Commands.Curl do
   end
 
   defp format_response_headers(headers) do
-    headers
-    |> Enum.map(fn {k, v} -> "#{k}: #{v}\n" end)
-    |> Enum.join()
+    Enum.map_join(headers, fn {k, v} -> "#{k}: #{v}\n" end)
   end
 
   defp status_text(200), do: "OK"

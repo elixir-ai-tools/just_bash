@@ -343,19 +343,26 @@ defmodule JustBash.Fs.InMemoryFs do
           {:ok, t()} | {:error, :eisdir}
   def write_file(%__MODULE__{} = fs, path, content, opts \\ []) do
     normalized = normalize_path(path)
-    mode = Keyword.get(opts, :mode, 0o644)
-    mtime = Keyword.get(opts, :mtime, DateTime.utc_now())
 
-    fs = ensure_parent_dirs(fs, normalized)
+    case Map.get(fs.data, normalized) do
+      %{type: :directory} ->
+        {:error, :eisdir}
 
-    entry = %{
-      type: :file,
-      content: content,
-      mode: mode,
-      mtime: mtime
-    }
+      _ ->
+        mode = Keyword.get(opts, :mode, 0o644)
+        mtime = Keyword.get(opts, :mtime, DateTime.utc_now())
 
-    {:ok, %{fs | data: Map.put(fs.data, normalized, entry)}}
+        fs = ensure_parent_dirs(fs, normalized)
+
+        entry = %{
+          type: :file,
+          content: content,
+          mode: mode,
+          mtime: mtime
+        }
+
+        {:ok, %{fs | data: Map.put(fs.data, normalized, entry)}}
+    end
   end
 
   @doc """

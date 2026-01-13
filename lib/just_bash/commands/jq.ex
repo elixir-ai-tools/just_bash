@@ -139,14 +139,13 @@ defmodule JustBash.Commands.Jq do
     end
   end
 
-  defp format_output(results, opts) when is_list(results) do
+  defp format_output(results, opts) do
+    separator = if opts.join_output, do: "", else: "\n"
+
     results
-    |> Enum.map(&format_value(&1, opts))
-    |> Enum.join(if opts.join_output, do: "", else: "\n")
+    |> Enum.map_join(separator, &format_value(&1, opts))
     |> then(fn s -> if opts.join_output, do: s, else: s <> "\n" end)
   end
-
-  defp format_output(result, opts), do: format_output([result], opts)
 
   defp format_value(value, opts) do
     cond do

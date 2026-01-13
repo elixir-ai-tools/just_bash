@@ -57,10 +57,7 @@ defmodule JustBash.Commands.Rev do
         lines
       end
 
-    reversed =
-      lines
-      |> Enum.map(&reverse_string/1)
-      |> Enum.join("\n")
+    reversed = Enum.map_join(lines, "\n", &reverse_string/1)
 
     if has_trailing_newline do
       reversed <> "\n"

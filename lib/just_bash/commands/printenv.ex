@@ -15,8 +15,7 @@ defmodule JustBash.Commands.Printenv do
       output =
         bash.env
         |> Enum.sort()
-        |> Enum.map(fn {k, v} -> "#{k}=#{v}" end)
-        |> Enum.join("\n")
+        |> Enum.map_join("\n", fn {k, v} -> "#{k}=#{v}" end)
         |> then(fn s -> if s == "", do: "", else: s <> "\n" end)
 
       {Command.ok(output), bash}

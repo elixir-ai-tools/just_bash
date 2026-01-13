@@ -195,14 +195,13 @@ defmodule JustBash.Interpreter.Expansion do
   defp glob_pattern_to_regex(pattern) do
     pattern
     |> String.graphemes()
-    |> Enum.map(fn
+    |> Enum.map_join(fn
       "*" -> ".*"
       "?" -> "."
       "[" -> "["
       "]" -> "]"
       c -> Regex.escape(c)
     end)
-    |> Enum.join()
   end
 
   defp expand_part(_bash, part) when is_binary(part), do: part
@@ -493,12 +492,11 @@ defmodule JustBash.Interpreter.Expansion do
   defp glob_to_regex(pattern) do
     pattern
     |> String.graphemes()
-    |> Enum.map(fn
+    |> Enum.map_join(fn
       "*" -> ".*"
       "?" -> "."
       c -> Regex.escape(c)
     end)
-    |> Enum.join()
   end
 
   defp remove_prefix(str, regex_pattern, greedy) do
