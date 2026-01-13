@@ -28,6 +28,32 @@ defmodule JustBash.Commands.Set do
         new_bash = %{bash | shell_opts: new_opts}
         {%{stdout: "", stderr: "", exit_code: 0}, new_bash}
 
+      {:ok, new_opts, positional_args} ->
+        # Set positional parameters ($1, $2, etc.)
+        # First, remove old positional parameters (numeric keys)
+        env_without_positional =
+          bash.env
+          |> Enum.reject(fn {key, _} ->
+            case Integer.parse(key) do
+              {n, ""} when n >= 1 -> true
+              _ -> false
+            end
+          end)
+          |> Enum.into(%{})
+
+        # Then add the new positional parameters
+        positional_env =
+          positional_args
+          |> Enum.with_index(1)
+          |> Enum.into(%{}, fn {arg, idx} -> {to_string(idx), arg} end)
+          |> Map.put("#", to_string(length(positional_args)))
+          |> Map.put("@", Enum.join(positional_args, " "))
+          |> Map.put("*", Enum.join(positional_args, " "))
+
+        new_env = Map.merge(env_without_positional, positional_env)
+        new_bash = %{bash | shell_opts: new_opts, env: new_env}
+        {%{stdout: "", stderr: "", exit_code: 0}, new_bash}
+
       {:error, msg} ->
         {%{stdout: "", stderr: "bash: set: #{msg}\n", exit_code: 1}, bash}
     end
@@ -102,6 +128,11 @@ defmodule JustBash.Commands.Set do
       {:error, _} = err ->
         err
     end
+  end
+
+  # set -- args: set positional parameters
+  defp parse_args(["--" | rest], opts) do
+    {:ok, opts, rest}
   end
 
   defp parse_args([arg | _rest], _opts) do

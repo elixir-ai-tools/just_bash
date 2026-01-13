@@ -51,7 +51,7 @@ defmodule JustBash.Commands.Awk.Formatter do
   defp format_by_type("d", width_spec, vals) do
     {val, rest_vals} = pop_value(vals, 0)
     num = parse_number(val) |> trunc()
-    {apply_width(to_string(num), width_spec), rest_vals}
+    {apply_int_width(num, width_spec), rest_vals}
   end
 
   defp format_by_type("f", width_spec, vals) do
@@ -89,6 +89,46 @@ defmodule JustBash.Commands.Awk.Formatter do
 
       :error ->
         str
+    end
+  end
+
+  # Integer width with zero-padding support
+  defp apply_int_width(num, ""), do: to_string(num)
+
+  defp apply_int_width(num, spec) do
+    cond do
+      # Zero-padded: 05, 010, etc.
+      String.starts_with?(spec, "0") ->
+        case Integer.parse(spec) do
+          {width, _} ->
+            str = to_string(abs(num))
+            sign = if num < 0, do: "-", else: ""
+            padded = String.pad_leading(str, width - String.length(sign), "0")
+            sign <> padded
+
+          :error ->
+            to_string(num)
+        end
+
+      # Left-aligned: -5, -10, etc.
+      String.starts_with?(spec, "-") ->
+        case Integer.parse(spec) do
+          {width, _} ->
+            String.pad_trailing(to_string(num), abs(width))
+
+          :error ->
+            to_string(num)
+        end
+
+      # Right-aligned with spaces
+      true ->
+        case Integer.parse(spec) do
+          {width, _} ->
+            String.pad_leading(to_string(num), width)
+
+          :error ->
+            to_string(num)
+        end
     end
   end
 

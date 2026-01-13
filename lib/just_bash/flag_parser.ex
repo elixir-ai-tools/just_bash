@@ -100,13 +100,33 @@ defmodule JustBash.FlagParser do
         end
 
       String.length(flag_str) > 1 ->
-        case parse_combined_flags(flag_str, spec, flags) do
-          {:ok, new_flags} -> {:ok, new_flags, remaining}
-          :error -> try_numeric_flag(flag_str, remaining, spec, flags)
+        # Try to parse as combined value flag (e.g., -k2, -n10)
+        case try_attached_value_flag(flag_str, spec, flags) do
+          {:ok, new_flags} ->
+            {:ok, new_flags, remaining}
+
+          :error ->
+            case parse_combined_flags(flag_str, spec, flags) do
+              {:ok, new_flags} -> {:ok, new_flags, remaining}
+              :error -> try_numeric_flag(flag_str, remaining, spec, flags)
+            end
         end
 
       true ->
         try_numeric_flag(flag_str, remaining, spec, flags)
+    end
+  end
+
+  # Handle flags like -k2, -n10 where value is attached
+  defp try_attached_value_flag(flag_str, spec, flags) do
+    <<first_char::binary-size(1), rest::binary>> = flag_str
+    flag_atom = String.to_atom(first_char)
+
+    if flag_atom in spec.value and rest != "" do
+      parsed_value = parse_value(rest)
+      {:ok, Map.put(flags, flag_atom, parsed_value)}
+    else
+      :error
     end
   end
 

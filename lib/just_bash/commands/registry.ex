@@ -74,7 +74,16 @@ defmodule JustBash.Commands.Registry do
     "sqlite3" => Commands.Sqlite3,
     "liquid" => Commands.Liquid,
     "markdown" => Commands.Markdown,
-    "md" => Commands.Markdown
+    "md" => Commands.Markdown,
+    "local" => Commands.Local,
+    "declare" => Commands.Local,
+    "typeset" => Commands.Local,
+    "break" => Commands.Break,
+    "continue" => Commands.Continue,
+    "shift" => Commands.Shift,
+    "return" => Commands.Return,
+    "getopts" => Commands.Getopts,
+    "trap" => Commands.Trap
   }
 
   @doc """

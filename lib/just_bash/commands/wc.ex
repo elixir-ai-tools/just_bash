@@ -45,10 +45,15 @@ defmodule JustBash.Commands.Wc do
     }
   end
 
-  defp format_counts(counts, %{l: true, w: false, c: false}), do: "#{counts.lines}"
-  defp format_counts(counts, %{l: false, w: true, c: false}), do: "#{counts.words}"
-  defp format_counts(counts, %{l: false, w: false, c: true}), do: "#{counts.bytes}"
-  defp format_counts(counts, _flags), do: "#{counts.lines} #{counts.words} #{counts.bytes}"
+  defp format_counts(counts, %{l: true, w: false, c: false}), do: pad_count(counts.lines)
+  defp format_counts(counts, %{l: false, w: true, c: false}), do: pad_count(counts.words)
+  defp format_counts(counts, %{l: false, w: false, c: true}), do: pad_count(counts.bytes)
+
+  defp format_counts(counts, _flags),
+    do: "#{pad_count(counts.lines)} #{pad_count(counts.words)} #{pad_count(counts.bytes)}"
+
+  # Real wc pads counts to 8 characters
+  defp pad_count(n), do: String.pad_leading(Integer.to_string(n), 8)
 
   defp parse_flags(args), do: parse_flags(args, %{l: false, w: false, c: false}, [])
 

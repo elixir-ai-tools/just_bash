@@ -106,12 +106,14 @@ defmodule JustBash do
     http_client = Keyword.get(opts, :http_client)
 
     default_env = %{
-      "HOME" => "/home/user",
+      "HOME" => cwd,
       "PATH" => "/bin:/usr/bin",
       "IFS" => " \t\n",
       "PWD" => cwd,
       "OLDPWD" => cwd,
-      "?" => "0"
+      "?" => "0",
+      # Simulated PID for the sandboxed shell
+      "$" => Integer.to_string(:erlang.unique_integer([:positive]) |> rem(100_000))
     }
 
     %__MODULE__{
@@ -174,7 +176,9 @@ defmodule JustBash do
   def exec(bash, command) when is_binary(command) do
     case Parser.parse(command) do
       {:ok, ast} ->
-        Executor.execute_script(bash, ast)
+        {result, final_bash} = Executor.execute_script(bash, ast)
+        # Execute EXIT trap if set
+        execute_exit_trap(result, final_bash)
 
       {:error, error} ->
         {%{
@@ -183,6 +187,34 @@ defmodule JustBash do
            exit_code: 2,
            env: bash.env
          }, bash}
+    end
+  end
+
+  defp execute_exit_trap(result, bash) do
+    traps = Map.get(bash, :traps, %{})
+
+    case Map.get(traps, "EXIT") do
+      nil ->
+        {result, bash}
+
+      trap_cmd ->
+        # Execute the trap command
+        case Parser.parse(trap_cmd) do
+          {:ok, ast} ->
+            {trap_result, trap_bash} = Executor.execute_script(bash, ast)
+
+            # Combine output, keep original exit code
+            combined_result = %{
+              result
+              | stdout: result.stdout <> trap_result.stdout,
+                stderr: result.stderr <> trap_result.stderr
+            }
+
+            {combined_result, trap_bash}
+
+          {:error, _} ->
+            {result, bash}
+        end
     end
   end
 

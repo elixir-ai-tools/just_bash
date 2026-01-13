@@ -54,8 +54,13 @@ defmodule JustBash.Commands.Tee do
 
   defp write_files(fs, cwd, files, content, append) do
     Enum.reduce(files, {fs, "", 0}, fn file, {acc_fs, acc_stderr, acc_code} ->
-      resolved = InMemoryFs.resolve_path(cwd, file)
-      write_single_file(acc_fs, resolved, file, content, append, acc_stderr, acc_code)
+      # /dev/null is a black hole - just ignore writes to it
+      if file == "/dev/null" do
+        {acc_fs, acc_stderr, acc_code}
+      else
+        resolved = InMemoryFs.resolve_path(cwd, file)
+        write_single_file(acc_fs, resolved, file, content, append, acc_stderr, acc_code)
+      end
     end)
   end
 

@@ -8,8 +8,8 @@ defmodule JustBash.Commands.Sort do
 
   @flag_spec %{
     boolean: [:r, :u, :n],
-    value: [],
-    defaults: %{r: false, u: false, n: false}
+    value: [:k, :t],
+    defaults: %{r: false, u: false, n: false, k: nil, t: nil}
   }
 
   @impl true
@@ -41,12 +41,50 @@ defmodule JustBash.Commands.Sort do
     end
   end
 
+  defp sort_lines(lines, %{k: key_spec} = flags) when key_spec != nil do
+    {field_num, _} = parse_key_spec(key_spec)
+    delimiter = flags[:t] || " "
+
+    Enum.sort_by(
+      lines,
+      fn line -> get_sort_key(line, field_num, delimiter, flags.n) end,
+      sort_direction(flags.r)
+    )
+  end
+
   defp sort_lines(lines, %{n: true} = flags) do
     Enum.sort_by(lines, &parse_leading_number/1, sort_direction(flags.r))
   end
 
   defp sort_lines(lines, %{r: true}), do: Enum.sort(lines, :desc)
   defp sort_lines(lines, _flags), do: Enum.sort(lines)
+
+  defp parse_key_spec(spec) when is_integer(spec), do: {spec, nil}
+
+  defp parse_key_spec(spec) when is_binary(spec) do
+    # Parse key spec like "2" or "2,2" or "2.3"
+    case Integer.parse(spec) do
+      {n, _} -> {n, nil}
+      :error -> {1, nil}
+    end
+  end
+
+  defp get_sort_key(line, field_num, delimiter, numeric) do
+    fields =
+      if delimiter == " " do
+        String.split(line, ~r/\s+/, trim: true)
+      else
+        String.split(line, delimiter)
+      end
+
+    field = Enum.at(fields, field_num - 1, "")
+
+    if numeric do
+      parse_leading_number(field)
+    else
+      field
+    end
+  end
 
   defp parse_leading_number(line) do
     case Integer.parse(String.trim(line)) do

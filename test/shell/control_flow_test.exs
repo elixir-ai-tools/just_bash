@@ -271,4 +271,314 @@ defmodule JustBash.Shell.ControlFlowTest do
       assert result.stdout == "yes\n"
     end
   end
+
+  describe "break builtin" do
+    test "break exits for loop" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        for i in 1 2 3 4 5; do
+          echo $i
+          if [ $i -eq 3 ]; then
+            break
+          fi
+        done
+        echo done
+        """)
+
+      assert result.stdout == "1\n2\n3\ndone\n"
+    end
+
+    test "break exits while loop" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        i=0
+        while true; do
+          i=$((i + 1))
+          echo $i
+          if [ $i -eq 2 ]; then
+            break
+          fi
+        done
+        """)
+
+      assert result.stdout == "1\n2\n"
+    end
+
+    test "break n exits multiple levels" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        for i in 1 2; do
+          for j in a b c; do
+            echo "$i$j"
+            if [ $j = b ]; then
+              break 2
+            fi
+          done
+        done
+        echo done
+        """)
+
+      assert result.stdout == "1a\n1b\ndone\n"
+    end
+  end
+
+  describe "continue builtin" do
+    test "continue skips to next iteration" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        for i in 1 2 3 4 5; do
+          if [ $i -eq 3 ]; then
+            continue
+          fi
+          echo $i
+        done
+        """)
+
+      assert result.stdout == "1\n2\n4\n5\n"
+    end
+
+    test "continue in while loop" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        i=0
+        while [ $i -lt 5 ]; do
+          i=$((i + 1))
+          if [ $i -eq 3 ]; then
+            continue
+          fi
+          echo $i
+        done
+        """)
+
+      assert result.stdout == "1\n2\n4\n5\n"
+    end
+
+    test "continue n skips multiple levels" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        for i in 1 2 3; do
+          for j in a b; do
+            if [ $j = a ]; then
+              continue 2
+            fi
+            echo "$i$j"
+          done
+          echo "after-$i"
+        done
+        """)
+
+      # continue 2 skips to outer loop, never prints "after-N" or "$i b"
+      assert result.stdout == ""
+    end
+  end
+
+  describe "shift builtin" do
+    test "shift moves positional parameters" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        set -- a b c d e
+        echo $1
+        shift
+        echo $1
+        shift 2
+        echo $1
+        """)
+
+      assert result.stdout == "a\nb\nd\n"
+    end
+
+    test "shift updates $#" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        set -- 1 2 3 4 5
+        echo $#
+        shift 3
+        echo $#
+        """)
+
+      assert result.stdout == "5\n2\n"
+    end
+  end
+
+  describe "return builtin" do
+    test "return exits function" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        myfunc() {
+          echo before
+          return
+          echo after
+        }
+        myfunc
+        echo done
+        """)
+
+      assert result.stdout == "before\ndone\n"
+    end
+
+    test "return sets exit code" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        myfunc() {
+          return 42
+        }
+        myfunc
+        echo $?
+        """)
+
+      assert result.stdout == "42\n"
+    end
+
+    test "return 0 for success" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        success() {
+          return 0
+        }
+        success && echo ok
+        """)
+
+      assert result.stdout == "ok\n"
+    end
+  end
+
+  describe "getopts builtin" do
+    test "getopts parses simple options" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        set -- -a -b
+        while getopts "ab" opt; do
+          echo "opt=$opt"
+        done
+        """)
+
+      assert result.stdout == "opt=a\nopt=b\n"
+    end
+
+    test "getopts handles options with arguments" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        set -- -f myfile -o output
+        while getopts "f:o:" opt; do
+          echo "$opt=$OPTARG"
+        done
+        """)
+
+      assert result.stdout == "f=myfile\no=output\n"
+    end
+
+    test "getopts sets OPTIND" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        set -- -a -b arg1 arg2
+        while getopts "ab" opt; do
+          :
+        done
+        echo $OPTIND
+        """)
+
+      assert result.stdout == "3\n"
+    end
+  end
+
+  describe "trap builtin" do
+    test "trap EXIT runs on script end" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        trap 'echo cleanup' EXIT
+        echo main
+        """)
+
+      assert result.stdout == "main\ncleanup\n"
+    end
+
+    test "trap with empty string disables trap" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        trap 'echo cleanup' EXIT
+        trap '' EXIT
+        echo main
+        """)
+
+      assert result.stdout == "main\n"
+    end
+
+    test "trap -p shows current trap" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        trap 'echo bye' EXIT
+        trap -p EXIT
+        """)
+
+      assert result.stdout =~ "trap -- 'echo bye' EXIT"
+    end
+  end
+
+  describe "local/declare builtin" do
+    test "local creates function-scoped variable" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        x=global
+        myfunc() {
+          local x=local
+          echo "inside: $x"
+        }
+        myfunc
+        echo "outside: $x"
+        """)
+
+      assert result.stdout == "inside: local\noutside: global\n"
+    end
+
+    test "declare works as alias for local" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        myfunc() {
+          declare y=declared
+          echo $y
+        }
+        myfunc
+        """)
+
+      assert result.stdout == "declared\n"
+    end
+  end
 end

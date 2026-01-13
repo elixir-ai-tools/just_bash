@@ -480,7 +480,18 @@ defmodule JustBash.Parser.WordParts do
     next = String.at(value, start)
 
     if next && not (next =~ ~r/[}:#%\/]/) do
-      {name, _i} = collect_var_name(value, start)
+      {name, i} = collect_var_name(value, start)
+
+      # Check for array subscript like [0] or [@]
+      name =
+        if String.at(value, i) == "[" do
+          bracket_end = find_matching_bracket(value, i)
+          subscript = String.slice(value, (i + 1)..(bracket_end - 1)//1)
+          name <> "[" <> subscript <> "]"
+        else
+          name
+        end
+
       # start points to char after ${#, so brace is at start - 2
       end_idx = find_matching_brace(value, start - 2)
       {AST.parameter_expansion(name, %AST.Length{}), end_idx + 1}

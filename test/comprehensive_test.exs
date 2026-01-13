@@ -417,6 +417,35 @@ defmodule JustBash.ComprehensiveTest do
       assert result.stdout == "Hello, World!\nToday is a good day.\n"
     end
 
+    test "quoted heredoc does not expand variables" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        name=World
+        cat <<'EOF'
+        Hello, $name!
+        Today is a good day.
+        EOF
+        """)
+
+      assert result.stdout == "Hello, $name!\nToday is a good day.\n"
+    end
+
+    test "double-quoted heredoc delimiter also prevents expansion" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        VAR=test
+        cat <<"END"
+        Value: $VAR
+        END
+        """)
+
+      assert result.stdout == "Value: $VAR\n"
+    end
+
     test "while loop with counter" do
       bash = JustBash.new()
 

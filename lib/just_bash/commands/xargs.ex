@@ -109,6 +109,13 @@ defmodule JustBash.Commands.Xargs do
     parse_args(rest, %{opts | no_run_if_empty: true})
   end
 
+  defp parse_args(["-n" <> num_str | rest], opts) when num_str != "" do
+    case Integer.parse(num_str) do
+      {n, ""} when n > 0 -> parse_args(rest, %{opts | max_args: n})
+      _ -> {:error, "xargs: invalid number for -n: '#{num_str}'\n"}
+    end
+  end
+
   defp parse_args(["-" <> flags | rest], opts) when byte_size(flags) > 0 do
     chars = String.graphemes(flags)
     parse_combined_flags(chars, rest, opts)

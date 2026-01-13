@@ -182,8 +182,16 @@ defmodule JustBash.Commands.Grep do
   end
 
   defp process_content(content, regex, flags, prefix) do
-    content
-    |> String.split("\n", trim: false)
+    lines = String.split(content, "\n", trim: false)
+
+    # Remove trailing empty string if input ended with newline
+    lines =
+      case List.last(lines) do
+        "" -> List.delete_at(lines, -1)
+        _ -> lines
+      end
+
+    lines
     |> Enum.with_index(1)
     |> Enum.flat_map(fn {line, line_num} ->
       grep_line(line, regex, flags, line_num, prefix)

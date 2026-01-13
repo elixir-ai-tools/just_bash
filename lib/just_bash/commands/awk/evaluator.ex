@@ -190,7 +190,8 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   defp execute_statement({:print, args}, state) do
     values = Enum.map(args, &evaluate_expression(&1, state))
-    output_line = Enum.join(values, state.ofs) <> state.ors
+    formatted = Enum.map(values, &format_output_value/1)
+    output_line = Enum.join(formatted, state.ofs) <> state.ors
     %{state | output: state.output <> output_line}
   end
 
@@ -201,8 +202,15 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   defp execute_statement({:assign, var, expr}, state) do
-    value = evaluate_expression(expr, state)
-    %{state | variables: Map.put(state.variables, var, to_string(value))}
+    value = evaluate_expression(expr, state) |> to_string()
+
+    # Handle special variables
+    case var do
+      "OFS" -> %{state | ofs: value}
+      "ORS" -> %{state | ors: value}
+      "FS" -> %{state | fs: value}
+      _ -> %{state | variables: Map.put(state.variables, var, value)}
+    end
   end
 
   defp execute_statement({:add_assign, var, expr}, state) do
@@ -217,6 +225,77 @@ defmodule JustBash.Commands.Awk.Evaluator do
     current = Map.get(state.variables, var, "0")
     current_num = parse_number(current)
     %{state | variables: Map.put(state.variables, var, to_string(current_num + 1))}
+  end
+
+  # if (condition) then_stmt; else else_stmt
+  defp execute_statement({:if, condition, then_stmt, else_stmt}, state) do
+    if evaluate_condition_expr(condition, state) do
+      execute_statement(then_stmt, state)
+    else
+      if else_stmt do
+        execute_statement(else_stmt, state)
+      else
+        state
+      end
+    end
+  end
+
+  # gsub(/pattern/, "replacement", target) - replace all occurrences
+  defp execute_statement({:gsub, pattern, replacement, {:field, 0}}, state) do
+    line = Enum.at(state.fields, 0, "")
+
+    case Regex.compile(pattern) do
+      {:ok, regex} ->
+        new_line = Regex.replace(regex, line, replacement)
+        new_fields = [new_line | tl(state.fields)]
+        %{state | fields: new_fields}
+
+      {:error, _} ->
+        state
+    end
+  end
+
+  defp execute_statement({:gsub, pattern, replacement, {:field, n}}, state) do
+    field_val = Enum.at(state.fields, n, "")
+
+    case Regex.compile(pattern) do
+      {:ok, regex} ->
+        new_val = Regex.replace(regex, field_val, replacement)
+        new_fields = List.replace_at(state.fields, n, new_val)
+        %{state | fields: new_fields}
+
+      {:error, _} ->
+        state
+    end
+  end
+
+  # sub(/pattern/, "replacement", target) - replace first occurrence only
+  defp execute_statement({:sub, pattern, replacement, {:field, 0}}, state) do
+    line = Enum.at(state.fields, 0, "")
+
+    case Regex.compile(pattern) do
+      {:ok, regex} ->
+        new_line = Regex.replace(regex, line, replacement, global: false)
+        new_fields = [new_line | tl(state.fields)]
+        %{state | fields: new_fields}
+
+      {:error, _} ->
+        state
+    end
+  end
+
+  defp execute_statement({:sub, pattern, replacement, {:field, n}}, state) do
+    field_val = Enum.at(state.fields, n, "")
+
+    case Regex.compile(pattern) do
+      {:ok, regex} ->
+        new_val = Regex.replace(regex, field_val, replacement, global: false)
+        new_fields = List.replace_at(state.fields, n, new_val)
+        %{state | fields: new_fields}
+
+      {:error, _} ->
+        state
+    end
   end
 
   @doc """
@@ -253,6 +332,44 @@ defmodule JustBash.Commands.Awk.Evaluator do
     left_val + right_val
   end
 
+  # Ternary operator
+  def evaluate_expression({:ternary, condition, true_expr, false_expr}, state) do
+    if evaluate_condition_expr(condition, state) do
+      evaluate_expression(true_expr, state)
+    else
+      evaluate_expression(false_expr, state)
+    end
+  end
+
+  # Function calls
+  def evaluate_expression({:call, name, args}, state) do
+    evaluated_args = Enum.map(args, &evaluate_expression(&1, state))
+    evaluate_function(name, evaluated_args, state)
+  end
+
+  def evaluate_expression({:sub, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+    left_val - right_val
+  end
+
+  def evaluate_expression({:mul, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+    left_val * right_val
+  end
+
+  def evaluate_expression({:div, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+
+    if right_val == 0 do
+      0.0
+    else
+      left_val / right_val
+    end
+  end
+
   defp get_field(state, 0), do: Enum.at(state.fields, 0, "")
 
   defp get_field(state, n) when n > 0 do
@@ -260,6 +377,154 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   defp get_field(_state, _n), do: ""
+
+  # Evaluate condition expressions for if statements
+  defp evaluate_condition_expr({:==, left, right}, state) do
+    left_val = evaluate_expression(left, state)
+    right_val = evaluate_expression(right, state)
+    # AWK does numeric comparison if both are numbers
+    compare_values(left_val, right_val, &==/2)
+  end
+
+  defp evaluate_condition_expr({:!=, left, right}, state) do
+    left_val = evaluate_expression(left, state)
+    right_val = evaluate_expression(right, state)
+    compare_values(left_val, right_val, &!=/2)
+  end
+
+  defp evaluate_condition_expr({:>, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+    left_val > right_val
+  end
+
+  defp evaluate_condition_expr({:<, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+    left_val < right_val
+  end
+
+  defp evaluate_condition_expr({:>=, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+    left_val >= right_val
+  end
+
+  defp evaluate_condition_expr({:<=, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+    left_val <= right_val
+  end
+
+  defp evaluate_condition_expr({:match, expr, pattern}, state) do
+    value = evaluate_expression(expr, state) |> to_string()
+
+    case Regex.compile(pattern) do
+      {:ok, regex} -> Regex.match?(regex, value)
+      {:error, _} -> false
+    end
+  end
+
+  defp evaluate_condition_expr({:truthy, expr}, state) do
+    value = evaluate_expression(expr, state)
+    truthy?(value)
+  end
+
+  defp compare_values(left, right, op) do
+    # If both can be parsed as numbers, compare numerically
+    left_num = parse_number(left)
+    right_num = parse_number(right)
+
+    if is_number(left) or is_number(right) or
+         (is_binary(left) and is_binary(right) and looks_like_number?(left) and
+            looks_like_number?(right)) do
+      op.(left_num, right_num)
+    else
+      op.(to_string(left), to_string(right))
+    end
+  end
+
+  defp looks_like_number?(s) when is_binary(s), do: s =~ ~r/^\s*-?\d+(\.\d+)?\s*$/
+  defp looks_like_number?(_), do: false
+
+  defp truthy?(0), do: false
+  defp truthy?(n) when is_float(n) and n == 0.0, do: false
+  defp truthy?(""), do: false
+  defp truthy?("0"), do: false
+  defp truthy?(_), do: true
+
+  # AWK built-in functions
+  defp evaluate_function("length", [], state) do
+    String.length(Enum.at(state.fields, 0, ""))
+  end
+
+  defp evaluate_function("length", [arg], _state) do
+    String.length(to_string(arg))
+  end
+
+  defp evaluate_function("substr", [str, start], _state) do
+    s = to_string(str)
+    start_idx = max(0, parse_number(start) |> trunc() |> Kernel.-(1))
+    String.slice(s, start_idx..-1//1)
+  end
+
+  defp evaluate_function("substr", [str, start, len], _state) do
+    s = to_string(str)
+    start_idx = max(0, parse_number(start) |> trunc() |> Kernel.-(1))
+    length = parse_number(len) |> trunc()
+    String.slice(s, start_idx, length)
+  end
+
+  defp evaluate_function("tolower", [arg], _state) do
+    String.downcase(to_string(arg))
+  end
+
+  defp evaluate_function("toupper", [arg], _state) do
+    String.upcase(to_string(arg))
+  end
+
+  defp evaluate_function("index", [str, substr], _state) do
+    s = to_string(str)
+    sub = to_string(substr)
+
+    case :binary.match(s, sub) do
+      {pos, _} -> pos + 1
+      :nomatch -> 0
+    end
+  end
+
+  defp evaluate_function("split", [str, _array, sep], _state) do
+    # Simplified: just return count
+    s = to_string(str)
+    length(String.split(s, to_string(sep)))
+  end
+
+  defp evaluate_function("sprintf", [format | args], _state) do
+    Formatter.format_printf(format, args)
+  end
+
+  defp evaluate_function(_name, _args, _state), do: ""
+
+  # Format a value for output - integers print without .0
+  defp format_output_value(value) when is_float(value) do
+    if trunc(value) == value do
+      Integer.to_string(trunc(value))
+    else
+      Float.to_string(value)
+    end
+  end
+
+  defp format_output_value(value) when is_integer(value), do: Integer.to_string(value)
+
+  defp format_output_value(value) when is_binary(value) do
+    # Check if string is a whole number float like "6.0" and format as "6"
+    case Float.parse(value) do
+      {num, ""} when trunc(num) == num -> Integer.to_string(trunc(num))
+      _ -> value
+    end
+  end
+
+  defp format_output_value(value), do: to_string(value)
 
   @doc """
   Parse a value as a number.

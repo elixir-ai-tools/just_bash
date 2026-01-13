@@ -49,6 +49,21 @@ defmodule JustBash.Commands.Tr do
   end
 
   defp expand_set(set) do
+    set
+    |> expand_escapes()
+    |> expand_ranges()
+  end
+
+  # Interpret backslash escape sequences like \n, \t, \\
+  defp expand_escapes(set) do
+    set
+    |> String.replace("\\n", "\n")
+    |> String.replace("\\t", "\t")
+    |> String.replace("\\r", "\r")
+    |> String.replace("\\\\", "\\")
+  end
+
+  defp expand_ranges(set) do
     Regex.replace(~r/(.)-(.)/u, set, fn _, from, to ->
       from_cp = String.to_charlist(from) |> hd()
       to_cp = String.to_charlist(to) |> hd()

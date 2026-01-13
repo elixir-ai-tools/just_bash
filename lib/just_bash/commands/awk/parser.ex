@@ -269,15 +269,40 @@ defmodule JustBash.Commands.Awk.Parser do
     |> String.split(~r/[;\n]/)
     |> Enum.map(&String.trim/1)
     |> Enum.filter(&(&1 != ""))
+    |> merge_if_else()
   end
+
+  # Merge "if ..." and "else ..." back together
+  defp merge_if_else([]), do: []
+
+  defp merge_if_else([if_stmt, else_stmt | rest])
+       when is_binary(if_stmt) and is_binary(else_stmt) do
+    if String.starts_with?(if_stmt, "if") and String.starts_with?(else_stmt, "else") do
+      merged = if_stmt <> "; " <> else_stmt
+      merge_if_else([merged | rest])
+    else
+      [if_stmt | merge_if_else([else_stmt | rest])]
+    end
+  end
+
+  defp merge_if_else([stmt | rest]), do: [stmt | merge_if_else(rest)]
 
   defp parse_statement(stmt) do
     cond do
+      String.starts_with?(stmt, "if ") or String.starts_with?(stmt, "if(") ->
+        parse_if_statement(stmt)
+
       String.starts_with?(stmt, "print ") or stmt == "print" ->
         parse_print_statement(stmt)
 
       String.starts_with?(stmt, "printf ") ->
         parse_printf_statement(stmt)
+
+      String.starts_with?(stmt, "gsub(") ->
+        parse_gsub_statement(stmt, :gsub)
+
+      String.starts_with?(stmt, "sub(") ->
+        parse_gsub_statement(stmt, :sub)
 
       stmt =~ ~r/^\w+\s*=/ ->
         parse_assign_statement(stmt)
@@ -329,16 +354,133 @@ defmodule JustBash.Commands.Awk.Parser do
     end
   end
 
-  defp parse_print_args(args) do
-    if String.contains?(args, ",") do
-      args
-      |> String.split(",")
-      |> Enum.map(&String.trim/1)
-      |> Enum.map(&parse_expression/1)
+  # Parse if (condition) action; else action
+  defp parse_if_statement(stmt) do
+    # Match: if (condition) then_stmt; else else_stmt
+    # or: if (condition) then_stmt
+    stmt = String.trim_leading(stmt, "if")
+
+    case extract_condition_and_body(stmt) do
+      {:ok, condition, body} ->
+        # Check for else clause
+        case String.split(body, ~r/;\s*else\s+/, parts: 2) do
+          [then_part, else_part] ->
+            then_stmt = parse_statement(String.trim(then_part))
+            else_stmt = parse_statement(String.trim(else_part))
+            {:if, parse_condition_expr(condition), then_stmt, else_stmt}
+
+          [then_part] ->
+            then_stmt = parse_statement(String.trim(then_part))
+            {:if, parse_condition_expr(condition), then_stmt, nil}
+        end
+
+      :error ->
+        nil
+    end
+  end
+
+  defp extract_condition_and_body(stmt) do
+    stmt = String.trim(stmt)
+
+    if String.starts_with?(stmt, "(") do
+      case find_matching_paren(stmt, 0) do
+        {:ok, end_pos} ->
+          condition = String.slice(stmt, 1..(end_pos - 1)//1)
+          body = String.slice(stmt, (end_pos + 1)..-1//1) |> String.trim()
+          {:ok, condition, body}
+
+        :error ->
+          :error
+      end
     else
-      args
-      |> String.split(~r/\s+/)
-      |> Enum.map(&parse_expression/1)
+      :error
+    end
+  end
+
+  defp find_matching_paren(str, start) do
+    find_matching_paren_loop(str, start + 1, 1)
+  end
+
+  defp find_matching_paren_loop(_str, _pos, 0), do: :error
+
+  defp find_matching_paren_loop(str, pos, _depth) when pos >= byte_size(str), do: :error
+
+  defp find_matching_paren_loop(str, pos, depth) do
+    char = String.at(str, pos)
+
+    cond do
+      char == "(" -> find_matching_paren_loop(str, pos + 1, depth + 1)
+      char == ")" and depth == 1 -> {:ok, pos}
+      char == ")" -> find_matching_paren_loop(str, pos + 1, depth - 1)
+      true -> find_matching_paren_loop(str, pos + 1, depth)
+    end
+  end
+
+  # Parse condition expressions like $1 > 3 or NR == 1
+  defp parse_condition_expr(condition) do
+    condition = String.trim(condition)
+
+    cond do
+      # Numeric comparisons: $1 > 3, NR == 1, etc.
+      match = Regex.run(~r/^(.+?)\s*(==|!=|>=|<=|>|<)\s*(.+)$/, condition) ->
+        [_, left, op, right] = match
+        {String.to_atom(op), parse_expression(left), parse_expression(right)}
+
+      # Regex match: $1 ~ /pattern/
+      match = Regex.run(~r/^(.+?)\s*~\s*\/(.+)\/$/, condition) ->
+        [_, expr, pattern] = match
+        {:match, parse_expression(expr), pattern}
+
+      true ->
+        # Default: treat as truthy expression
+        {:truthy, parse_expression(condition)}
+    end
+  end
+
+  # Parse gsub(/pattern/, "replacement") or gsub(/pattern/, "replacement", target)
+  defp parse_gsub_statement(stmt, type) do
+    # Match: gsub(/pattern/, "replacement") or sub(/pattern/, "replacement")
+    case Regex.run(~r/^(?:g?sub)\(\/([^\/]*)\/,\s*"([^"]*)"(?:,\s*(\$\d+))?\)$/, stmt) do
+      [_, pattern, replacement, target] when target != "" ->
+        {type, pattern, replacement, parse_expression(target)}
+
+      [_, pattern, replacement] ->
+        {type, pattern, replacement, {:field, 0}}
+
+      [_, pattern, replacement, _] ->
+        {type, pattern, replacement, {:field, 0}}
+
+      nil ->
+        nil
+    end
+  end
+
+  defp parse_print_args(args) do
+    cond do
+      # Ternary expression
+      ternary_pattern?(args) ->
+        [parse_expression(args)]
+
+      # Single function call (contains parens with balanced content)
+      function_call_pattern?(args) ->
+        [parse_expression(args)]
+
+      # Single expression (possibly arithmetic)
+      arithmetic_pattern?(args) ->
+        [parse_expression(args)]
+
+      # Comma-separated arguments (but not inside function calls)
+      String.contains?(args, ",") and not String.contains?(args, "(") ->
+        args
+        |> String.split(",")
+        |> Enum.map(&String.trim/1)
+        |> Enum.map(&parse_expression/1)
+
+      # Space-separated fields/values (traditional awk: print $1 $2)
+      true ->
+        args
+        |> String.split(~r/\s+/)
+        |> Enum.map(&parse_expression/1)
     end
   end
 
@@ -378,11 +520,15 @@ defmodule JustBash.Commands.Awk.Parser do
   defp dispatch_expression(expr) do
     cond do
       quoted_string?(expr) -> parse_string_literal(expr)
+      # Check for ternary operator
+      ternary_pattern?(expr) -> parse_ternary(expr)
+      # Check for function calls: name(args)
+      function_call_pattern?(expr) -> parse_function_call(expr)
+      # Check for arithmetic BEFORE simple field/variable parsing
+      arithmetic_pattern?(expr) -> parse_arithmetic(expr)
       String.starts_with?(expr, "$") -> parse_field_expression(expr)
       number_pattern?(expr) -> parse_number_literal(expr)
       word_pattern?(expr) -> {:variable, expr}
-      word_addition_pattern?(expr) -> parse_word_addition(expr)
-      field_addition_pattern?(expr) -> parse_field_addition(expr)
       true -> {:literal, expr}
     end
   end
@@ -390,8 +536,12 @@ defmodule JustBash.Commands.Awk.Parser do
   defp quoted_string?(s), do: String.starts_with?(s, "\"") and String.ends_with?(s, "\"")
   defp number_pattern?(s), do: s =~ ~r/^\d+(\.\d+)?$/
   defp word_pattern?(s), do: s =~ ~r/^\w+$/
-  defp word_addition_pattern?(s), do: s =~ ~r/^\w+\s*\+\s*/
-  defp field_addition_pattern?(s), do: s =~ ~r/^\$\d+\s*\+\s*/
+  # Match function calls: name(args)
+  defp function_call_pattern?(s), do: s =~ ~r/^\w+\([^)]*\)$/
+  # Match ternary operator: expr ? val1 : val2
+  defp ternary_pattern?(s), do: s =~ ~r/\?\s*[^:]+\s*:/
+  # Match expressions containing arithmetic operators: + - * /
+  defp arithmetic_pattern?(s), do: s =~ ~r/[\+\-\*\/]/ and not quoted_string?(s)
 
   defp parse_string_literal(expr) do
     {:literal, String.slice(expr, 1..-2//1) |> unescape_string()}
@@ -411,22 +561,87 @@ defmodule JustBash.Commands.Awk.Parser do
     {:number, n}
   end
 
-  defp parse_word_addition(expr) do
-    case Regex.run(~r/^(\w+|\$\d+)\s*\+\s*(.+)$/, expr) do
-      [_, left, right] ->
-        {:add, parse_expression(left), parse_expression(right)}
+  # Parse ternary operator: condition ? true_val : false_val
+  defp parse_ternary(expr) do
+    # Handle parenthesized condition: (condition) ? true : false
+    cond do
+      String.starts_with?(expr, "(") ->
+        case find_matching_paren(expr, 0) do
+          {:ok, end_pos} ->
+            condition = String.slice(expr, 1..(end_pos - 1)//1)
+            rest = String.slice(expr, (end_pos + 1)..-1//1) |> String.trim()
+
+            case Regex.run(~r/^\?\s*(.+?)\s*:\s*(.+)$/, rest) do
+              [_, true_val, false_val] ->
+                {:ternary, parse_condition_expr(String.trim(condition)),
+                 parse_expression(String.trim(true_val)),
+                 parse_expression(String.trim(false_val))}
+
+              nil ->
+                {:literal, expr}
+            end
+
+          :error ->
+            {:literal, expr}
+        end
+
+      # Non-parenthesized condition
+      true ->
+        case Regex.run(~r/^(.+?)\s*\?\s*(.+?)\s*:\s*(.+)$/, expr) do
+          [_, condition, true_val, false_val] ->
+            {:ternary, parse_condition_expr(String.trim(condition)),
+             parse_expression(String.trim(true_val)), parse_expression(String.trim(false_val))}
+
+          nil ->
+            {:literal, expr}
+        end
+    end
+  end
+
+  # Parse function calls: name(arg1, arg2, ...)
+  defp parse_function_call(expr) do
+    case Regex.run(~r/^(\w+)\(([^)]*)\)$/, expr) do
+      [_, name, args_str] ->
+        args =
+          if String.trim(args_str) == "" do
+            []
+          else
+            args_str
+            |> String.split(",")
+            |> Enum.map(&String.trim/1)
+            |> Enum.map(&parse_expression/1)
+          end
+
+        {:call, name, args}
 
       nil ->
         {:literal, expr}
     end
   end
 
-  defp parse_field_addition(expr) do
-    case Regex.run(~r/^(\$\d+)\s*\+\s*(.+)$/, expr) do
-      [_, left, right] ->
+  # Parse arithmetic expressions with proper operator precedence
+  # Handles: +, -, *, /
+  defp parse_arithmetic(expr) do
+    # Try operators in order of precedence (lowest first, so they bind loosest)
+    # Addition/subtraction first (lowest precedence)
+    cond do
+      match = Regex.run(~r/^(.+)\s*\+\s*([^\+\-]+)$/, expr) ->
+        [_, left, right] = match
         {:add, parse_expression(left), parse_expression(right)}
 
-      nil ->
+      match = Regex.run(~r/^(.+)\s*\-\s*([^\+\-]+)$/, expr) ->
+        [_, left, right] = match
+        {:sub, parse_expression(left), parse_expression(right)}
+
+      match = Regex.run(~r/^(.+)\s*\*\s*([^\*\/]+)$/, expr) ->
+        [_, left, right] = match
+        {:mul, parse_expression(left), parse_expression(right)}
+
+      match = Regex.run(~r/^(.+)\s*\/\s*([^\*\/]+)$/, expr) ->
+        [_, left, right] = match
+        {:div, parse_expression(left), parse_expression(right)}
+
+      true ->
         {:literal, expr}
     end
   end

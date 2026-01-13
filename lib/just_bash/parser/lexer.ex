@@ -394,6 +394,11 @@ defmodule JustBash.Parser.Lexer do
   def build_escape(["\\", c]) when is_integer(c), do: "\\" <> <<c::utf8>>
   def build_escape([c]) when is_integer(c), do: "\\" <> <<c::utf8>>
 
+  # Interpret an escape sequence outside quotes - strip the backslash
+  # In bash, \X outside quotes becomes X (the backslash quotes the next character)
+  defp interpret_escape(<<_backslash::utf8, rest::binary>>), do: rest
+  defp interpret_escape(s), do: s
+
   # In double quotes, only certain escapes are processed
   # \\ -> \, \" -> ", \n stays as \n (not newline)
   # IMPORTANT: \$ and \` must be preserved as-is so word_parts can recognize them as escaped
@@ -443,7 +448,10 @@ defmodule JustBash.Parser.Lexer do
           {acc <> inner, raw <> s, true, sq}
 
         {:escaped, s}, {acc, raw, hq, sq} ->
-          {acc <> s, raw <> s, hq, sq}
+          # Outside quotes, backslash escapes the next character
+          # So \' becomes ', \\ becomes \, etc.
+          interpreted = interpret_escape(s)
+          {acc <> interpreted, raw <> s, hq, sq}
       end)
 
     quoted = starts_quoted
@@ -650,7 +658,9 @@ defmodule JustBash.Parser.Lexer do
         case rest do
           [delim_token | rest2] when delim_token.type in [:word, :name] ->
             delimiter = delim_token.value
-            heredoc = %{delimiter: delimiter, strip_tabs: strip_tabs, quoted: false}
+            # Quoted heredoc delimiter (<<'EOF' or <<"EOF") means no expansion
+            quoted = delim_token.quoted || delim_token.single_quoted
+            heredoc = %{delimiter: delimiter, strip_tabs: strip_tabs, quoted: quoted}
             acc = [delim_token, token | acc]
             process_heredocs_loop(rest2, input, acc, [heredoc | pending])
 
@@ -661,7 +671,9 @@ defmodule JustBash.Parser.Lexer do
       # Newline - check for pending heredocs
       token.type == :newline and pending != [] ->
         acc = [token | acc]
-        {heredoc_tokens, new_pos, _rest2} = consume_heredocs(pending, input, token.end, [])
+        # Find the actual newline position in input (token.end may be wrong due to quoted strings)
+        heredoc_start = find_newline_after(input, token.start)
+        {heredoc_tokens, new_pos, _rest2} = consume_heredocs(pending, input, heredoc_start, [])
         acc = heredoc_tokens ++ acc
 
         # Skip tokens that are now part of heredoc content
@@ -795,6 +807,15 @@ defmodule JustBash.Parser.Lexer do
 
   defp skip_consumed_tokens(tokens, end_pos) do
     Enum.drop_while(tokens, fn t -> t.start < end_pos end)
+  end
+
+  # Find the position after the next newline character starting from pos
+  defp find_newline_after(input, pos) do
+    cond do
+      pos >= byte_size(input) -> pos
+      :binary.at(input, pos) == ?\n -> pos + 1
+      true -> find_newline_after(input, pos + 1)
+    end
   end
 
   defp build_tokens([], _input, _line, _col, _offset, acc), do: Enum.reverse(acc)

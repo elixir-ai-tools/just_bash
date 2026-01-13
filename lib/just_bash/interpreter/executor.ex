@@ -66,37 +66,72 @@ defmodule JustBash.Interpreter.Executor do
     execute_body_with_bash(bash, body)
   end
 
-  defp execute_pipelines(bash, [], _operators, exit_code, stdout, stderr, _prev_op) do
-    {%{stdout: stdout, stderr: stderr, exit_code: exit_code}, bash}
+  defp execute_pipelines(bash, pipelines, operators, prev_exit, stdout, stderr, prev_op) do
+    execute_pipelines(bash, pipelines, operators, prev_exit, stdout, stderr, prev_op, nil)
   end
 
-  defp execute_pipelines(bash, [pipeline | rest], operators, prev_exit, stdout, stderr, prev_op) do
-    should_run =
-      case prev_op do
-        nil -> true
-        :and -> prev_exit == 0
-        :or -> prev_exit != 0
-        :semicolon -> true
-      end
+  defp execute_pipelines(bash, [], _operators, exit_code, stdout, stderr, _prev_op, control) do
+    result = %{stdout: stdout, stderr: stderr, exit_code: exit_code}
+    result = add_control_signal(result, control)
+    {result, bash}
+  end
 
-    {next_op, next_operators} = advance_operators(operators)
-
-    if should_run do
-      {result, new_bash} = execute_pipeline(bash, pipeline)
-
-      execute_pipelines(
-        new_bash,
-        rest,
-        next_operators,
-        result.exit_code,
-        stdout <> result.stdout,
-        stderr <> result.stderr,
-        next_op
-      )
+  defp execute_pipelines(
+         bash,
+         [pipeline | rest],
+         operators,
+         prev_exit,
+         stdout,
+         stderr,
+         prev_op,
+         control
+       ) do
+    # If we have a pending break/continue, stop immediately
+    if control != nil do
+      execute_pipelines(bash, [], operators, prev_exit, stdout, stderr, prev_op, control)
     else
-      execute_pipelines(bash, rest, next_operators, prev_exit, stdout, stderr, next_op)
+      should_run =
+        case prev_op do
+          nil -> true
+          :and -> prev_exit == 0
+          :or -> prev_exit != 0
+          :semicolon -> true
+        end
+
+      {next_op, next_operators} = advance_operators(operators)
+
+      if should_run do
+        {result, new_bash} = execute_pipeline(bash, pipeline)
+
+        # Check for control signals
+        new_control =
+          cond do
+            Map.has_key?(result, :__break__) -> {:break, result.__break__}
+            Map.has_key?(result, :__continue__) -> {:continue, result.__continue__}
+            Map.has_key?(result, :__return__) -> {:return, result.__return__}
+            true -> nil
+          end
+
+        execute_pipelines(
+          new_bash,
+          rest,
+          next_operators,
+          result.exit_code,
+          stdout <> result.stdout,
+          stderr <> result.stderr,
+          next_op,
+          new_control
+        )
+      else
+        execute_pipelines(bash, rest, next_operators, prev_exit, stdout, stderr, next_op, nil)
+      end
     end
   end
+
+  defp add_control_signal(result, nil), do: result
+  defp add_control_signal(result, {:break, n}), do: Map.put(result, :__break__, n)
+  defp add_control_signal(result, {:continue, n}), do: Map.put(result, :__continue__, n)
+  defp add_control_signal(result, {:return, n}), do: Map.put(result, :__return__, n)
 
   defp advance_operators([op | rest]), do: {op, rest}
   defp advance_operators([]), do: {nil, []}
@@ -163,11 +198,14 @@ defmodule JustBash.Interpreter.Executor do
       # Apply any assignments from ${VAR:=default} expansions
       temp_bash = apply_expansion_assignments(temp_bash)
 
-      expanded_args =
-        Enum.flat_map(args, fn arg -> Expansion.expand_word_with_glob(temp_bash, arg.parts) end)
-
-      # Apply assignments from arg expansion as well
-      temp_bash = apply_expansion_assignments(temp_bash)
+      # Expand args sequentially, applying any assignments between each
+      # This ensures side effects like $((x++)) are visible to subsequent args
+      {expanded_args, temp_bash} =
+        Enum.reduce(args, {[], temp_bash}, fn arg, {acc, bash} ->
+          expanded = Expansion.expand_word_with_glob(bash, arg.parts)
+          bash = apply_expansion_assignments(bash)
+          {acc ++ expanded, bash}
+        end)
 
       # Extract heredoc content as stdin if present
       {heredoc_stdin, non_heredoc_redirs} = extract_heredoc_stdin(temp_bash, redirs)
@@ -212,8 +250,8 @@ defmodule JustBash.Interpreter.Executor do
     {result, bash}
   end
 
-  def execute_command(bash, %AST.Group{body: body}, _stdin) do
-    execute_body_with_bash(bash, body)
+  def execute_command(bash, %AST.Group{body: body}, stdin) do
+    execute_body_with_stdin(bash, body, stdin)
   end
 
   def execute_command(bash, %AST.FunctionDef{name: name, body: body}, _stdin) do
@@ -466,19 +504,43 @@ defmodule JustBash.Interpreter.Executor do
     if cond_result.exit_code == 0 do
       {body_result, new_bash} = execute_body_with_bash(cond_bash, body)
 
-      {%{
-         body_result
-         | stdout: cond_result.stdout <> body_result.stdout,
-           stderr: cond_result.stderr <> body_result.stderr
-       }, new_bash}
+      result = %{
+        body_result
+        | stdout: cond_result.stdout <> body_result.stdout,
+          stderr: cond_result.stderr <> body_result.stderr
+      }
+
+      # Propagate break/continue signals
+      result = propagate_control_signals(body_result, result)
+      {result, new_bash}
     else
       {else_result, new_bash} = execute_if(cond_bash, rest, else_body)
 
-      {%{
-         else_result
-         | stdout: cond_result.stdout <> else_result.stdout,
-           stderr: cond_result.stderr <> else_result.stderr
-       }, new_bash}
+      result = %{
+        else_result
+        | stdout: cond_result.stdout <> else_result.stdout,
+          stderr: cond_result.stderr <> else_result.stderr
+      }
+
+      # Propagate break/continue signals
+      result = propagate_control_signals(else_result, result)
+      {result, new_bash}
+    end
+  end
+
+  # Helper to propagate break/continue signals from source to target result
+  defp propagate_control_signals(source, target) do
+    target
+    |> maybe_put_signal(source, :__break__)
+    |> maybe_put_signal(source, :__continue__)
+    |> maybe_put_signal(source, :__return__)
+  end
+
+  defp maybe_put_signal(target, source, key) do
+    if Map.has_key?(source, key) do
+      Map.put(target, key, Map.get(source, key))
+    else
+      target
     end
   end
 
@@ -494,16 +556,44 @@ defmodule JustBash.Interpreter.Executor do
   defp execute_for_loop(bash, variable, [value | rest], body, stdout, stderr, _exit_code) do
     new_bash = %{bash | env: Map.put(bash.env, variable, value)}
     {result, body_bash} = execute_body(new_bash, body)
+    new_stdout = stdout <> result.stdout
+    new_stderr = stderr <> result.stderr
 
-    execute_for_loop(
-      body_bash,
-      variable,
-      rest,
-      body,
-      stdout <> result.stdout,
-      stderr <> result.stderr,
-      result.exit_code
-    )
+    cond do
+      # Break: exit loop with accumulated output
+      Map.has_key?(result, :__break__) and result.__break__ == 1 ->
+        {%{stdout: new_stdout, stderr: new_stderr, exit_code: 0}, body_bash}
+
+      # Break with level > 1: propagate to outer loop
+      Map.has_key?(result, :__break__) ->
+        {%{stdout: new_stdout, stderr: new_stderr, exit_code: 0, __break__: result.__break__ - 1},
+         body_bash}
+
+      # Continue: skip to next iteration
+      Map.has_key?(result, :__continue__) and result.__continue__ == 1 ->
+        execute_for_loop(body_bash, variable, rest, body, new_stdout, new_stderr, 0)
+
+      # Continue with level > 1: propagate to outer loop
+      Map.has_key?(result, :__continue__) ->
+        {%{
+           stdout: new_stdout,
+           stderr: new_stderr,
+           exit_code: 0,
+           __continue__: result.__continue__ - 1
+         }, body_bash}
+
+      # Normal: continue to next iteration
+      true ->
+        execute_for_loop(
+          body_bash,
+          variable,
+          rest,
+          body,
+          new_stdout,
+          new_stderr,
+          result.exit_code
+        )
+    end
   end
 
   defp execute_while(bash, condition, body, is_until) do
@@ -534,17 +624,58 @@ defmodule JustBash.Interpreter.Executor do
 
     if should_continue do
       {body_result, body_bash} = execute_body(cond_bash, body)
+      body_stdout = new_stdout <> body_result.stdout
+      body_stderr = new_stderr <> body_result.stderr
 
-      execute_while_loop(
-        body_bash,
-        condition,
-        body,
-        is_until,
-        new_stdout <> body_result.stdout,
-        new_stderr <> body_result.stderr,
-        body_result.exit_code,
-        iterations + 1
-      )
+      cond do
+        # Break: exit loop
+        Map.has_key?(body_result, :__break__) and body_result.__break__ == 1 ->
+          {%{stdout: body_stdout, stderr: body_stderr, exit_code: 0}, body_bash}
+
+        # Break with level > 1: propagate
+        Map.has_key?(body_result, :__break__) ->
+          {%{
+             stdout: body_stdout,
+             stderr: body_stderr,
+             exit_code: 0,
+             __break__: body_result.__break__ - 1
+           }, body_bash}
+
+        # Continue: re-check condition
+        Map.has_key?(body_result, :__continue__) and body_result.__continue__ == 1 ->
+          execute_while_loop(
+            body_bash,
+            condition,
+            body,
+            is_until,
+            body_stdout,
+            body_stderr,
+            0,
+            iterations + 1
+          )
+
+        # Continue with level > 1: propagate
+        Map.has_key?(body_result, :__continue__) ->
+          {%{
+             stdout: body_stdout,
+             stderr: body_stderr,
+             exit_code: 0,
+             __continue__: body_result.__continue__ - 1
+           }, body_bash}
+
+        # Normal: continue loop
+        true ->
+          execute_while_loop(
+            body_bash,
+            condition,
+            body,
+            is_until,
+            body_stdout,
+            body_stderr,
+            body_result.exit_code,
+            iterations + 1
+          )
+      end
     else
       {%{stdout: new_stdout, stderr: new_stderr, exit_code: exit_code}, cond_bash}
     end
@@ -581,18 +712,63 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   defp execute_body(bash, statements) do
-    {final_bash, stdout, stderr, exit_code} =
-      Enum.reduce(statements, {bash, "", "", 0}, fn stmt, {b, out, err, _code} ->
+    {final_bash, stdout, stderr, exit_code, control} =
+      Enum.reduce_while(statements, {bash, "", "", 0, nil}, fn stmt,
+                                                               {b, out, err, _code, _ctrl} ->
         {result, new_bash} = execute_statement(b, stmt)
-        {new_bash, out <> result.stdout, err <> result.stderr, result.exit_code}
+        new_out = out <> result.stdout
+        new_err = err <> result.stderr
+
+        # Check for control flow signals
+        cond do
+          Map.has_key?(result, :__break__) ->
+            {:halt, {new_bash, new_out, new_err, 0, {:break, result.__break__}}}
+
+          Map.has_key?(result, :__continue__) ->
+            {:halt, {new_bash, new_out, new_err, 0, {:continue, result.__continue__}}}
+
+          Map.has_key?(result, :__return__) ->
+            {:halt, {new_bash, new_out, new_err, result.__return__, {:return, result.__return__}}}
+
+          true ->
+            {:cont, {new_bash, new_out, new_err, result.exit_code, nil}}
+        end
       end)
 
-    {%{stdout: stdout, stderr: stderr, exit_code: exit_code, env: final_bash.env}, final_bash}
+    result = %{stdout: stdout, stderr: stderr, exit_code: exit_code, env: final_bash.env}
+
+    # Propagate control flow signals
+    result =
+      case control do
+        {:break, n} -> Map.put(result, :__break__, n)
+        {:continue, n} -> Map.put(result, :__continue__, n)
+        {:return, n} -> Map.put(result, :__return__, n)
+        nil -> result
+      end
+
+    {result, final_bash}
   end
 
   defp execute_body_with_bash(bash, statements) do
     {result, new_bash} = execute_body(bash, statements)
-    {%{stdout: result.stdout, stderr: result.stderr, exit_code: result.exit_code}, new_bash}
+    # Preserve break/continue signals
+    new_result = %{stdout: result.stdout, stderr: result.stderr, exit_code: result.exit_code}
+    new_result = propagate_control_signals(result, new_result)
+    {new_result, new_bash}
+  end
+
+  # Execute body with stdin available for the first command in the first pipeline
+  defp execute_body_with_stdin(bash, [], _stdin) do
+    {%{stdout: "", stderr: "", exit_code: 0}, bash}
+  end
+
+  defp execute_body_with_stdin(bash, statements, stdin) do
+    # Store stdin in bash env temporarily for commands to consume
+    stdin_bash = %{bash | env: Map.put(bash.env, "__STDIN__", stdin)}
+    {result, new_bash} = execute_body(stdin_bash, statements)
+    # Remove the temporary stdin
+    final_bash = %{new_bash | env: Map.delete(new_bash.env, "__STDIN__")}
+    {%{stdout: result.stdout, stderr: result.stderr, exit_code: result.exit_code}, final_bash}
   end
 
   defp execute_function(bash, body, args) do
@@ -610,15 +786,44 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   defp execute_assignments(bash, assignments) do
-    Enum.reduce(assignments, bash, fn %AST.Assignment{name: name, value: value}, acc ->
-      expanded_value =
-        case value do
-          nil -> ""
-          %AST.Word{parts: parts} -> Expansion.expand_word_parts(acc, parts)
-          _ -> ""
-        end
+    Enum.reduce(assignments, bash, fn %AST.Assignment{name: name, value: value, array: array},
+                                      acc ->
+      case array do
+        nil ->
+          # Scalar assignment
+          expanded_value =
+            case value do
+              nil -> ""
+              %AST.Word{parts: parts} -> Expansion.expand_word_parts(acc, parts)
+              _ -> ""
+            end
 
-      %{acc | env: Map.put(acc.env, name, expanded_value)}
+          %{acc | env: Map.put(acc.env, name, expanded_value)}
+
+        elements when is_list(elements) ->
+          # Array assignment: arr=(a b c)
+          # First, clear any existing array elements for this name
+          env =
+            acc.env
+            |> Enum.reject(fn {key, _} ->
+              Regex.match?(~r/^#{Regex.escape(name)}\[\d+\]$/, key)
+            end)
+            |> Map.new()
+
+          # Store as arr[0], arr[1], etc.
+          {env, _idx} =
+            Enum.reduce(elements, {env, 0}, fn word, {env_acc, idx} ->
+              expanded = Expansion.expand_word_parts(acc, word.parts)
+              key = "#{name}[#{idx}]"
+              {Map.put(env_acc, key, expanded), idx + 1}
+            end)
+
+          # Also store arr itself as the first element (bash compat)
+          first_element = Map.get(env, "#{name}[0]", "")
+          env = Map.put(env, name, first_element)
+
+          %{acc | env: env}
+      end
     end)
   end
 
@@ -645,27 +850,45 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   defp extract_heredoc_stdin(bash, redirections) do
-    {heredocs, others} =
+    # Split redirections into stdin sources and others
+    {stdin_redirs, others} =
       Enum.split_with(redirections, fn redir ->
-        match?(%AST.Redirection{operator: op} when op in [:"<<", :"<<-"], redir)
+        match?(%AST.Redirection{operator: op} when op in [:"<<", :"<<-", :<, :<<<], redir)
       end)
 
-    heredoc_content = extract_heredoc_content(bash, heredocs)
-    {heredoc_content, others}
+    stdin_content = extract_stdin_content(bash, stdin_redirs)
+    {stdin_content, others}
   end
 
-  defp extract_heredoc_content(bash, [
-         %AST.Redirection{target: %AST.HereDoc{content: content}} | _
-       ])
+  # Here-string: <<< word
+  defp extract_stdin_content(bash, [%AST.Redirection{operator: :<<<, target: target} | _]) do
+    content = Expansion.expand_redirect_target(bash, target)
+    # Here-strings add a trailing newline
+    content <> "\n"
+  end
+
+  # Stdin from file: < file
+  defp extract_stdin_content(bash, [%AST.Redirection{operator: :<, target: target} | _]) do
+    target_path = Expansion.expand_redirect_target(bash, target)
+    resolved = InMemoryFs.resolve_path(bash.cwd, target_path)
+
+    case InMemoryFs.read_file(bash.fs, resolved) do
+      {:ok, content} -> content
+      {:error, _} -> ""
+    end
+  end
+
+  # Heredoc
+  defp extract_stdin_content(bash, [%AST.Redirection{target: %AST.HereDoc{content: content}} | _])
        when not is_nil(content) do
     Expansion.expand_word_parts(bash, content.parts)
   end
 
-  defp extract_heredoc_content(_bash, [%AST.Redirection{target: %AST.HereDoc{}} | _]) do
+  defp extract_stdin_content(_bash, [%AST.Redirection{target: %AST.HereDoc{}} | _]) do
     ""
   end
 
-  defp extract_heredoc_content(_bash, _heredocs) do
+  defp extract_stdin_content(_bash, _) do
     nil
   end
 
@@ -689,7 +912,9 @@ defmodule JustBash.Interpreter.Executor do
     apply_classified_redirection(redir_type, result, bash, resolved)
   end
 
-  defp classify_redirection(_fd, _operator, "/dev/null"), do: :dev_null
+  defp classify_redirection(2, :>, "/dev/null"), do: :stderr_dev_null
+  defp classify_redirection(2, :">>", "/dev/null"), do: :stderr_dev_null
+  defp classify_redirection(_fd, _operator, "/dev/null"), do: :stdout_dev_null
   defp classify_redirection(2, :>, _target), do: :stderr_write
   defp classify_redirection(2, :">>", _target), do: :stderr_append
   defp classify_redirection(_fd, :>, _target), do: :stdout_write
@@ -697,10 +922,15 @@ defmodule JustBash.Interpreter.Executor do
   defp classify_redirection(1, :">&", "2"), do: :stdout_to_stderr
   defp classify_redirection(2, :">&", "1"), do: :stderr_to_stdout
   defp classify_redirection(_fd, :"&>", _target), do: :combined_write
+  defp classify_redirection(_fd, :<, _target), do: :stdin_read
   defp classify_redirection(_fd, _operator, _target), do: :noop
 
-  defp apply_classified_redirection(:dev_null, result, bash, _resolved) do
+  defp apply_classified_redirection(:stdout_dev_null, result, bash, _resolved) do
     {%{result | stdout: ""}, bash}
+  end
+
+  defp apply_classified_redirection(:stderr_dev_null, result, bash, _resolved) do
+    {%{result | stderr: ""}, bash}
   end
 
   defp apply_classified_redirection(:stderr_write, result, bash, resolved) do

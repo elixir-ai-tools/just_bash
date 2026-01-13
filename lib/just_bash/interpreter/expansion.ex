@@ -43,19 +43,43 @@ defmodule JustBash.Interpreter.Expansion do
   Expand word parts with brace and glob expansion, returning a list of strings.
   Used for command arguments where globs should expand to multiple files.
 
-  Expansion order: brace -> parameter/command -> glob
+  Expansion order: brace -> parameter/command -> word splitting (IFS) -> glob
   """
   @spec expand_word_with_glob(JustBash.t(), [AST.word_part()]) :: [String.t()]
   def expand_word_with_glob(bash, parts) do
     has_unquoted_glob = has_unquoted_glob?(parts)
+    needs_ifs_split = has_unquoted_expansion?(parts)
+    ifs = Map.get(bash.env, "IFS", " \t\n")
+
     expanded_words = expand_with_brace_expansion(bash, parts)
 
-    Enum.flat_map(expanded_words, fn word_str ->
+    # Apply IFS word splitting if there are unquoted variable/command substitutions
+    split_words =
+      if needs_ifs_split and ifs != "" do
+        Enum.flat_map(expanded_words, fn word_str ->
+          split_on_ifs(word_str, ifs)
+        end)
+      else
+        expanded_words
+      end
+
+    Enum.flat_map(split_words, fn word_str ->
       if has_unquoted_glob and has_glob_chars?(word_str) do
         expand_glob(bash, word_str)
       else
         [word_str]
       end
+    end)
+  end
+
+  # Check if parts contain unquoted variable or command substitution
+  # that should trigger IFS word splitting
+  defp has_unquoted_expansion?(parts) do
+    Enum.any?(parts, fn
+      %AST.ParameterExpansion{} -> true
+      %AST.CommandSubstitution{} -> true
+      %AST.ArithmeticExpansion{} -> true
+      _ -> false
     end)
   end
 
@@ -242,13 +266,26 @@ defmodule JustBash.Interpreter.Expansion do
   defp expand_part(_bash, _), do: ""
 
   defp execute_arithmetic_expansion(bash, %AST.ArithmeticExpression{expression: inner_expr}) do
-    {value, _env} = Arithmetic.evaluate(inner_expr, bash.env)
+    {value, new_env} = Arithmetic.evaluate(inner_expr, bash.env)
+    # Store env changes from arithmetic (like x++ or x=5) as pending assignments
+    store_arithmetic_env_changes(bash.env, new_env)
     to_string(value)
   end
 
   defp execute_arithmetic_expansion(bash, expr) do
-    {value, _env} = Arithmetic.evaluate(expr, bash.env)
+    {value, new_env} = Arithmetic.evaluate(expr, bash.env)
+    # Store env changes from arithmetic (like x++ or x=5) as pending assignments
+    store_arithmetic_env_changes(bash.env, new_env)
     to_string(value)
+  end
+
+  # Store any env changes from arithmetic evaluation as pending assignments
+  defp store_arithmetic_env_changes(old_env, new_env) do
+    Enum.each(new_env, fn {key, value} ->
+      if Map.get(old_env, key) != value do
+        add_pending_assignment(key, value)
+      end
+    end)
   end
 
   defp execute_command_substitution(bash, %AST.Script{} = script) do
@@ -261,17 +298,28 @@ defmodule JustBash.Interpreter.Expansion do
   """
   @spec expand_parameter(JustBash.t(), AST.ParameterExpansion.t()) :: String.t()
   def expand_parameter(bash, %AST.ParameterExpansion{parameter: name, operation: nil}) do
-    case Map.fetch(bash.env, name) do
-      {:ok, value} ->
-        value
+    # Check for array subscript patterns: arr[@], arr[*], arr[n]
+    case parse_array_subscript(name) do
+      {:array_all, arr_name} ->
+        # ${arr[@]} or ${arr[*]} - return all elements space-separated
+        expand_array_all(bash, arr_name)
 
-      :error ->
-        # Check nounset - error if variable is unset and nounset is enabled
-        # Special variables like $?, $#, etc. are always considered set
-        if bash.shell_opts.nounset and not special_variable?(name) do
-          raise UnsetVariableError, variable: name
-        else
-          ""
+      {:array_index, arr_name, index} ->
+        # ${arr[n]} - return element at index (might be arithmetic)
+        expand_array_index(bash, arr_name, index)
+
+      :not_array ->
+        # Regular variable
+        case Map.fetch(bash.env, name) do
+          {:ok, value} ->
+            value
+
+          :error ->
+            if bash.shell_opts.nounset and not special_variable?(name) do
+              raise UnsetVariableError, variable: name
+            else
+              ""
+            end
         end
     end
   end
@@ -282,6 +330,52 @@ defmodule JustBash.Interpreter.Expansion do
     # For operations like ${var:-default}, we don't error on unset even with nounset
     # because the operation handles the unset case
     expand_with_operation(bash, name, value, operation)
+  end
+
+  defp parse_array_subscript(name) do
+    case Regex.run(~r/^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]$/, name) do
+      [_, arr_name, "@"] -> {:array_all, arr_name}
+      [_, arr_name, "*"] -> {:array_all, arr_name}
+      [_, arr_name, index] -> {:array_index, arr_name, index}
+      nil -> :not_array
+    end
+  end
+
+  defp expand_array_all(bash, arr_name) do
+    # Find all arr[N] keys and collect values in order
+    bash.env
+    |> Enum.filter(fn {key, _} ->
+      case Regex.run(~r/^#{Regex.escape(arr_name)}\[(\d+)\]$/, key) do
+        [_, _idx] -> true
+        nil -> false
+      end
+    end)
+    |> Enum.map(fn {key, value} ->
+      [_, idx] = Regex.run(~r/\[(\d+)\]$/, key)
+      {String.to_integer(idx), value}
+    end)
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.join(" ")
+  end
+
+  defp expand_array_index(bash, arr_name, index_str) do
+    # Try to evaluate index as arithmetic expression
+    index =
+      case Integer.parse(index_str) do
+        {n, ""} ->
+          n
+
+        _ ->
+          # Could be arithmetic like arr[i+1] - evaluate it
+          case Arithmetic.evaluate(bash, index_str) do
+            {:ok, n} -> n
+            _ -> 0
+          end
+      end
+
+    key = "#{arr_name}[#{index}]"
+    Map.get(bash.env, key, "")
   end
 
   # Special variables that are always considered "set" for nounset purposes
@@ -342,8 +436,22 @@ defmodule JustBash.Interpreter.Expansion do
     if should_use_alt, do: alt_val, else: ""
   end
 
-  defp expand_with_operation(_bash, _name, value, %AST.Length{}) do
-    String.length(value || "") |> to_string()
+  defp expand_with_operation(bash, name, value, %AST.Length{}) do
+    # Check if this is an array length request like ${#arr[@]} or ${#arr[*]}
+    case parse_array_subscript(name) do
+      {:array_all, arr_name} ->
+        # Count of array elements
+        count_array_elements(bash, arr_name) |> to_string()
+
+      {:array_index, arr_name, index_str} ->
+        # Length of specific element: ${#arr[0]}
+        elem_value = expand_array_index(bash, arr_name, index_str)
+        String.length(elem_value) |> to_string()
+
+      :not_array ->
+        # Regular variable length
+        String.length(value || "") |> to_string()
+    end
   end
 
   defp expand_with_operation(bash, _name, value, %AST.Substring{
@@ -451,6 +559,14 @@ defmodule JustBash.Interpreter.Expansion do
 
   defp expand_with_operation(_bash, _name, value, _operation) do
     value || ""
+  end
+
+  defp count_array_elements(bash, arr_name) do
+    bash.env
+    |> Enum.filter(fn {key, _} ->
+      Regex.match?(~r/^#{Regex.escape(arr_name)}\[\d+\]$/, key)
+    end)
+    |> length()
   end
 
   defp apply_case_modification(str, _direction, true = _all) when str == "", do: ""

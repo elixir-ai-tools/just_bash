@@ -7,9 +7,9 @@ defmodule JustBash.Commands.Uniq do
   alias JustBash.Fs.InMemoryFs
 
   @flag_spec %{
-    boolean: [:c],
+    boolean: [:c, :d, :u],
     value: [],
-    defaults: %{c: false}
+    defaults: %{c: false, d: false, u: false}
   }
 
   @impl true
@@ -36,14 +36,36 @@ defmodule JustBash.Commands.Uniq do
     lines = String.split(content, "\n", trim: true)
 
     output =
-      if flags.c do
-        lines
-        |> Enum.chunk_by(& &1)
-        |> Enum.map_join("\n", fn chunk -> "#{length(chunk)} #{hd(chunk)}" end)
-      else
-        lines
-        |> Enum.dedup()
-        |> Enum.join("\n")
+      cond do
+        flags.c ->
+          lines
+          |> Enum.chunk_by(& &1)
+          |> Enum.map_join("\n", fn chunk ->
+            # Real uniq pads count to 4 characters
+            count = String.pad_leading(Integer.to_string(length(chunk)), 4)
+            "#{count} #{hd(chunk)}"
+          end)
+
+        flags.d ->
+          # Only print duplicate lines (lines that appear more than once)
+          lines
+          |> Enum.chunk_by(& &1)
+          |> Enum.filter(fn chunk -> length(chunk) > 1 end)
+          |> Enum.map(&hd/1)
+          |> Enum.join("\n")
+
+        flags.u ->
+          # Only print unique lines (lines that appear exactly once)
+          lines
+          |> Enum.chunk_by(& &1)
+          |> Enum.filter(fn chunk -> length(chunk) == 1 end)
+          |> Enum.map(&hd/1)
+          |> Enum.join("\n")
+
+        true ->
+          lines
+          |> Enum.dedup()
+          |> Enum.join("\n")
       end
 
     output = if output != "", do: output <> "\n", else: ""

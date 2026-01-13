@@ -4,7 +4,7 @@ defmodule JustBash.Commands.Printf do
 
   alias JustBash.Commands.Command
 
-  @format_regex ~r/%(-)?(\d+)?(?:\.(\d+))?([sdxXofec%])/
+  @format_regex ~r/%(-)?(0)?(\d+)?(?:\.(\d+))?([sdxXofec%])/
 
   @impl true
   def names, do: ["printf"]
@@ -54,25 +54,27 @@ defmodule JustBash.Commands.Printf do
       nil ->
         process_parts(rest, args, [part | acc])
 
-      [_full, left_align, width, precision, specifier] ->
-        {formatted, remaining} = format_specifier(specifier, left_align, width, precision, args)
+      [_full, left_align, zero_pad, width, precision, specifier] ->
+        {formatted, remaining} =
+          format_specifier(specifier, left_align, zero_pad, width, precision, args)
+
         process_parts(rest, remaining, [formatted | acc])
     end
   end
 
-  defp format_specifier("%", _left, _width, _precision, args) do
+  defp format_specifier("%", _left, _zero, _width, _precision, args) do
     {"%", args}
   end
 
-  defp format_specifier(spec, left_align, width, precision, [arg | rest]) do
+  defp format_specifier(spec, left_align, zero_pad, width, precision, [arg | rest]) do
     formatted = do_format(spec, arg, precision)
-    padded = apply_width(formatted, left_align, width)
+    padded = apply_width(formatted, left_align, zero_pad, width)
     {padded, rest}
   end
 
-  defp format_specifier(spec, left_align, width, precision, []) do
+  defp format_specifier(spec, left_align, zero_pad, width, precision, []) do
     formatted = do_format(spec, "", precision)
-    padded = apply_width(formatted, left_align, width)
+    padded = apply_width(formatted, left_align, zero_pad, width)
     {padded, []}
   end
 
@@ -146,16 +148,18 @@ defmodule JustBash.Commands.Printf do
   defp parse_precision("", default), do: default
   defp parse_precision(p, _default), do: String.to_integer(p)
 
-  defp apply_width(str, _left_align, ""), do: str
+  defp apply_width(str, _left_align, _zero_pad, ""), do: str
+  defp apply_width(str, _left_align, _zero_pad, nil), do: str
 
-  defp apply_width(str, left_align, width_str) do
+  defp apply_width(str, left_align, zero_pad, width_str) do
     width = String.to_integer(width_str)
     len = String.length(str)
 
     if len >= width do
       str
     else
-      padding = String.duplicate(" ", width - len)
+      pad_char = if zero_pad == "0" and left_align != "-", do: "0", else: " "
+      padding = String.duplicate(pad_char, width - len)
       if left_align == "-", do: str <> padding, else: padding <> str
     end
   end

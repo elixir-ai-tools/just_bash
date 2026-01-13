@@ -308,7 +308,8 @@ defmodule JustBash.Commands.FileOperationsTest do
     end
 
     test "cd with no args goes home" do
-      bash = JustBash.new(cwd: "/tmp")
+      # Set HOME explicitly to test cd going to home directory
+      bash = JustBash.new(cwd: "/tmp", env: %{"HOME" => "/home/user"})
       {result, new_bash} = JustBash.exec(bash, "cd")
       assert result.exit_code == 0
       assert new_bash.cwd == "/home/user"

@@ -379,7 +379,16 @@ defmodule JustBash.Parser do
   end
 
   defp fill_empty_heredoc(redir, heredoc, [content | rest]) do
-    filled_heredoc = %{heredoc | content: AST.word(WordParts.parse(content))}
+    word_content =
+      if heredoc.quoted do
+        # Quoted heredoc (<<'EOF' or <<"EOF"): no expansion
+        AST.word([AST.literal(content)])
+      else
+        # Unquoted heredoc: expand variables, etc.
+        AST.word(WordParts.parse(content))
+      end
+
+    filled_heredoc = %{heredoc | content: word_content}
     {%{redir | target: filled_heredoc}, rest}
   end
 
@@ -516,10 +525,49 @@ defmodule JustBash.Parser do
   defp parse_assignments(parser, acc) do
     if check?(parser, :assignment_word) do
       {token, parser} = advance(parser)
-      assignment = parse_assignment_word(token.value)
-      parse_assignments(parser, [assignment | acc])
+
+      # Check if this is an array assignment: arr=(...)
+      if check?(parser, :lparen) do
+        {assignment, parser} = parse_array_assignment(token.value, parser)
+        parse_assignments(parser, [assignment | acc])
+      else
+        assignment = parse_assignment_word(token.value)
+        parse_assignments(parser, [assignment | acc])
+      end
     else
       {Enum.reverse(acc), parser}
+    end
+  end
+
+  defp parse_array_assignment(assign_token_value, parser) do
+    # assign_token_value is "arr=" - extract the name
+    name = String.trim_trailing(assign_token_value, "=")
+
+    # Consume the lparen
+    {_lparen, parser} = advance(parser)
+
+    # Parse elements until rparen
+    {elements, parser} = parse_array_elements(parser, [])
+
+    # Expect rparen
+    {_rparen, parser} = expect(parser, :rparen, "Expected ')' to close array")
+
+    assignment = AST.assignment(name, nil, false, elements)
+    {assignment, parser}
+  end
+
+  defp parse_array_elements(parser, acc) do
+    cond do
+      check?(parser, :rparen) ->
+        {Enum.reverse(acc), parser}
+
+      word?(parser) ->
+        {token, parser} = advance(parser)
+        word = parse_word_from_token(token)
+        parse_array_elements(parser, [word | acc])
+
+      true ->
+        {Enum.reverse(acc), parser}
     end
   end
 
@@ -559,7 +607,8 @@ defmodule JustBash.Parser do
   end
 
   defp parse_args(parser, acc) do
-    if word?(parser) and not statement_end?(parser) do
+    # Don't consume a number if it's a redirection fd (e.g., 2>/dev/null)
+    if word?(parser) and not statement_end?(parser) and not redirection?(parser) do
       {token, parser} = advance(parser)
       word = parse_word_from_token(token)
       parse_args(parser, [word | acc])
@@ -573,6 +622,7 @@ defmodule JustBash.Parser do
       :word,
       :name,
       :number,
+      :assignment_word,
       :if,
       :for,
       :while,
@@ -698,12 +748,12 @@ defmodule JustBash.Parser do
        when operator in [:"<<", :"<<-"] do
     delimiter = target_token.value
     strip_tabs = operator == :"<<-"
-    quoted = String.starts_with?(delimiter, "'") or String.starts_with?(delimiter, "\"")
-    clean_delimiter = String.trim(delimiter, "'") |> String.trim("\"")
+    # Check token metadata for quoted status (lexer strips quotes but preserves metadata)
+    quoted = target_token.quoted || target_token.single_quoted
 
-    heredoc = AST.here_doc(clean_delimiter, nil, strip_tabs, quoted)
+    heredoc = AST.here_doc(delimiter, nil, strip_tabs, quoted)
     redirection = AST.redirection(operator, heredoc, fd)
-    parser = %{parser | pending_heredocs: parser.pending_heredocs ++ [clean_delimiter]}
+    parser = %{parser | pending_heredocs: parser.pending_heredocs ++ [delimiter]}
 
     {redirection, parser}
   end
