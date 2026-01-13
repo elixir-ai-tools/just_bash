@@ -24,6 +24,10 @@ jobs:
             otp: "26"
           - elixir: "1.17"
             otp: "27"
+          - elixir: "1.18"
+            otp: "27"
+          - elixir: "1.19"
+            otp: "28"
 
     steps:
       - name: Checkout
@@ -71,8 +75,8 @@ jobs:
       - name: Setup Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.17"
-          otp-version: "27"
+          elixir-version: "1.19"
+          otp-version: "28"
 
       - name: Cache deps
         uses: actions/cache@v4
@@ -102,8 +106,8 @@ jobs:
       - name: Setup Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.17"
-          otp-version: "27"
+          elixir-version: "1.19"
+          otp-version: "28"
 
       - name: Cache deps
         uses: actions/cache@v4
