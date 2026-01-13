@@ -66,6 +66,7 @@ sqlite3 db "SELECT * FROM users WHERE active = 1" --json | jq -r '.[].email'
 `curl` - HTTP client with network sandboxing
 `jq` - JSON processor
 `sqlite3` - In-memory SQL database with `.import` for CSV
+`liquid` - Liquid template engine (via Solid)
 
 ### Utilities
 `echo`, `printf`, `pwd`, `cd`, `env`, `export`, `unset`, `test`, `[`, `seq`, `date`, `sleep`, `basename`, `dirname`, `which`, `xargs`, `tee`, `base64`, `md5sum`
@@ -81,6 +82,37 @@ sqlite3 db "SELECT * FROM users WHERE active = 1" --json | jq -r '.[].email'
 - **Logical operators** - `&&`, `||` with short-circuit evaluation
 - **Functions** - `function name() { ... }` or `name() { ... }`
 - **Brace expansion** - `{a,b,c}`, `{1..5}`
+
+## Liquid Templates
+
+Render Liquid templates with JSON data:
+
+```elixir
+bash = JustBash.new(
+  files: %{
+    "/templates/post.html" => """
+    <article>
+      <h1>{{ title }}</h1>
+      <p>By {{ author }} on {{ date }}</p>
+      {{ content }}
+    </article>
+    """
+  }
+)
+
+# Pipe JSON data to template
+{result, _} = JustBash.exec(bash, ~S"""
+echo '{"title": "Hello", "author": "Alice", "date": "2024-01-15", "content": "<p>Welcome!</p>"}' \
+  | liquid /templates/post.html
+""")
+
+# Use with sqlite for a blog
+{result, _} = JustBash.exec(bash, ~S"""
+sqlite3 blog "SELECT * FROM posts" --json | jq '{posts: .}' | liquid /templates/index.html
+""")
+```
+
+Supports loops, conditionals, filters, and all standard Liquid tags.
 
 ## SQLite Integration
 
