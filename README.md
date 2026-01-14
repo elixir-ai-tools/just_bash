@@ -3,7 +3,7 @@
   <p align="center">
     A sandboxed bash interpreter with virtual filesystem, written in pure Elixir.
     <br />
-    <strong>60+ commands | Full shell syntax | Data pipelines | Zero system access</strong>
+    <strong>70+ commands | Full shell syntax | Data pipelines | Zero system access</strong>
   </p>
 </p>
 
@@ -12,7 +12,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/hexpm/l/just_bash.svg" alt="License"></a>
 </p>
 
-> **Note**: This is an experimental project. The entire codebase—parser, interpreter, 60+ commands, and 1100+ tests—was generated with OpenCode using Claude Opus 4.5 through conversational prompting.
+> **Attribution**: This is an Elixir port of [just-bash](https://github.com/vercel-labs/just-bash) by Vercel Labs, originally written in TypeScript. This port was created as an experiment using [OpenCode](https://opencode.ai) with Claude Opus 4.5 through conversational prompting. The entire codebase—parser, interpreter, 70+ commands, and 1300+ tests—was generated through AI-assisted development.
 
 ---
 
@@ -325,6 +325,16 @@ function greet() {
 greet "World"
 ```
 
+### Arrays
+
+```bash
+arr=(a b c)                 # Array literal
+${arr[0]}                   # Index access
+${arr[@]}                   # All elements
+${arr[*]}                   # All elements (single word)
+${#arr[@]}                  # Array length
+```
+
 ### Compound Commands
 
 ```bash
@@ -447,7 +457,6 @@ tokens = JustBash.tokenize("echo hello")
 
 - No real filesystem access (by design)
 - No process spawning or job control
-- No arrays (variables are strings)
 - No process substitution `<(cmd)`
 - Limited glob patterns
 - SQLite databases are in-memory only
@@ -458,9 +467,9 @@ tokens = JustBash.tokenize("echo hello")
 
 ```bash
 mix deps.get
-mix test                    # 1100+ tests
+mix test                    # 1300+ tests
 mix dialyzer                # Type checking
-mix credo --strict          # Linting
+mix credo                   # Linting
 ```
 
 Tested on Elixir 1.15–1.19, OTP 25–28.
