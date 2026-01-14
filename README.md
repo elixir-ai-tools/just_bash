@@ -12,7 +12,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/hexpm/l/just_bash.svg" alt="License"></a>
 </p>
 
-> **Attribution**: This is an Elixir port of [just-bash](https://github.com/vercel-labs/just-bash) by Vercel Labs, originally written in TypeScript. This port was created as an experiment using [OpenCode](https://opencode.ai) with Claude Opus 4.5 through conversational prompting. The entire codebase—parser, interpreter, 70+ commands, and 1300+ tests—was generated through AI-assisted development.
+> **Why this exists**: We were curious what an Elixir version of [just-bash](https://github.com/vercel-labs/just-bash) would look like. The original is a fantastic TypeScript project by Vercel Labs. This port was created as an experiment using [OpenCode](https://opencode.ai) with Claude Opus 4.5—the entire codebase (parser, interpreter, 70+ commands, 1300+ tests) was generated through conversational prompting.
 
 ---
 
