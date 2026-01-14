@@ -35,12 +35,10 @@ defmodule JustBash.Commands.Awk.Parser do
   """
   @spec parse(String.t()) :: {:ok, program()} | {:error, String.t()}
   def parse(program_str) do
-    try do
-      rules = parse_rules(program_str)
-      {:ok, rules}
-    rescue
-      e -> {:error, Exception.message(e)}
-    end
+    rules = parse_rules(program_str)
+    {:ok, rules}
+  rescue
+    e -> {:error, Exception.message(e)}
   end
 
   defp parse_rules(program) do

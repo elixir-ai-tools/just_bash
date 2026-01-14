@@ -12,8 +12,8 @@ defmodule JustBash.Commands.Awk do
   """
   @behaviour JustBash.Commands.Command
 
+  alias JustBash.Commands.Awk.{Evaluator, Parser}
   alias JustBash.Commands.Command
-  alias JustBash.Commands.Awk.{Parser, Evaluator}
   alias JustBash.Fs.InMemoryFs
 
   @impl true

@@ -1,6 +1,8 @@
 defmodule JustBash.Commands.LiquidTest do
   use ExUnit.Case, async: true
 
+  alias JustBash.Fs.InMemoryFs
+
   describe "liquid command" do
     test "renders simple variable" do
       bash = JustBash.new()
@@ -127,7 +129,7 @@ defmodule JustBash.Commands.LiquidTest do
       bash =
         put_in(
           bash.fs,
-          JustBash.Fs.InMemoryFs.write_file(
+          InMemoryFs.write_file(
             bash.fs,
             "/template.html",
             "{% for post in posts %}<article>{{ post.title }} by {{ post.author }}</article>{% endfor %}"

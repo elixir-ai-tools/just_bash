@@ -510,7 +510,7 @@ defmodule JustBash.BashComparisonTest do
 
   describe "quoting edge cases comparison" do
     test "escaped double quote" do
-      compare_bash("echo \"it's \\\"quoted\\\"\"")
+      compare_bash(~s[echo "it's \\"quoted\\""])
     end
 
     test "single quote escape" do
@@ -594,6 +594,67 @@ defmodule JustBash.BashComparisonTest do
     test "cat nonexistent file" do
       # Just check exit code, error message format may differ
       compare_bash("cat /nonexistent_file_xyz 2>/dev/null; echo $?", ignore_exit: true)
+    end
+  end
+
+  describe "single quotes inside double quotes" do
+    test "apostrophe in string" do
+      compare_bash(~S[X="it's"; echo "$X"])
+    end
+
+    test "SQL-style single quotes" do
+      compare_bash(~S[X="VALUES ('hello')"; echo "$X"])
+    end
+
+    test "multiple single quotes" do
+      compare_bash(~S[X="'a' 'b' 'c'"; echo "$X"])
+    end
+
+    test "building SQL string incrementally" do
+      compare_bash(
+        ~S[SQL="INSERT INTO t VALUES ('x');"; SQL="$SQL INSERT INTO t VALUES ('y');"; echo "$SQL"]
+      )
+    end
+
+    test "single quote at boundaries" do
+      compare_bash(~S[X="'start"; echo "$X"])
+      compare_bash(~S[X="end'"; echo "$X"])
+    end
+  end
+
+  describe "while read loops" do
+    test "basic while read" do
+      compare_bash(~S[echo -e "a\nb\nc" | while read x; do echo "got: $x"; done])
+    end
+
+    test "while read terminates on EOF" do
+      compare_bash(~S[echo -e "1\n2\n3" | while read n; do echo $n; done; echo done])
+    end
+
+    test "while read with head" do
+      compare_bash(~S[echo -e "1\n2\n3\n4\n5" | head -3 | while read x; do echo "x=$x"; done])
+    end
+
+    test "read returns 1 on empty input" do
+      compare_bash(~S[echo "" | read x; echo $?])
+    end
+  end
+
+  describe "sqlite3 piped input" do
+    test "basic SQL via pipe" do
+      compare_bash(~S[echo "SELECT 1+1;" | sqlite3])
+    end
+
+    test "multi-statement SQL via pipe" do
+      compare_bash(
+        ~S[echo "CREATE TABLE t(n INT); INSERT INTO t VALUES(42); SELECT n FROM t;" | sqlite3]
+      )
+    end
+
+    test "SQL with quoted strings via pipe" do
+      compare_bash(
+        ~S[echo "CREATE TABLE t(s TEXT); INSERT INTO t VALUES('hello'); SELECT s FROM t;" | sqlite3]
+      )
     end
   end
 end

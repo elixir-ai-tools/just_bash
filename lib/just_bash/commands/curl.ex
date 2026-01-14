@@ -16,6 +16,7 @@ defmodule JustBash.Commands.Curl do
   """
   @behaviour JustBash.Commands.Command
 
+  alias JustBash.Commands.ArgParser
   alias JustBash.Commands.Command
   alias JustBash.Fs.InMemoryFs
 
@@ -26,22 +27,108 @@ defmodule JustBash.Commands.Curl do
 
   @impl true
   def execute(bash, args, _stdin) do
-    case parse_args(args) do
+    case ArgParser.parse(args, flags(), command: "curl") do
       {:error, msg} ->
         {Command.error(msg), bash}
 
-      {:ok, %{help: true}} ->
-        {Command.ok(help_text()), bash}
+      {:ok, opts, positional} ->
+        opts = finalize_opts(opts, positional)
 
-      {:ok, opts} ->
-        case validate_network_access(bash, opts.url) do
-          :ok ->
-            perform_request(bash, opts)
+        cond do
+          opts.help ->
+            {Command.ok(help_text()), bash}
 
-          {:error, msg} ->
-            {Command.error(msg), bash}
+          opts.url == nil ->
+            {Command.error("curl: no URL specified\n"), bash}
+
+          true ->
+            case validate_network_access(bash, opts.url) do
+              :ok -> perform_request(bash, opts)
+              {:error, msg} -> {Command.error(msg), bash}
+            end
         end
     end
+  end
+
+  # Post-process parsed options
+  defp finalize_opts(opts, positional) do
+    opts
+    |> Map.put(:url, List.first(positional))
+    |> Map.put(:headers, parse_headers(opts.header))
+    |> Map.put(:data, opts.data || opts[:data_raw])
+    |> Map.update!(:method, &parse_method/1)
+    |> apply_head_only()
+    |> apply_data_method()
+    |> apply_timeout()
+  end
+
+  defp parse_headers(header_list) do
+    Enum.reduce(header_list, %{}, fn header, acc ->
+      case String.split(header, ":", parts: 2) do
+        [key, value] ->
+          key = String.trim(key) |> String.downcase()
+          value = String.trim(value)
+          Map.put(acc, key, value)
+
+        _ ->
+          acc
+      end
+    end)
+  end
+
+  defp apply_head_only(%{head_only: true} = opts), do: %{opts | method: :head}
+  defp apply_head_only(opts), do: opts
+
+  defp apply_data_method(%{data: data, method: :get} = opts) when not is_nil(data) do
+    %{opts | method: :post}
+  end
+
+  defp apply_data_method(opts), do: opts
+
+  defp apply_timeout(%{connect_timeout: ct} = opts) when is_integer(ct) do
+    %{opts | timeout: ct * 1000}
+  end
+
+  defp apply_timeout(%{timeout: t} = opts) when is_integer(t) do
+    %{opts | timeout: t * 1000}
+  end
+
+  defp apply_timeout(opts), do: opts
+
+  defp parse_method(method) when is_atom(method), do: method
+
+  defp parse_method(method) when is_binary(method) do
+    case String.upcase(method) do
+      "GET" -> :get
+      "POST" -> :post
+      "PUT" -> :put
+      "DELETE" -> :delete
+      "PATCH" -> :patch
+      "HEAD" -> :head
+      "OPTIONS" -> :options
+      _ -> :get
+    end
+  end
+
+  # Declarative flag specification
+  defp flags do
+    [
+      help: [short: "-h", long: "--help", type: :boolean],
+      method: [short: "-X", long: "--request", type: :string, default: "GET"],
+      header: [short: "-H", long: "--header", type: :accumulator, default: []],
+      data: [short: "-d", long: "--data", type: :string],
+      data_raw: [long: "--data-raw", type: :string],
+      output_file: [short: "-o", long: "--output", type: :string],
+      silent: [short: "-s", long: "--silent", type: :boolean],
+      include_headers: [short: "-i", long: "--include", type: :boolean],
+      head_only: [short: "-I", long: "--head", type: :boolean],
+      follow_redirects: [short: "-L", long: "--location", type: :boolean],
+      insecure: [short: "-k", long: "--insecure", type: :boolean],
+      user: [short: "-u", long: "--user", type: :string],
+      user_agent: [short: "-A", long: "--user-agent", type: :string],
+      timeout: [short: "-m", long: "--max-time", type: :integer, default: @default_timeout],
+      connect_timeout: [long: "--connect-timeout", type: :integer]
+    ]
   end
 
   defp validate_network_access(bash, url) do
@@ -201,148 +288,6 @@ defmodule JustBash.Commands.Curl do
   defp format_transport_error(:econnrefused), do: "connection refused"
   defp format_transport_error(:nxdomain), do: "could not resolve host"
   defp format_transport_error(reason), do: inspect(reason)
-
-  defp parse_args(args) do
-    parse_args(args, %{
-      url: nil,
-      method: :get,
-      headers: %{},
-      data: nil,
-      output_file: nil,
-      silent: false,
-      include_headers: false,
-      head_only: false,
-      follow_redirects: false,
-      insecure: false,
-      user: nil,
-      user_agent: nil,
-      timeout: @default_timeout,
-      help: false
-    })
-  end
-
-  defp parse_args([], opts) do
-    if opts.url == nil and not opts.help do
-      {:error, "curl: no URL specified\n"}
-    else
-      {:ok, opts}
-    end
-  end
-
-  defp parse_args(["--help" | _], opts), do: {:ok, %{opts | help: true}}
-  defp parse_args(["-h" | _], opts), do: {:ok, %{opts | help: true}}
-
-  defp parse_args(["-X", method | rest], opts) do
-    parse_args(rest, %{opts | method: parse_method(method)})
-  end
-
-  defp parse_args(["--request", method | rest], opts) do
-    parse_args(rest, %{opts | method: parse_method(method)})
-  end
-
-  defp parse_args(["-H", header | rest], opts) do
-    case String.split(header, ":", parts: 2) do
-      [key, value] ->
-        key = String.trim(key) |> String.downcase()
-        value = String.trim(value)
-        parse_args(rest, %{opts | headers: Map.put(opts.headers, key, value)})
-
-      _ ->
-        {:error, "curl: invalid header: #{header}\n"}
-    end
-  end
-
-  defp parse_args(["--header", header | rest], opts) do
-    parse_args(["-H", header | rest], opts)
-  end
-
-  defp parse_args(["-d", data | rest], opts) do
-    new_opts = %{opts | data: data, method: if(opts.method == :get, do: :post, else: opts.method)}
-    parse_args(rest, new_opts)
-  end
-
-  defp parse_args(["--data", data | rest], opts), do: parse_args(["-d", data | rest], opts)
-  defp parse_args(["--data-raw", data | rest], opts), do: parse_args(["-d", data | rest], opts)
-
-  defp parse_args(["-o", file | rest], opts) do
-    parse_args(rest, %{opts | output_file: file})
-  end
-
-  defp parse_args(["--output", file | rest], opts), do: parse_args(["-o", file | rest], opts)
-
-  defp parse_args(["-s" | rest], opts), do: parse_args(rest, %{opts | silent: true})
-  defp parse_args(["--silent" | rest], opts), do: parse_args(rest, %{opts | silent: true})
-
-  defp parse_args(["-i" | rest], opts), do: parse_args(rest, %{opts | include_headers: true})
-
-  defp parse_args(["--include" | rest], opts),
-    do: parse_args(rest, %{opts | include_headers: true})
-
-  defp parse_args(["-I" | rest], opts),
-    do: parse_args(rest, %{opts | head_only: true, method: :head})
-
-  defp parse_args(["--head" | rest], opts),
-    do: parse_args(rest, %{opts | head_only: true, method: :head})
-
-  defp parse_args(["-L" | rest], opts), do: parse_args(rest, %{opts | follow_redirects: true})
-
-  defp parse_args(["--location" | rest], opts),
-    do: parse_args(rest, %{opts | follow_redirects: true})
-
-  defp parse_args(["-k" | rest], opts), do: parse_args(rest, %{opts | insecure: true})
-  defp parse_args(["--insecure" | rest], opts), do: parse_args(rest, %{opts | insecure: true})
-
-  defp parse_args(["-u", userpass | rest], opts) do
-    parse_args(rest, %{opts | user: userpass})
-  end
-
-  defp parse_args(["--user", userpass | rest], opts),
-    do: parse_args(["-u", userpass | rest], opts)
-
-  defp parse_args(["-A", agent | rest], opts) do
-    parse_args(rest, %{opts | user_agent: agent})
-  end
-
-  defp parse_args(["--user-agent", agent | rest], opts),
-    do: parse_args(["-A", agent | rest], opts)
-
-  defp parse_args(["--connect-timeout", seconds | rest], opts) do
-    case Integer.parse(seconds) do
-      {s, _} -> parse_args(rest, %{opts | timeout: s * 1000})
-      :error -> parse_args(rest, opts)
-    end
-  end
-
-  defp parse_args(["-m", seconds | rest], opts) do
-    case Integer.parse(seconds) do
-      {s, _} -> parse_args(rest, %{opts | timeout: s * 1000})
-      :error -> parse_args(rest, opts)
-    end
-  end
-
-  defp parse_args(["--max-time", seconds | rest], opts),
-    do: parse_args(["-m", seconds | rest], opts)
-
-  defp parse_args(["-" <> _ = flag | _rest], _opts) do
-    {:error, "curl: unknown option: #{flag}\n"}
-  end
-
-  defp parse_args([url | rest], opts) do
-    parse_args(rest, %{opts | url: url})
-  end
-
-  defp parse_method(method) do
-    case String.upcase(method) do
-      "GET" -> :get
-      "POST" -> :post
-      "PUT" -> :put
-      "DELETE" -> :delete
-      "PATCH" -> :patch
-      "HEAD" -> :head
-      "OPTIONS" -> :options
-      _ -> :get
-    end
-  end
 
   defp help_text do
     """

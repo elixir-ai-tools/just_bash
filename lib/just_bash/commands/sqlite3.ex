@@ -34,13 +34,8 @@ defmodule JustBash.Commands.Sqlite3 do
 
   @impl true
   def execute(bash, args, stdin) do
-    case parse_args(args) do
-      {:error, msg} ->
-        {Command.error(msg), bash}
-
-      {:ok, opts} ->
-        execute_with_opts(bash, opts, stdin)
-    end
+    opts = parse_args(args)
+    execute_with_opts(bash, opts, stdin)
   end
 
   defp execute_with_opts(bash, %{help: true}, _stdin) do
@@ -510,11 +505,12 @@ defmodule JustBash.Commands.Sqlite3 do
     })
   end
 
-  defp parse_args([], %{db_name: nil}), do: {:error, "sqlite3: no database specified\n"}
-  defp parse_args([], opts), do: {:ok, opts}
+  # No database specified - default to :memory: (like real sqlite3)
+  defp parse_args([], %{db_name: nil} = opts), do: %{opts | db_name: ":memory:"}
+  defp parse_args([], opts), do: opts
 
-  defp parse_args(["--help" | _rest], opts), do: {:ok, %{opts | help: true}}
-  defp parse_args(["-h" | _rest], opts), do: {:ok, %{opts | help: true}}
+  defp parse_args(["--help" | _rest], opts), do: %{opts | help: true}
+  defp parse_args(["-h" | _rest], opts), do: %{opts | help: true}
   defp parse_args(["--json" | rest], opts), do: parse_args(rest, %{opts | json: true})
   defp parse_args(["--csv" | rest], opts), do: parse_args(rest, %{opts | csv: true, header: true})
   defp parse_args(["--header" | rest], opts), do: parse_args(rest, %{opts | header: true})

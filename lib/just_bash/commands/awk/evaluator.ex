@@ -6,7 +6,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   and producing output.
   """
 
-  alias JustBash.Commands.Awk.{Parser, Formatter}
+  alias JustBash.Commands.Awk.{Formatter, Parser}
 
   @type state :: %{
           nr: non_neg_integer(),

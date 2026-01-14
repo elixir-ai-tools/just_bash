@@ -39,6 +39,7 @@ defmodule JustBash.MixProject do
   defp deps do
     [
       {:nimble_parsec, "~> 1.4"},
+      {:nimble_options, "~> 1.1"},
       {:req, "~> 0.5"},
       {:jason, "~> 1.4"},
       {:exqlite, "~> 0.27"},

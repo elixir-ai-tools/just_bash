@@ -1,6 +1,8 @@
 defmodule JustBash.Commands.MarkdownTest do
   use ExUnit.Case, async: true
 
+  alias JustBash.Fs.InMemoryFs
+
   describe "markdown command" do
     test "converts heading" do
       bash = JustBash.new()
@@ -136,7 +138,7 @@ defmodule JustBash.Commands.MarkdownTest do
       bash =
         put_in(
           bash.fs,
-          JustBash.Fs.InMemoryFs.write_file(
+          InMemoryFs.write_file(
             bash.fs,
             "/template.html",
             "<article><h1>{{ title }}</h1><div>{{ html_content }}</div></article>"

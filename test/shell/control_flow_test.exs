@@ -113,6 +113,59 @@ defmodule JustBash.Shell.ControlFlowTest do
     end
   end
 
+  describe "while read loop" do
+    test "while read processes lines from stdin" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        echo "a
+        b
+        c" | while read line; do
+          echo "GOT: $line"
+        done
+        """)
+
+      assert result.stdout == "GOT: a\nGOT: b\nGOT: c\n"
+    end
+
+    test "while read terminates on EOF" do
+      bash = JustBash.new(files: %{"/data.txt" => "line1\nline2\n"})
+
+      {result, _} =
+        JustBash.exec(bash, """
+        cat /data.txt | while read x; do
+          echo "READ: $x"
+        done
+        echo done
+        """)
+
+      assert result.stdout == "READ: line1\nREAD: line2\ndone\n"
+    end
+
+    test "read returns 0 for empty line, 1 for no input" do
+      bash = JustBash.new()
+
+      # echo "" produces a newline, so read gets an empty line (success)
+      {result, _} =
+        JustBash.exec(bash, """
+        echo "" | read x
+        echo $?
+        """)
+
+      assert result.stdout == "0\n"
+
+      # printf "" produces nothing, so read gets EOF (failure)
+      {result2, _} =
+        JustBash.exec(bash, """
+        printf "" | read x
+        echo $?
+        """)
+
+      assert result2.stdout == "1\n"
+    end
+  end
+
   describe "until loop" do
     test "until with true condition never runs" do
       bash = JustBash.new()

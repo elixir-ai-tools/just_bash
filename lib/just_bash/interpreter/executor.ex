@@ -1,11 +1,20 @@
 defmodule JustBash.Interpreter.Executor do
   @moduledoc """
   Executes parsed bash AST nodes.
+
+  This is the main entry point for script execution. Complex functionality
+  is delegated to submodules:
+
+  - `Executor.Conditional` - [[ ]] and if/case evaluation
+  - `Executor.Loop` - for/while/until loops
+  - `Executor.Redirection` - File redirections (>, >>, <, etc.)
   """
 
   alias JustBash.AST
   alias JustBash.Commands.Registry
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Interpreter.Executor.Conditional
+  alias JustBash.Interpreter.Executor.Loop
+  alias JustBash.Interpreter.Executor.Redirection
   alias JustBash.Interpreter.Expansion
 
   @type result :: %{
@@ -21,12 +30,13 @@ defmodule JustBash.Interpreter.Executor do
   """
   @spec execute_script(JustBash.t(), AST.Script.t()) :: {result(), JustBash.t()}
   def execute_script(bash, %AST.Script{statements: statements}) do
-    {final_bash, stdout, stderr, exit_code, _halted} =
-      Enum.reduce_while(statements, {bash, "", "", 0, false}, fn stmt, {b, out, err, _code, _} ->
+    {final_bash, stdout_io, stderr_io, exit_code, _halted} =
+      Enum.reduce_while(statements, {bash, [], [], 0, false}, fn stmt, {b, out, err, _code, _} ->
         {result, new_bash} = execute_statement(b, stmt)
         new_env = Map.put(new_bash.env, "?", to_string(result.exit_code))
         new_bash = %{new_bash | last_exit_code: result.exit_code, env: new_env}
-        acc = {new_bash, out <> result.stdout, err <> result.stderr, result.exit_code, false}
+        # Use iodata - O(1) prepend, single flatten at end
+        acc = {new_bash, [out, result.stdout], [err, result.stderr], result.exit_code, false}
 
         # Check errexit: exit if enabled and command failed
         # Note: errexit doesn't apply to statements with && or || operators
@@ -39,8 +49,8 @@ defmodule JustBash.Interpreter.Executor do
       end)
 
     result = %{
-      stdout: stdout,
-      stderr: stderr,
+      stdout: IO.iodata_to_binary(stdout_io),
+      stderr: IO.iodata_to_binary(stderr_io),
       exit_code: exit_code,
       env: final_bash.env
     }
@@ -59,19 +69,25 @@ defmodule JustBash.Interpreter.Executor do
   @spec execute_statement(JustBash.t(), AST.Statement.t() | AST.Group.t()) ::
           {result(), JustBash.t()}
   def execute_statement(bash, %AST.Statement{pipelines: pipelines, operators: operators}) do
-    execute_pipelines(bash, pipelines, operators, 0, "", "", nil)
+    execute_pipelines(bash, pipelines, operators, 0, [], [], nil)
   end
 
   def execute_statement(bash, %AST.Group{body: body}) do
     execute_body_with_bash(bash, body)
   end
 
-  defp execute_pipelines(bash, pipelines, operators, prev_exit, stdout, stderr, prev_op) do
-    execute_pipelines(bash, pipelines, operators, prev_exit, stdout, stderr, prev_op, nil)
+  # Use iodata for stdout/stderr accumulation
+  defp execute_pipelines(bash, pipelines, operators, prev_exit, stdout_io, stderr_io, prev_op) do
+    execute_pipelines(bash, pipelines, operators, prev_exit, stdout_io, stderr_io, prev_op, nil)
   end
 
-  defp execute_pipelines(bash, [], _operators, exit_code, stdout, stderr, _prev_op, control) do
-    result = %{stdout: stdout, stderr: stderr, exit_code: exit_code}
+  defp execute_pipelines(bash, [], _operators, exit_code, stdout_io, stderr_io, _prev_op, control) do
+    result = %{
+      stdout: IO.iodata_to_binary(stdout_io),
+      stderr: IO.iodata_to_binary(stderr_io),
+      exit_code: exit_code
+    }
+
     result = add_control_signal(result, control)
     {result, bash}
   end
@@ -81,14 +97,14 @@ defmodule JustBash.Interpreter.Executor do
          [pipeline | rest],
          operators,
          prev_exit,
-         stdout,
-         stderr,
+         stdout_io,
+         stderr_io,
          prev_op,
          control
        ) do
     # If we have a pending break/continue, stop immediately
     if control != nil do
-      execute_pipelines(bash, [], operators, prev_exit, stdout, stderr, prev_op, control)
+      execute_pipelines(bash, [], operators, prev_exit, stdout_io, stderr_io, prev_op, control)
     else
       should_run =
         case prev_op do
@@ -117,13 +133,22 @@ defmodule JustBash.Interpreter.Executor do
           rest,
           next_operators,
           result.exit_code,
-          stdout <> result.stdout,
-          stderr <> result.stderr,
+          [stdout_io, result.stdout],
+          [stderr_io, result.stderr],
           next_op,
           new_control
         )
       else
-        execute_pipelines(bash, rest, next_operators, prev_exit, stdout, stderr, next_op, nil)
+        execute_pipelines(
+          bash,
+          rest,
+          next_operators,
+          prev_exit,
+          stdout_io,
+          stderr_io,
+          next_op,
+          nil
+        )
       end
     end
   end
@@ -191,57 +216,26 @@ defmodule JustBash.Interpreter.Executor do
         },
         stdin
       ) do
-    try do
-      temp_bash = execute_assignments(bash, assignments)
-      cmd_name = Expansion.expand_word_parts(temp_bash, name.parts)
-
-      # Apply any assignments from ${VAR:=default} expansions
-      temp_bash = apply_expansion_assignments(temp_bash)
-
-      # Expand args sequentially, applying any assignments between each
-      # This ensures side effects like $((x++)) are visible to subsequent args
-      {expanded_args, temp_bash} =
-        Enum.reduce(args, {[], temp_bash}, fn arg, {acc, bash} ->
-          expanded = Expansion.expand_word_with_glob(bash, arg.parts)
-          bash = apply_expansion_assignments(bash)
-          {acc ++ expanded, bash}
-        end)
-
-      # Extract heredoc content as stdin if present
-      {heredoc_stdin, non_heredoc_redirs} = extract_heredoc_stdin(temp_bash, redirs)
-      effective_stdin = heredoc_stdin || stdin
-
-      {result, exec_bash} =
-        case Map.get(temp_bash.functions, cmd_name) do
-          nil ->
-            execute_builtin(temp_bash, cmd_name, expanded_args, effective_stdin)
-
-          func_body ->
-            execute_function(temp_bash, func_body, expanded_args)
-        end
-
-      {result, exec_bash} = apply_redirections(result, exec_bash, non_heredoc_redirs)
-      {result, exec_bash}
-    rescue
-      e in Expansion.UnsetVariableError ->
-        {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
-    end
+    do_execute_simple_command(bash, name, args, assignments, redirs, stdin)
   end
 
   def execute_command(bash, %AST.If{clauses: clauses, else_body: else_body}, _stdin),
     do: execute_if(bash, clauses, else_body)
 
-  def execute_command(bash, %AST.For{variable: variable, words: words, body: body}, _stdin),
-    do: execute_for(bash, variable, words, body)
+  def execute_command(bash, %AST.For{variable: variable, words: words, body: body}, _stdin) do
+    Loop.execute_for(bash, variable, words, body, &execute_body/2)
+  end
 
-  def execute_command(bash, %AST.While{condition: condition, body: body}, _stdin),
-    do: execute_while(bash, condition, body, false)
+  def execute_command(bash, %AST.While{condition: condition, body: body}, stdin) do
+    Loop.execute_while(bash, condition, body, stdin, &execute_body/2)
+  end
 
-  def execute_command(bash, %AST.Until{condition: condition, body: body}, _stdin),
-    do: execute_while(bash, condition, body, true)
+  def execute_command(bash, %AST.Until{condition: condition, body: body}, stdin) do
+    Loop.execute_until(bash, condition, body, stdin, &execute_body/2)
+  end
 
   def execute_command(bash, %AST.Case{word: word, items: items}, _stdin) do
-    value = Expansion.expand_word_parts(bash, word.parts)
+    value = Expansion.expand_word_parts_simple(bash, word.parts)
     execute_case(bash, value, items)
   end
 
@@ -267,7 +261,7 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   def execute_command(bash, %AST.ConditionalCommand{expression: expr}, _stdin) do
-    result = evaluate_conditional(bash, expr)
+    result = Conditional.evaluate(bash, expr)
     exit_code = if result, do: 0, else: 1
     {%{stdout: "", stderr: "", exit_code: exit_code}, bash}
   end
@@ -275,220 +269,44 @@ defmodule JustBash.Interpreter.Executor do
   def execute_command(bash, _command, _stdin),
     do: {%{stdout: "", stderr: "", exit_code: 0}, bash}
 
-  defp evaluate_conditional(bash, %AST.CondWord{word: word}) do
-    value = Expansion.expand_word_parts(bash, word.parts)
-    value != ""
+  # --- Simple Command Execution (with implicit try for UnsetVariableError) ---
+
+  defp do_execute_simple_command(bash, name, args, assignments, redirs, stdin) do
+    temp_bash = execute_assignments(bash, assignments)
+    {cmd_name, cmd_assigns} = Expansion.expand_word_parts(temp_bash, name.parts)
+
+    # Apply any assignments from ${VAR:=default} expansions
+    temp_bash = apply_pending_assignments(temp_bash, cmd_assigns)
+
+    # Expand args sequentially, applying any assignments between each
+    # This ensures side effects like $((x++)) are visible to subsequent args
+    {expanded_args, temp_bash} =
+      Enum.reduce(args, {[], temp_bash}, fn arg, {acc, current_bash} ->
+        {expanded, arg_assigns} = Expansion.expand_word_with_glob(current_bash, arg.parts)
+        current_bash = apply_pending_assignments(current_bash, arg_assigns)
+        {acc ++ expanded, current_bash}
+      end)
+
+    # Extract heredoc content as stdin if present
+    {heredoc_stdin, non_heredoc_redirs} = Redirection.extract_heredoc_stdin(temp_bash, redirs)
+    effective_stdin = heredoc_stdin || stdin
+
+    {result, exec_bash} =
+      case Map.get(temp_bash.functions, cmd_name) do
+        nil ->
+          execute_builtin(temp_bash, cmd_name, expanded_args, effective_stdin)
+
+        func_body ->
+          execute_function(temp_bash, func_body, expanded_args)
+      end
+
+    Redirection.apply_redirections(result, exec_bash, non_heredoc_redirs)
+  rescue
+    e in Expansion.UnsetVariableError ->
+      {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
   end
 
-  defp evaluate_conditional(bash, %AST.CondNot{operand: operand}) do
-    not evaluate_conditional(bash, operand)
-  end
-
-  defp evaluate_conditional(bash, %AST.CondAnd{left: left, right: right}) do
-    evaluate_conditional(bash, left) and evaluate_conditional(bash, right)
-  end
-
-  defp evaluate_conditional(bash, %AST.CondOr{left: left, right: right}) do
-    evaluate_conditional(bash, left) or evaluate_conditional(bash, right)
-  end
-
-  defp evaluate_conditional(bash, %AST.CondGroup{expression: expr}) do
-    evaluate_conditional(bash, expr)
-  end
-
-  defp evaluate_conditional(bash, %AST.CondUnary{operator: op, operand: word}) do
-    path = Expansion.expand_word_parts(bash, word.parts)
-    resolved = JustBash.Fs.InMemoryFs.resolve_path(bash.cwd, path)
-    evaluate_unary_conditional(bash, op, path, resolved)
-  end
-
-  defp evaluate_conditional(bash, %AST.CondBinary{
-         operator: op,
-         left: left_word,
-         right: right_word
-       }) do
-    left = Expansion.expand_word_parts(bash, left_word.parts)
-    right = Expansion.expand_word_parts(bash, right_word.parts)
-    evaluate_binary_conditional(bash, op, left, right)
-  end
-
-  defp evaluate_unary_conditional(bash, op, path, resolved) do
-    evaluate_unary_by_type(unary_op_type(op), bash, path, resolved)
-  end
-
-  defp evaluate_unary_by_type(:file_exists, bash, _path, resolved),
-    do: file_exists?(bash, resolved)
-
-  defp evaluate_unary_by_type(:regular_file, bash, _path, resolved),
-    do: regular_file?(bash, resolved)
-
-  defp evaluate_unary_by_type(:directory, bash, _path, resolved),
-    do: directory?(bash, resolved)
-
-  defp evaluate_unary_by_type(:file_size, bash, _path, resolved),
-    do: file_size_gt_zero?(bash, resolved)
-
-  defp evaluate_unary_by_type(:string_empty, _bash, path, _resolved),
-    do: path == ""
-
-  defp evaluate_unary_by_type(:string_non_empty, _bash, path, _resolved),
-    do: path != ""
-
-  defp evaluate_unary_by_type(:symlink, bash, _path, resolved),
-    do: symlink?(bash, resolved)
-
-  defp evaluate_unary_by_type(:always_false, _bash, _path, _resolved),
-    do: false
-
-  defp evaluate_unary_by_type(:var_set, bash, path, _resolved),
-    do: Map.has_key?(bash.env, path)
-
-  defp unary_op_type(:"-e"), do: :file_exists
-  defp unary_op_type(:"-a"), do: :file_exists
-  defp unary_op_type(:"-f"), do: :regular_file
-  defp unary_op_type(:"-d"), do: :directory
-  defp unary_op_type(:"-r"), do: :file_exists
-  defp unary_op_type(:"-w"), do: :file_exists
-  defp unary_op_type(:"-x"), do: :file_exists
-  defp unary_op_type(:"-s"), do: :file_size
-  defp unary_op_type(:"-z"), do: :string_empty
-  defp unary_op_type(:"-n"), do: :string_non_empty
-  defp unary_op_type(:"-L"), do: :symlink
-  defp unary_op_type(:"-h"), do: :symlink
-  defp unary_op_type(:"-O"), do: :file_exists
-  defp unary_op_type(:"-G"), do: :file_exists
-  defp unary_op_type(:"-N"), do: :file_exists
-  defp unary_op_type(:"-v"), do: :var_set
-  defp unary_op_type(:"-b"), do: :always_false
-  defp unary_op_type(:"-c"), do: :always_false
-  defp unary_op_type(:"-p"), do: :always_false
-  defp unary_op_type(:"-S"), do: :always_false
-  defp unary_op_type(:"-t"), do: :always_false
-  defp unary_op_type(:"-g"), do: :always_false
-  defp unary_op_type(:"-u"), do: :always_false
-  defp unary_op_type(:"-k"), do: :always_false
-  defp unary_op_type(_), do: :always_false
-
-  defp evaluate_binary_conditional(bash, op, left, right) do
-    case binary_op_type(op) do
-      :integer_comparison -> evaluate_integer_comparison(op, left, right)
-      :file_comparison -> evaluate_file_comparison(bash, op, left, right)
-      :string_comparison -> evaluate_string_comparison(op, left, right)
-    end
-  end
-
-  defp binary_op_type(op) when op in [:"-eq", :"-ne", :"-lt", :"-le", :"-gt", :"-ge"],
-    do: :integer_comparison
-
-  defp binary_op_type(op) when op in [:"-nt", :"-ot", :"-ef"], do: :file_comparison
-  defp binary_op_type(_), do: :string_comparison
-
-  defp evaluate_integer_comparison(:"-eq", left, right),
-    do: parse_int(left) == parse_int(right)
-
-  defp evaluate_integer_comparison(:"-ne", left, right),
-    do: parse_int(left) != parse_int(right)
-
-  defp evaluate_integer_comparison(:"-lt", left, right),
-    do: parse_int(left) < parse_int(right)
-
-  defp evaluate_integer_comparison(:"-le", left, right),
-    do: parse_int(left) <= parse_int(right)
-
-  defp evaluate_integer_comparison(:"-gt", left, right),
-    do: parse_int(left) > parse_int(right)
-
-  defp evaluate_integer_comparison(:"-ge", left, right),
-    do: parse_int(left) >= parse_int(right)
-
-  defp evaluate_file_comparison(bash, :"-nt", left, right), do: file_newer?(bash, left, right)
-  defp evaluate_file_comparison(bash, :"-ot", left, right), do: file_newer?(bash, right, left)
-  defp evaluate_file_comparison(bash, :"-ef", left, right), do: same_file?(bash, left, right)
-
-  defp evaluate_string_comparison(:=, left, right), do: left == right
-  defp evaluate_string_comparison(:==, left, right), do: pattern_match?(left, right)
-  defp evaluate_string_comparison(:!=, left, right), do: not pattern_match?(left, right)
-  defp evaluate_string_comparison(:=~, left, right), do: regex_match?(left, right)
-  defp evaluate_string_comparison(:<, left, right), do: left < right
-  defp evaluate_string_comparison(:>, left, right), do: left > right
-  defp evaluate_string_comparison(_, _left, _right), do: false
-
-  defp parse_int(s) do
-    case Integer.parse(s) do
-      {n, _} -> n
-      :error -> 0
-    end
-  end
-
-  defp pattern_match?(str, pattern) do
-    regex_pattern =
-      pattern
-      |> Regex.escape()
-      |> String.replace("\\*", ".*")
-      |> String.replace("\\?", ".")
-
-    case Regex.compile("^" <> regex_pattern <> "$") do
-      {:ok, regex} -> Regex.match?(regex, str)
-      {:error, _} -> str == pattern
-    end
-  end
-
-  defp regex_match?(str, pattern) do
-    case Regex.compile(pattern) do
-      {:ok, regex} -> Regex.match?(regex, str)
-      {:error, _} -> false
-    end
-  end
-
-  defp file_exists?(bash, path) do
-    case JustBash.Fs.InMemoryFs.stat(bash.fs, path) do
-      {:ok, _} -> true
-      {:error, _} -> false
-    end
-  end
-
-  defp regular_file?(bash, path) do
-    case JustBash.Fs.InMemoryFs.stat(bash.fs, path) do
-      {:ok, stat} -> stat.is_file
-      {:error, _} -> false
-    end
-  end
-
-  defp directory?(bash, path) do
-    case JustBash.Fs.InMemoryFs.stat(bash.fs, path) do
-      {:ok, stat} -> stat.is_directory
-      {:error, _} -> false
-    end
-  end
-
-  defp file_size_gt_zero?(bash, path) do
-    case JustBash.Fs.InMemoryFs.stat(bash.fs, path) do
-      {:ok, stat} -> stat.size > 0
-      {:error, _} -> false
-    end
-  end
-
-  defp symlink?(bash, path) do
-    case JustBash.Fs.InMemoryFs.lstat(bash.fs, path) do
-      {:ok, stat} -> stat.is_symbolic_link
-      {:error, _} -> false
-    end
-  end
-
-  defp file_newer?(bash, path1, path2) do
-    with {:ok, stat1} <- JustBash.Fs.InMemoryFs.stat(bash.fs, path1),
-         {:ok, stat2} <- JustBash.Fs.InMemoryFs.stat(bash.fs, path2) do
-      stat1.mtime > stat2.mtime
-    else
-      _ -> false
-    end
-  end
-
-  defp same_file?(bash, path1, path2) do
-    resolved1 = JustBash.Fs.InMemoryFs.resolve_path(bash.cwd, path1)
-    resolved2 = JustBash.Fs.InMemoryFs.resolve_path(bash.cwd, path2)
-    resolved1 == resolved2
-  end
+  # --- If/Case Execution ---
 
   defp execute_if(bash, [], else_body) do
     if else_body do
@@ -544,142 +362,7 @@ defmodule JustBash.Interpreter.Executor do
     end
   end
 
-  defp execute_for(bash, variable, words, body) do
-    expanded_words = Expansion.expand_for_loop_words(bash, words)
-    execute_for_loop(bash, variable, expanded_words, body, "", "", 0)
-  end
-
-  defp execute_for_loop(bash, _variable, [], _body, stdout, stderr, exit_code) do
-    {%{stdout: stdout, stderr: stderr, exit_code: exit_code}, bash}
-  end
-
-  defp execute_for_loop(bash, variable, [value | rest], body, stdout, stderr, _exit_code) do
-    new_bash = %{bash | env: Map.put(bash.env, variable, value)}
-    {result, body_bash} = execute_body(new_bash, body)
-    new_stdout = stdout <> result.stdout
-    new_stderr = stderr <> result.stderr
-
-    cond do
-      # Break: exit loop with accumulated output
-      Map.has_key?(result, :__break__) and result.__break__ == 1 ->
-        {%{stdout: new_stdout, stderr: new_stderr, exit_code: 0}, body_bash}
-
-      # Break with level > 1: propagate to outer loop
-      Map.has_key?(result, :__break__) ->
-        {%{stdout: new_stdout, stderr: new_stderr, exit_code: 0, __break__: result.__break__ - 1},
-         body_bash}
-
-      # Continue: skip to next iteration
-      Map.has_key?(result, :__continue__) and result.__continue__ == 1 ->
-        execute_for_loop(body_bash, variable, rest, body, new_stdout, new_stderr, 0)
-
-      # Continue with level > 1: propagate to outer loop
-      Map.has_key?(result, :__continue__) ->
-        {%{
-           stdout: new_stdout,
-           stderr: new_stderr,
-           exit_code: 0,
-           __continue__: result.__continue__ - 1
-         }, body_bash}
-
-      # Normal: continue to next iteration
-      true ->
-        execute_for_loop(
-          body_bash,
-          variable,
-          rest,
-          body,
-          new_stdout,
-          new_stderr,
-          result.exit_code
-        )
-    end
-  end
-
-  defp execute_while(bash, condition, body, is_until) do
-    execute_while_loop(bash, condition, body, is_until, "", "", 0, 0)
-  end
-
-  defp execute_while_loop(bash, _cond, _body, _is_until, stdout, stderr, exit_code, iterations)
-       when iterations >= 1000 do
-    {%{
-       stdout: stdout,
-       stderr: stderr <> "loop: iteration limit exceeded\n",
-       exit_code: exit_code
-     }, bash}
-  end
-
-  defp execute_while_loop(bash, condition, body, is_until, stdout, stderr, exit_code, iterations) do
-    {cond_result, cond_bash} = execute_body(bash, condition)
-
-    should_continue =
-      if is_until do
-        cond_result.exit_code != 0
-      else
-        cond_result.exit_code == 0
-      end
-
-    new_stdout = stdout <> cond_result.stdout
-    new_stderr = stderr <> cond_result.stderr
-
-    if should_continue do
-      {body_result, body_bash} = execute_body(cond_bash, body)
-      body_stdout = new_stdout <> body_result.stdout
-      body_stderr = new_stderr <> body_result.stderr
-
-      cond do
-        # Break: exit loop
-        Map.has_key?(body_result, :__break__) and body_result.__break__ == 1 ->
-          {%{stdout: body_stdout, stderr: body_stderr, exit_code: 0}, body_bash}
-
-        # Break with level > 1: propagate
-        Map.has_key?(body_result, :__break__) ->
-          {%{
-             stdout: body_stdout,
-             stderr: body_stderr,
-             exit_code: 0,
-             __break__: body_result.__break__ - 1
-           }, body_bash}
-
-        # Continue: re-check condition
-        Map.has_key?(body_result, :__continue__) and body_result.__continue__ == 1 ->
-          execute_while_loop(
-            body_bash,
-            condition,
-            body,
-            is_until,
-            body_stdout,
-            body_stderr,
-            0,
-            iterations + 1
-          )
-
-        # Continue with level > 1: propagate
-        Map.has_key?(body_result, :__continue__) ->
-          {%{
-             stdout: body_stdout,
-             stderr: body_stderr,
-             exit_code: 0,
-             __continue__: body_result.__continue__ - 1
-           }, body_bash}
-
-        # Normal: continue loop
-        true ->
-          execute_while_loop(
-            body_bash,
-            condition,
-            body,
-            is_until,
-            body_stdout,
-            body_stderr,
-            body_result.exit_code,
-            iterations + 1
-          )
-      end
-    else
-      {%{stdout: new_stdout, stderr: new_stderr, exit_code: exit_code}, cond_bash}
-    end
-  end
+  # --- Case Execution ---
 
   defp execute_case(bash, _value, []) do
     {%{stdout: "", stderr: "", exit_code: 0}, bash}
@@ -688,7 +371,7 @@ defmodule JustBash.Interpreter.Executor do
   defp execute_case(bash, value, [%AST.CaseItem{patterns: patterns, body: body} | rest]) do
     matches? =
       Enum.any?(patterns, fn pattern ->
-        pattern_str = Expansion.expand_word_parts(bash, pattern.parts)
+        pattern_str = Expansion.expand_word_parts_simple(bash, pattern.parts)
         match_pattern?(value, pattern_str)
       end)
 
@@ -791,13 +474,14 @@ defmodule JustBash.Interpreter.Executor do
       case array do
         nil ->
           # Scalar assignment
-          expanded_value =
+          {expanded_value, pending} =
             case value do
-              nil -> ""
+              nil -> {"", []}
               %AST.Word{parts: parts} -> Expansion.expand_word_parts(acc, parts)
-              _ -> ""
+              _ -> {"", []}
             end
 
+          acc = apply_pending_assignments(acc, pending)
           %{acc | env: Map.put(acc.env, name, expanded_value)}
 
         elements when is_list(elements) ->
@@ -811,11 +495,12 @@ defmodule JustBash.Interpreter.Executor do
             |> Map.new()
 
           # Store as arr[0], arr[1], etc.
-          {env, _idx} =
-            Enum.reduce(elements, {env, 0}, fn word, {env_acc, idx} ->
-              expanded = Expansion.expand_word_parts(acc, word.parts)
+          {env, _idx, acc} =
+            Enum.reduce(elements, {env, 0, acc}, fn word, {env_acc, idx, bash_acc} ->
+              {expanded, pending} = Expansion.expand_word_parts(bash_acc, word.parts)
+              bash_acc = apply_pending_assignments(bash_acc, pending)
               key = "#{name}[#{idx}]"
-              {Map.put(env_acc, key, expanded), idx + 1}
+              {Map.put(env_acc, key, expanded), idx + 1, bash_acc}
             end)
 
           # Also store arr itself as the first element (bash compat)
@@ -827,16 +512,13 @@ defmodule JustBash.Interpreter.Executor do
     end)
   end
 
-  defp apply_expansion_assignments(bash) do
-    case Expansion.get_pending_assignments() do
-      [] ->
-        bash
+  # Apply pending variable assignments from expansions like ${VAR:=default} or $((x++))
+  defp apply_pending_assignments(bash, []), do: bash
 
-      assignments ->
-        Enum.reduce(assignments, bash, fn {name, value}, acc ->
-          %{acc | env: Map.put(acc.env, name, value)}
-        end)
-    end
+  defp apply_pending_assignments(bash, assignments) do
+    Enum.reduce(assignments, bash, fn {name, value}, acc ->
+      %{acc | env: Map.put(acc.env, name, value)}
+    end)
   end
 
   defp execute_builtin(bash, cmd, args, stdin) do
@@ -848,167 +530,4 @@ defmodule JustBash.Interpreter.Executor do
         module.execute(bash, args, stdin)
     end
   end
-
-  defp extract_heredoc_stdin(bash, redirections) do
-    # Split redirections into stdin sources and others
-    {stdin_redirs, others} =
-      Enum.split_with(redirections, fn redir ->
-        match?(%AST.Redirection{operator: op} when op in [:"<<", :"<<-", :<, :<<<], redir)
-      end)
-
-    stdin_content = extract_stdin_content(bash, stdin_redirs)
-    {stdin_content, others}
-  end
-
-  # Here-string: <<< word
-  defp extract_stdin_content(bash, [%AST.Redirection{operator: :<<<, target: target} | _]) do
-    content = Expansion.expand_redirect_target(bash, target)
-    # Here-strings add a trailing newline
-    content <> "\n"
-  end
-
-  # Stdin from file: < file
-  defp extract_stdin_content(bash, [%AST.Redirection{operator: :<, target: target} | _]) do
-    target_path = Expansion.expand_redirect_target(bash, target)
-    resolved = InMemoryFs.resolve_path(bash.cwd, target_path)
-
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} -> content
-      {:error, _} -> ""
-    end
-  end
-
-  # Heredoc
-  defp extract_stdin_content(bash, [%AST.Redirection{target: %AST.HereDoc{content: content}} | _])
-       when not is_nil(content) do
-    Expansion.expand_word_parts(bash, content.parts)
-  end
-
-  defp extract_stdin_content(_bash, [%AST.Redirection{target: %AST.HereDoc{}} | _]) do
-    ""
-  end
-
-  defp extract_stdin_content(_bash, _) do
-    nil
-  end
-
-  defp apply_redirections(result, bash, []) do
-    {result, bash}
-  end
-
-  defp apply_redirections(result, bash, [redir | rest]) do
-    {result, bash} = apply_redirection(result, bash, redir)
-    apply_redirections(result, bash, rest)
-  end
-
-  defp apply_redirection(result, bash, %AST.Redirection{
-         fd: fd,
-         operator: operator,
-         target: target
-       }) do
-    target_path = Expansion.expand_redirect_target(bash, target)
-    resolved = InMemoryFs.resolve_path(bash.cwd, target_path)
-    redir_type = classify_redirection(fd, operator, target_path)
-    apply_classified_redirection(redir_type, result, bash, resolved)
-  end
-
-  defp classify_redirection(2, :>, "/dev/null"), do: :stderr_dev_null
-  defp classify_redirection(2, :">>", "/dev/null"), do: :stderr_dev_null
-  defp classify_redirection(_fd, _operator, "/dev/null"), do: :stdout_dev_null
-  defp classify_redirection(2, :>, _target), do: :stderr_write
-  defp classify_redirection(2, :">>", _target), do: :stderr_append
-  defp classify_redirection(_fd, :>, _target), do: :stdout_write
-  defp classify_redirection(_fd, :">>", _target), do: :stdout_append
-  defp classify_redirection(1, :">&", "2"), do: :stdout_to_stderr
-  defp classify_redirection(2, :">&", "1"), do: :stderr_to_stdout
-  defp classify_redirection(_fd, :"&>", _target), do: :combined_write
-  defp classify_redirection(_fd, :<, _target), do: :stdin_read
-  defp classify_redirection(_fd, _operator, _target), do: :noop
-
-  defp apply_classified_redirection(:stdout_dev_null, result, bash, _resolved) do
-    {%{result | stdout: ""}, bash}
-  end
-
-  defp apply_classified_redirection(:stderr_dev_null, result, bash, _resolved) do
-    {%{result | stderr: ""}, bash}
-  end
-
-  defp apply_classified_redirection(:stderr_write, result, bash, resolved) do
-    write_to_file(bash, resolved, result.stderr, result, :stderr)
-  end
-
-  defp apply_classified_redirection(:stderr_append, result, bash, resolved) do
-    append_to_file(bash, resolved, result.stderr, result, :stderr)
-  end
-
-  defp apply_classified_redirection(:stdout_write, result, bash, resolved) do
-    write_to_file(bash, resolved, result.stdout, result, :stdout)
-  end
-
-  defp apply_classified_redirection(:stdout_append, result, bash, resolved) do
-    append_to_file(bash, resolved, result.stdout, result, :stdout)
-  end
-
-  defp apply_classified_redirection(:stdout_to_stderr, result, bash, _resolved) do
-    {%{result | stderr: result.stderr <> result.stdout, stdout: ""}, bash}
-  end
-
-  defp apply_classified_redirection(:stderr_to_stdout, result, bash, _resolved) do
-    {%{result | stdout: result.stdout <> result.stderr, stderr: ""}, bash}
-  end
-
-  defp apply_classified_redirection(:combined_write, result, bash, resolved) do
-    combined = result.stdout <> result.stderr
-    write_combined_to_file(bash, resolved, combined, result)
-  end
-
-  defp apply_classified_redirection(:noop, result, bash, _resolved) do
-    {result, bash}
-  end
-
-  defp write_to_file(bash, path, content, result, stream) do
-    case InMemoryFs.write_file(bash.fs, path, content) do
-      {:ok, new_fs} ->
-        updated_result = clear_stream(result, stream)
-        {updated_result, %{bash | fs: new_fs}}
-
-      {:error, reason} ->
-        error_msg = format_redirection_error(path, reason)
-        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, bash}
-    end
-  end
-
-  defp append_to_file(bash, path, content, result, stream) do
-    current_content =
-      case InMemoryFs.read_file(bash.fs, path) do
-        {:ok, existing} -> existing
-        {:error, _} -> ""
-      end
-
-    case InMemoryFs.write_file(bash.fs, path, current_content <> content) do
-      {:ok, new_fs} ->
-        updated_result = clear_stream(result, stream)
-        {updated_result, %{bash | fs: new_fs}}
-
-      {:error, reason} ->
-        error_msg = format_redirection_error(path, reason)
-        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, bash}
-    end
-  end
-
-  defp write_combined_to_file(bash, path, content, result) do
-    case InMemoryFs.write_file(bash.fs, path, content) do
-      {:ok, new_fs} ->
-        {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
-
-      {:error, reason} ->
-        error_msg = format_redirection_error(path, reason)
-        {%{result | stderr: error_msg, exit_code: 1}, bash}
-    end
-  end
-
-  defp clear_stream(result, :stdout), do: %{result | stdout: ""}
-  defp clear_stream(result, :stderr), do: %{result | stderr: ""}
-
-  defp format_redirection_error(path, :eisdir), do: "bash: #{path}: Is a directory\n"
 end

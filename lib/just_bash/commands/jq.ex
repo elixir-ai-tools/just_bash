@@ -23,7 +23,7 @@ defmodule JustBash.Commands.Jq do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Commands.Jq.{Parser, Evaluator}
+  alias JustBash.Commands.Jq.{Evaluator, Parser}
   alias JustBash.Fs.InMemoryFs
 
   @impl true

@@ -12,6 +12,8 @@ defmodule JustBash.Parser.WordParts do
   """
 
   alias JustBash.AST
+  alias JustBash.Parser.WordParts.Bracket
+  alias JustBash.Parser.WordParts.Expansion
 
   @type parse_result :: [AST.word_part()]
 
@@ -178,7 +180,7 @@ defmodule JustBash.Parser.WordParts do
          is_assignment: is_assignment
        }) do
     parts = flush_literal(literal, parts)
-    {part, end_idx} = parse_expansion(value, i)
+    {part, end_idx} = Expansion.parse(value, i)
     new_parts = parts ++ [part]
     parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
   end
@@ -192,7 +194,7 @@ defmodule JustBash.Parser.WordParts do
          is_assignment: is_assignment
        }) do
     parts = flush_literal(literal, parts)
-    {part, end_idx} = parse_backtick_substitution(value, i)
+    {part, end_idx} = Expansion.parse_backtick(value, i)
     new_parts = parts ++ [part]
     parse_unquoted_loop(value, end_idx, len, "", new_parts, is_assignment)
   end
@@ -274,7 +276,7 @@ defmodule JustBash.Parser.WordParts do
          },
          char
        ) do
-    case find_glob_bracket_end(value, i) do
+    case Bracket.find_glob_bracket_end(value, i) do
       {:ok, end_idx} ->
         parts = flush_literal(literal, parts)
         pattern = String.slice(value, i..end_idx)
@@ -328,13 +330,13 @@ defmodule JustBash.Parser.WordParts do
 
       char == "$" ->
         parts = flush_literal(literal, parts)
-        {part, end_idx} = parse_expansion(value, i)
+        {part, end_idx} = Expansion.parse(value, i)
         new_parts = parts ++ [part]
         parse_double_quoted_loop(value, end_idx, len, "", new_parts)
 
       char == "`" ->
         parts = flush_literal(literal, parts)
-        {part, end_idx} = parse_backtick_substitution(value, i)
+        {part, end_idx} = Expansion.parse_backtick(value, i)
         new_parts = parts ++ [part]
         parse_double_quoted_loop(value, end_idx, len, "", new_parts)
 
@@ -359,417 +361,30 @@ defmodule JustBash.Parser.WordParts do
       char == "\\" and i + 1 < len ->
         next = String.at(value, i + 1)
 
-        if next in ["$", "`"] do
+        # In double quotes, these escapes are processed:
+        # \\ -> \, \" -> ", \$ -> $, \` -> `, \newline -> (line continuation)
+        if next in ["\\", "\"", "$", "`"] do
           parse_dq_content_loop(value, i + 2, len, literal <> next, parts)
         else
+          # Other backslashes are preserved literally
           parse_dq_content_loop(value, i + 1, len, literal <> char, parts)
         end
 
       char == "$" ->
         parts = flush_literal(literal, parts)
-        {part, end_idx} = parse_expansion(value, i)
+        {part, end_idx} = Expansion.parse(value, i)
         new_parts = parts ++ [part]
         parse_dq_content_loop(value, end_idx, len, "", new_parts)
 
       char == "`" ->
         parts = flush_literal(literal, parts)
-        {part, end_idx} = parse_backtick_substitution(value, i)
+        {part, end_idx} = Expansion.parse_backtick(value, i)
         new_parts = parts ++ [part]
         parse_dq_content_loop(value, end_idx, len, "", new_parts)
 
       true ->
         parse_dq_content_loop(value, i + 1, len, literal <> char, parts)
     end
-  end
-
-  defp parse_expansion(value, start) do
-    i = start + 1
-
-    if i >= String.length(value) do
-      {AST.literal("$"), i}
-    else
-      char = String.at(value, i)
-
-      cond do
-        char == "(" and String.at(value, i + 1) == "(" ->
-          parse_arithmetic_expansion(value, start)
-
-        char == "(" ->
-          parse_command_substitution(value, start)
-
-        char == "{" ->
-          parse_parameter_expansion(value, start)
-
-        char =~ ~r/[a-zA-Z_0-9@*#?$!-]/ ->
-          parse_simple_parameter(value, start)
-
-        true ->
-          {AST.literal("$"), i}
-      end
-    end
-  end
-
-  defp parse_simple_parameter(value, start) do
-    i = start + 1
-    char = String.at(value, i)
-
-    if char in [
-         "@",
-         "*",
-         "#",
-         "?",
-         "$",
-         "!",
-         "-",
-         "0",
-         "1",
-         "2",
-         "3",
-         "4",
-         "5",
-         "6",
-         "7",
-         "8",
-         "9"
-       ] do
-      {AST.parameter_expansion(char), i + 1}
-    else
-      {name, end_idx} = collect_var_name(value, i)
-      {AST.parameter_expansion(name), end_idx}
-    end
-  end
-
-  defp collect_var_name(value, start) do
-    collect_var_name_loop(value, start, "")
-  end
-
-  defp collect_var_name_loop(value, i, acc) do
-    char = String.at(value, i)
-
-    if char && char =~ ~r/[a-zA-Z0-9_]/ do
-      collect_var_name_loop(value, i + 1, acc <> char)
-    else
-      {acc, i}
-    end
-  end
-
-  defp parse_parameter_expansion(value, start) do
-    i = start + 2
-
-    cond do
-      String.at(value, i) == "!" ->
-        parse_indirection_expansion(value, i + 1)
-
-      String.at(value, i) == "#" ->
-        parse_length_expansion(value, i + 1)
-
-      true ->
-        parse_normal_param_expansion(value, i)
-    end
-  end
-
-  defp parse_indirection_expansion(value, start) do
-    {name, _i} = collect_var_name(value, start)
-    # start points to char after ${!, so brace is at start - 2
-    end_idx = find_matching_brace(value, start - 2)
-
-    {AST.parameter_expansion(name, %AST.Indirection{}), end_idx + 1}
-  end
-
-  defp parse_length_expansion(value, start) do
-    next = String.at(value, start)
-
-    if next && not (next =~ ~r/[}:#%\/]/) do
-      {name, i} = collect_var_name(value, start)
-
-      # Check for array subscript like [0] or [@]
-      name =
-        if String.at(value, i) == "[" do
-          bracket_end = find_matching_bracket(value, i)
-          subscript = String.slice(value, (i + 1)..(bracket_end - 1)//1)
-          name <> "[" <> subscript <> "]"
-        else
-          name
-        end
-
-      # start points to char after ${#, so brace is at start - 2
-      end_idx = find_matching_brace(value, start - 2)
-      {AST.parameter_expansion(name, %AST.Length{}), end_idx + 1}
-    else
-      parse_normal_param_expansion(value, start - 1)
-    end
-  end
-
-  defp parse_normal_param_expansion(value, start) do
-    {name, i} = collect_var_name(value, start)
-
-    # brace_start should be the position of the opening {, which is start - 1
-    # (start points to the first char after ${)
-    brace_start = start - 1
-
-    if String.at(value, i) == "[" do
-      bracket_end = find_matching_bracket(value, i)
-      subscript = String.slice(value, (i + 1)..(bracket_end - 1)//1)
-      name = name <> "[" <> subscript <> "]"
-      i = bracket_end + 1
-      parse_param_operation(value, brace_start, name, i)
-    else
-      parse_param_operation(value, brace_start, name, i)
-    end
-  end
-
-  defp parse_param_operation(value, brace_start, name, i) do
-    end_brace = find_matching_brace(value, brace_start)
-    char = String.at(value, i)
-
-    dispatch_param_operation(char, value, brace_start, name, i, end_brace)
-  end
-
-  defp dispatch_param_operation(char, _value, _brace_start, name, _i, end_brace)
-       when char == "}" or char == nil do
-    {AST.parameter_expansion(name), end_brace + 1}
-  end
-
-  defp dispatch_param_operation(":", value, brace_start, name, i, _end_brace) do
-    parse_colon_operation(value, brace_start, name, i)
-  end
-
-  defp dispatch_param_operation("-", value, brace_start, name, i, _end_brace) do
-    parse_default_operation(value, brace_start, name, i, false)
-  end
-
-  defp dispatch_param_operation("=", value, brace_start, name, i, _end_brace) do
-    parse_assign_default_operation(value, brace_start, name, i, false)
-  end
-
-  defp dispatch_param_operation("?", value, brace_start, name, i, _end_brace) do
-    parse_error_operation(value, brace_start, name, i, false)
-  end
-
-  defp dispatch_param_operation("+", value, brace_start, name, i, _end_brace) do
-    parse_alternative_operation(value, brace_start, name, i, false)
-  end
-
-  defp dispatch_param_operation("#", value, brace_start, name, i, _end_brace) do
-    parse_pattern_removal(value, brace_start, name, i, :prefix)
-  end
-
-  defp dispatch_param_operation("%", value, brace_start, name, i, _end_brace) do
-    parse_pattern_removal(value, brace_start, name, i, :suffix)
-  end
-
-  defp dispatch_param_operation("/", value, brace_start, name, i, _end_brace) do
-    parse_pattern_replacement(value, brace_start, name, i)
-  end
-
-  defp dispatch_param_operation("^", value, brace_start, name, i, _end_brace) do
-    parse_case_modification(value, brace_start, name, i, :upper)
-  end
-
-  defp dispatch_param_operation(",", value, brace_start, name, i, _end_brace) do
-    parse_case_modification(value, brace_start, name, i, :lower)
-  end
-
-  defp dispatch_param_operation(_char, _value, _brace_start, name, _i, end_brace) do
-    {AST.parameter_expansion(name), end_brace + 1}
-  end
-
-  defp parse_colon_operation(value, brace_start, name, i) do
-    next = String.at(value, i + 1)
-
-    case next do
-      "-" -> parse_default_operation(value, brace_start, name, i + 1, true)
-      "=" -> parse_assign_default_operation(value, brace_start, name, i + 1, true)
-      "?" -> parse_error_operation(value, brace_start, name, i + 1, true)
-      "+" -> parse_alternative_operation(value, brace_start, name, i + 1, true)
-      _ -> parse_substring_operation(value, brace_start, name, i)
-    end
-  end
-
-  defp parse_default_operation(value, brace_start, name, i, check_empty) do
-    end_brace = find_matching_brace(value, brace_start)
-    word_str = String.slice(value, (i + 1)..(end_brace - 1)//1)
-    word_parts = parse(word_str)
-    word = AST.word(word_parts)
-    op = %AST.DefaultValue{word: word, check_empty: check_empty}
-    {AST.parameter_expansion(name, op), end_brace + 1}
-  end
-
-  defp parse_assign_default_operation(value, brace_start, name, i, check_empty) do
-    end_brace = find_matching_brace(value, brace_start)
-    word_str = String.slice(value, (i + 1)..(end_brace - 1)//1)
-    word_parts = parse(word_str)
-    word = AST.word(word_parts)
-    op = %AST.AssignDefault{word: word, check_empty: check_empty}
-    {AST.parameter_expansion(name, op), end_brace + 1}
-  end
-
-  defp parse_error_operation(value, brace_start, name, i, check_empty) do
-    end_brace = find_matching_brace(value, brace_start)
-    word_str = String.slice(value, (i + 1)..(end_brace - 1)//1)
-    word = if word_str != "", do: AST.word(parse(word_str)), else: nil
-    op = %AST.ErrorIfUnset{word: word, check_empty: check_empty}
-    {AST.parameter_expansion(name, op), end_brace + 1}
-  end
-
-  defp parse_alternative_operation(value, brace_start, name, i, check_empty) do
-    end_brace = find_matching_brace(value, brace_start)
-    word_str = String.slice(value, (i + 1)..(end_brace - 1)//1)
-    word_parts = parse(word_str)
-    word = AST.word(word_parts)
-    op = %AST.UseAlternative{word: word, check_empty: check_empty}
-    {AST.parameter_expansion(name, op), end_brace + 1}
-  end
-
-  defp parse_substring_operation(value, brace_start, name, i) do
-    end_brace = find_matching_brace(value, brace_start)
-    rest = String.slice(value, (i + 1)..(end_brace - 1)//1)
-
-    {offset_str, length_str} =
-      case String.split(rest, ":", parts: 2) do
-        [off] -> {off, nil}
-        [off, len] -> {off, len}
-      end
-
-    offset = parse_substring_value(offset_str)
-    length = if length_str, do: parse_substring_value(length_str), else: nil
-
-    op = %AST.Substring{offset: offset, length: length}
-    {AST.parameter_expansion(name, op), end_brace + 1}
-  end
-
-  defp parse_substring_value(str) do
-    str = String.trim(str)
-
-    case Integer.parse(str) do
-      {num, ""} -> %AST.ArithNumber{value: num}
-      _ -> %AST.ArithVariable{name: str}
-    end
-  end
-
-  defp parse_pattern_removal(value, brace_start, name, i, side) do
-    end_brace = find_matching_brace(value, brace_start)
-    next = String.at(value, i + 1)
-
-    {greedy, pattern_start} =
-      if next == String.at(value, i), do: {true, i + 2}, else: {false, i + 1}
-
-    pattern_str = String.slice(value, pattern_start..(end_brace - 1)//1)
-    pattern = AST.word(parse(pattern_str))
-    op = %AST.PatternRemoval{pattern: pattern, side: side, greedy: greedy}
-    {AST.parameter_expansion(name, op), end_brace + 1}
-  end
-
-  defp parse_pattern_replacement(value, brace_start, name, i) do
-    end_brace = find_matching_brace(value, brace_start)
-    next = String.at(value, i + 1)
-    {all, start_pos} = if next == "/", do: {true, i + 2}, else: {false, i + 1}
-
-    anchor_char = String.at(value, start_pos)
-
-    {anchor, pattern_start} =
-      cond do
-        anchor_char == "#" -> {:start, start_pos + 1}
-        anchor_char == "%" -> {:end, start_pos + 1}
-        true -> {nil, start_pos}
-      end
-
-    rest = String.slice(value, pattern_start..(end_brace - 1)//1)
-
-    {pattern_str, replacement_str} =
-      case find_pattern_separator(rest) do
-        nil ->
-          {rest, nil}
-
-        sep_idx ->
-          {String.slice(rest, 0..(sep_idx - 1)//1), String.slice(rest, (sep_idx + 1)..-1//1)}
-      end
-
-    pattern = AST.word(parse(pattern_str))
-    replacement = if replacement_str, do: AST.word(parse(replacement_str)), else: nil
-
-    op = %AST.PatternReplacement{
-      pattern: pattern,
-      replacement: replacement,
-      all: all,
-      anchor: anchor
-    }
-
-    {AST.parameter_expansion(name, op), end_brace + 1}
-  end
-
-  defp find_pattern_separator(str) do
-    len = String.length(str)
-    find_pattern_separator(str, 0, len, 0)
-  end
-
-  defp find_pattern_separator(_str, i, len, _depth) when i >= len, do: nil
-
-  defp find_pattern_separator(str, i, len, depth) do
-    char = String.at(str, i)
-
-    cond do
-      char == "\\" and i + 1 < len ->
-        find_pattern_separator(str, i + 2, len, depth)
-
-      char == "/" and depth == 0 ->
-        i
-
-      char == "{" ->
-        find_pattern_separator(str, i + 1, len, depth + 1)
-
-      char == "}" ->
-        find_pattern_separator(str, i + 1, len, depth - 1)
-
-      true ->
-        find_pattern_separator(str, i + 1, len, depth)
-    end
-  end
-
-  defp parse_case_modification(value, brace_start, name, i, direction) do
-    end_brace = find_matching_brace(value, brace_start)
-    next = String.at(value, i + 1)
-    {all, pattern_start} = if next == String.at(value, i), do: {true, i + 2}, else: {false, i + 1}
-    pattern_str = String.slice(value, pattern_start..(end_brace - 1)//1)
-    pattern = if pattern_str != "", do: AST.word(parse(pattern_str)), else: nil
-    op = %AST.CaseModification{direction: direction, all: all, pattern: pattern}
-    {AST.parameter_expansion(name, op), end_brace + 1}
-  end
-
-  defp parse_command_substitution(value, start) do
-    end_paren = find_matching_paren(value, start + 1)
-    cmd_str = String.slice(value, (start + 2)..(end_paren - 1)//1)
-
-    body =
-      case JustBash.Parser.parse(cmd_str) do
-        {:ok, script} -> script
-        {:error, _} -> AST.script([])
-      end
-
-    {%AST.CommandSubstitution{body: body, legacy: false}, end_paren + 1}
-  end
-
-  defp parse_arithmetic_expansion(value, start) do
-    # start points to $, so start+3 is the first char after $((
-    end_dparen = find_double_paren_end(value, start + 3)
-    expr_str = String.slice(value, (start + 3)..(end_dparen - 1)//1)
-    parsed_expr = JustBash.Arithmetic.parse(expr_str)
-    expr = %AST.ArithmeticExpression{expression: parsed_expr}
-
-    {AST.arithmetic_expansion(expr), end_dparen + 2}
-  end
-
-  defp parse_backtick_substitution(value, start) do
-    end_tick = find_backtick_end(value, start + 1)
-    cmd_str = String.slice(value, (start + 1)..(end_tick - 1)//1)
-
-    body =
-      case JustBash.Parser.parse(cmd_str) do
-        {:ok, script} -> script
-        {:error, _} -> AST.script([])
-      end
-
-    {%AST.CommandSubstitution{body: body, legacy: true}, end_tick + 1}
   end
 
   defp parse_ansi_c_quoted(value, start) do
@@ -826,115 +441,6 @@ defmodule JustBash.Parser.WordParts do
       find_tilde_end_loop(value, i + 1)
     else
       i
-    end
-  end
-
-  defp find_glob_bracket_end(value, start) do
-    len = String.length(value)
-    find_glob_bracket_loop(value, start + 1, len)
-  end
-
-  defp find_glob_bracket_loop(_value, i, len) when i >= len, do: :error
-
-  defp find_glob_bracket_loop(value, i, len) do
-    char = String.at(value, i)
-
-    cond do
-      char == "]" -> {:ok, i}
-      char == "\\" and i + 1 < len -> find_glob_bracket_loop(value, i + 2, len)
-      true -> find_glob_bracket_loop(value, i + 1, len)
-    end
-  end
-
-  defp find_matching_brace(value, start) do
-    len = String.length(value)
-    find_matching_bracket_loop(value, start + 1, len, 1, "{", "}")
-  end
-
-  defp find_matching_paren(value, start) do
-    len = String.length(value)
-    find_matching_bracket_loop(value, start + 1, len, 1, "(", ")")
-  end
-
-  defp find_matching_bracket(value, start) do
-    len = String.length(value)
-    find_matching_bracket_loop(value, start + 1, len, 1, "[", "]")
-  end
-
-  defp find_matching_bracket_loop(_value, i, len, depth, _open, _close)
-       when depth == 0 or i >= len,
-       do: i - 1
-
-  defp find_matching_bracket_loop(value, i, len, depth, open, close) do
-    char = String.at(value, i)
-
-    cond do
-      char == open ->
-        find_matching_bracket_loop(value, i + 1, len, depth + 1, open, close)
-
-      char == close ->
-        find_matching_bracket_loop(value, i + 1, len, depth - 1, open, close)
-
-      char == "\\" and i + 1 < len ->
-        find_matching_bracket_loop(value, i + 2, len, depth, open, close)
-
-      true ->
-        find_matching_bracket_loop(value, i + 1, len, depth, open, close)
-    end
-  end
-
-  defp find_double_paren_end(value, start) do
-    len = String.length(value)
-    find_dparen_loop(value, start, len, 1, 0)
-  end
-
-  # When outer_depth reaches 0, i points to the position after ))
-  # Return i - 2 to point to the first ) of ))
-  defp find_dparen_loop(_value, i, _len, 0, _paren_depth), do: i - 2
-
-  defp find_dparen_loop(_value, i, len, _outer_depth, _paren_depth) when i >= len - 1, do: i - 1
-
-  defp find_dparen_loop(value, i, len, outer_depth, paren_depth) do
-    char = String.at(value, i)
-    next = String.at(value, i + 1)
-    {new_i, new_outer, new_paren} = handle_dparen_char(char, next, i, outer_depth, paren_depth)
-    find_dparen_loop(value, new_i, len, new_outer, new_paren)
-  end
-
-  defp handle_dparen_char("(", "(", i, outer_depth, paren_depth) do
-    {i + 2, outer_depth + 1, paren_depth}
-  end
-
-  defp handle_dparen_char(")", ")", i, outer_depth, 0) do
-    {i + 2, outer_depth - 1, 0}
-  end
-
-  defp handle_dparen_char("(", _next, i, outer_depth, paren_depth) do
-    {i + 1, outer_depth, paren_depth + 1}
-  end
-
-  defp handle_dparen_char(")", _next, i, outer_depth, paren_depth) when paren_depth > 0 do
-    {i + 1, outer_depth, paren_depth - 1}
-  end
-
-  defp handle_dparen_char(_char, _next, i, outer_depth, paren_depth) do
-    {i + 1, outer_depth, paren_depth}
-  end
-
-  defp find_backtick_end(value, start) do
-    len = String.length(value)
-    find_backtick_loop(value, start, len)
-  end
-
-  defp find_backtick_loop(_value, i, len) when i >= len, do: i
-
-  defp find_backtick_loop(value, i, len) do
-    char = String.at(value, i)
-
-    cond do
-      char == "`" -> i
-      char == "\\" and i + 1 < len -> find_backtick_loop(value, i + 2, len)
-      true -> find_backtick_loop(value, i + 1, len)
     end
   end
 

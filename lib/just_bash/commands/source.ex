@@ -9,6 +9,7 @@ defmodule JustBash.Commands.Source do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Interpreter.Executor
   alias JustBash.Parser
 
   @impl true
@@ -48,7 +49,7 @@ defmodule JustBash.Commands.Source do
   defp execute_script_content(bash, content) do
     case Parser.parse(content) do
       {:ok, ast} ->
-        JustBash.Interpreter.Executor.execute_script(bash, ast)
+        Executor.execute_script(bash, ast)
 
       {:error, error} ->
         {%{stdout: "", stderr: "bash: source: #{error.message}\n", exit_code: 1}, bash}

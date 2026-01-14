@@ -12,7 +12,7 @@ defmodule JustBash.Commands.Read do
     {_flags, var_names} = parse_flags(args)
     var_name = List.first(var_names) || "REPLY"
 
-    # Check for stdin from pipeline (stored in __STDIN__ for group commands)
+    # Check for stdin from pipeline (stored in __STDIN__ for while loops)
     effective_stdin =
       cond do
         stdin != "" -> stdin
@@ -20,14 +20,43 @@ defmodule JustBash.Commands.Read do
         true -> ""
       end
 
-    value =
-      if effective_stdin != "",
-        do:
-          String.trim_trailing(effective_stdin, "\n") |> String.split("\n") |> List.first() || "",
-        else: ""
+    # If no input available at all, return exit code 1 (EOF)
+    # Note: "" (empty string) means no input. "\n" means one empty line.
+    if effective_stdin == "" do
+      new_env = Map.put(bash.env, var_name, "")
+      {Command.error("", 1), %{bash | env: new_env}}
+    else
+      # Split into lines and consume the first one
+      # "a\nb\n" -> ["a", "b", ""]
+      # "a\nb" -> ["a", "b"]  (no trailing newline)
+      # "\n" -> ["", ""]  (one empty line)
+      # "" -> [""]  (but we already handled "" above)
+      lines = String.split(effective_stdin, "\n", parts: 2)
 
-    new_env = Map.put(bash.env, var_name, value)
-    {Command.ok(), %{bash | env: new_env}}
+      case lines do
+        # Single content with no newline - EOF without newline
+        # Bash reads the data but returns exit code 1
+        [only_line] ->
+          new_env = Map.put(bash.env, var_name, only_line)
+          new_env = Map.delete(new_env, "__STDIN__")
+          # Return exit code 1 because no newline terminator
+          {Command.error("", 1), %{bash | env: new_env}}
+
+        # Line followed by more content (or empty string after final newline)
+        [first_line, rest] ->
+          new_env = Map.put(bash.env, var_name, first_line)
+
+          new_env =
+            if rest == "" do
+              # Was a trailing newline - no more content
+              Map.delete(new_env, "__STDIN__")
+            else
+              Map.put(new_env, "__STDIN__", rest)
+            end
+
+          {Command.ok(), %{bash | env: new_env}}
+      end
+    end
   end
 
   defp parse_flags(args), do: parse_flags(args, %{}, [])

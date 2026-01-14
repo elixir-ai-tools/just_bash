@@ -1,6 +1,8 @@
 defmodule JustBash.Commands.Sqlite3Test do
   use ExUnit.Case, async: true
 
+  alias JustBash.Fs.InMemoryFs
+
   describe "sqlite3 command" do
     test "creates table and inserts data" do
       bash = JustBash.new()
@@ -140,11 +142,12 @@ defmodule JustBash.Commands.Sqlite3Test do
       assert result.stdout =~ "--json"
     end
 
-    test "error without database name" do
+    test "error without SQL (defaults to :memory: database)" do
+      # sqlite3 without args defaults to :memory: like real sqlite3
       bash = JustBash.new()
       {result, _bash} = JustBash.exec(bash, "sqlite3")
       assert result.exit_code == 1
-      assert result.stderr =~ "no database"
+      assert result.stderr =~ "no SQL"
     end
 
     test "error without SQL" do
@@ -281,7 +284,7 @@ defmodule JustBash.Commands.Sqlite3Test do
       bash =
         put_in(
           bash.fs,
-          JustBash.Fs.InMemoryFs.write_file(bash.fs, "/tmp/more.csv", csv) |> elem(1)
+          InMemoryFs.write_file(bash.fs, "/tmp/more.csv", csv) |> elem(1)
         )
 
       {result, bash} = JustBash.exec(bash, ~s[sqlite3 mydb ".import /tmp/more.csv t"])

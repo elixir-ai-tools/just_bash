@@ -1,6 +1,8 @@
 defmodule JustBash.Commands.UtilitiesTest do
   use ExUnit.Case, async: true
 
+  alias JustBash.Commands.Env
+
   describe "basic commands" do
     test "echo with multiple arguments" do
       bash = JustBash.new()
@@ -337,13 +339,13 @@ defmodule JustBash.Commands.UtilitiesTest do
 
     test "env command receives FOO=bar as argument" do
       bash = JustBash.new()
-      {result, _} = JustBash.Commands.Env.execute(bash, ["FOO=bar"], "")
+      {result, _} = Env.execute(bash, ["FOO=bar"], "")
       assert result.stdout =~ "FOO=bar"
     end
 
     test "env command with -i and NAME=VALUE as argument" do
       bash = JustBash.new(env: %{"FOO" => "bar"})
-      {result, _} = JustBash.Commands.Env.execute(bash, ["-i", "BAZ=qux"], "")
+      {result, _} = Env.execute(bash, ["-i", "BAZ=qux"], "")
       assert result.stdout == "BAZ=qux\n"
       refute result.stdout =~ "FOO"
     end

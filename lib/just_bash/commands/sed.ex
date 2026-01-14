@@ -13,7 +13,7 @@ defmodule JustBash.Commands.Sed do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Commands.Sed.{Parser, Executor}
+  alias JustBash.Commands.Sed.{Executor, Parser}
   alias JustBash.Fs.InMemoryFs
 
   @impl true
