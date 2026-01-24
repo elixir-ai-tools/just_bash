@@ -46,7 +46,8 @@ defmodule JustBash.MixProject do
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:stream_data, "~> 1.0", only: [:dev, :test]}
+      {:stream_data, "~> 1.0", only: [:dev, :test]},
+      {:benchee, "~> 1.0", only: :dev}
     ]
   end
 
