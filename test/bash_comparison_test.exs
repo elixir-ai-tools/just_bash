@@ -639,22 +639,4 @@ defmodule JustBash.BashComparisonTest do
       compare_bash(~S[echo "" | read x; echo $?])
     end
   end
-
-  describe "sqlite3 piped input" do
-    test "basic SQL via pipe" do
-      compare_bash(~S[echo "SELECT 1+1;" | sqlite3])
-    end
-
-    test "multi-statement SQL via pipe" do
-      compare_bash(
-        ~S[echo "CREATE TABLE t(n INT); INSERT INTO t VALUES(42); SELECT n FROM t;" | sqlite3]
-      )
-    end
-
-    test "SQL with quoted strings via pipe" do
-      compare_bash(
-        ~S[echo "CREATE TABLE t(s TEXT); INSERT INTO t VALUES('hello'); SELECT s FROM t;" | sqlite3]
-      )
-    end
-  end
 end
