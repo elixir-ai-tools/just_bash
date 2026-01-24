@@ -10,6 +10,7 @@ defmodule JustBash.Interpreter.Executor.Loop do
   """
 
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Result
 
   @max_iterations 1000
 
@@ -112,26 +113,27 @@ defmodule JustBash.Interpreter.Executor.Loop do
     new_stdout_io = [stdout_io, result.stdout]
     new_stderr_io = [stderr_io, result.stderr]
 
-    cond do
-      # Break: exit loop with accumulated output
-      Map.has_key?(result, :__break__) and result.__break__ == 1 ->
+    # Use Result struct for type-safe signal handling
+    case Result.from_map(result).signal do
+      # Break level 1: exit loop with accumulated output
+      {:break, 1} ->
         {%{
            stdout: IO.iodata_to_binary(new_stdout_io),
            stderr: IO.iodata_to_binary(new_stderr_io),
            exit_code: 0
          }, body_bash}
 
-      # Break with level > 1: propagate to outer loop
-      Map.has_key?(result, :__break__) ->
-        {%{
+      # Break with level > 1: propagate to outer loop with decremented level
+      {:break, n} when n > 1 ->
+        {Result.to_map(%Result{
            stdout: IO.iodata_to_binary(new_stdout_io),
            stderr: IO.iodata_to_binary(new_stderr_io),
            exit_code: 0,
-           __break__: result.__break__ - 1
-         }, body_bash}
+           signal: {:break, n - 1}
+         }), body_bash}
 
-      # Continue: skip to next iteration
-      Map.has_key?(result, :__continue__) and result.__continue__ == 1 ->
+      # Continue level 1: skip to next iteration
+      {:continue, 1} ->
         execute_for_loop(
           body_bash,
           variable,
@@ -143,17 +145,17 @@ defmodule JustBash.Interpreter.Executor.Loop do
           execute_body_fn
         )
 
-      # Continue with level > 1: propagate to outer loop
-      Map.has_key?(result, :__continue__) ->
-        {%{
+      # Continue with level > 1: propagate to outer loop with decremented level
+      {:continue, n} when n > 1 ->
+        {Result.to_map(%Result{
            stdout: IO.iodata_to_binary(new_stdout_io),
            stderr: IO.iodata_to_binary(new_stderr_io),
            exit_code: 0,
-           __continue__: result.__continue__ - 1
-         }, body_bash}
+           signal: {:continue, n - 1}
+         }), body_bash}
 
-      # Normal: continue to next iteration
-      true ->
+      # No signal: continue to next iteration
+      nil ->
         execute_for_loop(
           body_bash,
           variable,
@@ -164,6 +166,15 @@ defmodule JustBash.Interpreter.Executor.Loop do
           result.exit_code,
           execute_body_fn
         )
+
+      # Return signal: propagate as-is
+      {:return, _} = signal ->
+        {Result.to_map(%Result{
+           stdout: IO.iodata_to_binary(new_stdout_io),
+           stderr: IO.iodata_to_binary(new_stderr_io),
+           exit_code: result.exit_code,
+           signal: signal
+         }), body_bash}
     end
   end
 
@@ -203,40 +214,50 @@ defmodule JustBash.Interpreter.Executor.Loop do
           stderr_io: [new_acc.stderr_io, body_result.stderr]
       }
 
-      cond do
-        # Break: exit loop
-        Map.has_key?(body_result, :__break__) and body_result.__break__ == 1 ->
+      # Use Result struct for type-safe signal handling
+      case Result.from_map(body_result).signal do
+        # Break level 1: exit loop
+        {:break, 1} ->
           {%{
              stdout: IO.iodata_to_binary(body_acc.stdout_io),
              stderr: IO.iodata_to_binary(body_acc.stderr_io),
              exit_code: 0
            }, body_bash}
 
-        # Break with level > 1: propagate
-        Map.has_key?(body_result, :__break__) ->
-          {%{
+        # Break with level > 1: propagate with decremented level
+        {:break, n} when n > 1 ->
+          {Result.to_map(%Result{
              stdout: IO.iodata_to_binary(body_acc.stdout_io),
              stderr: IO.iodata_to_binary(body_acc.stderr_io),
              exit_code: 0,
-             __break__: body_result.__break__ - 1
-           }, body_bash}
+             signal: {:break, n - 1}
+           }), body_bash}
 
-        # Continue: re-check condition
-        Map.has_key?(body_result, :__continue__) and body_result.__continue__ == 1 ->
+        # Continue level 1: re-check condition
+        {:continue, 1} ->
           next_acc = %{body_acc | exit_code: 0, iterations: acc.iterations + 1}
           execute_while_loop(body_bash, ctx, next_acc)
 
-        # Continue with level > 1: propagate
-        Map.has_key?(body_result, :__continue__) ->
-          {%{
+        # Continue with level > 1: propagate with decremented level
+        {:continue, n} when n > 1 ->
+          {Result.to_map(%Result{
              stdout: IO.iodata_to_binary(body_acc.stdout_io),
              stderr: IO.iodata_to_binary(body_acc.stderr_io),
              exit_code: 0,
-             __continue__: body_result.__continue__ - 1
-           }, body_bash}
+             signal: {:continue, n - 1}
+           }), body_bash}
 
-        # Normal: continue loop
-        true ->
+        # Return signal: propagate as-is
+        {:return, _} = signal ->
+          {Result.to_map(%Result{
+             stdout: IO.iodata_to_binary(body_acc.stdout_io),
+             stderr: IO.iodata_to_binary(body_acc.stderr_io),
+             exit_code: body_result.exit_code,
+             signal: signal
+           }), body_bash}
+
+        # No signal: continue loop
+        nil ->
           next_acc = %{
             body_acc
             | exit_code: body_result.exit_code,

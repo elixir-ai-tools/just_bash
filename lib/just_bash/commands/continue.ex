@@ -9,14 +9,15 @@ defmodule JustBash.Commands.Continue do
   """
   @behaviour JustBash.Commands.Command
 
+  alias JustBash.Result
+
   @impl true
   def names, do: ["continue"]
 
   @impl true
   def execute(bash, args, _stdin) do
     level = parse_level(args)
-    # Return a special result that signals continue
-    {%{stdout: "", stderr: "", exit_code: 0, __continue__: level}, bash}
+    {Result.to_map(Result.continue(level)), bash}
   end
 
   defp parse_level([]), do: 1

@@ -9,14 +9,15 @@ defmodule JustBash.Commands.Return do
   """
   @behaviour JustBash.Commands.Command
 
+  alias JustBash.Result
+
   @impl true
   def names, do: ["return"]
 
   @impl true
   def execute(bash, args, _stdin) do
     exit_code = parse_exit_code(bash, args)
-    # Return a special result that signals return from function
-    {%{stdout: "", stderr: "", exit_code: exit_code, __return__: exit_code}, bash}
+    {Result.to_map(Result.return(exit_code)), bash}
   end
 
   defp parse_exit_code(bash, []) do
