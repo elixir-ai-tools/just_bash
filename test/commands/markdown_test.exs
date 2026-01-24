@@ -1,8 +1,6 @@
 defmodule JustBash.Commands.MarkdownTest do
   use ExUnit.Case, async: true
 
-  alias JustBash.Fs.InMemoryFs
-
   describe "markdown command" do
     test "converts heading" do
       bash = JustBash.new()
@@ -119,41 +117,6 @@ defmodule JustBash.Commands.MarkdownTest do
 
       assert result.exit_code == 1
       assert result.stderr =~ "cannot read"
-    end
-
-    test "works in pipeline with sqlite and liquid" do
-      bash = JustBash.new()
-
-      # Create a post with markdown content
-      {_, bash} =
-        JustBash.exec(bash, "sqlite3 blog 'CREATE TABLE posts (title TEXT, content TEXT)'")
-
-      {_, bash} =
-        JustBash.exec(
-          bash,
-          ~s[sqlite3 blog "INSERT INTO posts VALUES ('Hello', '# Welcome\\n\\nThis is **great**.')"]
-        )
-
-      # Template that expects html_content
-      bash =
-        put_in(
-          bash.fs,
-          InMemoryFs.write_file(
-            bash.fs,
-            "/template.html",
-            "<article><h1>{{ title }}</h1><div>{{ html_content }}</div></article>"
-          )
-          |> elem(1)
-        )
-
-      # This would be a real pipeline - but we need to process markdown separately
-      # because liquid doesn't have a markdown filter
-      {result, _} =
-        JustBash.exec(bash, ~s[sqlite3 blog "SELECT content FROM posts" | markdown])
-
-      assert result.exit_code == 0
-      assert result.stdout =~ "<h1>"
-      assert result.stdout =~ "<strong>great</strong>"
     end
   end
 end

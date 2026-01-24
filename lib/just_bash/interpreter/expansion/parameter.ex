@@ -99,10 +99,9 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
           n
 
         _ ->
-          case Arithmetic.evaluate(bash, index_str) do
-            {:ok, n} -> n
-            _ -> 0
-          end
+          expr = Arithmetic.parse(index_str)
+          {n, _env} = Arithmetic.evaluate(expr, bash.env)
+          n
       end
 
     key = "#{arr_name}[#{index}]"

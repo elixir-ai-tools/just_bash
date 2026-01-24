@@ -182,7 +182,6 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   defp clear_stream(result, :stderr), do: %{result | stderr: ""}
 
   defp format_redirection_error(path, :eisdir), do: "bash: #{path}: Is a directory\n"
-  defp format_redirection_error(path, reason), do: "bash: #{path}: #{reason}\n"
 
   # --- Stdin Content Extraction ---
 

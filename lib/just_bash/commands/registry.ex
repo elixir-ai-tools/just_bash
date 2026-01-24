@@ -71,8 +71,6 @@ defmodule JustBash.Commands.Registry do
     "set" => Commands.Set,
     "source" => Commands.Source,
     "." => Commands.Source,
-    "sqlite3" => Commands.Sqlite3,
-    "liquid" => Commands.Liquid,
     "markdown" => Commands.Markdown,
     "md" => Commands.Markdown,
     "local" => Commands.Local,
