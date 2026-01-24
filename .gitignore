@@ -30,3 +30,5 @@ Thumbs.db
 
 # Mix
 mix.lock.bak
+vercel_just_bash/
+elixir_lang/

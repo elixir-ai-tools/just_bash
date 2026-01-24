@@ -264,10 +264,39 @@ defmodule JustBash.Commands.Awk.Parser do
 
   defp split_statements(action) do
     action
-    |> String.split(~r/[;\n]/)
+    |> split_respecting_quotes()
     |> Enum.map(&String.trim/1)
     |> Enum.filter(&(&1 != ""))
     |> merge_if_else()
+  end
+
+  # Split on ; and \n but respect quoted strings
+  defp split_respecting_quotes(str) do
+    split_respecting_quotes(str, "", [], false)
+  end
+
+  defp split_respecting_quotes("", current, acc, _in_string) do
+    Enum.reverse([current | acc])
+  end
+
+  defp split_respecting_quotes(<<"\\", char::utf8, rest::binary>>, current, acc, in_string) do
+    # Escaped character - keep it
+    split_respecting_quotes(rest, current <> "\\" <> <<char::utf8>>, acc, in_string)
+  end
+
+  defp split_respecting_quotes(<<"\"", rest::binary>>, current, acc, in_string) do
+    # Toggle quote mode
+    split_respecting_quotes(rest, current <> "\"", acc, not in_string)
+  end
+
+  defp split_respecting_quotes(<<char::utf8, rest::binary>>, current, acc, false)
+       when char == ?; or char == ?\n do
+    # Statement separator outside quotes
+    split_respecting_quotes(rest, "", [current | acc], false)
+  end
+
+  defp split_respecting_quotes(<<char::utf8, rest::binary>>, current, acc, in_string) do
+    split_respecting_quotes(rest, current <> <<char::utf8>>, acc, in_string)
   end
 
   # Merge "if ..." and "else ..." back together
@@ -468,18 +497,88 @@ defmodule JustBash.Commands.Awk.Parser do
         [parse_expression(args)]
 
       # Comma-separated arguments (but not inside function calls)
-      String.contains?(args, ",") and not String.contains?(args, "(") ->
-        args
-        |> String.split(",")
-        |> Enum.map(&String.trim/1)
-        |> Enum.map(&parse_expression/1)
+      # Returns {:comma_sep, exprs} to indicate OFS should be used
+      has_comma_outside_parens?(args) ->
+        {:comma_sep,
+         args
+         |> split_on_comma_respecting_parens()
+         |> Enum.map(&String.trim/1)
+         |> Enum.map(&parse_expression/1)}
 
       # Space-separated fields/values (traditional awk: print $1 $2)
+      # Returns {:concat, exprs} to indicate concatenation (no separator)
       true ->
-        args
-        |> String.split(~r/\s+/)
-        |> Enum.map(&parse_expression/1)
+        {:concat,
+         args
+         |> split_print_args()
+         |> Enum.map(&parse_expression/1)}
     end
+  end
+
+  defp has_comma_outside_parens?(str), do: has_comma_outside_parens?(str, 0)
+  defp has_comma_outside_parens?("", _), do: false
+
+  defp has_comma_outside_parens?(<<"(", rest::binary>>, depth),
+    do: has_comma_outside_parens?(rest, depth + 1)
+
+  defp has_comma_outside_parens?(<<")", rest::binary>>, depth),
+    do: has_comma_outside_parens?(rest, max(0, depth - 1))
+
+  defp has_comma_outside_parens?(<<",", _::binary>>, 0), do: true
+
+  defp has_comma_outside_parens?(<<_::utf8, rest::binary>>, depth),
+    do: has_comma_outside_parens?(rest, depth)
+
+  defp split_on_comma_respecting_parens(str), do: split_on_comma_respecting_parens(str, "", [], 0)
+
+  defp split_on_comma_respecting_parens("", current, acc, _depth),
+    do: Enum.reverse([current | acc])
+
+  defp split_on_comma_respecting_parens(<<"(", rest::binary>>, current, acc, depth),
+    do: split_on_comma_respecting_parens(rest, current <> "(", acc, depth + 1)
+
+  defp split_on_comma_respecting_parens(<<")", rest::binary>>, current, acc, depth),
+    do: split_on_comma_respecting_parens(rest, current <> ")", acc, max(0, depth - 1))
+
+  defp split_on_comma_respecting_parens(<<",", rest::binary>>, current, acc, 0),
+    do: split_on_comma_respecting_parens(rest, "", [current | acc], 0)
+
+  defp split_on_comma_respecting_parens(<<char::utf8, rest::binary>>, current, acc, depth),
+    do: split_on_comma_respecting_parens(rest, current <> <<char::utf8>>, acc, depth)
+
+  # Split print args on whitespace, but respect quoted strings
+  defp split_print_args(str), do: split_print_args(str, "", [], false)
+
+  defp split_print_args("", current, acc, _in_string) do
+    if current == "" do
+      Enum.reverse(acc)
+    else
+      Enum.reverse([current | acc])
+    end
+  end
+
+  defp split_print_args(<<"\\", char::utf8, rest::binary>>, current, acc, in_string) do
+    # Escaped character - keep it
+    split_print_args(rest, current <> "\\" <> <<char::utf8>>, acc, in_string)
+  end
+
+  defp split_print_args(<<"\"", rest::binary>>, current, acc, in_string) do
+    # Toggle quote mode
+    split_print_args(rest, current <> "\"", acc, not in_string)
+  end
+
+  defp split_print_args(<<char::utf8, rest::binary>>, current, acc, false)
+       when char in [?\s, ?\t] do
+    # Whitespace separator outside quotes
+    if current == "" do
+      split_print_args(rest, "", acc, false)
+    else
+      split_print_args(rest, "", [current | acc], false)
+    end
+  end
+
+  defp split_print_args(<<char::utf8, rest::binary>>, current, acc, in_string) do
+    split_print_args(rest, current <> <<char::utf8>>, acc, in_string)
   end
 
   defp parse_printf_args(args) do

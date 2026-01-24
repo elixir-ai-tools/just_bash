@@ -160,6 +160,14 @@ defmodule JustBash.Commands.Awk.Evaluator do
       condition =~ ~r/^\$(\d+)\s*~\s*\/([^\/]*)\/\s*$/ ->
         evaluate_field_regex(condition, state)
 
+      # Numeric field comparisons: $1>5, $2>=10, etc.
+      condition =~ ~r/^\$(\d+)\s*(==|!=|>=|<=|>|<)\s*(.+)$/ ->
+        evaluate_field_numeric(condition, state)
+
+      # Field vs variable comparison: $1>max
+      condition =~ ~r/^\$(\w+)\s*(==|!=|>=|<=|>|<)\s*(\w+)$/ ->
+        evaluate_field_vs_var(condition, state)
+
       true ->
         nil
     end
@@ -182,13 +190,78 @@ defmodule JustBash.Commands.Awk.Evaluator do
     end
   end
 
+  defp evaluate_field_numeric(condition, state) do
+    [_, field_str, op, right_str] = Regex.run(~r/^\$(\d+)\s*(==|!=|>=|<=|>|<)\s*(.+)$/, condition)
+    field = String.to_integer(field_str)
+    left_val = get_field(state, field) |> parse_number()
+
+    # right_str could be a number or a variable name
+    right_val =
+      cond do
+        right_str =~ ~r/^-?\d+(\.\d+)?$/ ->
+          parse_number(right_str)
+
+        Map.has_key?(state.variables, right_str) ->
+          Map.get(state.variables, right_str) |> parse_number()
+
+        true ->
+          parse_number(right_str)
+      end
+
+    apply_comparison(op, left_val, right_val)
+  end
+
+  defp evaluate_field_vs_var(condition, state) do
+    [_, field_str, op, var_name] = Regex.run(~r/^\$(\w+)\s*(==|!=|>=|<=|>|<)\s*(\w+)$/, condition)
+
+    # Get field value
+    left_val =
+      case Integer.parse(field_str) do
+        {n, ""} -> get_field(state, n) |> parse_number()
+        _ -> get_field(state, 0) |> parse_number()
+      end
+
+    # Get variable value
+    right_val =
+      case Map.get(state.variables, var_name) do
+        nil -> 0.0
+        v -> parse_number(v)
+      end
+
+    apply_comparison(op, left_val, right_val)
+  end
+
+  defp apply_comparison("==", left, right), do: left == right
+  defp apply_comparison("!=", left, right), do: left != right
+  defp apply_comparison(">", left, right), do: left > right
+  defp apply_comparison("<", left, right), do: left < right
+  defp apply_comparison(">=", left, right), do: left >= right
+  defp apply_comparison("<=", left, right), do: left <= right
+
   defp execute_statements(statements, state) do
     Enum.reduce(statements, state, &execute_statement/2)
   end
 
   defp execute_statement(nil, state), do: state
 
-  defp execute_statement({:print, args}, state) do
+  defp execute_statement({:print, {:comma_sep, args}}, state) do
+    # Comma-separated: use OFS between values
+    values = Enum.map(args, &evaluate_expression(&1, state))
+    formatted = Enum.map(values, &format_output_value/1)
+    output_line = Enum.join(formatted, state.ofs) <> state.ors
+    %{state | output: state.output <> output_line}
+  end
+
+  defp execute_statement({:print, {:concat, args}}, state) do
+    # Space-separated in source: concatenate without separator
+    values = Enum.map(args, &evaluate_expression(&1, state))
+    formatted = Enum.map(values, &format_output_value/1)
+    output_line = Enum.join(formatted, "") <> state.ors
+    %{state | output: state.output <> output_line}
+  end
+
+  defp execute_statement({:print, args}, state) when is_list(args) do
+    # Legacy format - treat as comma-separated for backward compatibility
     values = Enum.map(args, &evaluate_expression(&1, state))
     formatted = Enum.map(values, &format_output_value/1)
     output_line = Enum.join(formatted, state.ofs) <> state.ors
@@ -308,9 +381,18 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   def evaluate_expression({:field_var, var_name}, state) do
     n =
-      case Map.get(state.variables, var_name) do
-        nil -> 0
-        v -> parse_number(v) |> trunc()
+      case var_name do
+        "NF" ->
+          state.nf
+
+        "NR" ->
+          state.nr
+
+        _ ->
+          case Map.get(state.variables, var_name) do
+            nil -> 0
+            v -> parse_number(v) |> trunc()
+          end
       end
 
     get_field(state, n)
@@ -518,9 +600,18 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   defp format_output_value(value) when is_binary(value) do
     # Check if string is a whole number float like "6.0" and format as "6"
-    case Float.parse(value) do
-      {num, ""} when trunc(num) == num -> Integer.to_string(trunc(num))
-      _ -> value
+    # But preserve strings that start with 0 (like "00042") or are not purely numeric
+    cond do
+      # Preserve strings starting with 0 (unless it's just "0")
+      String.starts_with?(value, "0") and value != "0" and value =~ ~r/^0\d/ ->
+        value
+
+      # Handle float-like strings like "6.0" -> "6"
+      true ->
+        case Float.parse(value) do
+          {num, ""} when trunc(num) == num -> Integer.to_string(trunc(num))
+          _ -> value
+        end
     end
   end
 
