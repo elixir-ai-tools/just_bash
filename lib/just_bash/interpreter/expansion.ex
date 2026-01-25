@@ -263,12 +263,39 @@ defmodule JustBash.Interpreter.Expansion do
   end
 
   defp expand_for_loop_word_no_brace(bash, parts, ifs) do
-    has_unquoted_glob = has_unquoted_glob?(parts)
-    expanded_segments = Enum.map(parts, &expand_for_loop_part(bash, &1, ifs))
-    needs_ifs_split = Enum.any?(expanded_segments, fn {_, split?} -> split? end)
-    combined = Enum.map_join(expanded_segments, "", fn {str, _} -> str end)
-    results = maybe_split_on_ifs(combined, ifs, needs_ifs_split)
-    maybe_expand_globs(bash, results, has_unquoted_glob)
+    # Special case: if the word is just "$@", expand to multiple words
+    case is_quoted_at_expansion?(parts) do
+      {:ok, :quoted_at} ->
+        expand_quoted_at_to_words(bash)
+
+      :not_at ->
+        has_unquoted_glob = has_unquoted_glob?(parts)
+        expanded_segments = Enum.map(parts, &expand_for_loop_part(bash, &1, ifs))
+        needs_ifs_split = Enum.any?(expanded_segments, fn {_, split?} -> split? end)
+        combined = Enum.map_join(expanded_segments, "", fn {str, _} -> str end)
+        results = maybe_split_on_ifs(combined, ifs, needs_ifs_split)
+        maybe_expand_globs(bash, results, has_unquoted_glob)
+    end
+  end
+
+  defp is_quoted_at_expansion?([
+         %AST.DoubleQuoted{parts: [%AST.ParameterExpansion{parameter: "@", operation: nil}]}
+       ]) do
+    {:ok, :quoted_at}
+  end
+
+  defp is_quoted_at_expansion?(_parts), do: :not_at
+
+  defp expand_quoted_at_to_words(bash) do
+    bash.env
+    |> Enum.filter(fn {key, _} ->
+      case Integer.parse(key) do
+        {n, ""} when n >= 1 -> true
+        _ -> false
+      end
+    end)
+    |> Enum.sort_by(fn {key, _} -> String.to_integer(key) end)
+    |> Enum.map(fn {_, value} -> value end)
   end
 
   defp maybe_split_on_ifs(combined, ifs, true = _needs_split) when ifs != "" do

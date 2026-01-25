@@ -50,18 +50,34 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
 
   # Simple variable expansion (no operation)
   defp expand_simple_variable(bash, name) do
-    case Map.fetch(bash.env, name) do
+    case expand_dynamic_variable(bash, name) do
       {:ok, value} ->
         value
 
-      :error ->
-        if bash.shell_opts.nounset and not special_variable?(name) do
-          raise Expansion.UnsetVariableError, variable: name
-        else
-          ""
+      :not_dynamic ->
+        case Map.fetch(bash.env, name) do
+          {:ok, value} ->
+            value
+
+          :error ->
+            if bash.shell_opts.nounset and not special_variable?(name) do
+              raise Expansion.UnsetVariableError, variable: name
+            else
+              ""
+            end
         end
     end
   end
+
+  defp expand_dynamic_variable(_bash, "RANDOM") do
+    {:ok, Integer.to_string(:rand.uniform(32768) - 1)}
+  end
+
+  defp expand_dynamic_variable(_bash, "SECONDS") do
+    {:ok, Integer.to_string(System.monotonic_time(:second))}
+  end
+
+  defp expand_dynamic_variable(_bash, _name), do: :not_dynamic
 
   # Array subscript parsing
 
