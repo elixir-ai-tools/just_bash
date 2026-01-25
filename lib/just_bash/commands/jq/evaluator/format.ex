@@ -75,11 +75,8 @@ defmodule JustBash.Commands.Jq.Evaluator.Format do
   defp format_csv_field(n) when is_number(n), do: to_string(n)
 
   defp format_csv_field(s) when is_binary(s) do
-    if String.contains?(s, [",", "\"", "\n", "\r"]) do
-      "\"" <> String.replace(s, "\"", "\"\"") <> "\""
-    else
-      s
-    end
+    # jq always quotes strings in CSV output
+    "\"" <> String.replace(s, "\"", "\"\"") <> "\""
   end
 
   defp format_csv_field(other), do: Jason.encode!(other)

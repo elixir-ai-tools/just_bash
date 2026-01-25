@@ -157,6 +157,12 @@ defmodule JustBash.Commands.Jq.Evaluator do
     not truthy?(val)
   end
 
+  # Update assignment operators: +=, -=, *=, /=, //=, |=
+  # These modify the value at a path and return the updated data
+  defp do_eval({:update_assign, op, path_expr, value_expr}, data, opts) do
+    eval_update_assign(op, path_expr, value_expr, data, opts)
+  end
+
   # Control flow
   defp do_eval({:if, cond_expr, then_expr, else_expr}, data, opts) do
     cond_val = do_eval(cond_expr, data, opts)
@@ -221,7 +227,9 @@ defmodule JustBash.Commands.Jq.Evaluator do
   defp do_eval({:arith, :div, left, right}, data, opts) do
     l = do_eval(left, data, opts)
     r = do_eval(right, data, opts)
-    to_num(l) / to_num(r)
+    result = to_num(l) / to_num(r)
+    # Return integer if result is whole number (like real jq)
+    if result == trunc(result), do: trunc(result), else: result
   end
 
   defp do_eval({:arith, :mod, left, right}, data, opts) do
@@ -268,7 +276,12 @@ defmodule JustBash.Commands.Jq.Evaluator do
   defp array_from_result(other), do: [other]
 
   # Arithmetic helpers
-  defp arith_add(l, r) when is_number(l) and is_number(r), do: l + r
+  defp arith_add(l, r) when is_number(l) and is_number(r) do
+    result = l + r
+    # Return integer if result is whole number (like real jq)
+    if is_float(result) and result == trunc(result), do: trunc(result), else: result
+  end
+
   defp arith_add(l, r) when is_binary(l) and is_binary(r), do: l <> r
   defp arith_add(l, r) when is_list(l) and is_list(r), do: l ++ r
   defp arith_add(l, r) when is_map(l) and is_map(r), do: Map.merge(l, r)
@@ -335,4 +348,64 @@ defmodule JustBash.Commands.Jq.Evaluator do
   catch
     {:eval_error, _} -> nil
   end
+
+  # Update assignment helpers
+  # .path += expr is equivalent to .path = (.path + expr)
+  defp eval_update_assign(op, path_expr, value_expr, data, opts) do
+    # Get current value at path
+    current_val = do_eval(path_expr, data, opts)
+    # Evaluate the update expression against the current value
+    update_val = do_eval(value_expr, current_val, opts)
+    # Apply the operation
+    new_val = apply_update_op(op, current_val, update_val, opts)
+    # Set the new value back at the path
+    set_at_path(path_expr, new_val, data)
+  end
+
+  defp apply_update_op(:add, current, update, _opts) do
+    arith_add(current, update)
+  end
+
+  defp apply_update_op(:sub, current, update, _opts) do
+    to_num(current) - to_num(update)
+  end
+
+  defp apply_update_op(:mul, current, update, _opts) do
+    to_num(current) * to_num(update)
+  end
+
+  defp apply_update_op(:div, current, update, _opts) do
+    result = to_num(current) / to_num(update)
+    if result == trunc(result), do: trunc(result), else: result
+  end
+
+  defp apply_update_op(:alt, current, update, _opts) do
+    if current == nil or current == false, do: update, else: current
+  end
+
+  defp apply_update_op(:pipe, _current, update, _opts) do
+    # |= just uses the result of the expression
+    update
+  end
+
+  # Set value at a path expression
+  defp set_at_path({:field, name}, value, data) when is_map(data) do
+    Map.put(data, name, value)
+  end
+
+  defp set_at_path({:index, idx}, value, data) when is_list(data) do
+    List.replace_at(data, idx, value)
+  end
+
+  defp set_at_path({:pipe, left, right}, value, data) do
+    # For nested paths like .foo.bar, we need to:
+    # 1. Get the intermediate value at 'left'
+    # 2. Set the value at 'right' in that intermediate
+    # 3. Set the modified intermediate back at 'left'
+    intermediate = do_eval(left, data, %{})
+    updated_intermediate = set_at_path(right, value, intermediate)
+    set_at_path(left, updated_intermediate, data)
+  end
+
+  defp set_at_path(_path, _value, data), do: data
 end

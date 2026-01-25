@@ -296,15 +296,21 @@ defmodule JustBash.BashComparison.AwkTest do
 
   describe "awk if-else comparison" do
     test "awk simple if condition" do
-      compare_bash("echo -e '5\\n15\\n25' | awk '{if ($1 > 10) print \"big\"; else print \"small\"}'")
+      compare_bash(
+        "echo -e '5\\n15\\n25' | awk '{if ($1 > 10) print \"big\"; else print \"small\"}'"
+      )
     end
 
     test "awk if with == comparison" do
-      compare_bash("echo -e '1\\n2\\n1' | awk '{if ($1 == 1) print \"one\"; else print \"other\"}'")
+      compare_bash(
+        "echo -e '1\\n2\\n1' | awk '{if ($1 == 1) print \"one\"; else print \"other\"}'"
+      )
     end
 
     test "awk if with string comparison" do
-      compare_bash("echo -e 'yes\\nno\\nyes' | awk '{if ($1 == \"yes\") print \"Y\"; else print \"N\"}'")
+      compare_bash(
+        "echo -e 'yes\\nno\\nyes' | awk '{if ($1 == \"yes\") print \"Y\"; else print \"N\"}'"
+      )
     end
   end
 
@@ -422,11 +428,15 @@ defmodule JustBash.BashComparison.AwkTest do
     end
 
     test "awk find max value" do
-      compare_bash("echo -e '10\\n25\\n15\\n30\\n5' | awk 'BEGIN{max=0}$1>max{max=$1}END{print max}'")
+      compare_bash(
+        "echo -e '10\\n25\\n15\\n30\\n5' | awk 'BEGIN{max=0}$1>max{max=$1}END{print max}'"
+      )
     end
 
     test "awk find min value" do
-      compare_bash("echo -e '10\\n25\\n15\\n30\\n5' | awk 'BEGIN{min=9999}$1<min{min=$1}END{print min}'")
+      compare_bash(
+        "echo -e '10\\n25\\n15\\n30\\n5' | awk 'BEGIN{min=9999}$1<min{min=$1}END{print min}'"
+      )
     end
 
     test "awk skip header row" do
@@ -434,7 +444,9 @@ defmodule JustBash.BashComparison.AwkTest do
     end
 
     test "awk count pattern matches" do
-      compare_bash("echo -e 'INFO: start\\nERROR: fail\\nINFO: done\\nERROR: crash' | awk '/ERROR/{count++}END{print count}'")
+      compare_bash(
+        "echo -e 'INFO: start\\nERROR: fail\\nINFO: done\\nERROR: crash' | awk '/ERROR/{count++}END{print count}'"
+      )
     end
 
     test "awk transform to uppercase" do

@@ -189,9 +189,15 @@ defmodule JustBash.Commands.Sed.Executor do
   defp execute_command(:noop, state, exec_state), do: {state, exec_state}
   defp execute_command(:delete, state, exec_state), do: {%{state | deleted: true}, exec_state}
   defp execute_command(:print, state, exec_state), do: {%{state | printed: true}, exec_state}
-  defp execute_command({:append, text}, state, exec_state), do: {%{state | appended: text}, exec_state}
-  defp execute_command({:insert, text}, state, exec_state), do: {%{state | inserted: text}, exec_state}
-  defp execute_command({:change, text}, state, exec_state), do: {%{state | changed: text}, exec_state}
+
+  defp execute_command({:append, text}, state, exec_state),
+    do: {%{state | appended: text}, exec_state}
+
+  defp execute_command({:insert, text}, state, exec_state),
+    do: {%{state | inserted: text}, exec_state}
+
+  defp execute_command({:change, text}, state, exec_state),
+    do: {%{state | changed: text}, exec_state}
 
   defp execute_command({:translate, source, dest}, state, exec_state) do
     translation = Enum.zip(String.graphemes(source), String.graphemes(dest)) |> Map.new()
@@ -224,10 +230,12 @@ defmodule JustBash.Commands.Sed.Executor do
   defp execute_substitute(regex, replacement, flags, state, exec_state) do
     global = :global in flags
     print_on_match = :print in flags
-    nth = Enum.find_value(flags, fn
-      {:nth, n} -> n
-      _ -> nil
-    end)
+
+    nth =
+      Enum.find_value(flags, fn
+        {:nth, n} -> n
+        _ -> nil
+      end)
 
     replacement = process_replacement(replacement)
 

@@ -297,28 +297,32 @@ defmodule JustBash.Commands.JqTest do
       bash = bash_with_json(~S(["a","b","c"]))
       {result, _} = JustBash.exec(bash, "jq -r '@csv' /data.json")
       assert result.exit_code == 0
-      assert String.trim(result.stdout) == "a,b,c"
+      # jq always quotes strings in CSV output
+      assert String.trim(result.stdout) == "\"a\",\"b\",\"c\""
     end
 
     test "@csv escapes commas in strings" do
       bash = bash_with_json(~S(["hello, world","test"]))
       {result, _} = JustBash.exec(bash, "jq -r '@csv' /data.json")
       assert result.exit_code == 0
-      assert String.trim(result.stdout) == "\"hello, world\",test"
+      # jq always quotes strings in CSV output
+      assert String.trim(result.stdout) == "\"hello, world\",\"test\""
     end
 
     test "@csv escapes quotes in strings" do
       bash = bash_with_json(~S(["say \"hello\"","test"]))
       {result, _} = JustBash.exec(bash, "jq -r '@csv' /data.json")
       assert result.exit_code == 0
-      assert String.trim(result.stdout) == "\"say \"\"hello\"\"\",test"
+      # jq always quotes strings in CSV output
+      assert String.trim(result.stdout) == "\"say \"\"hello\"\"\",\"test\""
     end
 
     test "@csv with mixed types" do
       bash = bash_with_json(~S(["name",42,true,null]))
       {result, _} = JustBash.exec(bash, "jq -r '@csv' /data.json")
       assert result.exit_code == 0
-      assert String.trim(result.stdout) == "name,42,true,"
+      # jq always quotes strings in CSV output
+      assert String.trim(result.stdout) == "\"name\",42,true,"
     end
 
     test "@tsv with strings" do
@@ -385,8 +389,9 @@ defmodule JustBash.Commands.JqTest do
       {result, _} = JustBash.exec(bash, cmd)
       assert result.exit_code == 0
       lines = String.split(String.trim(result.stdout), "\n")
-      assert "name,age" in lines
-      assert "alice,30" in lines
+      # jq always quotes strings in CSV output
+      assert "\"name\",\"age\"" in lines
+      assert "\"alice\",30" in lines
     end
   end
 end
