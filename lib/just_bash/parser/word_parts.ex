@@ -403,11 +403,72 @@ defmodule JustBash.Parser.WordParts do
 
       char == "\\" and i + 1 < len ->
         next = String.at(value, i + 1)
-        expanded = ansi_escape_char(next)
-        parse_ansi_c_loop(value, i + 2, len, acc <> expanded)
+
+        cond do
+          # Hex escape: \xNN
+          next == "x" and i + 3 < len ->
+            case parse_hex_escape(value, i + 2) do
+              {:ok, char_val, new_i} ->
+                parse_ansi_c_loop(value, new_i, len, acc <> char_val)
+
+              :error ->
+                parse_ansi_c_loop(value, i + 2, len, acc <> "\\x")
+            end
+
+          # Octal escape: \NNN (0-7 digits)
+          next in ["0", "1", "2", "3", "4", "5", "6", "7"] ->
+            {octal_str, new_i} = parse_octal_escape(value, i + 1, len)
+            char_val = <<String.to_integer(octal_str, 8)>>
+            parse_ansi_c_loop(value, new_i, len, acc <> char_val)
+
+          true ->
+            expanded = ansi_escape_char(next)
+            parse_ansi_c_loop(value, i + 2, len, acc <> expanded)
+        end
 
       true ->
         parse_ansi_c_loop(value, i + 1, len, acc <> char)
+    end
+  end
+
+  defp parse_hex_escape(value, start) do
+    hex1 = String.at(value, start)
+    hex2 = String.at(value, start + 1)
+
+    cond do
+      hex_digit?(hex1) and hex_digit?(hex2) ->
+        char_val = <<String.to_integer(hex1 <> hex2, 16)>>
+        {:ok, char_val, start + 2}
+
+      hex_digit?(hex1) ->
+        char_val = <<String.to_integer(hex1, 16)>>
+        {:ok, char_val, start + 1}
+
+      true ->
+        :error
+    end
+  end
+
+  defp hex_digit?(nil), do: false
+  defp hex_digit?(c), do: c =~ ~r/^[0-9a-fA-F]$/
+
+  defp parse_octal_escape(value, start, len) do
+    # Read up to 3 octal digits
+    {digits, end_i} = read_octal_digits(value, start, len, 3)
+    {digits, end_i}
+  end
+
+  defp read_octal_digits(_value, i, _len, 0), do: {"", i}
+  defp read_octal_digits(_value, i, len, _remaining) when i >= len, do: {"", i}
+
+  defp read_octal_digits(value, i, len, remaining) do
+    char = String.at(value, i)
+
+    if char in ["0", "1", "2", "3", "4", "5", "6", "7"] do
+      {more, end_i} = read_octal_digits(value, i + 1, len, remaining - 1)
+      {char <> more, end_i}
+    else
+      {"", i}
     end
   end
 

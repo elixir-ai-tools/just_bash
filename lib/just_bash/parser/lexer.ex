@@ -101,12 +101,28 @@ defmodule JustBash.Parser.Lexer do
     |> reduce({:build_ansi_c_quoted, []})
     |> unwrap_and_tag(:ansi_c_quoted)
 
+  # Hex digit for escape sequences
+  hex_digit = ascii_char([?0..?9, ?a..?f, ?A..?F])
+  # Octal digit for escape sequences
+  octal_digit = ascii_char([?0..?7])
+
   # Content inside $'...' - handles escape sequences
   defcombinatorp(
     :ansi_c_content,
     repeat(
       choice([
-        # Escape sequences
+        # Hex escape: \xNN (1-2 hex digits)
+        string("\\x")
+        |> concat(hex_digit)
+        |> optional(hex_digit)
+        |> reduce({:ansi_c_hex_escape, []}),
+        # Octal escape: \NNN (1-3 octal digits)
+        string("\\")
+        |> concat(octal_digit)
+        |> optional(octal_digit)
+        |> optional(octal_digit)
+        |> reduce({:ansi_c_octal_escape, []}),
+        # Other escape sequences (single char after \)
         string("\\") |> utf8_char([]) |> reduce({:ansi_c_escape, []}),
         # Regular characters (not backslash or closing quote)
         utf8_char([{:not, ?\\}, {:not, ?'}])
@@ -374,6 +390,26 @@ defmodule JustBash.Parser.Lexer do
   end
 
   def ansi_c_escape([c]) when is_integer(c), do: <<c::utf8>>
+
+  # Handle hex escapes: \xNN
+  def ansi_c_hex_escape(["\\x" | hex_digits]) do
+    hex_str = Enum.map_join(hex_digits, &<<&1::utf8>>)
+    <<String.to_integer(hex_str, 16)>>
+  end
+
+  # Handle octal escapes: \NNN
+  def ansi_c_octal_escape(["\\", d1]) when is_integer(d1) do
+    <<String.to_integer(<<d1::utf8>>, 8)>>
+  end
+
+  def ansi_c_octal_escape(["\\", d1, d2]) when is_integer(d1) and is_integer(d2) do
+    <<String.to_integer(<<d1::utf8, d2::utf8>>, 8)>>
+  end
+
+  def ansi_c_octal_escape(["\\", d1, d2, d3])
+      when is_integer(d1) and is_integer(d2) and is_integer(d3) do
+    <<String.to_integer(<<d1::utf8, d2::utf8, d3::utf8>>, 8)>>
+  end
 
   def build_ansi_c_quoted(["$'" | rest]) do
     # Last element is the closing quote, content is in between
