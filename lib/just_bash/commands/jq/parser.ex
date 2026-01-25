@@ -78,7 +78,7 @@ defmodule JustBash.Commands.Jq.Parser do
   defp parse_comma_tail(acc, rest), do: {{:comma, acc}, rest}
 
   defp parse_or(input) do
-    {left, rest} = parse_alternative(input)
+    {left, rest} = parse_update_assign(input)
     rest = String.trim(rest)
 
     if String.starts_with?(rest, "or") and not_ident_cont?(String.slice(rest, 2..-1//1)) do
@@ -90,17 +90,57 @@ defmodule JustBash.Commands.Jq.Parser do
     end
   end
 
+  # Update assignment operators: +=, -=, *=, /=, //=, |=
+  defp parse_update_assign(input) do
+    {left, rest} = parse_alternative(input)
+    rest = String.trim(rest)
+
+    cond do
+      String.starts_with?(rest, "+=") ->
+        {right, rest2} = parse_update_assign(String.trim(String.slice(rest, 2..-1//1)))
+        {{:update_assign, :add, left, right}, rest2}
+
+      String.starts_with?(rest, "-=") ->
+        {right, rest2} = parse_update_assign(String.trim(String.slice(rest, 2..-1//1)))
+        {{:update_assign, :sub, left, right}, rest2}
+
+      String.starts_with?(rest, "*=") ->
+        {right, rest2} = parse_update_assign(String.trim(String.slice(rest, 2..-1//1)))
+        {{:update_assign, :mul, left, right}, rest2}
+
+      String.starts_with?(rest, "/=") ->
+        {right, rest2} = parse_update_assign(String.trim(String.slice(rest, 2..-1//1)))
+        {{:update_assign, :div, left, right}, rest2}
+
+      String.starts_with?(rest, "//=") ->
+        {right, rest2} = parse_update_assign(String.trim(String.slice(rest, 3..-1//1)))
+        {{:update_assign, :alt, left, right}, rest2}
+
+      String.starts_with?(rest, "|=") ->
+        {right, rest2} = parse_update_assign(String.trim(String.slice(rest, 2..-1//1)))
+        {{:update_assign, :pipe, left, right}, rest2}
+
+      true ->
+        {left, rest}
+    end
+  end
+
   # // (alternative operator) - returns left if not false/null, else right
   defp parse_alternative(input) do
     {left, rest} = parse_and(input)
     rest = String.trim(rest)
 
-    case rest do
-      "//" <> rest2 ->
+    cond do
+      # Don't match //= (update alternative assignment)
+      String.starts_with?(rest, "//=") ->
+        {left, rest}
+
+      String.starts_with?(rest, "//") ->
+        rest2 = String.slice(rest, 2..-1//1)
         {right, rest3} = parse_alternative(String.trim(rest2))
         {{:alternative, left, right}, rest3}
 
-      _ ->
+      true ->
         {left, rest}
     end
   end
@@ -163,6 +203,10 @@ defmodule JustBash.Commands.Jq.Parser do
     parse_additive_tail(left, String.trim(rest))
   end
 
+  # Don't match += or -= (update assignment operators) as arithmetic
+  defp parse_additive_tail(left, "+=" <> _rest = input), do: {left, input}
+  defp parse_additive_tail(left, "-=" <> _rest = input), do: {left, input}
+
   defp parse_additive_tail(left, "+" <> rest) do
     {right, rest2} = parse_multiplicative(String.trim(rest))
     parse_additive_tail({:arith, :add, left, right}, String.trim(rest2))
@@ -180,12 +224,16 @@ defmodule JustBash.Commands.Jq.Parser do
     parse_multiplicative_tail(left, String.trim(rest))
   end
 
+  # Don't match *= or /= (update assignment operators) as arithmetic
+  defp parse_multiplicative_tail(left, "*=" <> _rest = input), do: {left, input}
+  defp parse_multiplicative_tail(left, "/=" <> _rest = input), do: {left, input}
+
   defp parse_multiplicative_tail(left, "*" <> rest) do
     {right, rest2} = parse_primary(String.trim(rest))
     parse_multiplicative_tail({:arith, :mul, left, right}, String.trim(rest2))
   end
 
-  # Don't match // (alternative operator) as division
+  # Don't match // (alternative operator) or //= (update alternative) as division
   defp parse_multiplicative_tail(left, "//" <> _rest = input), do: {left, input}
 
   defp parse_multiplicative_tail(left, "/" <> rest) do

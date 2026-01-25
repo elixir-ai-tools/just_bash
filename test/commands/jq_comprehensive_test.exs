@@ -289,7 +289,8 @@ defmodule JustBash.Commands.JqComprehensiveTest do
 
     test "addition of floats" do
       result = jq_ok("1.5", ". + 2.5")
-      assert String.to_float(result) == 4.0
+      # jq returns integer when result is whole number
+      assert result == "4"
     end
 
     test "subtraction" do

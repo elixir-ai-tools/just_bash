@@ -66,6 +66,10 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     Enum.map(data, fn item -> eval.eval(expr, item, opts) end)
   end
 
+  defp do_eval_func(:map_values, [expr], data, opts, eval) when is_map(data) do
+    Map.new(data, fn {k, v} -> {k, eval.eval(expr, v, opts)} end)
+  end
+
   defp do_eval_func(:select, [expr], data, opts, eval) do
     val = eval.eval(expr, data, opts)
     if truthy?(val), do: data, else: :empty
