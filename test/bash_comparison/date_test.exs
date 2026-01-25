@@ -5,21 +5,28 @@ defmodule JustBash.BashComparison.DateTest do
   @moduletag :bash_comparison
 
   # Check if we can use GNU date syntax
-  @gnu_date_available (
-    case System.cmd("bash", ["-c", "date -d '2024-01-01' '+%Y' 2>/dev/null"]) do
-      {"2024\n", 0} -> true
-      _ ->
-        case System.cmd("bash", ["-c", "command -v gdate >/dev/null 2>&1 && echo yes"]) do
-          {"yes\n", 0} -> :gdate
-          _ -> false
-        end
-    end
-  )
+  @gnu_date_available (case System.cmd("bash", ["-c", "date -d '2024-01-01' '+%Y' 2>/dev/null"]) do
+                         {"2024\n", 0} ->
+                           true
+
+                         _ ->
+                           case System.cmd("bash", [
+                                  "-c",
+                                  "command -v gdate >/dev/null 2>&1 && echo yes"
+                                ]) do
+                             {"yes\n", 0} -> :gdate
+                             _ -> false
+                           end
+                       end)
 
   defp date_cmd(date_str, format) do
     case @gnu_date_available do
-      true -> "date -d '#{date_str}' '+#{format}'"
-      :gdate -> "gdate -d '#{date_str}' '+#{format}'"
+      true ->
+        "date -d '#{date_str}' '+#{format}'"
+
+      :gdate ->
+        "gdate -d '#{date_str}' '+#{format}'"
+
       false ->
         {bsd_input, bsd_format} = iso_to_bsd_format(date_str)
         "date -j -f '#{bsd_format}' '#{bsd_input}' '+#{format}'"
@@ -30,10 +37,13 @@ defmodule JustBash.BashComparison.DateTest do
     cond do
       String.match?(date_str, ~r/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/) ->
         {date_str, "%Y-%m-%d %H:%M:%S"}
+
       String.match?(date_str, ~r/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/) ->
         {String.replace(date_str, "T", " "), "%Y-%m-%d %H:%M:%S"}
+
       String.match?(date_str, ~r/^\d{4}-\d{2}-\d{2}$/) ->
         {date_str, "%Y-%m-%d"}
+
       true ->
         {date_str, "%Y-%m-%d"}
     end

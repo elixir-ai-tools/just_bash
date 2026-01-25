@@ -76,7 +76,9 @@ defmodule JustBash.BashComparison.ControlFlowTest do
     end
 
     test "break in while loop" do
-      compare_bash("x=0; while true; do x=$((x+1)); if [ $x -ge 3 ]; then break; fi; echo $x; done")
+      compare_bash(
+        "x=0; while true; do x=$((x+1)); if [ $x -ge 3 ]; then break; fi; echo $x; done"
+      )
     end
 
     test "break with level 1" do
@@ -115,7 +117,9 @@ defmodule JustBash.BashComparison.ControlFlowTest do
     end
 
     test "continue in while loop" do
-      compare_bash("x=0; while [ $x -lt 5 ]; do x=$((x+1)); if [ $x -eq 3 ]; then continue; fi; echo $x; done")
+      compare_bash(
+        "x=0; while [ $x -lt 5 ]; do x=$((x+1)); if [ $x -eq 3 ]; then continue; fi; echo $x; done"
+      )
     end
 
     test "continue with level 1" do
@@ -146,11 +150,15 @@ defmodule JustBash.BashComparison.ControlFlowTest do
     end
 
     test "if elif else" do
-      compare_bash("x=2; if [ $x -eq 1 ]; then echo one; elif [ $x -eq 2 ]; then echo two; else echo other; fi")
+      compare_bash(
+        "x=2; if [ $x -eq 1 ]; then echo one; elif [ $x -eq 2 ]; then echo two; else echo other; fi"
+      )
     end
 
     test "multiple elif" do
-      compare_bash("x=3; if [ $x -eq 1 ]; then echo 1; elif [ $x -eq 2 ]; then echo 2; elif [ $x -eq 3 ]; then echo 3; else echo x; fi")
+      compare_bash(
+        "x=3; if [ $x -eq 1 ]; then echo 1; elif [ $x -eq 2 ]; then echo 2; elif [ $x -eq 3 ]; then echo 3; else echo x; fi"
+      )
     end
 
     test "nested if" do
