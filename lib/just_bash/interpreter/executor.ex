@@ -178,6 +178,9 @@ defmodule JustBash.Interpreter.Executor do
 
     exit_codes = Enum.reverse(exit_codes_reversed)
 
+    # Set PIPESTATUS array with exit codes from each command in the pipeline
+    final_bash = set_pipestatus(final_bash, exit_codes)
+
     # With pipefail, return the rightmost non-zero exit code
     # Without pipefail, return the last command's exit code
     pipeline_exit =
@@ -195,6 +198,25 @@ defmodule JustBash.Interpreter.Executor do
       end
 
     {%{final_result | exit_code: exit_code}, final_bash}
+  end
+
+  # Set PIPESTATUS array in env with exit codes from pipeline
+  defp set_pipestatus(bash, exit_codes) do
+    # First, clear any existing PIPESTATUS entries
+    new_env =
+      bash.env
+      |> Enum.reject(fn {key, _} -> String.starts_with?(key, "PIPESTATUS[") end)
+      |> Map.new()
+
+    # Add new PIPESTATUS entries
+    new_env =
+      exit_codes
+      |> Enum.with_index()
+      |> Enum.reduce(new_env, fn {code, idx}, env ->
+        Map.put(env, "PIPESTATUS[#{idx}]", to_string(code))
+      end)
+
+    %{bash | env: new_env}
   end
 
   @doc """

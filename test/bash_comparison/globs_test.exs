@@ -117,4 +117,52 @@ defmodule JustBash.BashComparison.GlobsTest do
       )
     end
   end
+
+  describe "directory wildcards" do
+    test "star in directory segment" do
+      compare_bash(
+        ~s|mkdir -p /tmp/gt/foo /tmp/gt/bar; touch /tmp/gt/foo/x.txt /tmp/gt/bar/y.txt; echo /tmp/gt/*/x.txt; rm -rf /tmp/gt|
+      )
+    end
+
+    test "star in directory segment matches multiple" do
+      compare_bash(
+        ~s|mkdir -p /tmp/gt/a /tmp/gt/b; touch /tmp/gt/a/file.txt /tmp/gt/b/file.txt; echo /tmp/gt/*/file.txt; rm -rf /tmp/gt|
+      )
+    end
+
+    test "star in directory segment with file pattern" do
+      compare_bash(
+        ~s|mkdir -p /tmp/gt/sub1 /tmp/gt/sub2; touch /tmp/gt/sub1/a.log /tmp/gt/sub2/b.log; echo /tmp/gt/*/*.log; rm -rf /tmp/gt|
+      )
+    end
+
+    test "question mark in directory segment" do
+      compare_bash(
+        ~s|mkdir -p /tmp/gt/d1 /tmp/gt/d2 /tmp/gt/d10; touch /tmp/gt/d1/f /tmp/gt/d2/f /tmp/gt/d10/f; echo /tmp/gt/d?/f; rm -rf /tmp/gt|
+      )
+    end
+
+    test "directory wildcard no match returns literal" do
+      compare_bash(~s|mkdir -p /tmp/gt; echo /tmp/gt/*/missing.txt; rm -rf /tmp/gt|)
+    end
+
+    test "multiple directory wildcards" do
+      compare_bash(
+        ~s|mkdir -p /tmp/gt/a/x /tmp/gt/b/y; touch /tmp/gt/a/x/f /tmp/gt/b/y/f; echo /tmp/gt/*/*/f; rm -rf /tmp/gt|
+      )
+    end
+
+    test "trailing slash preserved in directory glob" do
+      compare_bash(
+        ~s|mkdir -p /tmp/gt/a /tmp/gt/b; for d in /tmp/gt/*/; do echo "$d"; done; rm -rf /tmp/gt|
+      )
+    end
+
+    test "trailing slash used in path construction" do
+      compare_bash(
+        ~s|mkdir -p /tmp/gt/sub; touch /tmp/gt/sub/file.txt; for d in /tmp/gt/*/; do echo "${d}file.txt"; done; rm -rf /tmp/gt|
+      )
+    end
+  end
 end

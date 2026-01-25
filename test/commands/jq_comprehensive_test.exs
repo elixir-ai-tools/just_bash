@@ -1051,4 +1051,44 @@ defmodule JustBash.Commands.JqComprehensiveTest do
       assert String.trim(result) == "60"
     end
   end
+
+  describe "select with field access on multiple elements" do
+    # Regression tests for bug where select() filtering + field access fails
+    # when array has multiple elements and some are filtered out
+
+    test "select with field access - single matching element" do
+      json = ~S([{"type":"email","ref":"x"},{"type":"sms","ref":"y"}])
+      result = jq_ok(json, ".[] | select(.type == \"email\") | .ref")
+      assert String.trim(result) == "\"x\""
+    end
+
+    test "select with field access - multiple matching elements" do
+      json = ~S([{"type":"email","ref":"a"},{"type":"sms","ref":"b"},{"type":"email","ref":"c"}])
+      result = jq_ok(json, ".[] | select(.type == \"email\") | .ref")
+      # Should output both matching refs
+      assert result =~ "\"a\""
+      assert result =~ "\"c\""
+      refute result =~ "\"b\""
+    end
+
+    test "select with field access - no matching elements" do
+      json = ~S([{"type":"sms","ref":"x"},{"type":"push","ref":"y"}])
+      result = jq_ok(json, ".[] | select(.type == \"email\") | .ref")
+      assert String.trim(result) == ""
+    end
+
+    test "select with -r flag and field access" do
+      json = ~S([{"type":"email","ref":"hello"},{"type":"sms","ref":"world"}])
+      result = jq_ok(json, ".[] | select(.type == \"email\") | .ref", raw: true)
+      assert String.trim(result) == "hello"
+    end
+
+    test "select in workflow-like structure" do
+      json =
+        ~S({"steps":[{"channel_type":"email","ref":"send"},{"channel_type":"sms","ref":"text"}]})
+
+      result = jq_ok(json, ".steps[] | select(.channel_type == \"email\") | .ref")
+      assert String.trim(result) == "\"send\""
+    end
+  end
 end

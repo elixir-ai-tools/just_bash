@@ -145,10 +145,50 @@ defmodule JustBash.Parser.Lexer do
     |> utf8_char([])
     |> reduce({:build_dq_escape, []})
 
+  # Command substitution inside double quotes - must handle nested quotes properly
+  dq_cmd_subst =
+    string("$(")
+    |> concat(parsec(:dq_cmd_subst_content))
+    |> string(")")
+    |> reduce({:join_chars, []})
+
+  # Parameter expansion inside double quotes
+  dq_param_expansion =
+    string("${")
+    |> concat(parsec(:dq_param_content))
+    |> string("}")
+    |> reduce({:join_chars, []})
+
+  # Backtick substitution inside double quotes
+  dq_backtick =
+    string("`")
+    |> concat(parsec(:dq_backtick_content))
+    |> string("`")
+    |> reduce({:join_chars, []})
+
+  # Arithmetic expansion inside double quotes
+  dq_arith_expansion =
+    string("$((")
+    |> concat(parsec(:dq_arith_content))
+    |> string("))")
+    |> reduce({:join_chars, []})
+
+  # Simple variable inside double quotes
+  dq_simple_var =
+    string("$")
+    |> lookahead_not(choice([string("("), string("{")]))
+    |> utf8_string([?a..?z, ?A..?Z, ?0..?9, ?_, ??, ?$, ?#, ?@, ?*, ?!, ?-], min: 0)
+    |> reduce({:join_chars, []})
+
   dq_char =
     choice([
       dq_escape,
-      utf8_char([{:not, ?"}, {:not, ?\\}])
+      dq_arith_expansion,
+      dq_cmd_subst,
+      dq_param_expansion,
+      dq_backtick,
+      dq_simple_var,
+      utf8_char([{:not, ?"}, {:not, ?\\}, {:not, ?$}, {:not, ?`}])
     ])
 
   double_quoted =
@@ -302,6 +342,138 @@ defmodule JustBash.Parser.Lexer do
       choice([
         string("{") |> concat(parsec(:brace_content)) |> string("}"),
         utf8_char([{:not, ?{}, {:not, ?}}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside $() within double quotes - must handle quotes as part of the content
+  defcombinatorp(
+    :dq_cmd_subst_content,
+    repeat(
+      choice([
+        # Nested command substitution
+        string("$(") |> concat(parsec(:dq_cmd_subst_content)) |> string(")"),
+        # Nested parens
+        string("(") |> concat(parsec(:dq_paren_content)) |> string(")"),
+        # Single-quoted string (consume entirely)
+        string("'") |> concat(parsec(:sq_content)) |> string("'"),
+        # Double-quoted string inside cmd subst (starts a new quote context)
+        string("\"") |> concat(parsec(:nested_dq_content)) |> string("\""),
+        # Escape sequences
+        string("\\") |> utf8_char([]),
+        # Any char except parens
+        utf8_char([{:not, ?(}, {:not, ?)}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside parens within double-quoted command substitution
+  defcombinatorp(
+    :dq_paren_content,
+    repeat(
+      choice([
+        string("(") |> concat(parsec(:dq_paren_content)) |> string(")"),
+        string("'") |> concat(parsec(:sq_content)) |> string("'"),
+        string("\"") |> concat(parsec(:nested_dq_content)) |> string("\""),
+        string("\\") |> utf8_char([]),
+        utf8_char([{:not, ?(}, {:not, ?)}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside single quotes (consume until closing quote)
+  defcombinatorp(
+    :sq_content,
+    repeat(utf8_char([{:not, ?'}]))
+    |> reduce({:join_chars, []})
+  )
+
+  # Simple variable reference (like $x, $PATH, $?, etc)
+  defcombinatorp(
+    :simple_var_ref,
+    string("$")
+    |> lookahead_not(choice([string("("), string("{")]))
+    |> utf8_string([?a..?z, ?A..?Z, ?0..?9, ?_, ??, ?$, ?#, ?@, ?*, ?!, ?-], min: 0)
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside nested double quotes (inside command substitution)
+  defcombinatorp(
+    :nested_dq_content,
+    repeat(
+      choice([
+        string("\\") |> utf8_char([]),
+        string("$((") |> concat(parsec(:dq_arith_content)) |> string("))"),
+        string("$(") |> concat(parsec(:dq_cmd_subst_content)) |> string(")"),
+        string("${") |> concat(parsec(:dq_param_content)) |> string("}"),
+        parsec(:simple_var_ref),
+        utf8_char([{:not, ?"}, {:not, ?\\}, {:not, ?$}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside ${} within double quotes
+  defcombinatorp(
+    :dq_param_content,
+    repeat(
+      choice([
+        string("${") |> concat(parsec(:dq_param_content)) |> string("}"),
+        string("{") |> concat(parsec(:dq_brace_content)) |> string("}"),
+        string("'") |> concat(parsec(:sq_content)) |> string("'"),
+        string("\"") |> concat(parsec(:nested_dq_content)) |> string("\""),
+        utf8_char([{:not, ?{}, {:not, ?}}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside braces within double-quoted parameter expansion
+  defcombinatorp(
+    :dq_brace_content,
+    repeat(
+      choice([
+        string("{") |> concat(parsec(:dq_brace_content)) |> string("}"),
+        utf8_char([{:not, ?{}, {:not, ?}}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside backticks within double quotes
+  defcombinatorp(
+    :dq_backtick_content,
+    repeat(
+      choice([
+        string("\\") |> utf8_char([]),
+        utf8_char([{:not, ?`}, {:not, ?\\}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside $(()) within double quotes
+  defcombinatorp(
+    :dq_arith_content,
+    repeat(
+      choice([
+        string("(") |> concat(parsec(:dq_arith_paren_content)) |> string(")"),
+        utf8_char([{:not, ?(}, {:not, ?)}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside nested parens within double-quoted arithmetic
+  defcombinatorp(
+    :dq_arith_paren_content,
+    repeat(
+      choice([
+        string("(") |> concat(parsec(:dq_arith_paren_content)) |> string(")"),
+        utf8_char([{:not, ?(}, {:not, ?)}])
       ])
     )
     |> reduce({:join_chars, []})

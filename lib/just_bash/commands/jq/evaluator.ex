@@ -255,8 +255,12 @@ defmodule JustBash.Commands.Jq.Evaluator do
 
   # Pipe helper - handles multi-value results
   defp eval_pipe_right({:multi, results}, right, opts) do
+    # Filter out :empty values before piping to right side
+    # (select returns :empty for non-matching elements)
+    filtered_results = Enum.reject(results, &(&1 == :empty))
+
     multi_results =
-      Enum.flat_map(results, fn item ->
+      Enum.flat_map(filtered_results, fn item ->
         case do_eval(right, item, opts) do
           {:multi, inner} -> inner
           other -> [other]
@@ -265,6 +269,9 @@ defmodule JustBash.Commands.Jq.Evaluator do
 
     {:multi, multi_results}
   end
+
+  # :empty from select should not be piped to next stage
+  defp eval_pipe_right(:empty, _right, _opts), do: :empty
 
   defp eval_pipe_right(left_result, right, opts) do
     do_eval(right, left_result, opts)
