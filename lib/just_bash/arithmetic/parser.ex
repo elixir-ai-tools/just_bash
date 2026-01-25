@@ -626,12 +626,38 @@ defmodule JustBash.Arithmetic.Parser do
   defp parse_dollar_var(str, len, pos) do
     pos = pos + 1
 
-    if pos < len and String.at(str, pos) == "{" do
-      {name, pos} = collect_until_brace(str, len, pos + 1, "")
-      {%AST.ArithVariable{name: name}, pos}
+    cond do
+      pos >= len ->
+        {%AST.ArithVariable{name: ""}, pos}
+
+      String.at(str, pos) == "{" ->
+        {name, pos} = collect_until_brace(str, len, pos + 1, "")
+        {%AST.ArithVariable{name: name}, pos}
+
+      # Handle positional parameters: $1, $2, ..., $9, $10, etc.
+      digit?(str, pos) ->
+        {name, pos} = collect_digits(str, len, pos, "")
+        {%AST.ArithVariable{name: name}, pos}
+
+      # Handle special parameters: $?, $#, $@, $*, $$, $!
+      String.at(str, pos) in ["?", "#", "@", "*", "$", "!"] ->
+        {%AST.ArithVariable{name: String.at(str, pos)}, pos + 1}
+
+      true ->
+        {name, pos} = collect_var_name(str, len, pos, "")
+        {%AST.ArithVariable{name: name}, pos}
+    end
+  end
+
+  defp collect_digits(_str, len, pos, acc) when pos >= len, do: {acc, pos}
+
+  defp collect_digits(str, len, pos, acc) do
+    char = String.at(str, pos)
+
+    if char >= "0" and char <= "9" do
+      collect_digits(str, len, pos + 1, acc <> char)
     else
-      {name, pos} = collect_var_name(str, len, pos, "")
-      {%AST.ArithVariable{name: name}, pos}
+      {acc, pos}
     end
   end
 

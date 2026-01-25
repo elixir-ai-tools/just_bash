@@ -278,10 +278,17 @@ defmodule JustBash.Parser.WordParts do
        ) do
     case Bracket.find_glob_bracket_end(value, i) do
       {:ok, end_idx} ->
-        parts = flush_literal(literal, parts)
         pattern = String.slice(value, i..end_idx)
-        new_parts = parts ++ [%AST.Glob{pattern: pattern}]
-        parse_unquoted_loop(value, end_idx + 1, len, "", new_parts, is_assignment)
+
+        # If bracket content contains $, it's not a pure glob pattern
+        # The $ should be expanded first, so treat [ as a literal
+        if String.contains?(pattern, "$") do
+          parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)
+        else
+          parts = flush_literal(literal, parts)
+          new_parts = parts ++ [%AST.Glob{pattern: pattern}]
+          parse_unquoted_loop(value, end_idx + 1, len, "", new_parts, is_assignment)
+        end
 
       :error ->
         parse_unquoted_loop(value, i + 1, len, literal <> char, parts, is_assignment)

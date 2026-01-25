@@ -38,8 +38,12 @@ defmodule JustBash.Commands.Wc do
   end
 
   defp count_content(content) do
+    # wc -l counts newline characters, not logical lines
+    # "hello\n" = 1 line, "hello" = 0 lines
+    lines = content |> String.graphemes() |> Enum.count(&(&1 == "\n"))
+
     %{
-      lines: length(String.split(content, "\n", trim: true)),
+      lines: lines,
       words: length(String.split(content, ~r/\s+/, trim: true)),
       bytes: byte_size(content)
     }
@@ -49,10 +53,15 @@ defmodule JustBash.Commands.Wc do
   defp format_counts(counts, %{l: false, w: true, c: false}), do: pad_count(counts.words)
   defp format_counts(counts, %{l: false, w: false, c: true}), do: pad_count(counts.bytes)
 
-  defp format_counts(counts, _flags),
-    do: "#{pad_count(counts.lines)} #{pad_count(counts.words)} #{pad_count(counts.bytes)}"
+  # Default output: all three counts with consistent spacing
+  # Real wc uses 8-character fields for each count (total 24 chars)
+  defp format_counts(counts, _flags) do
+    String.pad_leading(Integer.to_string(counts.lines), 8) <>
+      String.pad_leading(Integer.to_string(counts.words), 8) <>
+      String.pad_leading(Integer.to_string(counts.bytes), 8)
+  end
 
-  # Real wc pads counts to 8 characters
+  # Single count padding to 8 characters (standard wc format)
   defp pad_count(n), do: String.pad_leading(Integer.to_string(n), 8)
 
   defp parse_flags(args), do: parse_flags(args, %{l: false, w: false, c: false}, [])

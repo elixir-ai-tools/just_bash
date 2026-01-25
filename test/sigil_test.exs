@@ -632,7 +632,9 @@ defmodule JustBash.SigilTest do
     end
 
     test "wc -l" do
-      result = ~b"printf 'a\nb\nc' | wc -l"t
+      # wc -l counts newline characters, not lines
+      # "a\nb\nc" has 2 newlines, so wc -l returns 2
+      result = ~b"printf 'a\nb\nc\n' | wc -l"t
       assert String.trim(result) == "3"
     end
 
