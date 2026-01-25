@@ -461,6 +461,7 @@ defmodule JustBash.Commands.Awk.Lexer do
     end
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp read_operator(state) do
     start_line = state.line
     start_column = state.column
