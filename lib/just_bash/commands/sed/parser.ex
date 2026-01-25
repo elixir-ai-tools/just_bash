@@ -7,7 +7,7 @@ defmodule JustBash.Commands.Sed.Parser do
   """
 
   @type address :: nil | :last | {:line, pos_integer()} | {:regex, Regex.t()}
-  @type substitute_flags :: [:global | :caseless | :print]
+  @type substitute_flags :: [:global | :caseless | :print | {:nth, pos_integer()}]
   @type command ::
           :noop
           | :delete
@@ -20,6 +20,7 @@ defmodule JustBash.Commands.Sed.Parser do
   @type sed_command :: %{
           address1: address(),
           address2: address(),
+          negated: boolean(),
           command: command()
         }
 
@@ -63,14 +64,20 @@ defmodule JustBash.Commands.Sed.Parser do
   defp parse_address_and_command(cmd, extended) do
     {addr1, addr2, rest} = parse_addresses(cmd, extended)
 
+    # Check for negation modifier (!)
+    {negated, rest} = parse_negation(rest)
+
     case parse_single_command(rest, extended) do
       {:ok, command} ->
-        {:ok, %{address1: addr1, address2: addr2, command: command}}
+        {:ok, %{address1: addr1, address2: addr2, negated: negated, command: command}}
 
       {:error, msg} ->
         {:error, msg}
     end
   end
+
+  defp parse_negation("!" <> rest), do: {true, String.trim_leading(rest)}
+  defp parse_negation(rest), do: {false, rest}
 
   defp parse_addresses(cmd, extended) do
     case cmd do
@@ -218,12 +225,17 @@ defmodule JustBash.Commands.Sed.Parser do
   defp build_substitute_command(pattern, replacement, flags_str, extended) do
     flags = parse_substitute_flags(flags_str)
 
-    case compile_regex(pattern, flags, extended) do
-      {:ok, regex} ->
-        {:ok, {:substitute, regex, replacement, flags}}
+    # Empty pattern means "reuse last regex"
+    if pattern == "" do
+      {:ok, {:substitute, :last_regex, replacement, flags}}
+    else
+      case compile_regex(pattern, flags, extended) do
+        {:ok, regex} ->
+          {:ok, {:substitute, regex, replacement, flags}}
 
-      {:error, msg} ->
-        {:error, msg}
+        {:error, msg} ->
+          {:error, msg}
+      end
     end
   end
 
@@ -268,6 +280,19 @@ defmodule JustBash.Commands.Sed.Parser do
   end
 
   defp parse_substitute_flags(flags_str) do
+    # Check if flags_str starts with a number for nth occurrence
+    case Integer.parse(flags_str) do
+      {n, rest} when n > 0 ->
+        # Parse remaining flags after the number
+        other_flags = parse_letter_flags(rest)
+        [{:nth, n} | other_flags]
+
+      _ ->
+        parse_letter_flags(flags_str)
+    end
+  end
+
+  defp parse_letter_flags(flags_str) do
     flags_str
     |> String.graphemes()
     |> Enum.reduce([], fn char, acc ->

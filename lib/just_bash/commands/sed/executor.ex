@@ -36,21 +36,22 @@ defmodule JustBash.Commands.Sed.Executor do
 
     total_lines = length(lines)
 
-    # Initialize range state for each command (tracks if we're inside a range)
-    # Key is command index, value is whether range is active
-    initial_range_state = %{}
+    # Initialize execution state:
+    # - range_state: tracks if we're inside a range (key is command index)
+    # - last_regex: tracks the last regex used for empty pattern substitution
+    initial_exec_state = %{range_state: %{}, last_regex: nil}
 
-    {output, _final_range_state} =
+    {output, _final_exec_state} =
       lines
       |> Enum.with_index(1)
-      |> Enum.reduce({"", initial_range_state}, fn {line, line_num}, {output, range_state} ->
-        process_line(line, line_num, total_lines, commands, silent, output, range_state)
+      |> Enum.reduce({"", initial_exec_state}, fn {line, line_num}, {output, exec_state} ->
+        process_line(line, line_num, total_lines, commands, silent, output, exec_state)
       end)
 
     output
   end
 
-  defp process_line(line, line_num, total_lines, commands, silent, output, range_state) do
+  defp process_line(line, line_num, total_lines, commands, silent, output, exec_state) do
     line_state = %{
       pattern_space: line,
       deleted: false,
@@ -62,11 +63,11 @@ defmodule JustBash.Commands.Sed.Executor do
       total_lines: total_lines
     }
 
-    {final_line_state, new_range_state} =
+    {final_line_state, new_exec_state} =
       commands
       |> Enum.with_index()
-      |> Enum.reduce({line_state, range_state}, fn {cmd, cmd_idx}, {state, rs} ->
-        apply_command(cmd, cmd_idx, state, rs)
+      |> Enum.reduce({line_state, exec_state}, fn {cmd, cmd_idx}, {state, es} ->
+        apply_command(cmd, cmd_idx, state, es)
       end)
 
     new_output =
@@ -103,20 +104,27 @@ defmodule JustBash.Commands.Sed.Executor do
           output <> inserted <> final_line_state.pattern_space <> "\n" <> appended <> extra
       end
 
-    {new_output, new_range_state}
+    {new_output, new_exec_state}
   end
 
-  defp apply_command(cmd, cmd_idx, state, range_state) do
+  defp apply_command(cmd, cmd_idx, state, exec_state) do
     if state.deleted do
-      {state, range_state}
+      {state, exec_state}
     else
       {matches, new_range_state} =
-        address_matches?(cmd.address1, cmd.address2, state, cmd_idx, range_state)
+        address_matches?(cmd.address1, cmd.address2, state, cmd_idx, exec_state.range_state)
 
-      if matches do
-        {execute_command(cmd.command, state), new_range_state}
+      # Apply negation if present
+      negated = Map.get(cmd, :negated, false)
+      should_execute = if negated, do: not matches, else: matches
+
+      if should_execute do
+        {new_state, new_exec_state} =
+          execute_command(cmd.command, state, exec_state)
+
+        {new_state, %{new_exec_state | range_state: new_range_state}}
       else
-        {state, new_range_state}
+        {state, %{exec_state | range_state: new_range_state}}
       end
     end
   end
@@ -178,14 +186,14 @@ defmodule JustBash.Commands.Sed.Executor do
     Regex.match?(regex, state.pattern_space)
   end
 
-  defp execute_command(:noop, state), do: state
-  defp execute_command(:delete, state), do: %{state | deleted: true}
-  defp execute_command(:print, state), do: %{state | printed: true}
-  defp execute_command({:append, text}, state), do: %{state | appended: text}
-  defp execute_command({:insert, text}, state), do: %{state | inserted: text}
-  defp execute_command({:change, text}, state), do: %{state | changed: text}
+  defp execute_command(:noop, state, exec_state), do: {state, exec_state}
+  defp execute_command(:delete, state, exec_state), do: {%{state | deleted: true}, exec_state}
+  defp execute_command(:print, state, exec_state), do: {%{state | printed: true}, exec_state}
+  defp execute_command({:append, text}, state, exec_state), do: {%{state | appended: text}, exec_state}
+  defp execute_command({:insert, text}, state, exec_state), do: {%{state | inserted: text}, exec_state}
+  defp execute_command({:change, text}, state, exec_state), do: {%{state | changed: text}, exec_state}
 
-  defp execute_command({:translate, source, dest}, state) do
+  defp execute_command({:translate, source, dest}, state, exec_state) do
     translation = Enum.zip(String.graphemes(source), String.graphemes(dest)) |> Map.new()
 
     new_pattern_space =
@@ -193,34 +201,64 @@ defmodule JustBash.Commands.Sed.Executor do
       |> String.graphemes()
       |> Enum.map_join(fn char -> Map.get(translation, char, char) end)
 
-    %{state | pattern_space: new_pattern_space}
+    {%{state | pattern_space: new_pattern_space}, exec_state}
   end
 
-  defp execute_command({:substitute, regex, replacement, flags}, state) do
+  defp execute_command({:substitute, :last_regex, replacement, flags}, state, exec_state) do
+    case exec_state.last_regex do
+      nil ->
+        # No previous regex - this is an error, but just return unchanged
+        {state, exec_state}
+
+      regex ->
+        execute_substitute(regex, replacement, flags, state, exec_state)
+    end
+  end
+
+  defp execute_command({:substitute, regex, replacement, flags}, state, exec_state) do
+    # Update last_regex and execute
+    new_exec_state = %{exec_state | last_regex: regex}
+    execute_substitute(regex, replacement, flags, state, new_exec_state)
+  end
+
+  defp execute_substitute(regex, replacement, flags, state, exec_state) do
     global = :global in flags
     print_on_match = :print in flags
+    nth = Enum.find_value(flags, fn
+      {:nth, n} -> n
+      _ -> nil
+    end)
 
     replacement = process_replacement(replacement)
 
     {new_pattern_space, matched} =
-      if global do
-        # Global replacement with backref expansion
-        # Use Regex.replace with a function to expand backrefs for each match
-        {result, had_match} =
-          global_replace_with_backrefs(regex, state.pattern_space, replacement)
+      cond do
+        global ->
+          # Global replacement with backref expansion
+          {result, had_match} =
+            global_replace_with_backrefs(regex, state.pattern_space, replacement)
 
-        {result, had_match}
-      else
-        single_substitute(regex, state.pattern_space, replacement)
+          {result, had_match}
+
+        nth != nil ->
+          # Replace nth occurrence only
+          nth_substitute(regex, state.pattern_space, replacement, nth)
+
+        true ->
+          # Replace first occurrence
+          single_substitute(regex, state.pattern_space, replacement)
       end
 
     new_state = %{state | pattern_space: new_pattern_space}
 
-    if matched and print_on_match do
-      %{new_state | printed: true}
-    else
-      new_state
-    end
+    final_state =
+      if matched and print_on_match do
+        %{new_state | printed: true}
+      else
+        new_state
+      end
+
+    {final_state, exec_state}
   end
 
   defp single_substitute(regex, pattern_space, replacement) do
@@ -232,6 +270,29 @@ defmodule JustBash.Commands.Sed.Executor do
         pre = String.slice(pattern_space, 0, start)
         post = String.slice(pattern_space, start + len, String.length(pattern_space))
         group_values = Enum.map(groups, fn {s, l} -> String.slice(pattern_space, s, l) end)
+        replaced = expand_backreferences(replacement, pattern_space, start, len, group_values)
+        {pre <> replaced <> post, true}
+    end
+  end
+
+  defp nth_substitute(regex, pattern_space, replacement, nth) do
+    # Get all matches
+    case Regex.scan(regex, pattern_space, return: :index) do
+      [] ->
+        {pattern_space, false}
+
+      matches when length(matches) < nth ->
+        # Not enough matches - don't replace anything
+        {pattern_space, false}
+
+      matches ->
+        # Replace the nth match (1-indexed)
+        match_to_replace = Enum.at(matches, nth - 1)
+        [{start, len} | group_indices] = match_to_replace
+
+        pre = String.slice(pattern_space, 0, start)
+        post = String.slice(pattern_space, start + len, String.length(pattern_space))
+        group_values = extract_group_values(group_indices, pattern_space)
         replaced = expand_backreferences(replacement, pattern_space, start, len, group_values)
         {pre <> replaced <> post, true}
     end
