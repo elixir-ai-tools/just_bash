@@ -204,8 +204,13 @@ defmodule JustBash.Interpreter.Executor do
   def execute_command(bash, command, stdin \\ "")
 
   def execute_command(bash, %AST.SimpleCommand{name: nil, assignments: assignments}, _stdin) do
-    new_bash = execute_assignments(bash, assignments)
-    {%{stdout: "", stderr: "", exit_code: 0}, new_bash}
+    try do
+      new_bash = execute_assignments(bash, assignments)
+      {%{stdout: "", stderr: "", exit_code: 0}, new_bash}
+    rescue
+      e in ArithmeticError ->
+        {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
+    end
   end
 
   def execute_command(
@@ -241,13 +246,17 @@ defmodule JustBash.Interpreter.Executor do
     execute_case(bash, value, items)
   end
 
-  def execute_command(bash, %AST.Subshell{body: body}, _stdin) do
+  def execute_command(bash, %AST.Subshell{body: body, redirections: redirs}, _stdin) do
     {result, _subshell_bash} = execute_body(bash, body)
+    # Apply any redirections attached to the subshell
+    {result, bash} = Redirection.apply_redirections(result, bash, redirs)
     {result, bash}
   end
 
-  def execute_command(bash, %AST.Group{body: body}, stdin) do
-    execute_body_with_stdin(bash, body, stdin)
+  def execute_command(bash, %AST.Group{body: body, redirections: redirs}, stdin) do
+    {result, new_bash} = execute_body_with_stdin(bash, body, stdin)
+    # Apply any redirections attached to the group
+    Redirection.apply_redirections(result, new_bash, redirs)
   end
 
   def execute_command(bash, %AST.FunctionDef{name: name, body: body}, _stdin) do
@@ -256,10 +265,16 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   def execute_command(bash, %AST.ArithmeticCommand{expression: expr}, _stdin) do
-    {value, new_env} = JustBash.Arithmetic.evaluate(expr.expression, bash.env)
-    new_bash = %{bash | env: new_env}
-    exit_code = if value == 0, do: 1, else: 0
-    {%{stdout: "", stderr: "", exit_code: exit_code}, new_bash}
+    case JustBash.Arithmetic.evaluate(expr.expression, bash.env) do
+      {:ok, value, new_env} ->
+        new_bash = %{bash | env: new_env}
+        exit_code = if value == 0, do: 1, else: 0
+        {%{stdout: "", stderr: "", exit_code: exit_code}, new_bash}
+
+      {:error, :division_by_zero, _env} ->
+        error_msg = "bash: division by 0 (error token is \"0\")\n"
+        {%{stdout: "", stderr: error_msg, exit_code: 1}, bash}
+    end
   end
 
   def execute_command(bash, %AST.ConditionalCommand{expression: expr}, _stdin) do
@@ -309,6 +324,9 @@ defmodule JustBash.Interpreter.Executor do
     Redirection.apply_redirections(result, exec_bash, non_heredoc_redirs)
   rescue
     e in Expansion.UnsetVariableError ->
+      {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
+
+    e in ArithmeticError ->
       {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
   end
 

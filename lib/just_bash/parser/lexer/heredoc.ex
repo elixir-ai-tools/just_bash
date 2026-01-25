@@ -91,13 +91,15 @@ defmodule JustBash.Parser.Lexer.Heredoc do
       {content, pos}
     else
       {line, end_pos} = read_line_at(input, pos)
-      line_to_check = if strip_tabs, do: String.replace(line, ~r/^\t+/, ""), else: line
+      # Strip leading tabs for <<- heredocs
+      processed_line = if strip_tabs, do: String.replace(line, ~r/^\t+/, ""), else: line
 
-      if line_to_check == delimiter do
+      if processed_line == delimiter do
         new_pos = consume_line_and_newline(input, pos)
         {content, new_pos}
       else
-        new_content = append_line_with_newline(content, line, input, end_pos)
+        # Use the tab-stripped line in the content for <<- heredocs
+        new_content = append_line_with_newline(content, processed_line, input, end_pos)
         new_pos = if end_pos < byte_size(input), do: end_pos + 1, else: end_pos
         read_heredoc_lines(input, new_pos, delimiter, strip_tabs, new_content)
       end

@@ -20,6 +20,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   @type redir_type ::
           :stdout_dev_null
           | :stderr_dev_null
+          | :combined_dev_null
           | :stdout_write
           | :stdout_append
           | :stderr_write
@@ -27,7 +28,9 @@ defmodule JustBash.Interpreter.Executor.Redirection do
           | :stdout_to_stderr
           | :stderr_to_stdout
           | :combined_write
+          | :combined_append
           | :stdin_read
+          | :close_fd
           | :noop
 
   @doc """
@@ -78,6 +81,11 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   end
 
   @spec classify_redirection(non_neg_integer(), atom(), String.t()) :: redir_type()
+  # Combined redirection &> must be checked before /dev/null catch-all
+  defp classify_redirection(_fd, :"&>", "/dev/null"), do: :combined_dev_null
+  defp classify_redirection(_fd, :"&>>", "/dev/null"), do: :combined_dev_null
+  defp classify_redirection(_fd, :"&>", _target), do: :combined_write
+  defp classify_redirection(_fd, :"&>>", _target), do: :combined_append
   defp classify_redirection(2, :>, "/dev/null"), do: :stderr_dev_null
   defp classify_redirection(2, :">>", "/dev/null"), do: :stderr_dev_null
   defp classify_redirection(_fd, _operator, "/dev/null"), do: :stdout_dev_null
@@ -87,7 +95,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   defp classify_redirection(_fd, :">>", _target), do: :stdout_append
   defp classify_redirection(1, :">&", "2"), do: :stdout_to_stderr
   defp classify_redirection(2, :">&", "1"), do: :stderr_to_stdout
-  defp classify_redirection(_fd, :"&>", _target), do: :combined_write
+  defp classify_redirection(_fd, :">&", "-"), do: :close_fd
   defp classify_redirection(_fd, :<, _target), do: :stdin_read
   defp classify_redirection(_fd, _operator, _target), do: :noop
 
@@ -128,8 +136,23 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     write_combined_to_file(bash, resolved, combined, result)
   end
 
+  defp apply_classified_redirection(:combined_append, result, bash, resolved) do
+    combined = result.stdout <> result.stderr
+    append_combined_to_file(bash, resolved, combined, result)
+  end
+
+  defp apply_classified_redirection(:combined_dev_null, result, bash, _resolved) do
+    {%{result | stdout: "", stderr: ""}, bash}
+  end
+
   defp apply_classified_redirection(:stdin_read, result, bash, _resolved) do
     # Input redirection is handled separately via extract_heredoc_stdin
+    {result, bash}
+  end
+
+  defp apply_classified_redirection(:close_fd, result, bash, _resolved) do
+    # Closing a file descriptor - just clear the output
+    # In a real shell this would close the fd, but here we just discard
     {result, bash}
   end
 
@@ -169,6 +192,23 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   defp write_combined_to_file(bash, path, content, result) do
     case InMemoryFs.write_file(bash.fs, path, content) do
+      {:ok, new_fs} ->
+        {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
+
+      {:error, reason} ->
+        error_msg = format_redirection_error(path, reason)
+        {%{result | stderr: error_msg, exit_code: 1}, bash}
+    end
+  end
+
+  defp append_combined_to_file(bash, path, content, result) do
+    current_content =
+      case InMemoryFs.read_file(bash.fs, path) do
+        {:ok, existing} -> existing
+        {:error, _} -> ""
+      end
+
+    case InMemoryFs.write_file(bash.fs, path, current_content <> content) do
       {:ok, new_fs} ->
         {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
 

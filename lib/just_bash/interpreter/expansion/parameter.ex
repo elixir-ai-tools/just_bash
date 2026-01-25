@@ -100,8 +100,11 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
 
         _ ->
           expr = Arithmetic.parse(index_str)
-          {n, _env} = Arithmetic.evaluate(expr, bash.env)
-          n
+
+          case Arithmetic.evaluate(expr, bash.env) do
+            {:ok, n, _env} -> n
+            {:error, :division_by_zero, _env} -> raise ArithmeticError, message: "division by 0"
+          end
       end
 
     key = "#{arr_name}[#{index}]"
@@ -322,15 +325,19 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
   defp apply_case_to_first(first, rest, :lower), do: String.downcase(first) <> Enum.join(rest)
 
   defp eval_arith_or_number(%AST.ArithmeticExpression{expression: expr}, env) do
-    {value, _} = Arithmetic.evaluate(expr, env)
-    value
+    case Arithmetic.evaluate(expr, env) do
+      {:ok, value, _} -> value
+      {:error, :division_by_zero, _} -> raise ArithmeticError, message: "division by 0"
+    end
   end
 
   defp eval_arith_or_number(%AST.ArithNumber{value: n}, _env), do: n
 
   defp eval_arith_or_number(expr, env) do
-    {value, _} = Arithmetic.evaluate(expr, env)
-    value
+    case Arithmetic.evaluate(expr, env) do
+      {:ok, value, _} -> value
+      {:error, :division_by_zero, _} -> raise ArithmeticError, message: "division by 0"
+    end
   end
 
   defp glob_to_regex(pattern) do

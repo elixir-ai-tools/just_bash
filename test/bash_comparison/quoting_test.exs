@@ -76,4 +76,98 @@ defmodule JustBash.BashComparison.QuotingTest do
       compare_bash(~S[X="end'"; echo "$X"])
     end
   end
+
+  describe "echo -e escape sequences" do
+    test "newline escape" do
+      compare_bash(~S[echo -e "hello\nworld"])
+    end
+
+    test "tab escape" do
+      compare_bash(~S[echo -e "col1\tcol2"])
+    end
+
+    test "carriage return escape" do
+      compare_bash(~S[echo -e "hello\rworld"])
+    end
+
+    test "backslash escape" do
+      compare_bash(~S[echo -e "back\\\\slash"])
+    end
+
+    test "hex escape lowercase" do
+      compare_bash(~S[echo -e '\x41'])
+    end
+
+    test "hex escape uppercase" do
+      compare_bash(~S[echo -e '\x41\x42\x43'])
+    end
+
+    test "hex escape mixed" do
+      compare_bash(~S[echo -e 'hex:\x48\x45\x4c\x4c\x4f'])
+    end
+
+    test "octal escape" do
+      compare_bash(~S[echo -e '\101'])
+    end
+
+    test "octal escape multiple" do
+      compare_bash(~S[echo -e '\101\102\103'])
+    end
+
+    test "mixed text and hex" do
+      compare_bash(~S[echo -e 'before\x41after'])
+    end
+
+    test "mixed text and octal" do
+      compare_bash(~S[echo -e 'before\101after'])
+    end
+  end
+
+  describe "$'...' ANSI-C quoting" do
+    test "tab in dollar-single-quote" do
+      compare_bash(~S[echo $'tab\ttab'])
+    end
+
+    test "newline in dollar-single-quote" do
+      compare_bash(~S[echo $'line1\nline2'])
+    end
+
+    test "hex in dollar-single-quote" do
+      compare_bash(~S[echo $'\x41\x42\x43'])
+    end
+
+    test "octal in dollar-single-quote" do
+      compare_bash(~S[echo $'\101\102\103'])
+    end
+
+    test "backslash in dollar-single-quote" do
+      compare_bash(~S[echo $'back\\slash'])
+    end
+
+    test "single quote in dollar-single-quote" do
+      compare_bash(~S[echo $'it\'s quoted'])
+    end
+
+    test "double quote in dollar-single-quote" do
+      compare_bash(~S[echo $'say "hello"'])
+    end
+
+    test "mixed escapes" do
+      compare_bash(~S[echo $'A:\x41 tab:\t newline:\n'])
+    end
+  end
+
+  describe "undefined variable behavior" do
+    test "undefined variable expands to empty" do
+      compare_bash(~S(echo "$undefined_var_xyz"))
+    end
+
+    test "undefined with braces" do
+      compare_bash(~S(x=hello; echo "$x"))
+    end
+
+    test "undefined unquoted" do
+      compare_bash(~S(echo $undefined_var_xyz end))
+    end
+  end
 end

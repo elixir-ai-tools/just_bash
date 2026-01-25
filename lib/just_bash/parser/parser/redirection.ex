@@ -32,9 +32,12 @@ defmodule JustBash.Parser.Redirection do
   """
   def redirection?(parser, helpers) do
     token = helpers.current(parser)
+    next_token = helpers.peek(parser, 1)
 
     token.type in @redirection_op_types or
-      (token.type == :number and helpers.peek(parser, 1).type in @redirection_op_types)
+      (token.type == :number and
+         next_token.type in @redirection_op_types and
+         token.end == next_token.start)
   end
 
   @doc """
@@ -62,7 +65,19 @@ defmodule JustBash.Parser.Redirection do
   end
 
   defp parse_redirection_fd(parser, helpers) do
-    if helpers.check?(parser, :number) and redirection_op?(helpers.peek(parser, 1).type) do
+    current_token = helpers.peek(parser, 0)
+    next_token = helpers.peek(parser, 1)
+
+    # A number is only a file descriptor if:
+    # 1. It's a number token
+    # 2. The next token is a redirection operator
+    # 3. There's no whitespace between them (tokens are adjacent)
+    is_fd =
+      helpers.check?(parser, :number) and
+        redirection_op?(next_token.type) and
+        current_token.end == next_token.start
+
+    if is_fd do
       {token, parser} = helpers.advance(parser)
       {String.to_integer(token.value), parser}
     else

@@ -179,15 +179,25 @@ defmodule JustBash.Interpreter.Expansion do
   defp expand_part(_bash, _), do: {"", []}
 
   defp execute_arithmetic_expansion(bash, %AST.ArithmeticExpression{expression: inner_expr}) do
-    {value, new_env} = Arithmetic.evaluate(inner_expr, bash.env)
-    assignments = collect_arithmetic_env_changes(bash.env, new_env)
-    {to_string(value), assignments}
+    case Arithmetic.evaluate(inner_expr, bash.env) do
+      {:ok, value, new_env} ->
+        assignments = collect_arithmetic_env_changes(bash.env, new_env)
+        {to_string(value), assignments}
+
+      {:error, :division_by_zero, _env} ->
+        raise ArithmeticError, message: "division by 0"
+    end
   end
 
   defp execute_arithmetic_expansion(bash, expr) do
-    {value, new_env} = Arithmetic.evaluate(expr, bash.env)
-    assignments = collect_arithmetic_env_changes(bash.env, new_env)
-    {to_string(value), assignments}
+    case Arithmetic.evaluate(expr, bash.env) do
+      {:ok, value, new_env} ->
+        assignments = collect_arithmetic_env_changes(bash.env, new_env)
+        {to_string(value), assignments}
+
+      {:error, :division_by_zero, _env} ->
+        raise ArithmeticError, message: "division by 0"
+    end
   end
 
   # Collect any env changes from arithmetic evaluation as pending assignments
