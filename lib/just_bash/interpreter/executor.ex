@@ -402,13 +402,50 @@ defmodule JustBash.Interpreter.Executor do
   defp match_pattern?(_value, "*"), do: true
 
   defp match_pattern?(value, pattern) do
-    regex_pattern =
-      pattern
-      |> Regex.escape()
-      |> String.replace("\\*", ".*")
-      |> String.replace("\\?", ".")
+    regex_pattern = glob_pattern_to_regex(pattern)
 
-    Regex.match?(~r/^#{regex_pattern}$/, value)
+    case Regex.compile("^" <> regex_pattern <> "$") do
+      {:ok, regex} -> Regex.match?(regex, value)
+      {:error, _} -> pattern == value
+    end
+  end
+
+  defp glob_pattern_to_regex(pattern) do
+    pattern
+    |> String.graphemes()
+    |> convert_glob_chars([])
+    |> Enum.join()
+  end
+
+  defp convert_glob_chars([], acc), do: Enum.reverse(acc)
+
+  defp convert_glob_chars(["*" | rest], acc) do
+    convert_glob_chars(rest, [".*" | acc])
+  end
+
+  defp convert_glob_chars(["?" | rest], acc) do
+    convert_glob_chars(rest, ["." | acc])
+  end
+
+  defp convert_glob_chars(["[" | rest], acc) do
+    {bracket_content, remaining} = extract_bracket_expr(rest, [])
+    convert_glob_chars(remaining, ["[" <> bracket_content <> "]" | acc])
+  end
+
+  defp convert_glob_chars([char | rest], acc) do
+    convert_glob_chars(rest, [Regex.escape(char) | acc])
+  end
+
+  defp extract_bracket_expr([], acc) do
+    {Enum.reverse(acc) |> Enum.join(), []}
+  end
+
+  defp extract_bracket_expr(["]" | rest], acc) do
+    {Enum.reverse(acc) |> Enum.join(), rest}
+  end
+
+  defp extract_bracket_expr([char | rest], acc) do
+    extract_bracket_expr(rest, [char | acc])
   end
 
   defp execute_body(bash, statements) do

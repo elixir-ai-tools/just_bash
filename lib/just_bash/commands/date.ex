@@ -24,7 +24,7 @@ defmodule JustBash.Commands.Date do
   end
 
   defp parse_args(args) do
-    parse_args(args, %{format: nil, datetime: nil})
+    parse_args(args, %{format: nil, datetime: nil, input_format: nil, no_set: false})
   end
 
   defp parse_args([], opts), do: {:ok, opts}
@@ -47,12 +47,43 @@ defmodule JustBash.Commands.Date do
     end
   end
 
+  # BSD date: -j flag means "don't set the date" (just display)
+  defp parse_args(["-j" | rest], opts) do
+    parse_args(rest, %{opts | no_set: true})
+  end
+
+  # BSD date: -f input_format to parse a date string
+  defp parse_args(["-f", input_format | rest], opts) do
+    parse_args(rest, %{opts | input_format: input_format})
+  end
+
   defp parse_args(["-u" | rest], opts) do
     parse_args(rest, opts)
   end
 
+  # When we have an input_format set (BSD -f flag) and encounter a non-option arg
+  defp parse_args([<<c, _::binary>> = date_str | rest], %{input_format: input_format} = opts)
+       when input_format != nil and c != ?+ and c != ?- do
+    case parse_formatted_date(date_str, input_format) do
+      {:ok, datetime} ->
+        parse_args(rest, %{opts | datetime: datetime, input_format: nil})
+
+      {:error, _} ->
+        {:error, "date: invalid date '#{date_str}'\n"}
+    end
+  end
+
   defp parse_args([_arg | rest], opts) do
     parse_args(rest, opts)
+  end
+
+  defp parse_formatted_date(date_str, format) do
+    cond do
+      format == "%Y-%m-%d %H:%M:%S" -> parse_space_datetime(date_str)
+      format == "%Y-%m-%d" -> parse_date_only(date_str)
+      format == "%Y-%m-%dT%H:%M:%S" -> parse_iso_datetime(date_str)
+      true -> parse_date_string(date_str)
+    end
   end
 
   defp parse_date_string(str) do

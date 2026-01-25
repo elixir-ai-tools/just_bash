@@ -7,9 +7,9 @@ defmodule JustBash.Commands.Sort do
   alias JustBash.Fs.InMemoryFs
 
   @flag_spec %{
-    boolean: [:r, :u, :n],
+    boolean: [:r, :u, :n, :f],
     value: [:k, :t],
-    defaults: %{r: false, u: false, n: false, k: nil, t: nil}
+    defaults: %{r: false, u: false, n: false, f: false, k: nil, t: nil}
   }
 
   @impl true
@@ -19,7 +19,15 @@ defmodule JustBash.Commands.Sort do
   def execute(bash, args, stdin) do
     {flags, files} = FlagParser.parse(args, @flag_spec)
     content = get_content(bash, files, stdin)
-    lines = String.split(content, "\n", trim: true)
+    # Don't trim - preserve empty lines. Only remove trailing empty if content ends with \n
+    lines = String.split(content, "\n", trim: false)
+
+    lines =
+      if List.last(lines) == "" do
+        List.delete_at(lines, -1)
+      else
+        lines
+      end
 
     sorted =
       lines
@@ -47,7 +55,7 @@ defmodule JustBash.Commands.Sort do
 
     Enum.sort_by(
       lines,
-      fn line -> get_sort_key(line, field_num, delimiter, flags.n) end,
+      fn line -> get_sort_key(line, field_num, delimiter, flags.n, flags.f) end,
       sort_direction(flags.r)
     )
   end
@@ -56,8 +64,55 @@ defmodule JustBash.Commands.Sort do
     Enum.sort_by(lines, &parse_leading_number/1, sort_direction(flags.r))
   end
 
-  defp sort_lines(lines, %{r: true}), do: Enum.sort(lines, :desc)
-  defp sort_lines(lines, _flags), do: Enum.sort(lines)
+  defp sort_lines(lines, %{f: true} = flags) do
+    # Case-insensitive sort: sort by downcased key, use stable sort
+    Enum.sort_by(lines, &String.downcase/1, sort_direction(flags.r))
+  end
+
+  defp sort_lines(lines, %{r: true}), do: Enum.sort(lines, &locale_compare_desc/2)
+  defp sort_lines(lines, _flags), do: Enum.sort(lines, &locale_compare_asc/2)
+
+  # Locale-aware comparison (similar to en_US.UTF-8 collation)
+  # Case-insensitive primary sort, lowercase before uppercase as tiebreaker
+  defp locale_compare_asc(a, b) do
+    a_down = String.downcase(a)
+    b_down = String.downcase(b)
+
+    cond do
+      a_down < b_down -> true
+      a_down > b_down -> false
+      true -> is_lowercase_first?(a, b)
+    end
+  end
+
+  defp locale_compare_desc(a, b), do: locale_compare_asc(b, a)
+
+  defp is_lowercase_first?(a, b) do
+    a_chars = String.graphemes(a)
+    b_chars = String.graphemes(b)
+    compare_chars(a_chars, b_chars)
+  end
+
+  defp compare_chars([], []), do: true
+  defp compare_chars([], _), do: true
+  defp compare_chars(_, []), do: false
+
+  defp compare_chars([a_char | a_rest], [b_char | b_rest]) do
+    a_down = String.downcase(a_char)
+    b_down = String.downcase(b_char)
+
+    cond do
+      a_down != b_down -> a_down <= b_down
+      a_char == b_char -> compare_chars(a_rest, b_rest)
+      is_lowercase?(a_char) and not is_lowercase?(b_char) -> true
+      not is_lowercase?(a_char) and is_lowercase?(b_char) -> false
+      true -> compare_chars(a_rest, b_rest)
+    end
+  end
+
+  defp is_lowercase?(char) do
+    String.downcase(char) == char and String.upcase(char) != char
+  end
 
   defp parse_key_spec(spec) when is_integer(spec), do: {spec, nil}
 
@@ -69,7 +124,7 @@ defmodule JustBash.Commands.Sort do
     end
   end
 
-  defp get_sort_key(line, field_num, delimiter, numeric) do
+  defp get_sort_key(line, field_num, delimiter, numeric, fold_case) do
     fields =
       if delimiter == " " do
         String.split(line, ~r/\s+/, trim: true)
@@ -79,10 +134,10 @@ defmodule JustBash.Commands.Sort do
 
     field = Enum.at(fields, field_num - 1, "")
 
-    if numeric do
-      parse_leading_number(field)
-    else
-      field
+    cond do
+      numeric -> parse_leading_number(field)
+      fold_case -> String.downcase(field)
+      true -> field
     end
   end
 

@@ -96,6 +96,39 @@ defmodule JustBash.PropertyTest do
   end
 
   describe "sort properties" do
+    # Locale-aware comparison matching bash's en_US.UTF-8 collation
+    defp locale_compare(a, b) do
+      a_down = String.downcase(a)
+      b_down = String.downcase(b)
+
+      cond do
+        a_down < b_down -> true
+        a_down > b_down -> false
+        true -> lowercase_first?(a, b)
+      end
+    end
+
+    defp lowercase_first?(a, b) do
+      compare_lowercase_first(String.graphemes(a), String.graphemes(b))
+    end
+
+    defp compare_lowercase_first([], []), do: true
+    defp compare_lowercase_first([], _), do: true
+    defp compare_lowercase_first(_, []), do: false
+
+    defp compare_lowercase_first([a_char | a_rest], [b_char | b_rest]) do
+      a_down = String.downcase(a_char)
+      b_down = String.downcase(b_char)
+
+      cond do
+        a_down != b_down -> a_down <= b_down
+        a_char == b_char -> compare_lowercase_first(a_rest, b_rest)
+        String.downcase(a_char) == a_char and String.upcase(a_char) != a_char -> true
+        String.downcase(b_char) == b_char and String.upcase(b_char) != b_char -> false
+        true -> compare_lowercase_first(a_rest, b_rest)
+      end
+    end
+
     property "sort output is sorted" do
       check all(
               lines <-
@@ -109,7 +142,7 @@ defmodule JustBash.PropertyTest do
         {result, _} = JustBash.exec(bash, "sort /file.txt")
 
         result_lines = String.split(result.stdout, "\n", trim: true)
-        assert result_lines == Enum.sort(result_lines)
+        assert result_lines == Enum.sort(result_lines, &locale_compare/2)
       end
     end
 
@@ -126,7 +159,7 @@ defmodule JustBash.PropertyTest do
         {result, _} = JustBash.exec(bash, "sort -r /file.txt")
 
         result_lines = String.split(result.stdout, "\n", trim: true)
-        assert result_lines == Enum.sort(result_lines, :desc)
+        assert result_lines == Enum.sort(result_lines, &(not locale_compare(&1, &2)))
       end
     end
 

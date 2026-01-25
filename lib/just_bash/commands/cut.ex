@@ -105,11 +105,16 @@ defmodule JustBash.Commands.Cut do
     spec = opts.field_spec || opts.char_spec || "1"
     ranges = parse_range(spec)
 
-    lines
-    |> Enum.map(&process_line(&1, opts, ranges))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join("\n")
-    |> then(fn s -> if s == "", do: "", else: s <> "\n" end)
+    processed =
+      lines
+      |> Enum.map(&process_line(&1, opts, ranges))
+      |> Enum.reject(&is_nil/1)
+
+    # Always output newlines for each processed line, even if content is empty
+    case processed do
+      [] -> ""
+      _ -> Enum.join(processed, "\n") <> "\n"
+    end
   end
 
   defp process_line(line, opts, ranges) do
