@@ -454,7 +454,6 @@ cat << EOF
     <div><span class="ts">[${TS}]</span> Uplink to api.weather.gov established</div>
     <div><span class="ts">[${TS}]</span> Grid coordinates verified: OKX/33,35</div>
     <div><span class="ts">[${TS}]</span> Forecast data parsed via jq processor</div>
-    <div><span class="ts">[${TS}]</span> SQLite analysis complete</div>
     <div><span class="ts">[${TS}]</span> Report generated // END TRANSMISSION</div>
   </div>
   <div class="prompt">root@weather-grid:~# <span class="cursor"></span></div>

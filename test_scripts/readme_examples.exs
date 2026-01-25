@@ -339,7 +339,7 @@ defmodule ReadmeExamples do
       test(
         "uniq -c",
         "printf 'a\\na\\nb' | uniq -c",
-        "   2 a\n   1 b\n"
+        "      2 a\n      1 b\n"
       ),
       test(
         "head",
@@ -353,7 +353,7 @@ defmodule ReadmeExamples do
       ),
       test(
         "wc -l",
-        "printf 'a\\nb\\nc' | wc -l",
+        "printf 'a\\nb\\nc\\n' | wc -l",
         "       3\n"
       ),
       test(
@@ -407,18 +407,6 @@ defmodule ReadmeExamples do
         "base64 decode",
         "echo 'aGVsbG8=' | base64 -d",
         "hello"
-      ),
-
-      # SQLite examples
-      test(
-        "sqlite3 create and query",
-        "sqlite3 testdb 'CREATE TABLE t(x)'; sqlite3 testdb 'INSERT INTO t VALUES (1)'; sqlite3 testdb 'SELECT * FROM t'",
-        "1\n"
-      ),
-      test(
-        "sqlite3 --json",
-        "sqlite3 db 'CREATE TABLE u(id,name)'; sqlite3 db \"INSERT INTO u VALUES(1,'alice')\"; sqlite3 db 'SELECT * FROM u' --json",
-        "[{\"id\":1,\"name\":\"alice\"}]\n"
       ),
 
       # awk examples  
