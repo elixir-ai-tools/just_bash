@@ -116,10 +116,8 @@ defmodule JustBash.Integration.ComplexQuotingTest do
   end
 
   describe "command substitution inside various contexts" do
-    @tag :skip
-    @tag :known_limitation
     test "in array assignment" do
-      # Known limitation: array assignment from command substitution not fully supported
+      # Command substitution in array context is word-split
       script = """
       arr=($(echo "a b c"))
       echo "${arr[1]}"
@@ -153,10 +151,8 @@ defmodule JustBash.Integration.ComplexQuotingTest do
       assert result.stdout == "matched\n"
     end
 
-    @tag :skip
-    @tag :known_limitation
     test "in arithmetic expression" do
-      # Known limitation: command substitution inside arithmetic expansion not fully supported
+      # Command substitution inside arithmetic expansion is expanded first
       script = """
       x=$(($(echo 5) + $(echo 3)))
       echo "$x"
@@ -355,12 +351,12 @@ defmodule JustBash.Integration.ComplexQuotingTest do
       assert result.stdout =~ "big"
     end
 
-    @tag :skip
-    @tag :known_limitation
     test "jq with try-catch" do
-      # Known limitation: jq try-catch not implemented
+      # try-catch catches errors (like accessing field on non-object)
+      # Note: .b.c on {"a":1} returns null (not error) because .b is null
+      # But .a.x on {"a":1} errors because .a is 1 (number), not an object
       bash = JustBash.new(files: %{"/test.json" => ~S'{"a": 1}'})
-      script = "cat /test.json | jq 'try .b.c catch \"not found\"'"
+      script = "cat /test.json | jq 'try .a.x catch \"not found\"'"
       {result, _} = JustBash.exec(bash, script)
       assert result.stdout =~ "not found"
     end

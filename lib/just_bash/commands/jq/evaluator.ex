@@ -169,8 +169,13 @@ defmodule JustBash.Commands.Jq.Evaluator do
     if truthy?(cond_val), do: do_eval(then_expr, data, opts), else: do_eval(else_expr, data, opts)
   end
 
+  defp do_eval({:try, expr, catch_expr}, data, opts) do
+    eval_try(expr, catch_expr, data, opts)
+  end
+
+  # Legacy form without catch (shouldn't occur with new parser but handle for safety)
   defp do_eval({:try, expr}, data, opts) do
-    eval_try(expr, data, opts)
+    eval_try(expr, nil, data, opts)
   end
 
   # Reduce and foreach
@@ -350,10 +355,16 @@ defmodule JustBash.Commands.Jq.Evaluator do
     {:eval_error, _} -> do_eval(right, data, opts)
   end
 
-  defp eval_try(expr, data, opts) do
+  defp eval_try(expr, nil, data, opts) do
     do_eval(expr, data, opts)
   catch
     {:eval_error, _} -> nil
+  end
+
+  defp eval_try(expr, catch_expr, data, opts) do
+    do_eval(expr, data, opts)
+  catch
+    {:eval_error, _} -> do_eval(catch_expr, data, opts)
   end
 
   # Update assignment helpers
