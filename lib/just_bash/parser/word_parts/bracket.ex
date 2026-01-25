@@ -167,10 +167,51 @@ defmodule JustBash.Parser.WordParts.Bracket do
         find_matching_bracket_loop(value, i + 1, len, depth - 1, open, close)
 
       char == "\\" and i + 1 < len ->
+        # Skip escaped character
         find_matching_bracket_loop(value, i + 2, len, depth, open, close)
+
+      char == "'" ->
+        # Skip single-quoted string entirely
+        end_quote = find_single_quote_end(value, i + 1, len)
+        find_matching_bracket_loop(value, end_quote + 1, len, depth, open, close)
+
+      char == "\"" ->
+        # Skip double-quoted string entirely
+        end_quote = find_double_quote_end(value, i + 1, len)
+        find_matching_bracket_loop(value, end_quote + 1, len, depth, open, close)
 
       true ->
         find_matching_bracket_loop(value, i + 1, len, depth, open, close)
+    end
+  end
+
+  # Find end of single-quoted string (no escapes in single quotes)
+  defp find_single_quote_end(_value, i, len) when i >= len, do: len
+
+  defp find_single_quote_end(value, i, len) do
+    if String.at(value, i) == "'" do
+      i
+    else
+      find_single_quote_end(value, i + 1, len)
+    end
+  end
+
+  # Find end of double-quoted string (handles escapes)
+  defp find_double_quote_end(_value, i, len) when i >= len, do: len
+
+  defp find_double_quote_end(value, i, len) do
+    char = String.at(value, i)
+
+    cond do
+      char == "\"" ->
+        i
+
+      char == "\\" and i + 1 < len ->
+        # Skip escaped character
+        find_double_quote_end(value, i + 2, len)
+
+      true ->
+        find_double_quote_end(value, i + 1, len)
     end
   end
 

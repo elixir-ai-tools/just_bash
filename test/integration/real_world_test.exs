@@ -334,5 +334,101 @@ defmodule JustBash.Integration.RealWorldTest do
       {result, _} = JustBash.exec(bash, script)
       assert result.stdout == "Email workflows: 2\n"
     end
+
+    test "find delay steps using jq recurse" do
+      bash =
+        JustBash.new(
+          files: %{
+            "/knock/workflows/drip-campaign/workflow.json" =>
+              ~S'{"steps": [{"type": "delay", "ref": "wait_1d", "settings": {"delay_for": {"value": 1, "unit": "days"}}}, {"type": "email", "ref": "send"}]}',
+            "/knock/workflows/simple/workflow.json" =>
+              ~S'{"steps": [{"type": "email", "ref": "notify"}]}',
+            "/knock/workflows/multi-delay/workflow.json" =>
+              ~S'{"steps": [{"type": "delay", "ref": "wait_1h", "settings": {"delay_for": {"value": 1, "unit": "hours"}}}, {"type": "delay", "ref": "wait_2d", "settings": {"delay_for": {"value": 2, "unit": "days"}}}]}'
+          }
+        )
+
+      # Agent pattern: find all delay steps across workflows using jq recurse
+      script = """
+      for dir in /knock/workflows/*/; do
+        workflow_key=$(basename "$dir")
+        if [ -f "$dir/workflow.json" ]; then
+          delay_info=$(cat "$dir/workflow.json" | jq -r 'recurse(.steps[]?) | select(.type? == "delay") | .ref' 2>/dev/null)
+
+          if [ -n "$delay_info" ]; then
+            echo "Workflow: $workflow_key"
+            echo "$delay_info"
+          fi
+        fi
+      done
+      """
+
+      {result, _} = JustBash.exec(bash, script)
+      assert result.exit_code == 0
+
+      # drip-campaign has one delay
+      assert result.stdout =~ "Workflow: drip-campaign"
+      assert result.stdout =~ "wait_1d"
+
+      # multi-delay has two delays
+      assert result.stdout =~ "Workflow: multi-delay"
+      assert result.stdout =~ "wait_1h"
+      assert result.stdout =~ "wait_2d"
+
+      # simple has no delays - should not appear
+      refute result.stdout =~ "Workflow: simple"
+    end
+
+    test "extract delay step details with jq string interpolation" do
+      bash =
+        JustBash.new(
+          files: %{
+            "/workflow.json" =>
+              ~S'{"steps": [{"type": "delay", "ref": "wait_1d", "settings": {"delay_for": {"value": 1, "unit": "days"}}}]}'
+          }
+        )
+
+      # Test jq recurse + select + string interpolation
+      script =
+        "cat /workflow.json | jq -r 'recurse(.steps[]?) | select(.type? == \"delay\") | \"Delay: \\(.ref) for \\(.settings.delay_for.value) \\(.settings.delay_for.unit)\"'"
+
+      {result, _} = JustBash.exec(bash, script)
+      assert result.exit_code == 0
+      assert result.stdout =~ "Delay: wait_1d for 1 days"
+    end
+
+    test "multiline jq filter with string interpolation inside command substitution" do
+      bash =
+        JustBash.new(
+          files: %{
+            "/knock/workflows/drip/workflow.json" =>
+              ~S'{"steps": [{"type": "delay", "ref": "wait_1d", "settings": {"delay_for": {"value": 1, "unit": "days"}}}]}'
+          }
+        )
+
+      # Test multiline jq inside command substitution - this was previously failing
+      script = """
+      for dir in /knock/workflows/*/; do
+        workflow_key=$(basename "$dir")
+        if [ -f "$dir/workflow.json" ]; then
+          delay_info=$(cat "$dir/workflow.json" | jq -r '
+            recurse(.steps[]?, .branches[]?.steps[]?) |
+            select(.type? == "delay") |
+            "  - \\(.ref): \\(.settings.delay_for.value) \\(.settings.delay_for.unit)"
+          ' 2>/dev/null)
+
+          if [ ! -z "$delay_info" ]; then
+            echo "Workflow: $workflow_key"
+            echo "$delay_info"
+          fi
+        fi
+      done
+      """
+
+      {result, _} = JustBash.exec(bash, script)
+      assert result.exit_code == 0
+      assert result.stdout =~ "Workflow: drip"
+      assert result.stdout =~ "wait_1d: 1 days"
+    end
   end
 end

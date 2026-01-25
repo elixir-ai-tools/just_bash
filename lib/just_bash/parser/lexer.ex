@@ -257,26 +257,54 @@ defmodule JustBash.Parser.Lexer do
     |> reduce({:join_chars, []})
     |> unwrap_and_tag(:chars)
 
-  # Content inside $() - handles nested parens
+  # Content inside $() - handles nested parens and quotes
   defcombinatorp(
     :cmd_subst_content,
     repeat(
       choice([
+        # Nested command substitution
         string("$(") |> concat(parsec(:cmd_subst_content)) |> string(")"),
+        # Nested parens
         string("(") |> concat(parsec(:paren_content)) |> string(")"),
-        utf8_char([{:not, ?(}, {:not, ?)}])
+        # Single-quoted string (consume entirely - parens inside are literal)
+        string("'") |> concat(parsec(:sq_content)) |> string("'"),
+        # Double-quoted string (consume entirely - parens inside are literal)
+        string("\"") |> concat(parsec(:cmd_subst_dq_content)) |> string("\""),
+        # Escape sequences (backslash escapes next char)
+        string("\\") |> utf8_char([]),
+        # Any char except parens
+        utf8_char([{:not, ?(}, {:not, ?)}, {:not, ?'}, {:not, ?"}, {:not, ?\\}])
       ])
     )
     |> reduce({:join_chars, []})
   )
 
-  # Content inside regular parens
+  # Double-quoted content inside command substitution (NOT inside outer double quotes)
+  defcombinatorp(
+    :cmd_subst_dq_content,
+    repeat(
+      choice([
+        string("\\") |> utf8_char([]),
+        string("$(") |> concat(parsec(:cmd_subst_content)) |> string(")"),
+        string("${") |> concat(parsec(:param_content)) |> string("}"),
+        utf8_char([{:not, ?"}, {:not, ?\\}, {:not, ?$}]),
+        # Plain $ not followed by ( or {
+        string("$") |> lookahead_not(choice([string("("), string("{")]))
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
+  # Content inside regular parens - also handles quotes
   defcombinatorp(
     :paren_content,
     repeat(
       choice([
         string("(") |> concat(parsec(:paren_content)) |> string(")"),
-        utf8_char([{:not, ?(}, {:not, ?)}])
+        string("'") |> concat(parsec(:sq_content)) |> string("'"),
+        string("\"") |> concat(parsec(:cmd_subst_dq_content)) |> string("\""),
+        string("\\") |> utf8_char([]),
+        utf8_char([{:not, ?(}, {:not, ?)}, {:not, ?'}, {:not, ?"}, {:not, ?\\}])
       ])
     )
     |> reduce({:join_chars, []})
