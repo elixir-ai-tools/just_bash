@@ -70,7 +70,7 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
   end
 
   defp expand_dynamic_variable(_bash, "RANDOM") do
-    {:ok, Integer.to_string(:rand.uniform(32768) - 1)}
+    {:ok, Integer.to_string(:rand.uniform(32_768) - 1)}
   end
 
   defp expand_dynamic_variable(_bash, "SECONDS") do

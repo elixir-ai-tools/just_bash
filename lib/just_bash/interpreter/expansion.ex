@@ -264,7 +264,7 @@ defmodule JustBash.Interpreter.Expansion do
 
   defp expand_for_loop_word_no_brace(bash, parts, ifs) do
     # Special case: if the word is just "$@", expand to multiple words
-    case is_quoted_at_expansion?(parts) do
+    case quoted_at_expansion?(parts) do
       {:ok, :quoted_at} ->
         expand_quoted_at_to_words(bash)
 
@@ -278,13 +278,13 @@ defmodule JustBash.Interpreter.Expansion do
     end
   end
 
-  defp is_quoted_at_expansion?([
+  defp quoted_at_expansion?([
          %AST.DoubleQuoted{parts: [%AST.ParameterExpansion{parameter: "@", operation: nil}]}
        ]) do
     {:ok, :quoted_at}
   end
 
-  defp is_quoted_at_expansion?(_parts), do: :not_at
+  defp quoted_at_expansion?(_parts), do: :not_at
 
   defp expand_quoted_at_to_words(bash) do
     bash.env

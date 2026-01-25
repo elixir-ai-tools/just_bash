@@ -81,13 +81,13 @@ defmodule JustBash.Commands.Sort do
     cond do
       a_down < b_down -> true
       a_down > b_down -> false
-      true -> is_lowercase_first?(a, b)
+      true -> lowercase_first?(a, b)
     end
   end
 
   defp locale_compare_desc(a, b), do: locale_compare_asc(b, a)
 
-  defp is_lowercase_first?(a, b) do
+  defp lowercase_first?(a, b) do
     a_chars = String.graphemes(a)
     b_chars = String.graphemes(b)
     compare_chars(a_chars, b_chars)
@@ -104,13 +104,13 @@ defmodule JustBash.Commands.Sort do
     cond do
       a_down != b_down -> a_down <= b_down
       a_char == b_char -> compare_chars(a_rest, b_rest)
-      is_lowercase?(a_char) and not is_lowercase?(b_char) -> true
-      not is_lowercase?(a_char) and is_lowercase?(b_char) -> false
+      lowercase?(a_char) and not lowercase?(b_char) -> true
+      not lowercase?(a_char) and lowercase?(b_char) -> false
       true -> compare_chars(a_rest, b_rest)
     end
   end
 
-  defp is_lowercase?(char) do
+  defp lowercase?(char) do
     String.downcase(char) == char and String.upcase(char) != char
   end
 
