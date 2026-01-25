@@ -120,11 +120,11 @@ defmodule JustBash.Commands.Awk do
   end
 
   defp parse_args(["-F", fs | rest], opts) do
-    parse_args(rest, %{opts | field_separator: fs})
+    parse_args(rest, %{opts | field_separator: interpret_escapes(fs)})
   end
 
   defp parse_args(["-F" <> fs | rest], opts) when fs != "" do
-    parse_args(rest, %{opts | field_separator: fs})
+    parse_args(rest, %{opts | field_separator: interpret_escapes(fs)})
   end
 
   defp parse_args(["-v", var_assign | rest], opts) do
@@ -164,5 +164,14 @@ defmodule JustBash.Commands.Awk do
         {:error, _} -> {:halt, {:error, "awk: #{file}: No such file or directory\n"}}
       end
     end)
+  end
+
+  # Interpret common escape sequences in strings (like \t, \n, etc.)
+  defp interpret_escapes(str) do
+    str
+    |> String.replace("\\t", "\t")
+    |> String.replace("\\n", "\n")
+    |> String.replace("\\r", "\r")
+    |> String.replace("\\\\", "\\")
   end
 end
