@@ -5,17 +5,26 @@ defmodule JustBash.Commands.Awk.Formatter do
   Handles printf-style formatting with width and precision specifiers.
   """
 
-  alias JustBash.Commands.Awk.Parser
-
   @doc """
   Format a printf string with the given values.
   """
   @spec format_printf(String.t(), [any()]) :: String.t()
   def format_printf(format, values) do
     format
-    |> Parser.unescape_string()
+    |> unescape_string()
     |> do_format(values, [])
     |> IO.iodata_to_binary()
+  end
+
+  @doc """
+  Unescape common escape sequences in a string.
+  """
+  def unescape_string(str) do
+    str
+    |> String.replace("\\n", "\n")
+    |> String.replace("\\t", "\t")
+    |> String.replace("\\r", "\r")
+    |> String.replace("\\\\", "\\")
   end
 
   # Process format string character by character, building output as iodata

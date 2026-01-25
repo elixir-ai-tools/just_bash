@@ -156,11 +156,17 @@ defmodule JustBash.Commands.Awk.Evaluator do
     evaluate_condition(condition, state)
   end
 
-  defp evaluate_condition(condition, state) do
+  defp evaluate_condition(condition, state) when is_binary(condition) do
+    # String-based condition (from old parser) - use regex parsing
     case evaluate_nr_condition(condition, state) do
       nil -> evaluate_field_or_default(condition, state)
       result -> result
     end
+  end
+
+  defp evaluate_condition(condition, state) when is_tuple(condition) do
+    # AST-based condition (from new parser) - evaluate expression directly
+    truthy?(evaluate_expression(condition, state))
   end
 
   defp evaluate_field_or_default(condition, state) do
@@ -422,7 +428,15 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp execute_statement({:break}, state), do: {:break, state}
   defp execute_statement({:continue}, state), do: {:continue, state}
   defp execute_statement({:next}, state), do: {:next, state}
-  defp execute_statement({:exit, code}, state), do: %{state | exit_code: code}
+
+  defp execute_statement({:exit, code}, state) when is_number(code) do
+    %{state | exit_code: trunc(code)}
+  end
+
+  defp execute_statement({:exit, code}, state) do
+    evaluated = evaluate_expression(code, state) |> parse_number() |> trunc()
+    %{state | exit_code: evaluated}
+  end
 
   # For loop
   defp execute_statement({:for, init, cond_expr, update, body}, state) do
@@ -526,6 +540,46 @@ defmodule JustBash.Commands.Awk.Evaluator do
       {:error, _} ->
         state
     end
+  end
+
+  # Handle gsub/sub as function calls (new parser format)
+  defp execute_statement({:call, "gsub", args}, state) do
+    {pattern, replacement, target} = extract_gsub_args(args, state)
+    execute_statement({:gsub, pattern, replacement, target}, state)
+  end
+
+  defp execute_statement({:call, "sub", args}, state) do
+    {pattern, replacement, target} = extract_gsub_args(args, state)
+    execute_statement({:sub, pattern, replacement, target}, state)
+  end
+
+  defp extract_gsub_args([{:regex, pattern}, replacement], _state) do
+    {pattern, extract_string(replacement), {:field, 0}}
+  end
+
+  defp extract_gsub_args([{:regex, pattern}, replacement, target], _state) do
+    {pattern, extract_string(replacement), target}
+  end
+
+  defp extract_gsub_args([pattern, replacement], state) do
+    {extract_string_value(pattern, state), extract_string(replacement), {:field, 0}}
+  end
+
+  defp extract_gsub_args([pattern, replacement, target], state) do
+    {extract_string_value(pattern, state), extract_string(replacement), target}
+  end
+
+  defp extract_string({:literal, s}), do: s
+  defp extract_string({:string, s}), do: s
+  defp extract_string(s) when is_binary(s), do: s
+  defp extract_string(other), do: to_string(other)
+
+  defp unwrap_pattern({:regex, p}), do: p
+  defp unwrap_pattern(p) when is_binary(p), do: p
+  defp unwrap_pattern(other), do: to_string(other)
+
+  defp extract_string_value(expr, state) do
+    evaluate_expression(expr, state) |> to_string()
   end
 
   # Loop helper functions
@@ -638,6 +692,13 @@ defmodule JustBash.Commands.Awk.Evaluator do
     left_val = evaluate_expression(left, state) |> parse_number()
     right_val = evaluate_expression(right, state) |> parse_number()
     left_val + right_val
+  end
+
+  # String concatenation (binary form)
+  def evaluate_expression({:concat, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> to_string()
+    right_val = evaluate_expression(right, state) |> to_string()
+    left_val <> right_val
   end
 
   # Ternary operator
@@ -771,8 +832,9 @@ defmodule JustBash.Commands.Awk.Evaluator do
   # Regex match as expression
   def evaluate_expression({:match, expr, pattern}, state) do
     value = evaluate_expression(expr, state) |> to_string()
+    pattern_str = unwrap_pattern(pattern)
 
-    case Regex.compile(pattern) do
+    case Regex.compile(pattern_str) do
       {:ok, regex} -> if Regex.match?(regex, value), do: 1, else: 0
       {:error, _} -> 0
     end
@@ -780,8 +842,9 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   def evaluate_expression({:not_match, expr, pattern}, state) do
     value = evaluate_expression(expr, state) |> to_string()
+    pattern_str = unwrap_pattern(pattern)
 
-    case Regex.compile(pattern) do
+    case Regex.compile(pattern_str) do
       {:ok, regex} -> if Regex.match?(regex, value), do: 0, else: 1
       {:error, _} -> 1
     end
