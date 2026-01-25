@@ -7,8 +7,29 @@ defmodule JustBash.Commands.Grep do
   alias JustBash.Fs.InMemoryFs
 
   @flag_spec %{
-    boolean: [:i, :v, :e_ext, :f_fixed, :c, :l, :n, :o, :q, :w, :x, :with_filename, :no_filename],
-    aliases: %{"E" => :e_ext, "F" => :f_fixed, "H" => :with_filename, "h" => :no_filename},
+    boolean: [
+      :i,
+      :v,
+      :e_ext,
+      :f_fixed,
+      :c,
+      :l,
+      :n,
+      :o,
+      :q,
+      :w,
+      :x,
+      :r,
+      :with_filename,
+      :no_filename
+    ],
+    aliases: %{
+      "E" => :e_ext,
+      "F" => :f_fixed,
+      "H" => :with_filename,
+      "h" => :no_filename,
+      "R" => :r
+    },
     value: [],
     defaults: %{
       i: false,
@@ -22,6 +43,7 @@ defmodule JustBash.Commands.Grep do
       q: false,
       w: false,
       x: false,
+      r: false,
       with_filename: false,
       no_filename: false
     }
@@ -48,15 +70,67 @@ defmodule JustBash.Commands.Grep do
 
   defp execute_with_files(bash, pattern, files, flags) do
     regex = compile_pattern(pattern, flags)
-    show_filename = flags.with_filename or (length(files) > 1 and not flags.no_filename)
+
+    # Expand files recursively if -r flag is set
+    expanded_files = expand_files(bash, files, flags.r)
+
+    show_filename =
+      flags.with_filename or (length(expanded_files) > 1 and not flags.no_filename)
 
     {results, any_match} =
-      Enum.reduce(files, {[], false}, fn file, {acc, had_match} ->
+      Enum.reduce(expanded_files, {[], false}, fn file, {acc, had_match} ->
         process_file(bash, file, regex, flags, show_filename, acc, had_match)
       end)
 
     build_files_result(bash, results, any_match, flags)
   end
+
+  # Expand files recursively when -r flag is set
+  defp expand_files(_bash, files, false), do: files
+
+  defp expand_files(bash, files, true) do
+    Enum.flat_map(files, fn file ->
+      resolved = InMemoryFs.resolve_path(bash.cwd, file)
+
+      case InMemoryFs.stat(bash.fs, resolved) do
+        {:ok, %{is_directory: true}} ->
+          find_files_recursive(bash.fs, resolved, file)
+
+        {:ok, _} ->
+          [file]
+
+        {:error, _} ->
+          [file]
+      end
+    end)
+  end
+
+  defp find_files_recursive(fs, full_path, display_path) do
+    case InMemoryFs.readdir(fs, full_path) do
+      {:ok, entries} ->
+        Enum.flat_map(entries, fn entry ->
+          child_full = join_path(full_path, entry)
+          child_display = join_path(display_path, entry)
+
+          case InMemoryFs.stat(fs, child_full) do
+            {:ok, %{is_directory: true}} ->
+              find_files_recursive(fs, child_full, child_display)
+
+            {:ok, _} ->
+              [child_display]
+
+            {:error, _} ->
+              []
+          end
+        end)
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  defp join_path("/", entry), do: "/#{entry}"
+  defp join_path(path, entry), do: "#{path}/#{entry}"
 
   defp process_file(bash, file, regex, flags, show_filename, acc, had_match) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)

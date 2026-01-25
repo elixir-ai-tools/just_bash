@@ -216,14 +216,35 @@ defmodule JustBash.Parser do
 
   @doc false
   def parse_word_from_token(token) do
-    parts =
-      WordParts.parse(
-        token.value,
-        quoted: token.quoted,
-        single_quoted: token.single_quoted
-      )
+    # For mixed quoted/unquoted words (e.g., "$prefix"_"$suffix"), we need to
+    # use raw_value so WordParts.parse can see where quotes begin and end.
+    # Otherwise "$prefix"_"$suffix" becomes "$prefix_$suffix" and $prefix_ is
+    # treated as a single variable name.
+    #
+    # We only use raw_value when:
+    # 1. Token isn't purely single-quoted (those are already handled correctly)
+    # 2. raw_value exists and differs from value (indicates quote stripping occurred)
+    # 3. raw_value contains quotes (indicates mixed quoted/unquoted parts)
+    use_raw =
+      not token.single_quoted and
+        token.raw_value != nil and
+        token.raw_value != token.value and
+        (String.contains?(token.raw_value, "\"") or String.contains?(token.raw_value, "'"))
 
-    AST.word(parts)
+    if use_raw do
+      # Parse as unquoted - WordParts.parse will handle embedded quotes
+      parts = WordParts.parse(token.raw_value, quoted: false, single_quoted: false)
+      AST.word(parts)
+    else
+      parts =
+        WordParts.parse(
+          token.value,
+          quoted: token.quoted,
+          single_quoted: token.single_quoted
+        )
+
+      AST.word(parts)
+    end
   end
 
   @doc false

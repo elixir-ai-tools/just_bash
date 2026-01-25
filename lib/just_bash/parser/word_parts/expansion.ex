@@ -401,8 +401,22 @@ defmodule JustBash.Parser.WordParts.Expansion do
   defp parse_arithmetic_expansion(value, start) do
     end_dparen = Bracket.find_double_paren_end(value, start + 3)
     expr_str = String.slice(value, (start + 3)..(end_dparen - 1)//1)
-    parsed_expr = JustBash.Arithmetic.parse(expr_str)
-    expr = %AST.ArithmeticExpression{expression: parsed_expr}
-    {AST.arithmetic_expansion(expr), end_dparen + 2}
+
+    # Check if expression contains command substitution $(...) or backticks
+    # If so, store raw string for expansion at evaluation time
+    if has_command_substitution?(expr_str) do
+      expr = %AST.ArithmeticExpression{expression: nil, raw: expr_str}
+      {AST.arithmetic_expansion(expr), end_dparen + 2}
+    else
+      parsed_expr = JustBash.Arithmetic.parse(expr_str)
+      expr = %AST.ArithmeticExpression{expression: parsed_expr}
+      {AST.arithmetic_expansion(expr), end_dparen + 2}
+    end
+  end
+
+  # Check if expression string contains command substitution that needs expansion
+  defp has_command_substitution?(str) do
+    # Look for $( or backticks - these indicate command substitution
+    String.contains?(str, "$(") or String.contains?(str, "`")
   end
 end

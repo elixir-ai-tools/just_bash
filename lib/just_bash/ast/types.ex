@@ -337,10 +337,13 @@ defmodule JustBash.AST do
 
   defmodule ArithmeticExpression do
     @moduledoc "Arithmetic expression (for $((...)) and ((...)))"
-    defstruct expression: nil
+    # `raw` stores the original expression string for cases with command substitution
+    # When raw is set, it will be expanded and parsed at evaluation time
+    defstruct expression: nil, raw: nil
 
     @type t :: %__MODULE__{
-            expression: JustBash.AST.arith_expr()
+            expression: JustBash.AST.arith_expr(),
+            raw: String.t() | nil
           }
   end
 

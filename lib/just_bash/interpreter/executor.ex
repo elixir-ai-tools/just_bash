@@ -178,6 +178,9 @@ defmodule JustBash.Interpreter.Executor do
 
     exit_codes = Enum.reverse(exit_codes_reversed)
 
+    # Set PIPESTATUS array with exit codes from each command in the pipeline
+    final_bash = set_pipestatus(final_bash, exit_codes)
+
     # With pipefail, return the rightmost non-zero exit code
     # Without pipefail, return the last command's exit code
     pipeline_exit =
@@ -195,6 +198,25 @@ defmodule JustBash.Interpreter.Executor do
       end
 
     {%{final_result | exit_code: exit_code}, final_bash}
+  end
+
+  # Set PIPESTATUS array in env with exit codes from pipeline
+  defp set_pipestatus(bash, exit_codes) do
+    # First, clear any existing PIPESTATUS entries
+    new_env =
+      bash.env
+      |> Enum.reject(fn {key, _} -> String.starts_with?(key, "PIPESTATUS[") end)
+      |> Map.new()
+
+    # Add new PIPESTATUS entries
+    new_env =
+      exit_codes
+      |> Enum.with_index()
+      |> Enum.reduce(new_env, fn {code, idx}, env ->
+        Map.put(env, "PIPESTATUS[#{idx}]", to_string(code))
+      end)
+
+    %{bash | env: new_env}
   end
 
   @doc """
@@ -533,7 +555,8 @@ defmodule JustBash.Interpreter.Executor do
           %{acc | env: Map.put(acc.env, name, expanded_value)}
 
         elements when is_list(elements) ->
-          # Array assignment: arr=(a b c)
+          # Array assignment: arr=(a b c) or arr=($(echo "a b c"))
+          # Command substitution and parameter expansion in array context are word-split
           # First, clear any existing array elements for this name
           env =
             acc.env
@@ -542,13 +565,20 @@ defmodule JustBash.Interpreter.Executor do
             end)
             |> Map.new()
 
+          # Expand each word, which may produce multiple values due to IFS splitting
+          # For example: arr=($(echo "a b c")) expands to ["a", "b", "c"]
+          expanded_values =
+            Enum.flat_map(elements, fn word ->
+              Expansion.expand_array_element(acc, word)
+            end)
+
           # Store as arr[0], arr[1], etc.
-          {env, _idx, acc} =
-            Enum.reduce(elements, {env, 0, acc}, fn word, {env_acc, idx, bash_acc} ->
-              {expanded, pending} = Expansion.expand_word_parts(bash_acc, word.parts)
-              bash_acc = apply_pending_assignments(bash_acc, pending)
+          env =
+            expanded_values
+            |> Enum.with_index()
+            |> Enum.reduce(env, fn {value, idx}, env_acc ->
               key = "#{name}[#{idx}]"
-              {Map.put(env_acc, key, expanded), idx + 1, bash_acc}
+              Map.put(env_acc, key, value)
             end)
 
           # Also store arr itself as the first element (bash compat)

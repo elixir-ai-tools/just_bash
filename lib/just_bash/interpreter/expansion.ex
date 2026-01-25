@@ -178,8 +178,24 @@ defmodule JustBash.Interpreter.Expansion do
 
   defp expand_part(_bash, _), do: {"", []}
 
+  defp execute_arithmetic_expansion(bash, %AST.ArithmeticExpression{raw: raw, expression: _expr})
+       when raw != nil do
+    # Expression contains command substitution - expand it first, then parse and evaluate
+    expanded_str = expand_arithmetic_cmd_subs(bash, raw)
+    parsed_expr = Arithmetic.parse(expanded_str)
+    evaluate_arithmetic_expr(bash, parsed_expr)
+  end
+
   defp execute_arithmetic_expansion(bash, %AST.ArithmeticExpression{expression: inner_expr}) do
-    case Arithmetic.evaluate(inner_expr, bash.env) do
+    evaluate_arithmetic_expr(bash, inner_expr)
+  end
+
+  defp execute_arithmetic_expansion(bash, expr) do
+    evaluate_arithmetic_expr(bash, expr)
+  end
+
+  defp evaluate_arithmetic_expr(bash, expr) do
+    case Arithmetic.evaluate(expr, bash.env) do
       {:ok, value, new_env} ->
         assignments = collect_arithmetic_env_changes(bash.env, new_env)
         {to_string(value), assignments}
@@ -189,14 +205,86 @@ defmodule JustBash.Interpreter.Expansion do
     end
   end
 
-  defp execute_arithmetic_expansion(bash, expr) do
-    case Arithmetic.evaluate(expr, bash.env) do
-      {:ok, value, new_env} ->
-        assignments = collect_arithmetic_env_changes(bash.env, new_env)
-        {to_string(value), assignments}
+  # Expand command substitutions in arithmetic expression string
+  # Handles $(...) and backticks
+  defp expand_arithmetic_cmd_subs(bash, str) do
+    str
+    |> expand_dollar_cmd_subs(bash)
+    |> expand_backtick_cmd_subs(bash)
+  end
 
-      {:error, :division_by_zero, _env} ->
-        raise ArithmeticError, message: "division by 0"
+  defp expand_dollar_cmd_subs(str, bash) do
+    # Pattern: $(...)  - need to handle nested parens
+    do_expand_dollar_cmd_subs(str, bash, "")
+  end
+
+  defp do_expand_dollar_cmd_subs("", _bash, acc), do: acc
+
+  defp do_expand_dollar_cmd_subs("$(" <> rest, bash, acc) do
+    # Find matching close paren
+    case find_cmd_sub_end(rest, 0, "") do
+      {cmd, remaining} ->
+        output = execute_command_substitution(bash, parse_cmd_sub(cmd))
+        do_expand_dollar_cmd_subs(remaining, bash, acc <> output)
+
+      :error ->
+        do_expand_dollar_cmd_subs(rest, bash, acc <> "$(")
+    end
+  end
+
+  defp do_expand_dollar_cmd_subs(<<c::binary-size(1), rest::binary>>, bash, acc) do
+    do_expand_dollar_cmd_subs(rest, bash, acc <> c)
+  end
+
+  defp find_cmd_sub_end("", _depth, _acc), do: :error
+
+  defp find_cmd_sub_end(")" <> rest, 0, acc), do: {acc, rest}
+
+  defp find_cmd_sub_end(")" <> rest, depth, acc) do
+    find_cmd_sub_end(rest, depth - 1, acc <> ")")
+  end
+
+  defp find_cmd_sub_end("(" <> rest, depth, acc) do
+    find_cmd_sub_end(rest, depth + 1, acc <> "(")
+  end
+
+  defp find_cmd_sub_end(<<c::binary-size(1), rest::binary>>, depth, acc) do
+    find_cmd_sub_end(rest, depth, acc <> c)
+  end
+
+  defp expand_backtick_cmd_subs(str, bash) do
+    # Pattern: `...`
+    do_expand_backtick_cmd_subs(str, bash, "")
+  end
+
+  defp do_expand_backtick_cmd_subs("", _bash, acc), do: acc
+
+  defp do_expand_backtick_cmd_subs("`" <> rest, bash, acc) do
+    case find_backtick_end(rest, "") do
+      {cmd, remaining} ->
+        output = execute_command_substitution(bash, parse_cmd_sub(cmd))
+        do_expand_backtick_cmd_subs(remaining, bash, acc <> output)
+
+      :error ->
+        do_expand_backtick_cmd_subs(rest, bash, acc <> "`")
+    end
+  end
+
+  defp do_expand_backtick_cmd_subs(<<c::binary-size(1), rest::binary>>, bash, acc) do
+    do_expand_backtick_cmd_subs(rest, bash, acc <> c)
+  end
+
+  defp find_backtick_end("", _acc), do: :error
+  defp find_backtick_end("`" <> rest, acc), do: {acc, rest}
+
+  defp find_backtick_end(<<c::binary-size(1), rest::binary>>, acc) do
+    find_backtick_end(rest, acc <> c)
+  end
+
+  defp parse_cmd_sub(cmd_str) do
+    case JustBash.Parser.parse(cmd_str) do
+      {:ok, script} -> script
+      {:error, _} -> %AST.Script{statements: []}
     end
   end
 
@@ -251,6 +339,20 @@ defmodule JustBash.Interpreter.Expansion do
     Enum.flat_map(words, fn word ->
       expand_for_loop_word(bash, word.parts, ifs)
     end)
+  end
+
+  @doc """
+  Expand a single array element word, applying IFS splitting to unquoted expansions.
+
+  Used for array assignment like `arr=($(echo "a b c"))` where command substitution
+  output should be word-split into multiple array elements.
+
+  Returns a list of expanded strings (may be multiple due to IFS splitting or brace expansion).
+  """
+  @spec expand_array_element(JustBash.t(), AST.Word.t()) :: [String.t()]
+  def expand_array_element(bash, %AST.Word{parts: parts}) do
+    ifs = Map.get(bash.env, "IFS", " \t\n")
+    expand_for_loop_word(bash, parts, ifs)
   end
 
   defp expand_for_loop_word(bash, parts, ifs) do

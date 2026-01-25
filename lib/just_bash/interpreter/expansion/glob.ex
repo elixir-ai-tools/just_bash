@@ -22,21 +22,133 @@ defmodule JustBash.Interpreter.Expansion.Glob do
   @doc """
   Expand a glob pattern against the filesystem.
   Returns a list of matching filenames, or the original pattern if no matches.
+
+  Handles wildcards in any path segment, not just the filename.
+  For example: /tmp/*/file.txt or /a/*/b/*.log
+
+  Trailing slashes are preserved: /tmp/*/ expands to /tmp/foo/, /tmp/bar/
   """
   @spec expand(JustBash.t(), String.t()) :: [String.t()]
   def expand(bash, pattern) do
-    dir = if String.starts_with?(pattern, "/"), do: "/", else: bash.cwd
-    {dir_pattern, file_pattern, original_prefix} = split_glob_pattern(bash.cwd, dir, pattern)
-    regex_pattern = glob_pattern_to_regex(file_pattern)
+    has_trailing_slash = String.ends_with?(pattern, "/")
+    {is_absolute, segments} = split_pattern_segments(pattern)
+    base_dir = if is_absolute, do: "/", else: bash.cwd
+    prefix = if is_absolute, do: "/", else: ""
 
-    with {:ok, regex} <- Regex.compile("^" <> regex_pattern <> "$"),
-         {:ok, entries} <- InMemoryFs.readdir(bash.fs, dir_pattern) do
-      matches = filter_and_format_matches(entries, regex, original_prefix, bash.cwd)
-      if matches == [], do: [pattern], else: matches
+    matches = expand_segments(bash.fs, base_dir, prefix, segments, has_trailing_slash)
+
+    if matches == [], do: [pattern], else: Enum.sort(matches)
+  end
+
+  # Split pattern into segments, handling absolute vs relative paths
+  defp split_pattern_segments(pattern) do
+    is_absolute = String.starts_with?(pattern, "/")
+    stripped = if is_absolute, do: String.slice(pattern, 1..-1//1), else: pattern
+
+    segments =
+      stripped
+      |> String.split("/")
+      |> Enum.reject(&(&1 == ""))
+
+    {is_absolute, segments}
+  end
+
+  # Recursively expand segments, handling wildcards at any level
+  # has_trailing_slash indicates if original pattern ended with /
+  defp expand_segments(_fs, _current_path, prefix, [], has_trailing_slash) do
+    # No more segments - return current path if it's not just the prefix
+    if prefix == "" or prefix == "/" do
+      []
     else
-      _ -> [pattern]
+      result = String.trim_trailing(prefix, "/")
+      # Append trailing slash if original pattern had one
+      if has_trailing_slash, do: [result <> "/"], else: [result]
     end
   end
+
+  defp expand_segments(fs, current_path, prefix, [segment | rest], has_trailing_slash) do
+    if has_glob_chars?(segment) do
+      # This segment has wildcards - expand it
+      expand_wildcard_segment(fs, current_path, prefix, segment, rest, has_trailing_slash)
+    else
+      # No wildcards - just append and continue
+      next_path = join_path(current_path, segment)
+      next_prefix = join_prefix(prefix, segment)
+
+      case InMemoryFs.stat(fs, next_path) do
+        {:ok, _} ->
+          expand_segments(fs, next_path, next_prefix, rest, has_trailing_slash)
+
+        {:error, _} ->
+          # Path doesn't exist
+          []
+      end
+    end
+  end
+
+  defp expand_wildcard_segment(fs, current_path, prefix, segment, rest, has_trailing_slash) do
+    regex_pattern = glob_pattern_to_regex(segment)
+
+    with {:ok, regex} <- Regex.compile("^" <> regex_pattern <> "$"),
+         {:ok, entries} <- InMemoryFs.readdir(fs, current_path) do
+      matching = Enum.filter(entries, &matches_pattern?(&1, regex, segment))
+
+      Enum.flat_map(matching, fn entry ->
+        expand_matched_entry(fs, current_path, prefix, entry, rest, has_trailing_slash)
+      end)
+    else
+      _ -> []
+    end
+  end
+
+  defp expand_matched_entry(fs, current_path, prefix, entry, rest, has_trailing_slash) do
+    next_path = join_path(current_path, entry)
+    next_prefix = join_prefix(prefix, entry)
+
+    if rest == [] do
+      finalize_match(fs, next_path, next_prefix, has_trailing_slash)
+    else
+      continue_expansion(fs, next_path, next_prefix, rest, has_trailing_slash)
+    end
+  end
+
+  defp finalize_match(fs, path, prefix, has_trailing_slash) do
+    case InMemoryFs.stat(fs, path) do
+      {:ok, stat} ->
+        if has_trailing_slash and stat.is_directory,
+          do: [prefix <> "/"],
+          else: [prefix]
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  defp continue_expansion(fs, path, prefix, rest, has_trailing_slash) do
+    case InMemoryFs.stat(fs, path) do
+      {:ok, %{is_directory: true}} ->
+        expand_segments(fs, path, prefix, rest, has_trailing_slash)
+
+      _ ->
+        []
+    end
+  end
+
+  defp matches_pattern?(entry, regex, segment) do
+    # Dotfiles only match if pattern explicitly starts with .
+    if String.starts_with?(entry, ".") and not String.starts_with?(segment, ".") do
+      false
+    else
+      Regex.match?(regex, entry)
+    end
+  end
+
+  defp join_path("/", entry), do: "/" <> entry
+  defp join_path(path, entry), do: path <> "/" <> entry
+
+  defp join_prefix("", entry), do: entry
+  defp join_prefix("/", entry), do: "/" <> entry
+  defp join_prefix(prefix, entry), do: prefix <> "/" <> entry
 
   @doc """
   Split a string on IFS characters.
@@ -70,40 +182,6 @@ defmodule JustBash.Interpreter.Expansion.Glob do
       "[" -> "["
       "]" -> "]"
       c -> Regex.escape(c)
-    end)
-  end
-
-  # Private helpers
-
-  defp split_glob_pattern(cwd, dir, pattern) do
-    case String.split(pattern, "/") |> Enum.reverse() do
-      [file] ->
-        # No directory prefix in pattern, use cwd for lookup, no prefix in output
-        {dir, file, nil}
-
-      [file | rest] ->
-        dir_part = rest |> Enum.reverse() |> Enum.join("/")
-        resolved_dir = resolve_glob_dir(cwd, dir_part)
-        # Return both resolved dir (for lookup) and original dir_part (for output)
-        {resolved_dir, file, dir_part}
-    end
-  end
-
-  defp resolve_glob_dir(cwd, dir_part) do
-    if String.starts_with?(dir_part, "/"),
-      do: dir_part,
-      else: InMemoryFs.resolve_path(cwd, dir_part)
-  end
-
-  defp filter_and_format_matches(entries, regex, original_prefix, _cwd) do
-    entries
-    |> Enum.filter(fn entry ->
-      Regex.match?(regex, entry) and not String.starts_with?(entry, ".")
-    end)
-    |> Enum.sort()
-    |> Enum.map(fn entry ->
-      # Use original prefix (nil = no prefix, or the relative/absolute path from pattern)
-      if original_prefix == nil, do: entry, else: Path.join(original_prefix, entry)
     end)
   end
 end

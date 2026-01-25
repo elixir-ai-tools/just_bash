@@ -169,8 +169,13 @@ defmodule JustBash.Commands.Jq.Evaluator do
     if truthy?(cond_val), do: do_eval(then_expr, data, opts), else: do_eval(else_expr, data, opts)
   end
 
+  defp do_eval({:try, expr, catch_expr}, data, opts) do
+    eval_try(expr, catch_expr, data, opts)
+  end
+
+  # Legacy form without catch (shouldn't occur with new parser but handle for safety)
   defp do_eval({:try, expr}, data, opts) do
-    eval_try(expr, data, opts)
+    eval_try(expr, nil, data, opts)
   end
 
   # Reduce and foreach
@@ -255,8 +260,12 @@ defmodule JustBash.Commands.Jq.Evaluator do
 
   # Pipe helper - handles multi-value results
   defp eval_pipe_right({:multi, results}, right, opts) do
+    # Filter out :empty values before piping to right side
+    # (select returns :empty for non-matching elements)
+    filtered_results = Enum.reject(results, &(&1 == :empty))
+
     multi_results =
-      Enum.flat_map(results, fn item ->
+      Enum.flat_map(filtered_results, fn item ->
         case do_eval(right, item, opts) do
           {:multi, inner} -> inner
           other -> [other]
@@ -265,6 +274,9 @@ defmodule JustBash.Commands.Jq.Evaluator do
 
     {:multi, multi_results}
   end
+
+  # :empty from select should not be piped to next stage
+  defp eval_pipe_right(:empty, _right, _opts), do: :empty
 
   defp eval_pipe_right(left_result, right, opts) do
     do_eval(right, left_result, opts)
@@ -343,10 +355,16 @@ defmodule JustBash.Commands.Jq.Evaluator do
     {:eval_error, _} -> do_eval(right, data, opts)
   end
 
-  defp eval_try(expr, data, opts) do
+  defp eval_try(expr, nil, data, opts) do
     do_eval(expr, data, opts)
   catch
     {:eval_error, _} -> nil
+  end
+
+  defp eval_try(expr, catch_expr, data, opts) do
+    do_eval(expr, data, opts)
+  catch
+    {:eval_error, _} -> do_eval(catch_expr, data, opts)
   end
 
   # Update assignment helpers

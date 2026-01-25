@@ -22,7 +22,7 @@ defmodule JustBash.Commands.Jq.Parser do
           | {:comparison, atom(), ast(), ast()}
           | {:boolean, atom(), ast(), ast()}
           | {:not, ast()}
-          | {:try, ast()}
+          | {:try, ast(), ast() | nil}
           | {:if, ast(), ast(), ast()}
           | {:recursive_descent}
 
@@ -648,7 +648,16 @@ defmodule JustBash.Commands.Jq.Parser do
 
   defp parse_try_expr(rest) do
     {expr, rest2} = parse_primary(String.trim(rest))
-    {{:try, expr}, rest2}
+    rest2 = String.trim(rest2)
+
+    # Check for optional catch clause
+    if String.starts_with?(rest2, "catch") and not_ident_cont?(String.slice(rest2, 5..-1//1)) do
+      rest3 = String.trim(String.slice(rest2, 5..-1//1))
+      {catch_expr, rest4} = parse_primary(rest3)
+      {{:try, expr, catch_expr}, rest4}
+    else
+      {{:try, expr, nil}, rest2}
+    end
   end
 
   defp parse_format_string(input) do

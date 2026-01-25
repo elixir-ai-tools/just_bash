@@ -172,4 +172,34 @@ defmodule JustBash.BashComparison.SpecialVariablesTest do
       compare_bash("x=$RANDOM; test -n \"$x\" && echo ok || echo empty")
     end
   end
+
+  describe "PIPESTATUS array" do
+    test "PIPESTATUS after simple pipeline" do
+      compare_bash("echo hello | cat; echo ${PIPESTATUS[0]} ${PIPESTATUS[1]}")
+    end
+
+    test "PIPESTATUS with failed first command" do
+      compare_bash("false | cat; echo ${PIPESTATUS[0]} ${PIPESTATUS[1]}")
+    end
+
+    test "PIPESTATUS with failed last command" do
+      compare_bash("echo hello | false; echo ${PIPESTATUS[0]} ${PIPESTATUS[1]}")
+    end
+
+    test "PIPESTATUS all elements" do
+      compare_bash("true | false | true; echo ${PIPESTATUS[@]}")
+    end
+
+    test "PIPESTATUS single command" do
+      compare_bash("true; echo ${PIPESTATUS[0]}")
+    end
+
+    test "PIPESTATUS reset after each pipeline" do
+      compare_bash("false | true; x=\"${PIPESTATUS[@]}\"; true; echo \"$x\" ${PIPESTATUS[@]}")
+    end
+
+    test "PIPESTATUS length" do
+      compare_bash("echo a | cat | cat; echo ${#PIPESTATUS[@]}")
+    end
+  end
 end
