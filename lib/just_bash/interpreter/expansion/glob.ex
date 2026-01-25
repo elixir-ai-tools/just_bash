@@ -91,45 +91,46 @@ defmodule JustBash.Interpreter.Expansion.Glob do
 
     with {:ok, regex} <- Regex.compile("^" <> regex_pattern <> "$"),
          {:ok, entries} <- InMemoryFs.readdir(fs, current_path) do
-      # Filter entries that match the pattern (excluding dotfiles unless pattern starts with .)
-      matching =
-        entries
-        |> Enum.filter(fn entry ->
-          matches_pattern?(entry, regex, segment)
-        end)
+      matching = Enum.filter(entries, &matches_pattern?(&1, regex, segment))
 
-      # For each match, continue expanding remaining segments
       Enum.flat_map(matching, fn entry ->
-        next_path = join_path(current_path, entry)
-        next_prefix = join_prefix(prefix, entry)
-
-        if rest == [] do
-          # This is the last segment - check if path exists
-          case InMemoryFs.stat(fs, next_path) do
-            {:ok, stat} ->
-              # Only add trailing slash for directories if pattern had trailing slash
-              if has_trailing_slash and stat.is_directory do
-                [next_prefix <> "/"]
-              else
-                [next_prefix]
-              end
-
-            {:error, _} ->
-              []
-          end
-        else
-          # More segments to process - only continue if this is a directory
-          case InMemoryFs.stat(fs, next_path) do
-            {:ok, %{is_directory: true}} ->
-              expand_segments(fs, next_path, next_prefix, rest, has_trailing_slash)
-
-            _ ->
-              []
-          end
-        end
+        expand_matched_entry(fs, current_path, prefix, entry, rest, has_trailing_slash)
       end)
     else
       _ -> []
+    end
+  end
+
+  defp expand_matched_entry(fs, current_path, prefix, entry, rest, has_trailing_slash) do
+    next_path = join_path(current_path, entry)
+    next_prefix = join_prefix(prefix, entry)
+
+    if rest == [] do
+      finalize_match(fs, next_path, next_prefix, has_trailing_slash)
+    else
+      continue_expansion(fs, next_path, next_prefix, rest, has_trailing_slash)
+    end
+  end
+
+  defp finalize_match(fs, path, prefix, has_trailing_slash) do
+    case InMemoryFs.stat(fs, path) do
+      {:ok, stat} ->
+        if has_trailing_slash and stat.is_directory,
+          do: [prefix <> "/"],
+          else: [prefix]
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  defp continue_expansion(fs, path, prefix, rest, has_trailing_slash) do
+    case InMemoryFs.stat(fs, path) do
+      {:ok, %{is_directory: true}} ->
+        expand_segments(fs, path, prefix, rest, has_trailing_slash)
+
+      _ ->
+        []
     end
   end
 
