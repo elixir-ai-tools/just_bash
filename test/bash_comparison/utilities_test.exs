@@ -96,7 +96,9 @@ defmodule JustBash.BashComparison.UtilitiesTest do
 
   describe "tee command" do
     test "tee to file" do
-      compare_bash("mkdir -p /tmp/teetest; echo hello | tee /tmp/teetest/out.txt; cat /tmp/teetest/out.txt; rm -rf /tmp/teetest")
+      compare_bash(
+        "mkdir -p /tmp/teetest; echo hello | tee /tmp/teetest/out.txt; cat /tmp/teetest/out.txt; rm -rf /tmp/teetest"
+      )
     end
 
     test "tee passes through" do
@@ -104,7 +106,9 @@ defmodule JustBash.BashComparison.UtilitiesTest do
     end
 
     test "tee append mode" do
-      compare_bash("mkdir -p /tmp/teetest; echo first > /tmp/teetest/out.txt; echo second | tee -a /tmp/teetest/out.txt > /dev/null; cat /tmp/teetest/out.txt; rm -rf /tmp/teetest")
+      compare_bash(
+        "mkdir -p /tmp/teetest; echo first > /tmp/teetest/out.txt; echo second | tee -a /tmp/teetest/out.txt > /dev/null; cat /tmp/teetest/out.txt; rm -rf /tmp/teetest"
+      )
     end
   end
 

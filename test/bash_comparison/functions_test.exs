@@ -74,7 +74,9 @@ defmodule JustBash.BashComparison.FunctionsTest do
     end
 
     test "function with conditional" do
-      compare_bash(~s|check() { if [ "$1" = "yes" ]; then echo "ok"; else echo "no"; fi; }; check yes|)
+      compare_bash(
+        ~s|check() { if [ "$1" = "yes" ]; then echo "ok"; else echo "no"; fi; }; check yes|
+      )
     end
 
     test "function calling another function" do
@@ -82,7 +84,9 @@ defmodule JustBash.BashComparison.FunctionsTest do
     end
 
     test "recursive function" do
-      compare_bash(~s|countdown() { if [ $1 -gt 0 ]; then echo $1; countdown $(($1 - 1)); fi; }; countdown 3|)
+      compare_bash(
+        ~s|countdown() { if [ $1 -gt 0 ]; then echo $1; countdown $(($1 - 1)); fi; }; countdown 3|
+      )
     end
   end
 
