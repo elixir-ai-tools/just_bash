@@ -93,6 +93,28 @@ defmodule JustBash.Parser.Lexer do
 
   operators = choice([op3, op2, dparen_start, dparen_end, op1])
 
+  # ANSI-C quoted string $'...' - interprets escape sequences
+  ansi_c_quoted =
+    string("$'")
+    |> concat(parsec(:ansi_c_content))
+    |> string("'")
+    |> reduce({:build_ansi_c_quoted, []})
+    |> unwrap_and_tag(:ansi_c_quoted)
+
+  # Content inside $'...' - handles escape sequences
+  defcombinatorp(
+    :ansi_c_content,
+    repeat(
+      choice([
+        # Escape sequences
+        string("\\") |> utf8_char([]) |> reduce({:ansi_c_escape, []}),
+        # Regular characters (not backslash or closing quote)
+        utf8_char([{:not, ?\\}, {:not, ?'}])
+      ])
+    )
+    |> reduce({:join_chars, []})
+  )
+
   # Single-quoted string
   single_quoted =
     ignore(string("'"))
@@ -286,6 +308,7 @@ defmodule JustBash.Parser.Lexer do
   # Word parts - order matters! More specific patterns first
   word_part =
     choice([
+      ansi_c_quoted,
       single_quoted,
       double_quoted,
       escape_seq,
@@ -330,6 +353,34 @@ defmodule JustBash.Parser.Lexer do
   def build_escape(["\\", c]) when is_integer(c), do: "\\" <> <<c::utf8>>
   def build_escape([c]) when is_integer(c), do: "\\" <> <<c::utf8>>
 
+  # ANSI-C escape sequence interpretation
+  @ansi_c_escape_map %{
+    ?n => "\n",
+    ?t => "\t",
+    ?r => "\r",
+    ?\\ => "\\",
+    ?' => "'",
+    ?" => "\"",
+    ?a => "\a",
+    ?b => "\b",
+    ?e => "\e",
+    ?E => "\e",
+    ?f => "\f",
+    ?v => "\v"
+  }
+
+  def ansi_c_escape(["\\", c]) when is_integer(c) do
+    Map.get(@ansi_c_escape_map, c, <<c::utf8>>)
+  end
+
+  def ansi_c_escape([c]) when is_integer(c), do: <<c::utf8>>
+
+  def build_ansi_c_quoted(["$'" | rest]) do
+    # Last element is the closing quote, content is in between
+    content = rest |> Enum.take(length(rest) - 1) |> join_chars()
+    content
+  end
+
   # Interpret an escape sequence outside quotes - strip the backslash
   # In bash, \X outside quotes becomes X (the backslash quotes the next character)
   defp interpret_escape(<<_backslash::utf8, rest::binary>>), do: rest
@@ -362,7 +413,9 @@ defmodule JustBash.Parser.Lexer do
     # Build the display value and track original for assignment detection
     # quoted/single_quoted flags only true if word STARTS with a quote
     starts_quoted =
-      match?([{:single_quoted, _} | _], parts) or match?([{:double_quoted, _} | _], parts)
+      match?([{:single_quoted, _} | _], parts) or
+        match?([{:double_quoted, _} | _], parts) or
+        match?([{:ansi_c_quoted, _} | _], parts)
 
     {value, raw_value, _has_quotes, single_quoted} =
       Enum.reduce(parts, {"", "", false, false}, fn
@@ -371,6 +424,10 @@ defmodule JustBash.Parser.Lexer do
 
         {:single_quoted, s}, {acc, raw, _hq, _sq} ->
           {acc <> s, raw <> "'" <> s <> "'", true, true}
+
+        {:ansi_c_quoted, s}, {acc, raw, _hq, _sq} ->
+          # s is already the interpreted content, raw needs $'...'
+          {acc <> s, raw <> "$'" <> escape_for_raw(s) <> "'", true, false}
 
         {:double_quoted, s}, {acc, raw, _hq, sq} ->
           # s already includes the quotes from build_double_quoted
@@ -389,6 +446,16 @@ defmodule JustBash.Parser.Lexer do
 
     type = classify_word(value, raw_value, quoted)
     {type, value, quoted: quoted, single_quoted: single_quoted, raw_value: raw_value}
+  end
+
+  # Escape special characters for raw_value reconstruction
+  defp escape_for_raw(s) do
+    s
+    |> String.replace("\\", "\\\\")
+    |> String.replace("\n", "\\n")
+    |> String.replace("\t", "\\t")
+    |> String.replace("\r", "\\r")
+    |> String.replace("'", "\\'")
   end
 
   @reserved ~w(if then else elif fi for while until do done case esac in function select time coproc)
