@@ -73,16 +73,13 @@ defmodule JustBash.BashComparison.SedTest do
       compare_bash("echo -e 'begin\\nx\\ny\\nfinish\\nz' | sed '/begin/,/finish/s/x/X/g'")
     end
 
-    # Skip: BSD sed requires $'...' ANSI-C quoting which JustBash lexer doesn't fully support yet.
-    # JustBash's sed supports 'a\text' format directly. See: lexer ANSI-C quoting TODO.
-    @tag :skip
     test "append command" do
+      # BSD sed (macOS) requires $'...' ANSI-C quoting with newline after backslash
       compare_bash("echo -e 'a\\nb\\nc' | sed $'2a\\\\\\nappended text'")
     end
 
-    # Skip: BSD sed requires $'...' ANSI-C quoting which JustBash lexer doesn't fully support yet.
-    @tag :skip
     test "insert command" do
+      # BSD sed (macOS) requires $'...' ANSI-C quoting with newline after backslash
       compare_bash("echo -e 'a\\nb\\nc' | sed $'2i\\\\\\ninserted text'")
     end
 
@@ -94,9 +91,8 @@ defmodule JustBash.BashComparison.SedTest do
       compare_bash("echo -e 'foo\\nbar\\nbaz' | sed '/ba/d'")
     end
 
-    # Skip: BSD sed requires $'...' ANSI-C quoting which JustBash lexer doesn't fully support yet.
-    @tag :skip
     test "change command" do
+      # BSD sed (macOS) requires $'...' ANSI-C quoting with newline after backslash
       compare_bash("echo -e 'a\\nb\\nc' | sed $'2c\\\\\\nchanged line'")
     end
 
