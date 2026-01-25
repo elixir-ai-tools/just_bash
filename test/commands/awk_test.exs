@@ -715,4 +715,232 @@ defmodule JustBash.Commands.AwkTest do
       assert result.exit_code == 0
     end
   end
+
+  describe "loops" do
+    test "for loop basic" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{for(i=1;i<=3;i++)print i}'")
+      assert result.stdout == "1\n2\n3\n"
+    end
+
+    test "for loop with compound body" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+
+      {result, _} =
+        JustBash.exec(bash, "awk 'BEGIN{sum=0; for(i=1;i<=5;i++){sum+=i}; print sum}'")
+
+      assert result.stdout == "15\n"
+    end
+
+    test "while loop basic" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{i=1; while(i<=3){print i; i++}}'")
+      assert result.stdout == "1\n2\n3\n"
+    end
+
+    test "while loop with break" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+
+      {result, _} =
+        JustBash.exec(bash, "awk 'BEGIN{i=1; while(i<=10){if(i>3)break; print i; i++}}'")
+
+      assert result.stdout == "1\n2\n3\n"
+    end
+
+    test "while loop with continue" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk 'BEGIN{i=0; while(i<5){i++; if(i==3)continue; print i}}'"
+        )
+
+      assert result.stdout == "1\n2\n4\n5\n"
+    end
+
+    test "nested for loops" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk 'BEGIN{for(i=1;i<=2;i++){for(j=1;j<=2;j++){print i,j}}}'"
+        )
+
+      assert result.stdout == "1 1\n1 2\n2 1\n2 2\n"
+    end
+  end
+
+  describe "arrays" do
+    test "array assignment and access" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, ~s|awk 'BEGIN{a["x"]=5; print a["x"]}'|)
+      assert result.stdout == "5\n"
+    end
+
+    test "array increment" do
+      bash = JustBash.new(files: %{"/data.txt" => "a\na\nb\na\n"})
+      {result, _} = JustBash.exec(bash, ~s|awk '{count[$1]++} END{print count["a"]}' /data.txt|)
+      assert result.stdout == "3\n"
+    end
+
+    test "for-in loop over array" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          ~s|awk 'BEGIN{a[1]="one"; a[2]="two"; for(k in a){print k, a[k]}}'|
+        )
+
+      # Order of keys is not guaranteed, so check both values are present
+      assert result.stdout =~ "one"
+      assert result.stdout =~ "two"
+    end
+
+    test "in operator" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, ~s|awk 'BEGIN{a[1]=1; print (1 in a), (2 in a)}'|)
+      assert result.stdout == "1 0\n"
+    end
+
+    test "delete array element" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          ~s|awk 'BEGIN{a[1]=1; a[2]=2; delete a[1]; print (1 in a), (2 in a)}'|
+        )
+
+      assert result.stdout == "0 1\n"
+    end
+  end
+
+  describe "control flow" do
+    test "next skips to next record" do
+      bash = JustBash.new(files: %{"/data.txt" => "1\n2\n3\n4\n"})
+      {result, _} = JustBash.exec(bash, "awk '$1==2{next} {print}' /data.txt")
+      assert result.stdout == "1\n3\n4\n"
+    end
+
+    test "exit terminates processing" do
+      bash = JustBash.new(files: %{"/data.txt" => "1\n2\n3\n4\n"})
+      {result, _} = JustBash.exec(bash, "awk '{print; if(NR==2)exit}' /data.txt")
+      assert result.stdout == "1\n2\n"
+    end
+
+    test "exit with code" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{exit 42}'")
+      assert result.exit_code == 42
+    end
+  end
+
+  describe "operators" do
+    test "modulo operator" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{print 17 % 5}'")
+      assert result.stdout == "2\n"
+    end
+
+    test "power operator with ^" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{print 2^10}'")
+      assert result.stdout == "1024\n"
+    end
+
+    test "power operator with **" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{print 2**3}'")
+      assert result.stdout == "8\n"
+    end
+
+    test "logical AND" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{print (1 && 1), (1 && 0), (0 && 1)}'")
+      assert result.stdout == "1 0 0\n"
+    end
+
+    test "logical OR" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{print (1 || 0), (0 || 1), (0 || 0)}'")
+      assert result.stdout == "1 1 0\n"
+    end
+
+    test "logical NOT" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{print !0, !1, !\"\", !\"x\"}'")
+      assert result.stdout == "1 0 1 0\n"
+    end
+
+    test "compound assignment -=" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{x=10; x-=3; print x}'")
+      assert result.stdout == "7\n"
+    end
+
+    test "compound assignment *=" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{x=5; x*=3; print x}'")
+      assert result.stdout == "15\n"
+    end
+
+    test "compound assignment /=" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{x=20; x/=4; print x}'")
+      assert result.stdout == "5\n"
+    end
+
+    test "pre-increment ++x" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{x=5; ++x; print x}'")
+      assert result.stdout == "6\n"
+    end
+
+    test "post-decrement x--" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{x=5; x--; print x}'")
+      assert result.stdout == "4\n"
+    end
+
+    test "pre-decrement --x" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{x=5; --x; print x}'")
+      assert result.stdout == "4\n"
+    end
+  end
+
+  describe "math functions" do
+    test "int() truncates to integer" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{print int(3.7), int(-3.7)}'")
+      assert result.stdout == "3 -3\n"
+    end
+
+    test "sqrt() calculates square root" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{print int(sqrt(16))}'")
+      assert result.stdout == "4\n"
+    end
+
+    test "sin() and cos()" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{print int(sin(0)), int(cos(0))}'")
+      assert result.stdout == "0 1\n"
+    end
+
+    test "exp() and log()" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{print int(exp(0)), int(log(1))}'")
+      assert result.stdout == "1 0\n"
+    end
+
+    test "rand() returns value between 0 and 1" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{r=rand(); print (r>=0 && r<1)}'")
+      assert result.stdout == "1\n"
+    end
+  end
 end

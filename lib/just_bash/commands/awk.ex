@@ -55,8 +55,15 @@ defmodule JustBash.Commands.Awk do
           variables: opts.variables
         }
 
-        output = Evaluator.execute(data, program, eval_opts)
-        {Command.ok(output), bash}
+        {output, exit_code} = Evaluator.execute(data, program, eval_opts)
+
+        result = %{
+          stdout: output,
+          stderr: "",
+          exit_code: exit_code
+        }
+
+        {result, bash}
     end
   end
 

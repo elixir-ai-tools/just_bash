@@ -16,7 +16,9 @@ defmodule JustBash.Commands.Awk.Evaluator do
           ors: String.t(),
           fields: [String.t()],
           variables: %{String.t() => String.t()},
-          output: String.t()
+          arrays: %{String.t() => map()},
+          output: String.t(),
+          exit_code: non_neg_integer() | nil
         }
 
   @doc """
@@ -44,19 +46,36 @@ defmodule JustBash.Commands.Awk.Evaluator do
       ors: "\n",
       fields: [],
       variables: opts.variables,
-      output: ""
+      arrays: %{},
+      output: "",
+      exit_code: nil
     }
 
     state = execute_begin_blocks(state, program.begin_blocks)
 
     state =
-      Enum.reduce(lines, state, fn line, s ->
-        process_line(line, program.main_rules, s)
-      end)
+      if state.exit_code != nil do
+        state
+      else
+        Enum.reduce_while(lines, state, fn line, s ->
+          new_state = process_line(line, program.main_rules, s)
 
-    state = execute_end_blocks(state, program.end_blocks)
+          if new_state.exit_code != nil do
+            {:halt, new_state}
+          else
+            {:cont, new_state}
+          end
+        end)
+      end
 
-    state.output
+    state =
+      if state.exit_code != nil do
+        state
+      else
+        execute_end_blocks(state, program.end_blocks)
+      end
+
+    {state.output, state.exit_code || 0}
   end
 
   defp execute_begin_blocks(state, blocks) do
@@ -84,16 +103,36 @@ defmodule JustBash.Commands.Awk.Evaluator do
     if rules == [] do
       state
     else
-      Enum.reduce(rules, state, &apply_rule/2)
+      apply_rules(rules, state)
     end
   end
 
-  defp apply_rule({pattern, action}, state) do
+  defp apply_rules([], state), do: state
+
+  defp apply_rules([{pattern, action} | rest], state) do
     if pattern_matches?(pattern, state) do
-      execute_statements(action, state)
+      case execute_statements_with_control(action, state) do
+        {:next, new_state} ->
+          # next: skip remaining rules for this line
+          new_state
+
+        new_state ->
+          apply_rules(rest, new_state)
+      end
     else
-      state
+      apply_rules(rest, state)
     end
+  end
+
+  defp execute_statements_with_control(statements, state) do
+    Enum.reduce_while(statements, state, fn stmt, acc_state ->
+      case execute_statement(stmt, acc_state) do
+        {:next, new_state} -> {:halt, {:next, new_state}}
+        {:break, new_state} -> {:cont, new_state}
+        {:continue, new_state} -> {:cont, new_state}
+        new_state -> {:cont, new_state}
+      end
+    end)
   end
 
   defp split_fields(line, fs) do
@@ -300,6 +339,124 @@ defmodule JustBash.Commands.Awk.Evaluator do
     %{state | variables: Map.put(state.variables, var, to_string(current_num + 1))}
   end
 
+  defp execute_statement({:pre_increment, var}, state) do
+    current = Map.get(state.variables, var, "0")
+    current_num = parse_number(current)
+    %{state | variables: Map.put(state.variables, var, to_string(current_num + 1))}
+  end
+
+  defp execute_statement({:decrement, var}, state) do
+    current = Map.get(state.variables, var, "0")
+    current_num = parse_number(current)
+    %{state | variables: Map.put(state.variables, var, to_string(current_num - 1))}
+  end
+
+  defp execute_statement({:pre_decrement, var}, state) do
+    current = Map.get(state.variables, var, "0")
+    current_num = parse_number(current)
+    %{state | variables: Map.put(state.variables, var, to_string(current_num - 1))}
+  end
+
+  defp execute_statement({:sub_assign, var, expr}, state) do
+    current = Map.get(state.variables, var, "0")
+    current_num = parse_number(current)
+    sub_val = evaluate_expression(expr, state) |> parse_number()
+    new_val = current_num - sub_val
+    %{state | variables: Map.put(state.variables, var, to_string(new_val))}
+  end
+
+  defp execute_statement({:mul_assign, var, expr}, state) do
+    current = Map.get(state.variables, var, "1")
+    current_num = parse_number(current)
+    mul_val = evaluate_expression(expr, state) |> parse_number()
+    new_val = current_num * mul_val
+    %{state | variables: Map.put(state.variables, var, to_string(new_val))}
+  end
+
+  defp execute_statement({:div_assign, var, expr}, state) do
+    current = Map.get(state.variables, var, "0")
+    current_num = parse_number(current)
+    div_val = evaluate_expression(expr, state) |> parse_number()
+    new_val = if div_val == 0, do: 0.0, else: current_num / div_val
+    %{state | variables: Map.put(state.variables, var, to_string(new_val))}
+  end
+
+  # Array operations
+  defp execute_statement({:array_assign, array, key_expr, value_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> to_string()
+    value = evaluate_expression(value_expr, state) |> to_string()
+    arr = Map.get(state.arrays, array, %{})
+    new_arr = Map.put(arr, key, value)
+    %{state | arrays: Map.put(state.arrays, array, new_arr)}
+  end
+
+  defp execute_statement({:array_increment, array, key_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> to_string()
+    arr = Map.get(state.arrays, array, %{})
+    current = Map.get(arr, key, "0") |> parse_number()
+    new_arr = Map.put(arr, key, to_string(current + 1))
+    %{state | arrays: Map.put(state.arrays, array, new_arr)}
+  end
+
+  defp execute_statement({:array_add_assign, array, key_expr, value_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> to_string()
+    value = evaluate_expression(value_expr, state) |> parse_number()
+    arr = Map.get(state.arrays, array, %{})
+    current = Map.get(arr, key, "0") |> parse_number()
+    new_arr = Map.put(arr, key, to_string(current + value))
+    %{state | arrays: Map.put(state.arrays, array, new_arr)}
+  end
+
+  defp execute_statement({:delete_element, array, key_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> to_string()
+    arr = Map.get(state.arrays, array, %{})
+    new_arr = Map.delete(arr, key)
+    %{state | arrays: Map.put(state.arrays, array, new_arr)}
+  end
+
+  defp execute_statement({:delete_array, array}, state) do
+    %{state | arrays: Map.delete(state.arrays, array)}
+  end
+
+  # Control flow
+  defp execute_statement({:break}, state), do: {:break, state}
+  defp execute_statement({:continue}, state), do: {:continue, state}
+  defp execute_statement({:next}, state), do: {:next, state}
+  defp execute_statement({:exit, code}, state), do: %{state | exit_code: code}
+
+  # For loop
+  defp execute_statement({:for, init, cond_expr, update, body}, state) do
+    # Execute init
+    state = if init, do: execute_statement(init, state), else: state
+    execute_for_loop(cond_expr, update, body, state)
+  end
+
+  # For-in loop (iterate over array keys)
+  defp execute_statement({:for_in, var, array, body}, state) do
+    arr = Map.get(state.arrays, array, %{})
+    keys = Map.keys(arr)
+
+    Enum.reduce_while(keys, state, fn key, acc_state ->
+      new_state = %{acc_state | variables: Map.put(acc_state.variables, var, key)}
+
+      case execute_loop_body(body, new_state) do
+        {:break, final_state} -> {:halt, final_state}
+        {:continue, final_state} -> {:cont, final_state}
+        final_state -> {:cont, final_state}
+      end
+    end)
+  end
+
+  # While loop
+  defp execute_statement({:while, cond_expr, body}, state) do
+    execute_while_loop(cond_expr, body, state)
+  end
+
+  # Do-while loop
+  defp execute_statement({:do_while, body, cond_expr}, state) do
+    execute_do_while_loop(body, cond_expr, state)
+  end
+
   # if (condition) then_stmt; else else_stmt
   defp execute_statement({:if, condition, then_stmt, else_stmt}, state) do
     if evaluate_condition_expr(condition, state) do
@@ -369,6 +526,75 @@ defmodule JustBash.Commands.Awk.Evaluator do
       {:error, _} ->
         state
     end
+  end
+
+  # Loop helper functions
+
+  defp execute_for_loop(cond_expr, update, body, state) do
+    if truthy?(evaluate_expression(cond_expr, state)) do
+      case execute_loop_body(body, state) do
+        {:break, new_state} ->
+          new_state
+
+        {:continue, new_state} ->
+          new_state = if update, do: execute_statement(update, new_state), else: new_state
+          execute_for_loop(cond_expr, update, body, new_state)
+
+        new_state ->
+          new_state = if update, do: execute_statement(update, new_state), else: new_state
+          execute_for_loop(cond_expr, update, body, new_state)
+      end
+    else
+      state
+    end
+  end
+
+  defp execute_while_loop(cond_expr, body, state) do
+    if truthy?(evaluate_expression(cond_expr, state)) do
+      case execute_loop_body(body, state) do
+        {:break, new_state} ->
+          new_state
+
+        {:continue, new_state} ->
+          execute_while_loop(cond_expr, body, new_state)
+
+        new_state ->
+          execute_while_loop(cond_expr, body, new_state)
+      end
+    else
+      state
+    end
+  end
+
+  defp execute_do_while_loop(body, cond_expr, state) do
+    case execute_loop_body(body, state) do
+      {:break, new_state} ->
+        new_state
+
+      {:continue, new_state} ->
+        if truthy?(evaluate_expression(cond_expr, new_state)) do
+          execute_do_while_loop(body, cond_expr, new_state)
+        else
+          new_state
+        end
+
+      new_state ->
+        if truthy?(evaluate_expression(cond_expr, new_state)) do
+          execute_do_while_loop(body, cond_expr, new_state)
+        else
+          new_state
+        end
+    end
+  end
+
+  defp execute_loop_body(statements, state) do
+    Enum.reduce_while(statements, state, fn stmt, acc_state ->
+      case execute_statement(stmt, acc_state) do
+        {:break, new_state} -> {:halt, {:break, new_state}}
+        {:continue, new_state} -> {:halt, {:continue, new_state}}
+        new_state -> {:cont, new_state}
+      end
+    end)
   end
 
   @doc """
@@ -450,6 +676,129 @@ defmodule JustBash.Commands.Awk.Evaluator do
     else
       left_val / right_val
     end
+  end
+
+  # Modulo
+  def evaluate_expression({:mod, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number() |> trunc()
+    right_val = evaluate_expression(right, state) |> parse_number() |> trunc()
+
+    if right_val == 0 do
+      0
+    else
+      rem(left_val, right_val)
+    end
+  end
+
+  # Power
+  def evaluate_expression({:pow, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+    :math.pow(left_val, right_val)
+  end
+
+  # Logical operators
+  def evaluate_expression({:and, left, right}, state) do
+    left_val = evaluate_expression(left, state)
+
+    if truthy?(left_val) do
+      right_val = evaluate_expression(right, state)
+      if truthy?(right_val), do: 1, else: 0
+    else
+      0
+    end
+  end
+
+  def evaluate_expression({:or, left, right}, state) do
+    left_val = evaluate_expression(left, state)
+
+    if truthy?(left_val) do
+      1
+    else
+      right_val = evaluate_expression(right, state)
+      if truthy?(right_val), do: 1, else: 0
+    end
+  end
+
+  def evaluate_expression({:not, expr}, state) do
+    val = evaluate_expression(expr, state)
+    if truthy?(val), do: 0, else: 1
+  end
+
+  # Unary minus
+  def evaluate_expression({:negate, expr}, state) do
+    val = evaluate_expression(expr, state) |> parse_number()
+    -val
+  end
+
+  # Comparison operators as expressions (return 0 or 1)
+  def evaluate_expression({:==, left, right}, state) do
+    left_val = evaluate_expression(left, state)
+    right_val = evaluate_expression(right, state)
+    if compare_values(left_val, right_val, &==/2), do: 1, else: 0
+  end
+
+  def evaluate_expression({:!=, left, right}, state) do
+    left_val = evaluate_expression(left, state)
+    right_val = evaluate_expression(right, state)
+    if compare_values(left_val, right_val, &!=/2), do: 1, else: 0
+  end
+
+  def evaluate_expression({:>, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+    if left_val > right_val, do: 1, else: 0
+  end
+
+  def evaluate_expression({:<, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+    if left_val < right_val, do: 1, else: 0
+  end
+
+  def evaluate_expression({:>=, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+    if left_val >= right_val, do: 1, else: 0
+  end
+
+  def evaluate_expression({:<=, left, right}, state) do
+    left_val = evaluate_expression(left, state) |> parse_number()
+    right_val = evaluate_expression(right, state) |> parse_number()
+    if left_val <= right_val, do: 1, else: 0
+  end
+
+  # Regex match as expression
+  def evaluate_expression({:match, expr, pattern}, state) do
+    value = evaluate_expression(expr, state) |> to_string()
+
+    case Regex.compile(pattern) do
+      {:ok, regex} -> if Regex.match?(regex, value), do: 1, else: 0
+      {:error, _} -> 0
+    end
+  end
+
+  def evaluate_expression({:not_match, expr, pattern}, state) do
+    value = evaluate_expression(expr, state) |> to_string()
+
+    case Regex.compile(pattern) do
+      {:ok, regex} -> if Regex.match?(regex, value), do: 0, else: 1
+      {:error, _} -> 1
+    end
+  end
+
+  # "in" operator: key in array
+  def evaluate_expression({:in, key_expr, array_name}, state) do
+    key = evaluate_expression(key_expr, state) |> to_string()
+    arr = Map.get(state.arrays, array_name, %{})
+    if Map.has_key?(arr, key), do: 1, else: 0
+  end
+
+  # Array access
+  def evaluate_expression({:array_access, array_name, key_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> to_string()
+    arr = Map.get(state.arrays, array_name, %{})
+    Map.get(arr, key, "")
   end
 
   defp get_field(state, 0), do: Enum.at(state.fields, 0, "")
@@ -583,6 +932,49 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   defp evaluate_function("sprintf", [format | args], _state) do
     Formatter.format_printf(format, args)
+  end
+
+  # Math functions
+  defp evaluate_function("int", [arg], _state) do
+    parse_number(arg) |> trunc()
+  end
+
+  defp evaluate_function("sqrt", [arg], _state) do
+    :math.sqrt(parse_number(arg))
+  end
+
+  defp evaluate_function("sin", [arg], _state) do
+    :math.sin(parse_number(arg))
+  end
+
+  defp evaluate_function("cos", [arg], _state) do
+    :math.cos(parse_number(arg))
+  end
+
+  defp evaluate_function("exp", [arg], _state) do
+    :math.exp(parse_number(arg))
+  end
+
+  defp evaluate_function("log", [arg], _state) do
+    :math.log(parse_number(arg))
+  end
+
+  defp evaluate_function("atan2", [y, x], _state) do
+    :math.atan2(parse_number(y), parse_number(x))
+  end
+
+  defp evaluate_function("rand", [], _state) do
+    :rand.uniform()
+  end
+
+  defp evaluate_function("srand", [], _state) do
+    :rand.seed(:default)
+    0
+  end
+
+  defp evaluate_function("srand", [seed], _state) do
+    :rand.seed(:default, {trunc(parse_number(seed)), 0, 0})
+    0
   end
 
   defp evaluate_function(_name, _args, _state), do: ""
