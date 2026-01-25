@@ -283,6 +283,7 @@ defmodule JustBash.Integration.ComplexQuotingTest do
 
     test "grep pattern stored in variable" do
       bash = JustBash.new(files: %{"/test.txt" => "hello world"})
+
       script = """
       pattern='hello'
       grep "$pattern" /test.txt
