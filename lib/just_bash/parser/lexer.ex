@@ -510,7 +510,8 @@ defmodule JustBash.Parser.Lexer do
 
   defp assignment?(value) do
     case String.split(value, "=", parts: 2) do
-      [lhs, _rhs] -> Regex.match?(~r/^[a-zA-Z_][a-zA-Z0-9_]*\+?$/, lhs)
+      # Match simple variable (foo=), append (foo+=), or array element (arr[n]=, arr[n]+=)
+      [lhs, _rhs] -> Regex.match?(~r/^[a-zA-Z_][a-zA-Z0-9_]*(\[[^\]]*\])?\+?$/, lhs)
       _ -> false
     end
   end

@@ -11,11 +11,11 @@ defmodule JustBash.Commands.Basename do
   def execute(bash, args, _stdin) do
     case args do
       [path] ->
-        name = Path.basename(path)
+        name = get_basename(path)
         {Command.ok(name <> "\n"), bash}
 
       [path, suffix] ->
-        name = Path.basename(path)
+        name = get_basename(path)
 
         name =
           if String.ends_with?(name, suffix),
@@ -27,5 +27,14 @@ defmodule JustBash.Commands.Basename do
       _ ->
         {Command.error("basename: missing operand\n"), bash}
     end
+  end
+
+  # basename "/" returns "/" in bash, but Path.basename("/") returns ""
+  defp get_basename("/"), do: "/"
+
+  defp get_basename(path) do
+    path
+    |> String.trim_trailing("/")
+    |> Path.basename()
   end
 end

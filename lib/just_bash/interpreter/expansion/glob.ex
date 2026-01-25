@@ -26,12 +26,12 @@ defmodule JustBash.Interpreter.Expansion.Glob do
   @spec expand(JustBash.t(), String.t()) :: [String.t()]
   def expand(bash, pattern) do
     dir = if String.starts_with?(pattern, "/"), do: "/", else: bash.cwd
-    {dir_pattern, file_pattern} = split_glob_pattern(bash.cwd, dir, pattern)
+    {dir_pattern, file_pattern, original_prefix} = split_glob_pattern(bash.cwd, dir, pattern)
     regex_pattern = glob_pattern_to_regex(file_pattern)
 
     with {:ok, regex} <- Regex.compile("^" <> regex_pattern <> "$"),
          {:ok, entries} <- InMemoryFs.readdir(bash.fs, dir_pattern) do
-      matches = filter_and_format_matches(entries, regex, dir_pattern, bash.cwd)
+      matches = filter_and_format_matches(entries, regex, original_prefix, bash.cwd)
       if matches == [], do: [pattern], else: matches
     else
       _ -> [pattern]
@@ -78,12 +78,14 @@ defmodule JustBash.Interpreter.Expansion.Glob do
   defp split_glob_pattern(cwd, dir, pattern) do
     case String.split(pattern, "/") |> Enum.reverse() do
       [file] ->
-        {dir, file}
+        # No directory prefix in pattern, use cwd for lookup, no prefix in output
+        {dir, file, nil}
 
       [file | rest] ->
         dir_part = rest |> Enum.reverse() |> Enum.join("/")
         resolved_dir = resolve_glob_dir(cwd, dir_part)
-        {resolved_dir, file}
+        # Return both resolved dir (for lookup) and original dir_part (for output)
+        {resolved_dir, file, dir_part}
     end
   end
 
@@ -93,14 +95,15 @@ defmodule JustBash.Interpreter.Expansion.Glob do
       else: InMemoryFs.resolve_path(cwd, dir_part)
   end
 
-  defp filter_and_format_matches(entries, regex, dir_pattern, cwd) do
+  defp filter_and_format_matches(entries, regex, original_prefix, _cwd) do
     entries
     |> Enum.filter(fn entry ->
       Regex.match?(regex, entry) and not String.starts_with?(entry, ".")
     end)
     |> Enum.sort()
     |> Enum.map(fn entry ->
-      if dir_pattern == cwd, do: entry, else: Path.join(dir_pattern, entry)
+      # Use original prefix (nil = no prefix, or the relative/absolute path from pattern)
+      if original_prefix == nil, do: entry, else: Path.join(original_prefix, entry)
     end)
   end
 end
