@@ -12,8 +12,8 @@ defmodule JustBash.Commands.Markdown do
       # Pipe content
       echo "# Hello" | markdown
 
-      # Use with sqlite and liquid for a blog
-      sqlite3 blog "SELECT content FROM posts WHERE slug='hello'" | markdown | ...
+      # Process markdown from a variable
+      echo "$content" | markdown > page.html
   """
   @behaviour JustBash.Commands.Command
 
