@@ -25,8 +25,29 @@ defmodule JustBash do
   - No access to the real filesystem by default
   - No network access by default
   - Execution limits to prevent infinite loops
+
+  ## Sigil
+
+  Use the `~b` sigil for inline bash execution:
+
+      import JustBash.Sigil
+
+      # Execute and get result map
+      result = ~b"echo hello"
+      result.stdout  # "hello\\n"
+
+      # With modifiers
+      ~b"echo hello"t  # "hello" (trimmed)
+      ~b"echo hello"s  # "hello\\n" (stdout only)
+      ~b"exit 42"e     # 42 (exit code)
+      ~b"echo hi"x     # "hi\\n" (raises on non-zero exit)
+
+      # With interpolation
+      name = "world"
+      ~b"echo hello \#{name}"t  # "hello world"
   """
 
+  alias JustBash.Formatter
   alias JustBash.Fs.InMemoryFs
   alias JustBash.Interpreter.Executor
   alias JustBash.Parser
@@ -262,6 +283,53 @@ defmodule JustBash do
   """
   @spec tokenize(String.t()) :: [Lexer.Token.t()]
   def tokenize(input), do: Lexer.tokenize(input)
+
+  @doc """
+  Format a bash script into a consistent, readable format.
+
+  Parses the input script and outputs it with consistent formatting:
+  - Consistent indentation for control structures
+  - Normalized whitespace
+  - Proper line breaks
+
+  ## Options
+
+  - `:indent` - Indentation string (default: "  " - two spaces)
+
+  ## Examples
+
+      JustBash.format("if true;then echo yes;fi")
+      # {:ok, "if true; then\\n  echo yes\\nfi"}
+
+      JustBash.format("echo   hello    world")
+      # {:ok, "echo hello world"}
+
+      JustBash.format("for i in 1 2 3;do echo $i;done")
+      # {:ok, "for i in 1 2 3; do\\n  echo $i\\ndone"}
+  """
+  @spec format(String.t(), keyword()) :: {:ok, String.t()} | {:error, Parser.ParseError.t()}
+  def format(input, opts \\ []) when is_binary(input) do
+    case Parser.parse(input) do
+      {:ok, ast} -> {:ok, Formatter.format(ast, opts)}
+      {:error, _} = error -> error
+    end
+  end
+
+  @doc """
+  Format a bash script, raising on parse errors.
+
+  ## Examples
+
+      JustBash.format!("echo hello")
+      # "echo hello"
+  """
+  @spec format!(String.t(), keyword()) :: String.t()
+  def format!(input, opts \\ []) when is_binary(input) do
+    case format(input, opts) do
+      {:ok, formatted} -> formatted
+      {:error, error} -> raise "Parse error: #{error.message}"
+    end
+  end
 
   @doc """
   Execute a bash script from a file on the real filesystem.

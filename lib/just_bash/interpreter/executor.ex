@@ -16,6 +16,7 @@ defmodule JustBash.Interpreter.Executor do
   alias JustBash.Interpreter.Executor.Loop
   alias JustBash.Interpreter.Executor.Redirection
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Result
 
   @type result :: %{
           :stdout => String.t(),
@@ -119,14 +120,8 @@ defmodule JustBash.Interpreter.Executor do
       if should_run do
         {result, new_bash} = execute_pipeline(bash, pipeline)
 
-        # Check for control signals
-        new_control =
-          cond do
-            Map.has_key?(result, :__break__) -> {:break, result.__break__}
-            Map.has_key?(result, :__continue__) -> {:continue, result.__continue__}
-            Map.has_key?(result, :__return__) -> {:return, result.__return__}
-            true -> nil
-          end
+        # Check for control signals using Result struct for type safety
+        new_control = extract_control_signal(result)
 
         execute_pipelines(
           new_bash,
@@ -158,6 +153,11 @@ defmodule JustBash.Interpreter.Executor do
   defp add_control_signal(result, {:continue, n}), do: Map.put(result, :__continue__, n)
   defp add_control_signal(result, {:return, n}), do: Map.put(result, :__return__, n)
 
+  # Extract control signal from a result map using Result struct for type safety
+  defp extract_control_signal(result) do
+    Result.from_map(result).signal
+  end
+
   defp advance_operators([op | rest]), do: {op, rest}
   defp advance_operators([]), do: {nil, []}
 
@@ -166,15 +166,17 @@ defmodule JustBash.Interpreter.Executor do
   """
   @spec execute_pipeline(JustBash.t(), AST.Pipeline.t()) :: {result(), JustBash.t()}
   def execute_pipeline(bash, %AST.Pipeline{commands: commands, negated: negated}) do
-    # Track all exit codes for pipefail
-    {final_result, final_bash, exit_codes} =
+    # Track all exit codes for pipefail (prepend for O(1), reverse at end)
+    {final_result, final_bash, exit_codes_reversed} =
       Enum.reduce(commands, {%{stdout: "", stderr: "", exit_code: 0}, bash, []}, fn cmd,
                                                                                     {prev_result,
                                                                                      current_bash,
                                                                                      codes} ->
         {result, new_bash} = execute_command(current_bash, cmd, prev_result.stdout)
-        {result, new_bash, codes ++ [result.exit_code]}
+        {result, new_bash, [result.exit_code | codes]}
       end)
+
+    exit_codes = Enum.reverse(exit_codes_reversed)
 
     # With pipefail, return the rightmost non-zero exit code
     # Without pipefail, return the last command's exit code
@@ -280,12 +282,16 @@ defmodule JustBash.Interpreter.Executor do
 
     # Expand args sequentially, applying any assignments between each
     # This ensures side effects like $((x++)) are visible to subsequent args
-    {expanded_args, temp_bash} =
+    # Use prepend for O(1) and reverse at end for correct order
+    {expanded_args_reversed, temp_bash} =
       Enum.reduce(args, {[], temp_bash}, fn arg, {acc, current_bash} ->
         {expanded, arg_assigns} = Expansion.expand_word_with_glob(current_bash, arg.parts)
         current_bash = apply_pending_assignments(current_bash, arg_assigns)
-        {acc ++ expanded, current_bash}
+        # Prepend expanded (which is a list) reversed, so final reverse gives correct order
+        {Enum.reverse(expanded) ++ acc, current_bash}
       end)
+
+    expanded_args = Enum.reverse(expanded_args_reversed)
 
     # Extract heredoc content as stdin if present
     {heredoc_stdin, non_heredoc_redirs} = Redirection.extract_heredoc_stdin(temp_bash, redirs)
@@ -346,19 +352,12 @@ defmodule JustBash.Interpreter.Executor do
     end
   end
 
-  # Helper to propagate break/continue signals from source to target result
+  # Helper to propagate control signals from source to target result
+  # Uses Result struct for type-safe signal extraction
   defp propagate_control_signals(source, target) do
-    target
-    |> maybe_put_signal(source, :__break__)
-    |> maybe_put_signal(source, :__continue__)
-    |> maybe_put_signal(source, :__return__)
-  end
-
-  defp maybe_put_signal(target, source, key) do
-    if Map.has_key?(source, key) do
-      Map.put(target, key, Map.get(source, key))
-    else
-      target
+    case extract_control_signal(source) do
+      nil -> target
+      signal -> add_control_signal(target, signal)
     end
   end
 
@@ -402,32 +401,26 @@ defmodule JustBash.Interpreter.Executor do
         new_out = out <> result.stdout
         new_err = err <> result.stderr
 
-        # Check for control flow signals
-        cond do
-          Map.has_key?(result, :__break__) ->
-            {:halt, {new_bash, new_out, new_err, 0, {:break, result.__break__}}}
+        # Check for control flow signals using Result struct
+        case extract_control_signal(result) do
+          {:break, n} ->
+            {:halt, {new_bash, new_out, new_err, 0, {:break, n}}}
 
-          Map.has_key?(result, :__continue__) ->
-            {:halt, {new_bash, new_out, new_err, 0, {:continue, result.__continue__}}}
+          {:continue, n} ->
+            {:halt, {new_bash, new_out, new_err, 0, {:continue, n}}}
 
-          Map.has_key?(result, :__return__) ->
-            {:halt, {new_bash, new_out, new_err, result.__return__, {:return, result.__return__}}}
+          {:return, n} ->
+            {:halt, {new_bash, new_out, new_err, n, {:return, n}}}
 
-          true ->
+          nil ->
             {:cont, {new_bash, new_out, new_err, result.exit_code, nil}}
         end
       end)
 
     result = %{stdout: stdout, stderr: stderr, exit_code: exit_code, env: final_bash.env}
 
-    # Propagate control flow signals
-    result =
-      case control do
-        {:break, n} -> Map.put(result, :__break__, n)
-        {:continue, n} -> Map.put(result, :__continue__, n)
-        {:return, n} -> Map.put(result, :__return__, n)
-        nil -> result
-      end
+    # Propagate control flow signals using add_control_signal helper
+    result = add_control_signal(result, control)
 
     {result, final_bash}
   end
