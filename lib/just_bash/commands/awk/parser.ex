@@ -5,8 +5,8 @@ defmodule JustBash.Commands.Awk.Parser do
   Uses recursive descent parsing on a token stream from the Lexer.
   """
 
-  alias JustBash.Commands.Awk.Lexer
   alias JustBash.Commands.Awk.AST
+  alias JustBash.Commands.Awk.Lexer
 
   defstruct [:tokens, :pos]
 

@@ -41,9 +41,7 @@ defmodule JustBash.Formatter do
       level: 0
     }
 
-    script.statements
-    |> Enum.map(&format_statement(&1, ctx))
-    |> Enum.join("\n")
+    Enum.map_join(script.statements, "\n", &format_statement(&1, ctx))
   end
 
   # Statement: pipelines connected by && or ||
@@ -51,7 +49,7 @@ defmodule JustBash.Formatter do
     parts =
       stmt.pipelines
       |> Enum.zip(stmt.operators ++ [nil])
-      |> Enum.map(fn {pipeline, op} ->
+      |> Enum.map_join(" ", fn {pipeline, op} ->
         formatted = format_pipeline(pipeline, ctx)
 
         case op do
@@ -61,7 +59,6 @@ defmodule JustBash.Formatter do
           nil -> formatted
         end
       end)
-      |> Enum.join(" ")
 
     if stmt.background do
       parts <> " &"
@@ -74,10 +71,7 @@ defmodule JustBash.Formatter do
   defp format_pipeline(%AST.Pipeline{} = pipeline, ctx) do
     prefix = if pipeline.negated, do: "! ", else: ""
 
-    commands =
-      pipeline.commands
-      |> Enum.map(&format_command(&1, ctx))
-      |> Enum.join(" | ")
+    commands = Enum.map_join(pipeline.commands, " | ", &format_command(&1, ctx))
 
     prefix <> commands
   end
@@ -170,13 +164,12 @@ defmodule JustBash.Formatter do
     formatted_clauses =
       clauses
       |> Enum.with_index()
-      |> Enum.map(fn {clause, idx} ->
+      |> Enum.map_join("\n#{indent}", fn {clause, idx} ->
         keyword = if idx == 0, do: "if", else: "elif"
         condition = format_statements_inline(clause.condition, ctx)
         body = format_body(clause.body, inner_ctx, inner_indent)
         "#{keyword} #{condition}; then\n#{body}"
       end)
-      |> Enum.join("\n#{indent}")
 
     formatted_else =
       if else_body do
@@ -198,7 +191,7 @@ defmodule JustBash.Formatter do
 
     words_str =
       if words do
-        " in " <> (words |> Enum.map(&format_word/1) |> Enum.join(" "))
+        " in " <> Enum.map_join(words, " ", &format_word/1)
       else
         ""
       end
@@ -268,14 +261,12 @@ defmodule JustBash.Formatter do
     body_indent = String.duplicate(ctx.indent, ctx.level + 2)
 
     formatted_items =
-      items
-      |> Enum.map(fn item ->
-        patterns = item.patterns |> Enum.map(&format_word/1) |> Enum.join(" | ")
+      Enum.map_join(items, "\n", fn item ->
+        patterns = Enum.map_join(item.patterns, " | ", &format_word/1)
         body = format_body(item.body, %{inner_ctx | level: ctx.level + 2}, body_indent)
         terminator = format_case_terminator(item.terminator)
         "#{inner_indent}#{patterns})\n#{body}\n#{inner_indent}#{terminator}"
       end)
-      |> Enum.join("\n")
 
     result = "case #{format_word(word)} in\n#{formatted_items}\n#{indent}esac"
     result <> format_redirections_suffix(redirs, ctx)
@@ -308,18 +299,14 @@ defmodule JustBash.Formatter do
 
   # Format body statements with indentation
   defp format_body(statements, ctx, indent) do
-    statements
-    |> Enum.map(fn stmt ->
+    Enum.map_join(statements, "\n", fn stmt ->
       indent <> format_statement(stmt, ctx)
     end)
-    |> Enum.join("\n")
   end
 
   # Format statements inline (for conditions, etc.)
   defp format_statements_inline(statements, ctx) do
-    statements
-    |> Enum.map(&format_statement(&1, ctx))
-    |> Enum.join("; ")
+    Enum.map_join(statements, "; ", &format_statement(&1, ctx))
   end
 
   # Assignment
@@ -328,7 +315,7 @@ defmodule JustBash.Formatter do
 
     cond do
       array != nil ->
-        array_str = array |> Enum.map(&format_word/1) |> Enum.join(" ")
+        array_str = Enum.map_join(array, " ", &format_word/1)
         "#{name}#{op}(#{array_str})"
 
       value != nil ->
@@ -341,9 +328,7 @@ defmodule JustBash.Formatter do
 
   # Word
   defp format_word(%AST.Word{parts: parts}) do
-    parts
-    |> Enum.map(&format_word_part/1)
-    |> Enum.join()
+    Enum.map_join(parts, "", &format_word_part/1)
   end
 
   # Word parts
@@ -356,7 +341,7 @@ defmodule JustBash.Formatter do
   end
 
   defp format_word_part(%AST.DoubleQuoted{parts: parts}) do
-    inner = parts |> Enum.map(&format_double_quoted_part/1) |> Enum.join()
+    inner = Enum.map_join(parts, "", &format_double_quoted_part/1)
     "\"" <> inner <> "\""
   end
 
@@ -408,11 +393,7 @@ defmodule JustBash.Formatter do
   end
 
   defp format_word_part(%AST.BraceExpansion{items: items}) do
-    inner =
-      items
-      |> Enum.map(&format_brace_item/1)
-      |> Enum.join(",")
-
+    inner = Enum.map_join(items, ",", &format_brace_item/1)
     "{#{inner}}"
   end
 
@@ -568,7 +549,7 @@ defmodule JustBash.Formatter do
   defp format_redirections_suffix([], _ctx), do: ""
 
   defp format_redirections_suffix(redirs, ctx) do
-    " " <> (redirs |> Enum.map(&format_redirection(&1, ctx)) |> Enum.join(" "))
+    " " <> Enum.map_join(redirs, " ", &format_redirection(&1, ctx))
   end
 
   # Arithmetic expressions

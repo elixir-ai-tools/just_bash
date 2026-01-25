@@ -1056,17 +1056,15 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp format_output_value(value) when is_binary(value) do
     # Check if string is a whole number float like "6.0" and format as "6"
     # But preserve strings that start with 0 (like "00042") or are not purely numeric
-    cond do
-      # Preserve strings starting with 0 (unless it's just "0")
-      String.starts_with?(value, "0") and value != "0" and value =~ ~r/^0\d/ ->
-        value
-
+    # Preserve strings starting with 0 (unless it's just "0")
+    if String.starts_with?(value, "0") and value != "0" and value =~ ~r/^0\d/ do
+      value
+    else
       # Handle float-like strings like "6.0" -> "6"
-      true ->
-        case Float.parse(value) do
-          {num, ""} when trunc(num) == num -> Integer.to_string(trunc(num))
-          _ -> value
-        end
+      case Float.parse(value) do
+        {num, ""} when trunc(num) == num -> Integer.to_string(trunc(num))
+        _ -> value
+      end
     end
   end
 
