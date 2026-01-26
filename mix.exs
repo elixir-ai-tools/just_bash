@@ -2,7 +2,7 @@ defmodule JustBash.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @source_url "https://github.com/ivarvong/just_bash"
+  @source_url "https://github.com/elixir-ai-tools/just_bash"
   @description "A simulated bash environment with virtual filesystem for safe command execution"
 
   def project do
