@@ -59,7 +59,7 @@ defmodule JustBash.MixProject do
         "GitHub" => @source_url,
         "Changelog" => "#{@source_url}/blob/main/CHANGELOG.md"
       },
-      maintainers: ["Your Name"],
+      maintainers: ["Ivar Vong", "Chris Bell", "Dave Lucia"],
       files: ~w(lib .formatter.exs mix.exs README.md LICENSE CHANGELOG.md)
     ]
   end
