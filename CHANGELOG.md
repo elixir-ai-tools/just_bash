@@ -56,5 +56,5 @@ Utilities:
 - `which`, `env`, `printenv`, `hostname`
 - `xargs`, `tee`
 
-[Unreleased]: https://github.com/ivarvong/just_bash/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/ivarvong/just_bash/releases/tag/v0.1.0
+[Unreleased]: https://github.com/elixir-ai-tools/just_bash/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/elixir-ai-tools/just_bash/releases/tag/v0.1.0
