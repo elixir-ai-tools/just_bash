@@ -25,7 +25,7 @@ defmodule JustBash.BashComparison.MvTest do
 
     test "mv to the same path is a no-op" do
       compare_bash(
-        "D=/tmp/jb_mv_$$; rm -rf $D; mkdir $D; echo hi > $D/file; mv $D/file $D/file; cat $D/file; rm -rf $D"
+        "D=/tmp/jb_mv_$$; rm -rf $D; mkdir $D; echo hi > $D/file; mv $D/file $D/file 2>/dev/null; echo EXIT=$?; cat $D/file; rm -rf $D"
       )
     end
 
