@@ -64,6 +64,45 @@ jobs:
       - name: Run tests
         run: mix test --exclude bash_comparison
 
+  bash_comparison:
+    name: Bash Comparison (Elixir 1.19 / OTP 28)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.19"
+          otp-version: "28"
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: deps
+          key: ${{ runner.os }}-mix-bash-comparison-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-bash-comparison-
+
+      - name: Cache _build
+        uses: actions/cache@v4
+        with:
+          path: _build
+          key: ${{ runner.os }}-build-bash-comparison-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-bash-comparison-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile --warnings-as-errors
+
+      - name: Run bash comparison tests
+        run: mix test --only bash_comparison
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
