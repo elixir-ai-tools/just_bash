@@ -132,7 +132,11 @@ defmodule JustBash.BashComparison.FindTest do
     end
 
     test "find nonexistent path" do
-      compare_bash("find /tmp/nonexistent_dir_12345 2>&1", ignore_exit: true)
+      {real_out, _real_exit} = run_real_bash("find /tmp/nonexistent_dir_12345 2>&1")
+      {just_out, _just_exit} = run_just_bash("find /tmp/nonexistent_dir_12345 2>&1")
+
+      assert real_out =~ "No such file or directory"
+      assert just_out =~ "No such file or directory"
     end
 
     test "find with print0 flag" do

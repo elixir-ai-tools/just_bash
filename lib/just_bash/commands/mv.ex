@@ -24,18 +24,24 @@ defmodule JustBash.Commands.Mv do
               dest_resolved
           end
 
-        case InMemoryFs.mv(bash.fs, src_resolved, dest_final) do
-          {:ok, new_fs} ->
-            {Command.ok(), %{bash | fs: new_fs}}
+        if InMemoryFs.normalize_path(src_resolved) == InMemoryFs.normalize_path(dest_final) do
+          {Command.result("", "mv: '#{src_resolved}' and '#{dest_final}' are the same file\n", 0),
+           bash}
+        else
+          case InMemoryFs.mv(bash.fs, src_resolved, dest_final) do
+            {:ok, new_fs} ->
+              {Command.ok(), %{bash | fs: new_fs}}
 
-          {:error, :enoent} ->
-            {Command.error("mv: cannot stat '#{src}': No such file or directory\n"), bash}
+            {:error, :enoent} ->
+              {Command.error("mv: cannot stat '#{src}': No such file or directory\n"), bash}
 
-          {:error, :eisdir} ->
-            {Command.error("mv: cannot overwrite directory '#{dest}' with non-directory\n"), bash}
+            {:error, :eisdir} ->
+              {Command.error("mv: cannot overwrite directory '#{dest}' with non-directory\n"),
+               bash}
 
-          {:error, :enotdir} ->
-            {Command.error("mv: cannot move '#{src}' to '#{dest}': Not a directory\n"), bash}
+            {:error, :enotdir} ->
+              {Command.error("mv: cannot move '#{src}' to '#{dest}': Not a directory\n"), bash}
+          end
         end
 
       _ ->

@@ -33,8 +33,14 @@ defmodule JustBash.Commands.Wc do
 
   defp format_output(content, file, flags) do
     counts = count_content(content)
-    suffix = if file, do: " #{file}\n", else: "\n"
-    format_counts(counts, flags) <> suffix
+
+    formatted = format_counts(counts, flags, file != nil)
+
+    if file do
+      formatted <> " " <> file <> "\n"
+    else
+      formatted <> "\n"
+    end
   end
 
   defp count_content(content) do
@@ -49,20 +55,26 @@ defmodule JustBash.Commands.Wc do
     }
   end
 
-  defp format_counts(counts, %{l: true, w: false, c: false}), do: pad_count(counts.lines)
-  defp format_counts(counts, %{l: false, w: true, c: false}), do: pad_count(counts.words)
-  defp format_counts(counts, %{l: false, w: false, c: true}), do: pad_count(counts.bytes)
+  defp format_counts(counts, %{l: true, w: false, c: false}, has_file?),
+    do: format_single_count(counts.lines, has_file?)
 
-  # Default output: all three counts with consistent spacing
-  # Real wc uses 8-character fields for each count (total 24 chars)
-  defp format_counts(counts, _flags) do
-    String.pad_leading(Integer.to_string(counts.lines), 8) <>
-      String.pad_leading(Integer.to_string(counts.words), 8) <>
-      String.pad_leading(Integer.to_string(counts.bytes), 8)
+  defp format_counts(counts, %{l: false, w: true, c: false}, has_file?),
+    do: format_single_count(counts.words, has_file?)
+
+  defp format_counts(counts, %{l: false, w: false, c: true}, has_file?),
+    do: format_single_count(counts.bytes, has_file?)
+
+  defp format_counts(counts, _flags, _has_file?) do
+    # Match GNU wc formatting on Linux:
+    # counts are printed as right-aligned 7-char fields, separated by a space.
+    # Example: "      1       1       6"
+    pad_field(counts.lines) <> " " <> pad_field(counts.words) <> " " <> pad_field(counts.bytes)
   end
 
-  # Single count padding to 8 characters (standard wc format)
-  defp pad_count(n), do: String.pad_leading(Integer.to_string(n), 8)
+  defp format_single_count(n, false), do: Integer.to_string(n)
+  defp format_single_count(n, true), do: pad_field(n)
+
+  defp pad_field(n), do: String.pad_leading(Integer.to_string(n), 7)
 
   defp parse_flags(args), do: parse_flags(args, %{l: false, w: false, c: false}, [])
 
