@@ -25,7 +25,7 @@ defmodule JustBash.Commands.Mv do
           end
 
         if InMemoryFs.normalize_path(src_resolved) == InMemoryFs.normalize_path(dest_final) do
-          {Command.result("", "mv: '#{src_resolved}' and '#{dest_final}' are the same file\n", 0),
+          {Command.result("", "mv: '#{src_resolved}' and '#{dest_final}' are the same file\n", 1),
            bash}
         else
           case InMemoryFs.mv(bash.fs, src_resolved, dest_final) do
