@@ -479,8 +479,12 @@ defmodule JustBash.EdgeCasesTest do
 
     test "mv to same location" do
       bash = JustBash.new(files: %{"/file.txt" => "content"})
-      {result, _} = JustBash.exec(bash, "mv /file.txt /file.txt")
+      {result, bash} = JustBash.exec(bash, "mv /file.txt /file.txt")
       assert result.exit_code == 0
+
+      {result2, _} = JustBash.exec(bash, "cat /file.txt")
+      assert result2.exit_code == 0
+      assert result2.stdout == "content"
     end
 
     test "rm with multiple nonexistent files" do

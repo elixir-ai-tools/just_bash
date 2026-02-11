@@ -549,7 +549,8 @@ defmodule JustBash.Fs.InMemoryFs do
   - `{:error, :enoent}` if source doesn't exist
   - `{:error, :eisdir}` if source is directory and not recursive
   """
-  @spec cp(t(), String.t(), String.t(), cp_opts()) :: {:ok, t()} | {:error, :enoent | :eisdir}
+  @spec cp(t(), String.t(), String.t(), cp_opts()) ::
+          {:ok, t()} | {:error, :enoent | :eisdir | :enotdir}
   def cp(%__MODULE__{data: data} = fs, src, dest, opts \\ []) do
     src_norm = normalize_path(src)
     dest_norm = normalize_path(dest)
@@ -563,12 +564,24 @@ defmodule JustBash.Fs.InMemoryFs do
         fs = ensure_parent_dirs(fs, dest_norm)
         {:ok, %{fs | data: Map.put(fs.data, dest_norm, entry)}}
 
+      %{type: :symlink} = entry ->
+        fs = ensure_parent_dirs(fs, dest_norm)
+        {:ok, %{fs | data: Map.put(fs.data, dest_norm, entry)}}
+
       %{type: :directory} when not recursive ->
         {:error, :eisdir}
 
       %{type: :directory} ->
-        {:ok, fs} = mkdir(fs, dest_norm, recursive: true)
-        cp_children(fs, src_norm, dest_norm, opts)
+        case mkdir(fs, dest_norm, recursive: true) do
+          {:ok, fs} ->
+            cp_children(fs, src_norm, dest_norm, opts)
+
+          {:error, :eexist} ->
+            {:error, :enotdir}
+
+          {:error, _} = err ->
+            err
+        end
     end
   end
 
@@ -588,11 +601,18 @@ defmodule JustBash.Fs.InMemoryFs do
   @doc """
   Move/rename a file or directory.
   """
-  @spec mv(t(), String.t(), String.t()) :: {:ok, t()} | {:error, :enoent}
+  @spec mv(t(), String.t(), String.t()) :: {:ok, t()} | {:error, :enoent | :eisdir | :enotdir}
   def mv(%__MODULE__{} = fs, src, dest) do
-    case cp(fs, src, dest, recursive: true) do
-      {:ok, fs} -> rm(fs, src, recursive: true)
-      error -> error
+    src_norm = normalize_path(src)
+    dest_norm = normalize_path(dest)
+
+    if src_norm == dest_norm do
+      {:ok, fs}
+    else
+      case cp(fs, src_norm, dest_norm, recursive: true) do
+        {:ok, fs} -> rm(fs, src_norm, recursive: true)
+        error -> error
+      end
     end
   end
 

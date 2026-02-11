@@ -1,6 +1,8 @@
 defmodule JustBash.Commands.FileOperationsTest do
   use ExUnit.Case, async: true
 
+  alias JustBash.Fs.InMemoryFs
+
   describe "ls command" do
     test "ls nonexistent directory fails" do
       bash = JustBash.new()
@@ -89,6 +91,89 @@ defmodule JustBash.Commands.FileOperationsTest do
 
       {result3, _} = JustBash.exec(bash, "cat /src.txt")
       assert result3.exit_code == 1
+    end
+
+    test "mv preserves file mode" do
+      bash = JustBash.new()
+
+      {:ok, fs} = InMemoryFs.write_file(bash.fs, "/src.sh", "echo hi\n", mode: 0o755)
+      bash = %{bash | fs: fs}
+
+      {result, bash} = JustBash.exec(bash, "mv /src.sh /dest.sh")
+      assert result.exit_code == 0
+
+      {:ok, stat} = InMemoryFs.stat(bash.fs, "/dest.sh")
+      assert stat.mode == 0o755
+    end
+
+    test "mv moves a symlink without dereferencing it" do
+      bash = JustBash.new(files: %{"/target.txt" => "hello\n"})
+      {_, bash} = JustBash.exec(bash, "ln -s /target.txt /link.txt")
+
+      {result, bash} = JustBash.exec(bash, "mv /link.txt /moved-link.txt")
+      assert result.exit_code == 0
+
+      {readlink_result, _} = JustBash.exec(bash, "readlink /moved-link.txt")
+      assert readlink_result.stdout == "/target.txt\n"
+
+      {cat_result, _} = JustBash.exec(bash, "cat /moved-link.txt")
+      assert cat_result.stdout == "hello\n"
+
+      {old_cat_result, _} = JustBash.exec(bash, "cat /link.txt")
+      assert old_cat_result.exit_code == 1
+    end
+
+    test "mv into existing directory uses source basename" do
+      bash = JustBash.new(files: %{"/src.txt" => "content"})
+      {_, bash} = JustBash.exec(bash, "mkdir /dir")
+
+      {result, bash} = JustBash.exec(bash, "mv /src.txt /dir")
+      assert result.exit_code == 0
+
+      {result2, _} = JustBash.exec(bash, "cat /dir/src.txt")
+      assert result2.stdout == "content"
+    end
+
+    test "mv overwrites destination file by default" do
+      bash = JustBash.new(files: %{"/src.txt" => "new", "/dest.txt" => "old"})
+
+      {result, bash} = JustBash.exec(bash, "mv /src.txt /dest.txt")
+      assert result.exit_code == 0
+
+      {result2, _} = JustBash.exec(bash, "cat /dest.txt")
+      assert result2.stdout == "new"
+
+      {result3, _} = JustBash.exec(bash, "cat /src.txt")
+      assert result3.exit_code == 1
+    end
+
+    test "mv creates missing destination parent directories" do
+      bash = JustBash.new(files: %{"/src.txt" => "content"})
+
+      {result, bash} = JustBash.exec(bash, "mv /src.txt /newdir/sub/dest.txt")
+      assert result.exit_code == 0
+
+      {result2, _} = JustBash.exec(bash, "cat /newdir/sub/dest.txt")
+      assert result2.stdout == "content"
+
+      {result3, _} = JustBash.exec(bash, "cat /src.txt")
+      assert result3.exit_code == 1
+
+      {result4, _} = JustBash.exec(bash, "[ -d /newdir/sub ] && echo yes || echo no")
+      assert result4.stdout == "yes\n"
+    end
+
+    test "mv fails moving a directory onto an existing file" do
+      bash = JustBash.new(files: %{"/srcdir/file.txt" => "content", "/dest.txt" => "old"})
+
+      {result, bash} = JustBash.exec(bash, "mv /srcdir /dest.txt")
+      assert result.exit_code == 1
+
+      {result2, _} = JustBash.exec(bash, "cat /dest.txt")
+      assert result2.stdout == "old"
+
+      {result3, _} = JustBash.exec(bash, "cat /srcdir/file.txt")
+      assert result3.stdout == "content"
     end
 
     test "mv file not found error" do
