@@ -11,61 +11,7 @@ env:
 
 jobs:
   test:
-    name: Test (Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }})
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - elixir: "1.15"
-            otp: "25"
-          - elixir: "1.16"
-            otp: "26"
-          - elixir: "1.17"
-            otp: "27"
-          - elixir: "1.18"
-            otp: "27"
-          - elixir: "1.19"
-            otp: "28"
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Elixir
-        uses: erlef/setup-beam@v1
-        with:
-          elixir-version: ${{ matrix.elixir }}
-          otp-version: ${{ matrix.otp }}
-
-      - name: Cache deps
-        uses: actions/cache@v4
-        with:
-          path: deps
-          key: ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-
-
-      - name: Cache _build
-        uses: actions/cache@v4
-        with:
-          path: _build
-          key: ${{ runner.os }}-build-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ matrix.elixir }}-${{ matrix.otp }}-
-
-      - name: Install dependencies
-        run: mix deps.get
-
-      - name: Compile
-        run: mix compile --warnings-as-errors
-
-      - name: Run tests
-        run: mix test --exclude bash_comparison
-
-  bash_comparison:
-    name: Bash Comparison (Elixir 1.19 / OTP 28)
+    name: Test (Elixir 1.19 / OTP 28)
     runs-on: ubuntu-latest
 
     steps:
@@ -82,17 +28,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: deps
-          key: ${{ runner.os }}-mix-bash-comparison-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-mix-test-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-bash-comparison-
+            ${{ runner.os }}-mix-test-
 
       - name: Cache _build
         uses: actions/cache@v4
         with:
           path: _build
-          key: ${{ runner.os }}-build-bash-comparison-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-build-test-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-build-bash-comparison-
+            ${{ runner.os }}-build-test-
 
       - name: Install dependencies
         run: mix deps.get
@@ -100,8 +46,8 @@ jobs:
       - name: Compile
         run: mix compile --warnings-as-errors
 
-      - name: Run bash comparison tests
-        run: mix test --only bash_comparison
+      - name: Run tests
+        run: mix test
 
   lint:
     name: Lint
