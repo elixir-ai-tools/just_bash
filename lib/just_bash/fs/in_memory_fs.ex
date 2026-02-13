@@ -3,20 +3,31 @@ defmodule JustBash.Fs.InMemoryFs do
   In-memory filesystem implementation for JustBash.
 
   Provides a complete virtual filesystem with support for:
-  - Files (with binary content)
+  - Files (with binary or adapter-backed content)
   - Directories
   - Symbolic links
   - File permissions (mode)
   - Modification times
 
   All operations are synchronous and work on an in-memory data structure.
+
+  ## Content Adapters
+
+  File content can be stored as:
+  - Binary strings (default)
+  - Function-backed content (via `JustBash.Fs.Content.FunctionContent`)
+  - S3-backed content (via `JustBash.Fs.Content.S3Content`)
+
+  Content is resolved through the `JustBash.Fs.ContentAdapter` protocol.
   """
+
+  alias JustBash.Fs.ContentAdapter
 
   defstruct data: %{}
 
   @type file_entry :: %{
           type: :file,
-          content: binary(),
+          content: binary() | struct(),
           mode: non_neg_integer(),
           mtime: DateTime.t()
         }
@@ -62,12 +73,17 @@ defmodule JustBash.Fs.InMemoryFs do
   Initial files can be provided as a map:
   - Simple form: `%{"/path/to/file" => "content"}`
   - Extended form: `%{"/path/to/file" => %{content: "content", mode: 0o755, mtime: ~U[...]}}`
+  - Content adapter: `%{"/path/to/file" => %FunctionContent{...}}`
+  - Bare function: `%{"/path/to/file" => fn -> "content" end}`
 
   ## Examples
 
       iex> fs = InMemoryFs.new()
       iex> fs = InMemoryFs.new(%{"/home/user/file.txt" => "hello"})
       iex> fs = InMemoryFs.new(%{"/bin/script" => %{content: "#!/bin/bash", mode: 0o755}})
+      iex> alias JustBash.Fs.Content.FunctionContent
+      iex> fs = InMemoryFs.new(%{"/dynamic.txt" => FunctionContent.new(fn -> "generated" end)})
+      iex> fs = InMemoryFs.new(%{"/simple.txt" => fn -> "easy" end})
   """
   @spec new(map()) :: t()
   def new(initial_files \\ %{}) do
@@ -87,6 +103,32 @@ defmodule JustBash.Fs.InMemoryFs do
         content when is_binary(content) ->
           {:ok, new_fs} = write_file(acc, path, content)
           new_fs
+
+        content when is_struct(content) ->
+          # Content adapter struct - store directly
+          fs_with_parents = ensure_parent_dirs(acc, normalize_path(path))
+          entry = %{
+            type: :file,
+            content: content,
+            mode: 0o644,
+            mtime: DateTime.utc_now()
+          }
+
+          %{fs_with_parents | data: Map.put(fs_with_parents.data, normalize_path(path), entry)}
+
+        content when is_function(content, 0) ->
+          # Bare anonymous function - wrap in FunctionContent
+          fc = JustBash.Fs.Content.FunctionContent.new(content)
+          fs_with_parents = ensure_parent_dirs(acc, normalize_path(path))
+
+          entry = %{
+            type: :file,
+            content: fc,
+            mode: 0o644,
+            mtime: DateTime.utc_now()
+          }
+
+          %{fs_with_parents | data: Map.put(fs_with_parents.data, normalize_path(path), entry)}
       end
     end)
   end
@@ -238,7 +280,7 @@ defmodule JustBash.Fs.InMemoryFs do
       {:ok, entry} ->
         size =
           case entry do
-            %{type: :file, content: content} -> byte_size(content)
+            %{type: :file, content: content} -> ContentAdapter.size(content) || 0
             _ -> 0
           end
 
@@ -282,7 +324,7 @@ defmodule JustBash.Fs.InMemoryFs do
       entry ->
         size =
           case entry do
-            %{type: :file, content: content} -> byte_size(content)
+            %{type: :file, content: content} -> ContentAdapter.size(content) || 0
             _ -> 0
           end
 
@@ -301,20 +343,25 @@ defmodule JustBash.Fs.InMemoryFs do
   @doc """
   Read the contents of a file.
 
+  Content is resolved through the `ContentAdapter` protocol, supporting
+  binary, function-backed, and S3-backed content.
+
   ## Returns
 
   - `{:ok, content}` - binary content of the file
   - `{:error, :enoent}` - file does not exist
   - `{:error, :eisdir}` - path is a directory
   - `{:error, :eloop}` - too many symlink levels
+  - `{:error, term()}` - content resolution error (e.g., function error, S3 error)
   """
-  @spec read_file(t(), String.t()) :: {:ok, binary()} | {:error, :enoent | :eisdir | :eloop}
+  @spec read_file(t(), String.t()) ::
+          {:ok, binary()} | {:error, :enoent | :eisdir | :eloop | term()}
   def read_file(%__MODULE__{} = fs, path) do
     normalized = normalize_path(path)
 
     case get_entry_following_symlinks(fs, normalized) do
       {:ok, %{type: :file, content: content}} ->
-        {:ok, content}
+        ContentAdapter.resolve(content)
 
       {:ok, %{type: :directory}} ->
         {:error, :eisdir}
@@ -329,6 +376,8 @@ defmodule JustBash.Fs.InMemoryFs do
 
   Parent directories are created automatically.
 
+  Content can be binary or a content adapter struct.
+
   ## Options
 
   - `:mode` - file permissions (default: 0o644)
@@ -339,7 +388,7 @@ defmodule JustBash.Fs.InMemoryFs do
   - `{:ok, updated_fs}` on success
   - `{:error, :eisdir}` if path is a directory
   """
-  @spec write_file(t(), String.t(), binary(), write_opts()) ::
+  @spec write_file(t(), String.t(), binary() | struct(), write_opts()) ::
           {:ok, t()} | {:error, :eisdir}
   def write_file(%__MODULE__{} = fs, path, content, opts \\ []) do
     normalized = normalize_path(path)
@@ -367,8 +416,11 @@ defmodule JustBash.Fs.InMemoryFs do
 
   @doc """
   Append content to a file, creating it if it doesn't exist.
+
+  If the file has adapter-backed content, it is resolved before appending.
+  The result is always stored as binary content.
   """
-  @spec append_file(t(), String.t(), binary()) :: {:ok, t()} | {:error, :eisdir}
+  @spec append_file(t(), String.t(), binary()) :: {:ok, t()} | {:error, :eisdir | term()}
   def append_file(%__MODULE__{} = fs, path, content) do
     normalized = normalize_path(path)
 
@@ -377,9 +429,15 @@ defmodule JustBash.Fs.InMemoryFs do
         {:error, :eisdir}
 
       %{type: :file} = entry ->
-        new_content = entry.content <> content
-        updated_entry = %{entry | content: new_content, mtime: DateTime.utc_now()}
-        {:ok, %{fs | data: Map.put(fs.data, normalized, updated_entry)}}
+        case ContentAdapter.resolve(entry.content) do
+          {:ok, existing} ->
+            new_content = existing <> content
+            updated_entry = %{entry | content: new_content, mtime: DateTime.utc_now()}
+            {:ok, %{fs | data: Map.put(fs.data, normalized, updated_entry)}}
+
+          {:error, _} = err ->
+            err
+        end
 
       nil ->
         write_file(fs, path, content)
@@ -701,6 +759,86 @@ defmodule JustBash.Fs.InMemoryFs do
   @spec get_all_paths(t()) :: [String.t()]
   def get_all_paths(%__MODULE__{data: data}) do
     Map.keys(data)
+  end
+
+  @doc """
+  Materialize a single file's lazy content, replacing it with resolved binary.
+
+  If the file content is already binary, this is a no-op. If the content is
+  adapter-backed (function, S3, etc.), it is resolved and replaced with the
+  resulting binary.
+
+  ## Returns
+
+  - `{:ok, updated_fs}` - filesystem with materialized content
+  - `{:error, :enoent}` - file does not exist
+  - `{:error, :eisdir}` - path is a directory
+  - `{:error, term()}` - content resolution error
+
+  ## Examples
+
+      iex> fc = JustBash.Fs.Content.FunctionContent.new(fn -> "generated" end)
+      iex> fs = InMemoryFs.new(%{"/dynamic.txt" => fc})
+      iex> {:ok, materialized_fs} = InMemoryFs.materialize(fs, "/dynamic.txt")
+      # Now /dynamic.txt contains binary "generated"
+  """
+  @spec materialize(t(), String.t()) :: {:ok, t()} | {:error, :enoent | :eisdir | term()}
+  def materialize(%__MODULE__{} = fs, path) do
+    normalized = normalize_path(path)
+
+    case Map.get(fs.data, normalized) do
+      %{type: :file, content: content} when is_binary(content) ->
+        {:ok, fs}
+
+      %{type: :file, content: content} = entry ->
+        case ContentAdapter.resolve(content) do
+          {:ok, binary} ->
+            updated_entry = %{entry | content: binary}
+            {:ok, %{fs | data: Map.put(fs.data, normalized, updated_entry)}}
+
+          {:error, _} = err ->
+            err
+        end
+
+      nil ->
+        {:error, :enoent}
+
+      _ ->
+        {:error, :eisdir}
+    end
+  end
+
+  @doc """
+  Materialize all lazy file content in the filesystem.
+
+  Resolves all adapter-backed content to binary. Halts on first error.
+
+  ## Returns
+
+  - `{:ok, updated_fs}` - filesystem with all content materialized
+  - `{:error, term()}` - content resolution error
+
+  ## Examples
+
+      iex> fs = InMemoryFs.new(%{
+      ...>   "/file1.txt" => fn -> "a" end,
+      ...>   "/file2.txt" => fn -> "b" end
+      ...> })
+      iex> {:ok, materialized_fs} = InMemoryFs.materialize_all(fs)
+      # Now both files contain binary content
+  """
+  @spec materialize_all(t()) :: {:ok, t()} | {:error, term()}
+  def materialize_all(%__MODULE__{data: data} = fs) do
+    Enum.reduce_while(data, {:ok, fs}, fn
+      {path, %{type: :file, content: content}}, {:ok, acc_fs} when not is_binary(content) ->
+        case materialize(acc_fs, path) do
+          {:ok, new_fs} -> {:cont, {:ok, new_fs}}
+          {:error, _} = err -> {:halt, err}
+        end
+
+      _, acc ->
+        {:cont, acc}
+    end)
   end
 
   defp ensure_parent_dirs(%__MODULE__{} = fs, path) do

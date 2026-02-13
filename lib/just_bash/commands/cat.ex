@@ -34,6 +34,9 @@ defmodule JustBash.Commands.Cat do
 
       {:error, :eisdir} ->
         {out_acc, err_acc <> "cat: #{path}: Is a directory\n", 1}
+
+      {:error, _} ->
+        {out_acc, err_acc <> "cat: #{path}: cannot read\n", 1}
     end
   end
 end
