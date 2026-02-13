@@ -69,50 +69,8 @@ defmodule JustBash.Commands.Sort do
     Enum.sort_by(lines, &String.downcase/1, sort_direction(flags.r))
   end
 
-  defp sort_lines(lines, %{r: true}), do: Enum.sort(lines, &locale_compare_desc/2)
-  defp sort_lines(lines, _flags), do: Enum.sort(lines, &locale_compare_asc/2)
-
-  # Locale-aware comparison (similar to en_US.UTF-8 collation)
-  # Case-insensitive primary sort, lowercase before uppercase as tiebreaker
-  defp locale_compare_asc(a, b) do
-    a_down = String.downcase(a)
-    b_down = String.downcase(b)
-
-    cond do
-      a_down < b_down -> true
-      a_down > b_down -> false
-      true -> lowercase_first?(a, b)
-    end
-  end
-
-  defp locale_compare_desc(a, b), do: locale_compare_asc(b, a)
-
-  defp lowercase_first?(a, b) do
-    a_chars = String.graphemes(a)
-    b_chars = String.graphemes(b)
-    compare_chars(a_chars, b_chars)
-  end
-
-  defp compare_chars([], []), do: true
-  defp compare_chars([], _), do: true
-  defp compare_chars(_, []), do: false
-
-  defp compare_chars([a_char | a_rest], [b_char | b_rest]) do
-    a_down = String.downcase(a_char)
-    b_down = String.downcase(b_char)
-
-    cond do
-      a_down != b_down -> a_down <= b_down
-      a_char == b_char -> compare_chars(a_rest, b_rest)
-      lowercase?(a_char) and not lowercase?(b_char) -> true
-      not lowercase?(a_char) and lowercase?(b_char) -> false
-      true -> compare_chars(a_rest, b_rest)
-    end
-  end
-
-  defp lowercase?(char) do
-    String.downcase(char) == char and String.upcase(char) != char
-  end
+  defp sort_lines(lines, %{r: true}), do: Enum.sort(lines, &>=/2)
+  defp sort_lines(lines, _flags), do: Enum.sort(lines, &<=/2)
 
   defp parse_key_spec(spec) when is_integer(spec), do: {spec, nil}
 

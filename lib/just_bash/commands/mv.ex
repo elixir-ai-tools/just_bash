@@ -15,14 +15,33 @@ defmodule JustBash.Commands.Mv do
         src_resolved = InMemoryFs.resolve_path(bash.cwd, src)
         dest_resolved = InMemoryFs.resolve_path(bash.cwd, dest)
 
-        case InMemoryFs.read_file(bash.fs, src_resolved) do
-          {:ok, content} ->
-            {:ok, new_fs} = InMemoryFs.write_file(bash.fs, dest_resolved, content)
-            {:ok, new_fs} = InMemoryFs.rm(new_fs, src_resolved)
-            {Command.ok(), %{bash | fs: new_fs}}
+        dest_final =
+          case InMemoryFs.stat(bash.fs, dest_resolved) do
+            {:ok, %{is_directory: true}} ->
+              InMemoryFs.normalize_path(dest_resolved <> "/" <> InMemoryFs.basename(src_resolved))
 
-          {:error, _} ->
-            {Command.error("mv: cannot stat '#{src}': No such file or directory\n"), bash}
+            _ ->
+              dest_resolved
+          end
+
+        if InMemoryFs.normalize_path(src_resolved) == InMemoryFs.normalize_path(dest_final) do
+          {Command.result("", "mv: '#{src_resolved}' and '#{dest_final}' are the same file\n", 1),
+           bash}
+        else
+          case InMemoryFs.mv(bash.fs, src_resolved, dest_final) do
+            {:ok, new_fs} ->
+              {Command.ok(), %{bash | fs: new_fs}}
+
+            {:error, :enoent} ->
+              {Command.error("mv: cannot stat '#{src}': No such file or directory\n"), bash}
+
+            {:error, :eisdir} ->
+              {Command.error("mv: cannot overwrite directory '#{dest}' with non-directory\n"),
+               bash}
+
+            {:error, :enotdir} ->
+              {Command.error("mv: cannot move '#{src}' to '#{dest}': Not a directory\n"), bash}
+          end
         end
 
       _ ->

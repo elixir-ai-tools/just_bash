@@ -46,6 +46,9 @@ defmodule JustBash.Commands.Uniq do
             "#{count} #{hd(chunk)}"
           end)
 
+        flags.d and flags.u ->
+          ""
+
         flags.d ->
           # Only print duplicate lines (lines that appear more than once)
           lines

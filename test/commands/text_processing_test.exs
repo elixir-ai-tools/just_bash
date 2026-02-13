@@ -686,7 +686,7 @@ defmodule JustBash.Commands.TextProcessingTest do
     test "wc counts lines, words, bytes" do
       bash = JustBash.new(files: %{"/file.txt" => "hello world\nfoo bar\n"})
       {result, _} = JustBash.exec(bash, "wc -l /file.txt")
-      assert result.stdout == "       2 /file.txt\n"
+      assert result.stdout == "      2 /file.txt\n"
     end
 
     test "wc -w counts words" do
