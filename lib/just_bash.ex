@@ -170,9 +170,19 @@ defmodule JustBash do
         end
       end)
 
-    Enum.reduce(files, fs, fn {path, content}, acc_fs ->
-      {:ok, new_fs} = InMemoryFs.write_file(acc_fs, path, content)
-      new_fs
+    Enum.reduce(files, fs, fn
+      {path, content}, acc_fs when is_binary(content) ->
+        {:ok, new_fs} = InMemoryFs.write_file(acc_fs, path, content)
+        new_fs
+
+      {path, content}, acc_fs when is_struct(content) ->
+        {:ok, new_fs} = InMemoryFs.write_file(acc_fs, path, content)
+        new_fs
+
+      {path, content}, acc_fs when is_function(content, 0) ->
+        fc = JustBash.Fs.Content.FunctionContent.new(content)
+        {:ok, new_fs} = InMemoryFs.write_file(acc_fs, path, fc)
+        new_fs
     end)
   end
 
@@ -405,5 +415,37 @@ defmodule JustBash do
     script = File.read!(expanded_path)
     bash = new(opts)
     exec(bash, script)
+  end
+
+  @doc """
+  Materialize all lazy file content (functions, S3 refs) into binary strings.
+
+  Call this before execution if you want to ensure all content is resolved
+  and avoid repeated function calls during execution.
+
+  ## Returns
+
+  - `{:ok, updated_bash}` - bash with all files materialized
+  - `{:error, term()}` - content resolution error
+
+  ## Examples
+
+      bash = JustBash.new(files: %{
+        "/dynamic.txt" => fn -> expensive_computation() end
+      })
+
+      # Materialize once before multiple executions
+      {:ok, bash} = JustBash.materialize_files(bash)
+
+      {result1, bash} = JustBash.exec(bash, "cat /dynamic.txt")
+      {result2, bash} = JustBash.exec(bash, "cat /dynamic.txt")
+      # Function only called once during materialize
+  """
+  @spec materialize_files(t()) :: {:ok, t()} | {:error, term()}
+  def materialize_files(%__MODULE__{fs: fs} = bash) do
+    case InMemoryFs.materialize_all(fs) do
+      {:ok, new_fs} -> {:ok, %{bash | fs: new_fs}}
+      {:error, _} = err -> err
+    end
   end
 end

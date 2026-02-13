@@ -78,6 +78,43 @@ JustBash.exec_file("script.sh",
 )
 ```
 
+### Content Adapters (Dynamic Files)
+
+Files can be backed by functions or external resources instead of static strings:
+
+```elixir
+alias JustBash.Fs.Content.FunctionContent
+
+bash = JustBash.new(
+  files: %{
+    # Static file (default)
+    "/static.txt" => "fixed content",
+
+    # Function-backed file (called on each read)
+    "/dynamic.txt" => fn -> "Generated at #{DateTime.utc_now()}" end,
+
+    # MFA tuple (serialization-friendly)
+    "/upper.txt" => FunctionContent.new({String, :upcase, ["hello"]}),
+
+    # S3-backed file (requires custom client)
+    "/remote.txt" => S3Content.new(
+      bucket: "my-bucket",
+      key: "file.txt",
+      client: MyS3Client
+    )
+  }
+)
+
+# Function is called on each read
+{result, bash} = JustBash.exec(bash, "cat /dynamic.txt")
+
+# Materialize to cache function results
+{:ok, bash} = JustBash.materialize_files(bash)
+# Now functions won't be called again
+```
+
+See `examples/content_adapters.exs` for more examples.
+
 ### Sigil
 
 ```elixir

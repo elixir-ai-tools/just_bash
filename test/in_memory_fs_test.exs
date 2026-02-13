@@ -443,4 +443,165 @@ defmodule JustBash.Fs.InMemoryFsTest do
       assert {:error, :eloop} = InMemoryFs.read_file(fs, "/link1")
     end
   end
+
+  describe "content adapters" do
+    alias JustBash.Fs.Content.FunctionContent
+    alias JustBash.Fs.Content.S3Content
+
+    test "new/1 accepts FunctionContent structs" do
+      fc = FunctionContent.new(fn -> "generated content" end)
+      fs = InMemoryFs.new(%{"/dynamic.txt" => fc})
+
+      assert {:ok, "generated content"} = InMemoryFs.read_file(fs, "/dynamic.txt")
+    end
+
+    test "new/1 accepts bare anonymous functions" do
+      fs = InMemoryFs.new(%{"/simple.txt" => fn -> "easy" end})
+
+      assert {:ok, "easy"} = InMemoryFs.read_file(fs, "/simple.txt")
+    end
+
+    test "read_file resolves FunctionContent" do
+      fc = FunctionContent.new({String, :upcase, ["hello"]})
+      fs = InMemoryFs.new(%{"/upper.txt" => fc})
+
+      assert {:ok, "HELLO"} = InMemoryFs.read_file(fs, "/upper.txt")
+    end
+
+    test "read_file returns error when function fails" do
+      fc = FunctionContent.new(fn -> raise "boom" end)
+      fs = InMemoryFs.new(%{"/error.txt" => fc})
+
+      assert {:error, {:function_error, _}} = InMemoryFs.read_file(fs, "/error.txt")
+    end
+
+    test "stat returns size 0 for unmaterialized FunctionContent" do
+      fc = FunctionContent.new(fn -> "hello world" end)
+      fs = InMemoryFs.new(%{"/dynamic.txt" => fc})
+
+      assert {:ok, stat} = InMemoryFs.stat(fs, "/dynamic.txt")
+      assert stat.size == 0
+    end
+
+    test "stat returns correct size for materialized FunctionContent" do
+      fc = FunctionContent.new(fn -> "hello world" end)
+      {:ok, _content, materialized_fc} = FunctionContent.materialize(fc)
+
+      fs = InMemoryFs.new(%{"/cached.txt" => materialized_fc})
+
+      assert {:ok, stat} = InMemoryFs.stat(fs, "/cached.txt")
+      assert stat.size == 11
+    end
+
+    test "append_file resolves FunctionContent before appending" do
+      fc = FunctionContent.new(fn -> "start" end)
+      fs = InMemoryFs.new(%{"/file.txt" => fc})
+
+      {:ok, fs} = InMemoryFs.append_file(fs, "/file.txt", " end")
+
+      assert {:ok, "start end"} = InMemoryFs.read_file(fs, "/file.txt")
+    end
+
+    test "append_file stores result as binary" do
+      fc = FunctionContent.new(fn -> "start" end)
+      fs = InMemoryFs.new(%{"/file.txt" => fc})
+
+      {:ok, fs} = InMemoryFs.append_file(fs, "/file.txt", " end")
+
+      # Second append should work on binary, not call function again
+      {:ok, fs} = InMemoryFs.append_file(fs, "/file.txt", " more")
+
+      assert {:ok, "start end more"} = InMemoryFs.read_file(fs, "/file.txt")
+    end
+
+    test "cp preserves FunctionContent adapter" do
+      fc = FunctionContent.new(fn -> "dynamic" end)
+      fs = InMemoryFs.new(%{"/source.txt" => fc})
+
+      {:ok, fs} = InMemoryFs.cp(fs, "/source.txt", "/dest.txt")
+
+      # Both files should resolve to the same content
+      assert {:ok, "dynamic"} = InMemoryFs.read_file(fs, "/source.txt")
+      assert {:ok, "dynamic"} = InMemoryFs.read_file(fs, "/dest.txt")
+    end
+
+    defmodule TestS3Client do
+      @behaviour JustBash.Fs.Content.S3Content
+
+      @impl true
+      def get_object("test-bucket", "file.txt"), do: {:ok, "s3 content"}
+      def get_object(_bucket, _key), do: {:error, :not_found}
+    end
+
+    test "read_file resolves S3Content" do
+      s3 = S3Content.new(bucket: "test-bucket", key: "file.txt", client: TestS3Client)
+      fs = InMemoryFs.new(%{"/remote.txt" => s3})
+
+      assert {:ok, "s3 content"} = InMemoryFs.read_file(fs, "/remote.txt")
+    end
+
+    test "materialize/2 converts FunctionContent to binary" do
+      fc = FunctionContent.new(fn -> "generated" end)
+      fs = InMemoryFs.new(%{"/dynamic.txt" => fc})
+
+      {:ok, fs} = InMemoryFs.materialize(fs, "/dynamic.txt")
+
+      # Read the internal data to verify it's now binary
+      entry = Map.get(fs.data, "/dynamic.txt")
+      assert is_binary(entry.content)
+      assert entry.content == "generated"
+    end
+
+    test "materialize/2 is no-op for binary content" do
+      fs = InMemoryFs.new(%{"/normal.txt" => "hello"})
+
+      {:ok, fs_after} = InMemoryFs.materialize(fs, "/normal.txt")
+
+      assert fs == fs_after
+    end
+
+    test "materialize/2 returns error for non-existent file" do
+      fs = InMemoryFs.new()
+
+      assert {:error, :enoent} = InMemoryFs.materialize(fs, "/nonexistent.txt")
+    end
+
+    test "materialize/2 returns error for directory" do
+      fs = InMemoryFs.new()
+      {:ok, fs} = InMemoryFs.mkdir(fs, "/dir")
+
+      assert {:error, :eisdir} = InMemoryFs.materialize(fs, "/dir")
+    end
+
+    test "materialize_all/1 resolves all lazy content" do
+      fs =
+        InMemoryFs.new(%{
+          "/file1.txt" => fn -> "a" end,
+          "/file2.txt" => "b",
+          "/file3.txt" => FunctionContent.new(fn -> "c" end)
+        })
+
+      {:ok, fs} = InMemoryFs.materialize_all(fs)
+
+      # All entries should now be binary
+      assert is_binary(Map.get(fs.data, "/file1.txt").content)
+      assert is_binary(Map.get(fs.data, "/file2.txt").content)
+      assert is_binary(Map.get(fs.data, "/file3.txt").content)
+
+      assert {:ok, "a"} = InMemoryFs.read_file(fs, "/file1.txt")
+      assert {:ok, "b"} = InMemoryFs.read_file(fs, "/file2.txt")
+      assert {:ok, "c"} = InMemoryFs.read_file(fs, "/file3.txt")
+    end
+
+    test "materialize_all/1 halts on first error" do
+      fs =
+        InMemoryFs.new(%{
+          "/good.txt" => fn -> "ok" end,
+          "/bad.txt" => FunctionContent.new(fn -> raise "error" end),
+          "/also_good.txt" => fn -> "ok2" end
+        })
+
+      assert {:error, {:function_error, _}} = InMemoryFs.materialize_all(fs)
+    end
+  end
 end
