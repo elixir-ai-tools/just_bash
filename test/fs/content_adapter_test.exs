@@ -1,13 +1,18 @@
 defmodule JustBash.Fs.ContentAdapterTest do
   use ExUnit.Case, async: true
 
+  alias JustBash
   alias JustBash.Fs.ContentAdapter
   alias JustBash.Fs.Content.FunctionContent
   alias JustBash.Fs.Content.S3Content
 
+  defp minimal_bash do
+    %JustBash{cwd: "/", env: %{}, fs: JustBash.Fs.InMemoryFs.new()}
+  end
+
   describe "BitString implementation" do
     test "resolve returns the binary as-is" do
-      assert {:ok, "hello world"} = ContentAdapter.resolve("hello world")
+      assert {:ok, "hello world", _bash} = ContentAdapter.resolve("hello world", minimal_bash())
     end
 
     test "size returns byte_size" do
@@ -20,22 +25,22 @@ defmodule JustBash.Fs.ContentAdapterTest do
   describe "FunctionContent implementation" do
     test "resolve calls a zero-arity anonymous function" do
       fc = FunctionContent.new(fn -> "generated content" end)
-      assert {:ok, "generated content"} = ContentAdapter.resolve(fc)
+      assert {:ok, "generated content", _bash} = ContentAdapter.resolve(fc, minimal_bash())
     end
 
     test "resolve calls an MFA tuple" do
       fc = FunctionContent.new({String, :upcase, ["hello"]})
-      assert {:ok, "HELLO"} = ContentAdapter.resolve(fc)
+      assert {:ok, "HELLO", _bash} = ContentAdapter.resolve(fc, minimal_bash())
     end
 
     test "resolve returns error when function raises" do
       fc = FunctionContent.new(fn -> raise "boom" end)
-      assert {:error, {:function_error, _}} = ContentAdapter.resolve(fc)
+      assert {:error, {:function_error, _}} = ContentAdapter.resolve(fc, minimal_bash())
     end
 
     test "resolve returns error when MFA raises" do
       fc = FunctionContent.new({String, :upcase, [123]})
-      assert {:error, {:function_error, _}} = ContentAdapter.resolve(fc)
+      assert {:error, {:function_error, _}} = ContentAdapter.resolve(fc, minimal_bash())
     end
 
     test "resolve returns cached content without calling function again" do
@@ -55,7 +60,7 @@ defmodule JustBash.Fs.ContentAdapterTest do
         end)
 
       # First resolve calls function
-      {:ok, content1} = ContentAdapter.resolve(fc)
+      {:ok, content1, _bash} = ContentAdapter.resolve(fc, minimal_bash())
       assert_received {:call_count, 1}
 
       # Materialize to cache
@@ -63,7 +68,7 @@ defmodule JustBash.Fs.ContentAdapterTest do
       assert cached_fc.cached_content == content1
 
       # Second resolve on cached version doesn't call function
-      {:ok, content2} = ContentAdapter.resolve(cached_fc)
+      {:ok, content2, _bash} = ContentAdapter.resolve(cached_fc, minimal_bash())
       assert content2 == content1
       refute_received {:call_count, 2}
     end
@@ -100,19 +105,19 @@ defmodule JustBash.Fs.ContentAdapterTest do
 
     test "resolve delegates to client" do
       s3 = S3Content.new(bucket: "test-bucket", key: "success.txt", client: MockS3Client)
-      assert {:ok, "s3 content"} = ContentAdapter.resolve(s3)
+      assert {:ok, "s3 content", _bash} = ContentAdapter.resolve(s3, minimal_bash())
     end
 
     test "resolve returns error when client fails" do
       s3 = S3Content.new(bucket: "test-bucket", key: "error.txt", client: MockS3Client)
-      assert {:error, :not_found} = ContentAdapter.resolve(s3)
+      assert {:error, :not_found} = ContentAdapter.resolve(s3, minimal_bash())
     end
 
     test "resolve returns cached content without calling client again" do
       s3 = S3Content.new(bucket: "test-bucket", key: "success.txt", client: MockS3Client)
 
       # First resolve calls client
-      {:ok, content1} = ContentAdapter.resolve(s3)
+      {:ok, content1, _bash} = ContentAdapter.resolve(s3, minimal_bash())
 
       # Materialize to cache
       {:ok, ^content1, cached_s3} = S3Content.materialize(s3)
@@ -120,7 +125,7 @@ defmodule JustBash.Fs.ContentAdapterTest do
 
       # Replace client with one that would error - cached version doesn't call it
       cached_s3_bad_client = %{cached_s3 | client: __MODULE__}
-      {:ok, content2} = ContentAdapter.resolve(cached_s3_bad_client)
+      {:ok, content2, _bash} = ContentAdapter.resolve(cached_s3_bad_client, minimal_bash())
       assert content2 == content1
     end
 

@@ -56,7 +56,7 @@ defmodule JustBash.Commands.Md5sum do
     {output, exit_code} =
       Enum.reduce(files, {"", 0}, fn file, {acc_out, acc_code} ->
         case read_file(bash, file, stdin) do
-          {:ok, content} ->
+          {:ok, content, _new_bash} ->
             hash = md5(content)
             {acc_out <> "#{hash}  #{file}\n", acc_code}
 
@@ -72,7 +72,7 @@ defmodule JustBash.Commands.Md5sum do
     {output, failed} =
       Enum.reduce(files, {"", 0}, fn file, {acc_out, acc_failed} ->
         case read_file(bash, file, stdin) do
-          {:ok, content} ->
+          {:ok, content, _new_bash} ->
             check_content(bash, content, stdin, acc_out, acc_failed)
 
           {:error, _} ->
@@ -112,7 +112,7 @@ defmodule JustBash.Commands.Md5sum do
 
   defp verify_file_checksum(bash, stdin, expected_hash, target_file, out, failed) do
     case read_file(bash, target_file, stdin) do
-      {:ok, target_content} ->
+      {:ok, target_content, _new_bash} ->
         compare_hashes(target_content, expected_hash, target_file, out, failed)
 
       {:error, _} ->
@@ -130,11 +130,11 @@ defmodule JustBash.Commands.Md5sum do
     end
   end
 
-  defp read_file(_bash, "-", stdin), do: {:ok, stdin}
+  defp read_file(bash, "-", stdin), do: {:ok, stdin, bash}
 
   defp read_file(bash, file, _stdin) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)
-    InMemoryFs.read_file(bash.fs, resolved)
+    InMemoryFs.read_file(bash, resolved)
   end
 
   defp md5(content) do

@@ -442,9 +442,9 @@ defmodule JustBash do
       # Function only called once during materialize
   """
   @spec materialize_files(t()) :: {:ok, t()} | {:error, term()}
-  def materialize_files(%__MODULE__{fs: fs} = bash) do
-    case InMemoryFs.materialize_all(fs) do
-      {:ok, new_fs} -> {:ok, %{bash | fs: new_fs}}
+  def materialize_files(bash) do
+    case InMemoryFs.materialize_all(bash) do
+      {:ok, new_bash} -> {:ok, new_bash}
       {:error, _} = err -> err
     end
   end

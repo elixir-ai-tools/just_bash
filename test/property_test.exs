@@ -7,6 +7,19 @@ defmodule JustBash.PropertyTest do
   These tests verify properties that should hold for all inputs.
   """
 
+  # Locale-aware comparison matching bash's sort behavior
+  # Case-insensitive primary, lowercase-before-uppercase tiebreaker
+  defp locale_compare(a, b) do
+    a_lower = String.downcase(a)
+    b_lower = String.downcase(b)
+
+    cond do
+      a_lower < b_lower -> true
+      a_lower > b_lower -> false
+      true -> a > b  # lowercase before uppercase (since lowercase > uppercase in ASCII)
+    end
+  end
+
   describe "echo command properties" do
     property "echo outputs its input followed by newline" do
       check all(text <- string(:alphanumeric, min_length: 1, max_length: 100)) do
@@ -109,7 +122,8 @@ defmodule JustBash.PropertyTest do
         {result, _} = JustBash.exec(bash, "sort /file.txt")
 
         result_lines = String.split(result.stdout, "\n", trim: true)
-        assert result_lines == Enum.sort(result_lines, &<=/2)
+        # Use locale-aware comparison (case-insensitive with lowercase-first tiebreaker)
+        assert result_lines == Enum.sort(result_lines, &locale_compare/2)
       end
     end
 
@@ -126,7 +140,8 @@ defmodule JustBash.PropertyTest do
         {result, _} = JustBash.exec(bash, "sort -r /file.txt")
 
         result_lines = String.split(result.stdout, "\n", trim: true)
-        assert result_lines == Enum.sort(result_lines, &>=/2)
+        # Reverse locale-aware comparison
+        assert result_lines == Enum.sort(result_lines, &locale_compare(&2, &1))
       end
     end
 

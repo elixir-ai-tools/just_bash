@@ -2,8 +2,9 @@ defprotocol JustBash.Fs.ContentAdapter do
   @moduledoc """
   Protocol for resolving file content from different backing stores.
 
-  Implementations must provide `resolve/1` which returns the binary content,
-  and `size/1` which returns the byte size (or nil if unknown without resolving).
+  Implementations must provide `resolve/2` which returns the binary content
+  and potentially updated bash state, and `size/1` which returns the byte size
+  (or nil if unknown without resolving).
 
   ## Implementations
 
@@ -13,20 +14,30 @@ defprotocol JustBash.Fs.ContentAdapter do
   """
 
   @doc """
-  Resolve the content to a binary.
+  Resolve the content to a binary, optionally accessing or modifying bash state.
 
-  Returns `{:ok, binary()}` on success or `{:error, term()}` on failure.
+  Returns `{:ok, binary(), bash}` on success or `{:error, term()}` on failure.
+
+  The bash parameter allows content adapters to:
+  - Access environment variables, current directory, etc.
+  - Modify bash state (e.g., set env vars, track access)
 
   ## Examples
 
-      iex> ContentAdapter.resolve("hello")
-      {:ok, "hello"}
+      iex> ContentAdapter.resolve("hello", bash)
+      {:ok, "hello", bash}
 
-      iex> ContentAdapter.resolve(%FunctionContent{fun: fn -> "dynamic" end})
-      {:ok, "dynamic"}
+      iex> ContentAdapter.resolve(%FunctionContent{fun: fn bash -> bash.env["USER"] end}, bash)
+      {:ok, "alice", bash}
+
+      iex> ContentAdapter.resolve(%FunctionContent{fun: fn bash ->
+      ...>   new_bash = %{bash | env: Map.put(bash.env, "CALLED", "1")}
+      ...>   {"content", new_bash}
+      ...> end}, bash)
+      {:ok, "content", updated_bash}
   """
-  @spec resolve(t()) :: {:ok, binary()} | {:error, term()}
-  def resolve(content)
+  @spec resolve(t(), JustBash.t()) :: {:ok, binary(), JustBash.t()} | {:error, term()}
+  def resolve(content, bash)
 
   @doc """
   Return the byte size of the content, or nil if unknown without resolving.
@@ -53,8 +64,8 @@ defimpl JustBash.Fs.ContentAdapter, for: BitString do
   This is the identity implementation - binary content is already resolved.
   """
 
-  @doc "Returns the binary as-is."
-  def resolve(content), do: {:ok, content}
+  @doc "Returns the binary as-is, bash state unchanged."
+  def resolve(content, bash), do: {:ok, content, bash}
 
   @doc "Returns the byte size of the binary."
   def size(content), do: byte_size(content)

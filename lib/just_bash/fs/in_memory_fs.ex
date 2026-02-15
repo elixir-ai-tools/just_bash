@@ -341,27 +341,28 @@ defmodule JustBash.Fs.InMemoryFs do
   end
 
   @doc """
-  Read the contents of a file.
+  Read the contents of a file with bash context.
 
   Content is resolved through the `ContentAdapter` protocol, supporting
-  binary, function-backed, and S3-backed content.
+  binary, function-backed, and S3-backed content. Function-backed content
+  can access and modify bash state (environment variables, etc.).
 
   ## Returns
 
-  - `{:ok, content}` - binary content of the file
+  - `{:ok, content, bash}` - binary content and potentially updated bash
   - `{:error, :enoent}` - file does not exist
   - `{:error, :eisdir}` - path is a directory
   - `{:error, :eloop}` - too many symlink levels
   - `{:error, term()}` - content resolution error (e.g., function error, S3 error)
   """
-  @spec read_file(t(), String.t()) ::
-          {:ok, binary()} | {:error, :enoent | :eisdir | :eloop | term()}
-  def read_file(%__MODULE__{} = fs, path) do
+  @spec read_file(JustBash.t(), String.t()) ::
+          {:ok, binary(), JustBash.t()} | {:error, :enoent | :eisdir | :eloop | term()}
+  def read_file(%JustBash{fs: fs} = bash, path) do
     normalized = normalize_path(path)
 
     case get_entry_following_symlinks(fs, normalized) do
       {:ok, %{type: :file, content: content}} ->
-        ContentAdapter.resolve(content)
+        ContentAdapter.resolve(content, bash)
 
       {:ok, %{type: :directory}} ->
         {:error, :eisdir}
@@ -420,8 +421,9 @@ defmodule JustBash.Fs.InMemoryFs do
   If the file has adapter-backed content, it is resolved before appending.
   The result is always stored as binary content.
   """
-  @spec append_file(t(), String.t(), binary()) :: {:ok, t()} | {:error, :eisdir | term()}
-  def append_file(%__MODULE__{} = fs, path, content) do
+  @spec append_file(JustBash.t(), String.t(), binary()) ::
+          {:ok, JustBash.t()} | {:error, :eisdir | term()}
+  def append_file(%JustBash{fs: fs} = bash, path, content) do
     normalized = normalize_path(path)
 
     case Map.get(fs.data, normalized) do
@@ -429,18 +431,22 @@ defmodule JustBash.Fs.InMemoryFs do
         {:error, :eisdir}
 
       %{type: :file} = entry ->
-        case ContentAdapter.resolve(entry.content) do
-          {:ok, existing} ->
+        case ContentAdapter.resolve(entry.content, bash) do
+          {:ok, existing, new_bash} ->
             new_content = existing <> content
             updated_entry = %{entry | content: new_content, mtime: DateTime.utc_now()}
-            {:ok, %{fs | data: Map.put(fs.data, normalized, updated_entry)}}
+            new_fs = %{new_bash.fs | data: Map.put(new_bash.fs.data, normalized, updated_entry)}
+            {:ok, %{new_bash | fs: new_fs}}
 
           {:error, _} = err ->
             err
         end
 
       nil ->
-        write_file(fs, path, content)
+        case write_file(bash.fs, path, content) do
+          {:ok, new_fs} -> {:ok, %{bash | fs: new_fs}}
+          error -> error
+        end
     end
   end
 
@@ -770,7 +776,7 @@ defmodule JustBash.Fs.InMemoryFs do
 
   ## Returns
 
-  - `{:ok, updated_fs}` - filesystem with materialized content
+  - `{:ok, updated_bash}` - bash with materialized content
   - `{:error, :enoent}` - file does not exist
   - `{:error, :eisdir}` - path is a directory
   - `{:error, term()}` - content resolution error
@@ -778,23 +784,25 @@ defmodule JustBash.Fs.InMemoryFs do
   ## Examples
 
       iex> fc = JustBash.Fs.Content.FunctionContent.new(fn -> "generated" end)
-      iex> fs = InMemoryFs.new(%{"/dynamic.txt" => fc})
-      iex> {:ok, materialized_fs} = InMemoryFs.materialize(fs, "/dynamic.txt")
+      iex> bash = JustBash.new(files: %{"/dynamic.txt" => fc})
+      iex> {:ok, materialized_bash} = InMemoryFs.materialize(bash, "/dynamic.txt")
       # Now /dynamic.txt contains binary "generated"
   """
-  @spec materialize(t(), String.t()) :: {:ok, t()} | {:error, :enoent | :eisdir | term()}
-  def materialize(%__MODULE__{} = fs, path) do
+  @spec materialize(JustBash.t(), String.t()) ::
+          {:ok, JustBash.t()} | {:error, :enoent | :eisdir | term()}
+  def materialize(%JustBash{fs: fs} = bash, path) do
     normalized = normalize_path(path)
 
     case Map.get(fs.data, normalized) do
       %{type: :file, content: content} when is_binary(content) ->
-        {:ok, fs}
+        {:ok, bash}
 
       %{type: :file, content: content} = entry ->
-        case ContentAdapter.resolve(content) do
-          {:ok, binary} ->
+        case ContentAdapter.resolve(content, bash) do
+          {:ok, binary, new_bash} ->
             updated_entry = %{entry | content: binary}
-            {:ok, %{fs | data: Map.put(fs.data, normalized, updated_entry)}}
+            new_fs = %{new_bash.fs | data: Map.put(new_bash.fs.data, normalized, updated_entry)}
+            {:ok, %{new_bash | fs: new_fs}}
 
           {:error, _} = err ->
             err
@@ -827,12 +835,12 @@ defmodule JustBash.Fs.InMemoryFs do
       iex> {:ok, materialized_fs} = InMemoryFs.materialize_all(fs)
       # Now both files contain binary content
   """
-  @spec materialize_all(t()) :: {:ok, t()} | {:error, term()}
-  def materialize_all(%__MODULE__{data: data} = fs) do
-    Enum.reduce_while(data, {:ok, fs}, fn
-      {path, %{type: :file, content: content}}, {:ok, acc_fs} when not is_binary(content) ->
-        case materialize(acc_fs, path) do
-          {:ok, new_fs} -> {:cont, {:ok, new_fs}}
+  @spec materialize_all(JustBash.t()) :: {:ok, JustBash.t()} | {:error, term()}
+  def materialize_all(%JustBash{fs: %__MODULE__{data: data}} = bash) do
+    Enum.reduce_while(data, {:ok, bash}, fn
+      {path, %{type: :file, content: content}}, {:ok, acc_bash} when not is_binary(content) ->
+        case materialize(acc_bash, path) do
+          {:ok, new_bash} -> {:cont, {:ok, new_bash}}
           {:error, _} = err -> {:halt, err}
         end
 

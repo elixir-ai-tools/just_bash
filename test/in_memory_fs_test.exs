@@ -1,7 +1,13 @@
 defmodule JustBash.Fs.InMemoryFsTest do
   use ExUnit.Case, async: true
 
+  alias JustBash
   alias JustBash.Fs.InMemoryFs
+
+  # Helper to create a minimal bash struct from an fs
+  defp bash_from_fs(fs) do
+    %JustBash{fs: fs, cwd: "/home/user", env: %{}}
+  end
 
   describe "new/1" do
     test "creates filesystem with root directory" do
@@ -11,7 +17,8 @@ defmodule JustBash.Fs.InMemoryFsTest do
 
     test "creates filesystem with initial files" do
       fs = InMemoryFs.new(%{"/home/user/file.txt" => "hello"})
-      assert {:ok, "hello"} = InMemoryFs.read_file(fs, "/home/user/file.txt")
+      bash = bash_from_fs(fs)
+      assert {:ok, "hello", _bash} = InMemoryFs.read_file(bash, "/home/user/file.txt")
     end
 
     test "creates filesystem with extended file init" do
@@ -95,7 +102,8 @@ defmodule JustBash.Fs.InMemoryFsTest do
     test "writes and reads file content" do
       fs = InMemoryFs.new()
       {:ok, fs} = InMemoryFs.write_file(fs, "/test.txt", "hello world")
-      assert {:ok, "hello world"} = InMemoryFs.read_file(fs, "/test.txt")
+      bash = bash_from_fs(fs)
+      assert {:ok, "hello world", _bash} = InMemoryFs.read_file(bash, "/test.txt")
     end
 
     test "creates parent directories" do
@@ -107,18 +115,20 @@ defmodule JustBash.Fs.InMemoryFsTest do
     test "overwrites existing files" do
       fs = InMemoryFs.new(%{"/file.txt" => "old"})
       {:ok, fs} = InMemoryFs.write_file(fs, "/file.txt", "new")
-      assert {:ok, "new"} = InMemoryFs.read_file(fs, "/file.txt")
+      bash = bash_from_fs(fs)
+      assert {:ok, "new", _bash} = InMemoryFs.read_file(bash, "/file.txt")
     end
 
     test "read_file returns error for nonexistent file" do
-      fs = InMemoryFs.new()
-      assert {:error, :enoent} = InMemoryFs.read_file(fs, "/nonexistent")
+      bash = bash_from_fs(InMemoryFs.new())
+      assert {:error, :enoent} = InMemoryFs.read_file(bash, "/nonexistent")
     end
 
     test "read_file returns error for directory" do
       fs = InMemoryFs.new()
       {:ok, fs} = InMemoryFs.mkdir(fs, "/mydir")
-      assert {:error, :eisdir} = InMemoryFs.read_file(fs, "/mydir")
+      bash = bash_from_fs(fs)
+      assert {:error, :eisdir} = InMemoryFs.read_file(bash, "/mydir")
     end
 
     test "writes with custom mode" do
@@ -131,15 +141,15 @@ defmodule JustBash.Fs.InMemoryFsTest do
 
   describe "append_file/3" do
     test "appends to existing file" do
-      fs = InMemoryFs.new(%{"/file.txt" => "hello"})
-      {:ok, fs} = InMemoryFs.append_file(fs, "/file.txt", " world")
-      assert {:ok, "hello world"} = InMemoryFs.read_file(fs, "/file.txt")
+      bash = bash_from_fs(InMemoryFs.new(%{"/file.txt" => "hello"}))
+      {:ok, bash} = InMemoryFs.append_file(bash, "/file.txt", " world")
+      assert {:ok, "hello world", _bash} = InMemoryFs.read_file(bash, "/file.txt")
     end
 
     test "creates file if it doesn't exist" do
-      fs = InMemoryFs.new()
-      {:ok, fs} = InMemoryFs.append_file(fs, "/new.txt", "content")
-      assert {:ok, "content"} = InMemoryFs.read_file(fs, "/new.txt")
+      bash = bash_from_fs(InMemoryFs.new())
+      {:ok, bash} = InMemoryFs.append_file(bash, "/new.txt", "content")
+      assert {:ok, "content", _bash} = InMemoryFs.read_file(bash, "/new.txt")
     end
   end
 
@@ -257,8 +267,9 @@ defmodule JustBash.Fs.InMemoryFsTest do
     test "copies file" do
       fs = InMemoryFs.new(%{"/src.txt" => "content"})
       {:ok, fs} = InMemoryFs.cp(fs, "/src.txt", "/dest.txt")
-      assert {:ok, "content"} = InMemoryFs.read_file(fs, "/dest.txt")
-      assert {:ok, "content"} = InMemoryFs.read_file(fs, "/src.txt")
+      bash = bash_from_fs(fs)
+      assert {:ok, "content", bash} = InMemoryFs.read_file(bash, "/dest.txt")
+      assert {:ok, "content", _bash} = InMemoryFs.read_file(bash, "/src.txt")
     end
 
     test "returns error for nonexistent source" do
@@ -280,8 +291,9 @@ defmodule JustBash.Fs.InMemoryFsTest do
         })
 
       {:ok, fs} = InMemoryFs.cp(fs, "/srcdir", "/destdir", recursive: true)
-      assert {:ok, "a"} = InMemoryFs.read_file(fs, "/destdir/file.txt")
-      assert {:ok, "b"} = InMemoryFs.read_file(fs, "/destdir/subdir/nested.txt")
+      bash = bash_from_fs(fs)
+      assert {:ok, "a", bash} = InMemoryFs.read_file(bash, "/destdir/file.txt")
+      assert {:ok, "b", _bash} = InMemoryFs.read_file(bash, "/destdir/subdir/nested.txt")
     end
   end
 
@@ -289,14 +301,16 @@ defmodule JustBash.Fs.InMemoryFsTest do
     test "moves file" do
       fs = InMemoryFs.new(%{"/src.txt" => "content"})
       {:ok, fs} = InMemoryFs.mv(fs, "/src.txt", "/dest.txt")
-      assert {:ok, "content"} = InMemoryFs.read_file(fs, "/dest.txt")
+      bash = bash_from_fs(fs)
+      assert {:ok, "content", _bash} = InMemoryFs.read_file(bash, "/dest.txt")
       refute InMemoryFs.exists?(fs, "/src.txt")
     end
 
     test "moves directory" do
       fs = InMemoryFs.new(%{"/srcdir/file.txt" => "content"})
       {:ok, fs} = InMemoryFs.mv(fs, "/srcdir", "/destdir")
-      assert {:ok, "content"} = InMemoryFs.read_file(fs, "/destdir/file.txt")
+      bash = bash_from_fs(fs)
+      assert {:ok, "content", _bash} = InMemoryFs.read_file(bash, "/destdir/file.txt")
       refute InMemoryFs.exists?(fs, "/srcdir")
     end
   end
@@ -361,7 +375,8 @@ defmodule JustBash.Fs.InMemoryFsTest do
     test "creates symbolic link" do
       fs = InMemoryFs.new(%{"/target.txt" => "content"})
       {:ok, fs} = InMemoryFs.symlink(fs, "/target.txt", "/link")
-      assert {:ok, "content"} = InMemoryFs.read_file(fs, "/link")
+      bash = bash_from_fs(fs)
+      assert {:ok, "content", _bash} = InMemoryFs.read_file(bash, "/link")
     end
 
     test "returns error if link exists" do
@@ -372,8 +387,9 @@ defmodule JustBash.Fs.InMemoryFsTest do
     test "can create link to nonexistent target" do
       fs = InMemoryFs.new()
       {:ok, fs} = InMemoryFs.symlink(fs, "/nonexistent", "/link")
+      bash = bash_from_fs(fs)
       assert InMemoryFs.exists?(fs, "/link")
-      assert {:error, :enoent} = InMemoryFs.read_file(fs, "/link")
+      assert {:error, :enoent} = InMemoryFs.read_file(bash, "/link")
     end
   end
 
@@ -399,7 +415,8 @@ defmodule JustBash.Fs.InMemoryFsTest do
     test "creates hard link" do
       fs = InMemoryFs.new(%{"/file.txt" => "content"})
       {:ok, fs} = InMemoryFs.link(fs, "/file.txt", "/link")
-      assert {:ok, "content"} = InMemoryFs.read_file(fs, "/link")
+      bash = bash_from_fs(fs)
+      assert {:ok, "content", _bash} = InMemoryFs.read_file(bash, "/link")
     end
 
     test "returns error for nonexistent source" do
@@ -440,7 +457,8 @@ defmodule JustBash.Fs.InMemoryFsTest do
       fs = InMemoryFs.new()
       {:ok, fs} = InMemoryFs.symlink(fs, "/link2", "/link1")
       {:ok, fs} = InMemoryFs.symlink(fs, "/link1", "/link2")
-      assert {:error, :eloop} = InMemoryFs.read_file(fs, "/link1")
+      bash = bash_from_fs(fs)
+      assert {:error, :eloop} = InMemoryFs.read_file(bash, "/link1")
     end
   end
 
@@ -450,29 +468,29 @@ defmodule JustBash.Fs.InMemoryFsTest do
 
     test "new/1 accepts FunctionContent structs" do
       fc = FunctionContent.new(fn -> "generated content" end)
-      fs = InMemoryFs.new(%{"/dynamic.txt" => fc})
+      bash = bash_from_fs(InMemoryFs.new(%{"/dynamic.txt" => fc}))
 
-      assert {:ok, "generated content"} = InMemoryFs.read_file(fs, "/dynamic.txt")
+      assert {:ok, "generated content", _bash} = InMemoryFs.read_file(bash, "/dynamic.txt")
     end
 
     test "new/1 accepts bare anonymous functions" do
-      fs = InMemoryFs.new(%{"/simple.txt" => fn -> "easy" end})
+      bash = bash_from_fs(InMemoryFs.new(%{"/simple.txt" => fn -> "easy" end}))
 
-      assert {:ok, "easy"} = InMemoryFs.read_file(fs, "/simple.txt")
+      assert {:ok, "easy", _bash} = InMemoryFs.read_file(bash, "/simple.txt")
     end
 
     test "read_file resolves FunctionContent" do
       fc = FunctionContent.new({String, :upcase, ["hello"]})
-      fs = InMemoryFs.new(%{"/upper.txt" => fc})
+      bash = bash_from_fs(InMemoryFs.new(%{"/upper.txt" => fc}))
 
-      assert {:ok, "HELLO"} = InMemoryFs.read_file(fs, "/upper.txt")
+      assert {:ok, "HELLO", _bash} = InMemoryFs.read_file(bash, "/upper.txt")
     end
 
     test "read_file returns error when function fails" do
       fc = FunctionContent.new(fn -> raise "boom" end)
-      fs = InMemoryFs.new(%{"/error.txt" => fc})
+      bash = bash_from_fs(InMemoryFs.new(%{"/error.txt" => fc}))
 
-      assert {:error, {:function_error, _}} = InMemoryFs.read_file(fs, "/error.txt")
+      assert {:error, {:function_error, _}} = InMemoryFs.read_file(bash, "/error.txt")
     end
 
     test "stat returns size 0 for unmaterialized FunctionContent" do
@@ -495,23 +513,23 @@ defmodule JustBash.Fs.InMemoryFsTest do
 
     test "append_file resolves FunctionContent before appending" do
       fc = FunctionContent.new(fn -> "start" end)
-      fs = InMemoryFs.new(%{"/file.txt" => fc})
+      bash = bash_from_fs(InMemoryFs.new(%{"/file.txt" => fc}))
 
-      {:ok, fs} = InMemoryFs.append_file(fs, "/file.txt", " end")
+      {:ok, bash} = InMemoryFs.append_file(bash, "/file.txt", " end")
 
-      assert {:ok, "start end"} = InMemoryFs.read_file(fs, "/file.txt")
+      assert {:ok, "start end", _bash} = InMemoryFs.read_file(bash, "/file.txt")
     end
 
     test "append_file stores result as binary" do
       fc = FunctionContent.new(fn -> "start" end)
-      fs = InMemoryFs.new(%{"/file.txt" => fc})
+      bash = bash_from_fs(InMemoryFs.new(%{"/file.txt" => fc}))
 
-      {:ok, fs} = InMemoryFs.append_file(fs, "/file.txt", " end")
+      {:ok, bash} = InMemoryFs.append_file(bash, "/file.txt", " end")
 
       # Second append should work on binary, not call function again
-      {:ok, fs} = InMemoryFs.append_file(fs, "/file.txt", " more")
+      {:ok, bash} = InMemoryFs.append_file(bash, "/file.txt", " more")
 
-      assert {:ok, "start end more"} = InMemoryFs.read_file(fs, "/file.txt")
+      assert {:ok, "start end more", _bash} = InMemoryFs.read_file(bash, "/file.txt")
     end
 
     test "cp preserves FunctionContent adapter" do
@@ -519,10 +537,11 @@ defmodule JustBash.Fs.InMemoryFsTest do
       fs = InMemoryFs.new(%{"/source.txt" => fc})
 
       {:ok, fs} = InMemoryFs.cp(fs, "/source.txt", "/dest.txt")
+      bash = bash_from_fs(fs)
 
       # Both files should resolve to the same content
-      assert {:ok, "dynamic"} = InMemoryFs.read_file(fs, "/source.txt")
-      assert {:ok, "dynamic"} = InMemoryFs.read_file(fs, "/dest.txt")
+      assert {:ok, "dynamic", bash} = InMemoryFs.read_file(bash, "/source.txt")
+      assert {:ok, "dynamic", _bash} = InMemoryFs.read_file(bash, "/dest.txt")
     end
 
     defmodule TestS3Client do
@@ -535,73 +554,78 @@ defmodule JustBash.Fs.InMemoryFsTest do
 
     test "read_file resolves S3Content" do
       s3 = S3Content.new(bucket: "test-bucket", key: "file.txt", client: TestS3Client)
-      fs = InMemoryFs.new(%{"/remote.txt" => s3})
+      bash = bash_from_fs(InMemoryFs.new(%{"/remote.txt" => s3}))
 
-      assert {:ok, "s3 content"} = InMemoryFs.read_file(fs, "/remote.txt")
+      assert {:ok, "s3 content", _bash} = InMemoryFs.read_file(bash, "/remote.txt")
     end
 
     test "materialize/2 converts FunctionContent to binary" do
       fc = FunctionContent.new(fn -> "generated" end)
-      fs = InMemoryFs.new(%{"/dynamic.txt" => fc})
+      bash = bash_from_fs(InMemoryFs.new(%{"/dynamic.txt" => fc}))
 
-      {:ok, fs} = InMemoryFs.materialize(fs, "/dynamic.txt")
+      {:ok, bash} = InMemoryFs.materialize(bash, "/dynamic.txt")
 
       # Read the internal data to verify it's now binary
-      entry = Map.get(fs.data, "/dynamic.txt")
+      entry = Map.get(bash.fs.data, "/dynamic.txt")
       assert is_binary(entry.content)
       assert entry.content == "generated"
     end
 
     test "materialize/2 is no-op for binary content" do
-      fs = InMemoryFs.new(%{"/normal.txt" => "hello"})
+      bash = bash_from_fs(InMemoryFs.new(%{"/normal.txt" => "hello"}))
 
-      {:ok, fs_after} = InMemoryFs.materialize(fs, "/normal.txt")
+      {:ok, bash_after} = InMemoryFs.materialize(bash, "/normal.txt")
 
-      assert fs == fs_after
+      assert bash.fs == bash_after.fs
     end
 
     test "materialize/2 returns error for non-existent file" do
-      fs = InMemoryFs.new()
+      bash = bash_from_fs(InMemoryFs.new())
 
-      assert {:error, :enoent} = InMemoryFs.materialize(fs, "/nonexistent.txt")
+      assert {:error, :enoent} = InMemoryFs.materialize(bash, "/nonexistent.txt")
     end
 
     test "materialize/2 returns error for directory" do
       fs = InMemoryFs.new()
       {:ok, fs} = InMemoryFs.mkdir(fs, "/dir")
+      bash = bash_from_fs(fs)
 
-      assert {:error, :eisdir} = InMemoryFs.materialize(fs, "/dir")
+      assert {:error, :eisdir} = InMemoryFs.materialize(bash, "/dir")
     end
 
     test "materialize_all/1 resolves all lazy content" do
-      fs =
-        InMemoryFs.new(%{
-          "/file1.txt" => fn -> "a" end,
-          "/file2.txt" => "b",
-          "/file3.txt" => FunctionContent.new(fn -> "c" end)
-        })
+      bash =
+        bash_from_fs(
+          InMemoryFs.new(%{
+            "/file1.txt" => fn -> "a" end,
+            "/file2.txt" => "b",
+            "/file3.txt" => FunctionContent.new(fn -> "c" end)
+          })
+        )
 
-      {:ok, fs} = InMemoryFs.materialize_all(fs)
+      {:ok, bash} = InMemoryFs.materialize_all(bash)
 
       # All entries should now be binary
-      assert is_binary(Map.get(fs.data, "/file1.txt").content)
-      assert is_binary(Map.get(fs.data, "/file2.txt").content)
-      assert is_binary(Map.get(fs.data, "/file3.txt").content)
+      assert is_binary(Map.get(bash.fs.data, "/file1.txt").content)
+      assert is_binary(Map.get(bash.fs.data, "/file2.txt").content)
+      assert is_binary(Map.get(bash.fs.data, "/file3.txt").content)
 
-      assert {:ok, "a"} = InMemoryFs.read_file(fs, "/file1.txt")
-      assert {:ok, "b"} = InMemoryFs.read_file(fs, "/file2.txt")
-      assert {:ok, "c"} = InMemoryFs.read_file(fs, "/file3.txt")
+      assert {:ok, "a", bash} = InMemoryFs.read_file(bash, "/file1.txt")
+      assert {:ok, "b", bash} = InMemoryFs.read_file(bash, "/file2.txt")
+      assert {:ok, "c", _bash} = InMemoryFs.read_file(bash, "/file3.txt")
     end
 
     test "materialize_all/1 halts on first error" do
-      fs =
-        InMemoryFs.new(%{
-          "/good.txt" => fn -> "ok" end,
-          "/bad.txt" => FunctionContent.new(fn -> raise "error" end),
-          "/also_good.txt" => fn -> "ok2" end
-        })
+      bash =
+        bash_from_fs(
+          InMemoryFs.new(%{
+            "/good.txt" => fn -> "ok" end,
+            "/bad.txt" => FunctionContent.new(fn -> raise "error" end),
+            "/also_good.txt" => fn -> "ok2" end
+          })
+        )
 
-      assert {:error, {:function_error, _}} = InMemoryFs.materialize_all(fs)
+      assert {:error, {:function_error, _}} = InMemoryFs.materialize_all(bash)
     end
   end
 end

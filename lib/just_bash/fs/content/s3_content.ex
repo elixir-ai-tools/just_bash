@@ -114,14 +114,15 @@ defimpl JustBash.Fs.ContentAdapter, for: JustBash.Fs.Content.S3Content do
   Resolve the S3-backed content by fetching from S3.
 
   If the content is cached, returns the cached value without fetching.
+  Bash state is passed through unchanged (S3 doesn't need bash context).
   """
-  def resolve(%S3Content{cached_content: content}) when not is_nil(content) do
-    {:ok, content}
+  def resolve(%S3Content{cached_content: content}, bash) when not is_nil(content) do
+    {:ok, content, bash}
   end
 
-  def resolve(%S3Content{} = s3) do
+  def resolve(%S3Content{} = s3, bash) do
     case S3Content.materialize(s3) do
-      {:ok, content, _updated} -> {:ok, content}
+      {:ok, content, _updated} -> {:ok, content, bash}
       {:error, _} = err -> err
     end
   end
