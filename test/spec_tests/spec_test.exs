@@ -29,7 +29,7 @@ defmodule JustBash.SpecTestTest do
   ]
 
   # Known test names to skip (features we don't support yet)
-  @skip_tests [
+  skip_tests = [
     # Array side effects in indexing - complex feature
     "Side Effect in Array Indexing",
     # Constant with quotes - edge case
@@ -56,7 +56,7 @@ defmodule JustBash.SpecTestTest do
 
         for %TestCase{} = tc <- test_cases do
           # Skip tests in the skip list
-          unless tc.name in @skip_tests do
+          unless tc.name in skip_tests do
             test_name = "#{spec_file}:#{tc.line_number}: #{tc.name}"
 
             @tag spec_file: Path.basename(spec_file, ".test.sh")
