@@ -168,13 +168,13 @@ defmodule JustBash.Commands.Sed do
 
   defp process_files_to_output(bash, files, commands, opts) do
     result =
-      Enum.reduce_while(files, {:ok, ""}, fn file, {:ok, acc} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+      Enum.reduce_while(files, {:ok, "", bash}, fn file, {:ok, acc, current_bash} ->
+        resolved = InMemoryFs.resolve_path(current_bash.cwd, file)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
-          {:ok, content} ->
+        case InMemoryFs.read_file(current_bash, resolved) do
+          {:ok, content, new_bash} ->
             output = Executor.execute(content, commands, opts.silent)
-            {:cont, {:ok, acc <> output}}
+            {:cont, {:ok, acc <> output, new_bash}}
 
           {:error, _} ->
             {:halt, {:error, "sed: #{file}: No such file or directory\n"}}
@@ -182,7 +182,7 @@ defmodule JustBash.Commands.Sed do
       end)
 
     case result do
-      {:ok, output} -> {:ok, output, bash}
+      {:ok, output, final_bash} -> {:ok, output, final_bash}
       {:error, msg} -> {:error, msg}
     end
   end
@@ -202,9 +202,9 @@ defmodule JustBash.Commands.Sed do
   defp process_single_file_in_place(bash, file, commands, opts) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} ->
-        write_processed_content(bash, resolved, file, content, commands, opts)
+    case InMemoryFs.read_file(bash, resolved) do
+      {:ok, content, new_bash} ->
+        write_processed_content(new_bash, resolved, file, content, commands, opts)
 
       {:error, _} ->
         {:halt, {:error, "sed: #{file}: No such file or directory\n"}}

@@ -72,8 +72,8 @@ defmodule JustBash.Commands.Jq do
   defp read_file_input(bash, file) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} -> {:ok, content}
+    case InMemoryFs.read_file(bash, resolved) do
+      {:ok, content, _new_bash} -> {:ok, content}
       {:error, _} -> {:error, "jq: #{file}: No such file or directory\n"}
     end
   end

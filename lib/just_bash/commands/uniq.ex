@@ -27,8 +27,8 @@ defmodule JustBash.Commands.Uniq do
         [file | _] ->
           resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-          case InMemoryFs.read_file(bash.fs, resolved) do
-            {:ok, c} -> c
+          case InMemoryFs.read_file(bash, resolved) do
+            {:ok, c, _new_bash} -> c
             {:error, _} -> ""
           end
       end

@@ -135,8 +135,8 @@ defmodule JustBash.Commands.Grep do
   defp process_file(bash, file, regex, flags, show_filename, acc, had_match) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} ->
+    case InMemoryFs.read_file(bash, resolved) do
+      {:ok, content, _new_bash} ->
         prefix = if show_filename, do: "#{file}:", else: ""
         lines = process_content(content, regex, flags, prefix)
         matched = lines != []
