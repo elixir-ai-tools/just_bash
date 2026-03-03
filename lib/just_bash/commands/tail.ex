@@ -29,10 +29,10 @@ defmodule JustBash.Commands.Tail do
   defp tail_file(bash, file, n) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} ->
+    case InMemoryFs.read_file(bash, resolved) do
+      {:ok, content, new_bash} ->
         output = format_tail_output(content, n)
-        {Command.ok(output), bash}
+        {Command.ok(output), new_bash}
 
       {:error, _} ->
         {Command.error("tail: cannot open '#{file}' for reading: No such file or directory\n"),

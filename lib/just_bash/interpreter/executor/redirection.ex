@@ -173,16 +173,10 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   end
 
   defp append_to_file(bash, path, content, result, stream) do
-    current_content =
-      case InMemoryFs.read_file(bash.fs, path) do
-        {:ok, existing} -> existing
-        {:error, _} -> ""
-      end
-
-    case InMemoryFs.write_file(bash.fs, path, current_content <> content) do
-      {:ok, new_fs} ->
+    case InMemoryFs.append_file(bash, path, content) do
+      {:ok, new_bash} ->
         updated_result = clear_stream(result, stream)
-        {updated_result, %{bash | fs: new_fs}}
+        {updated_result, new_bash}
 
       {:error, reason} ->
         error_msg = format_redirection_error(path, reason)
@@ -202,15 +196,9 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   end
 
   defp append_combined_to_file(bash, path, content, result) do
-    current_content =
-      case InMemoryFs.read_file(bash.fs, path) do
-        {:ok, existing} -> existing
-        {:error, _} -> ""
-      end
-
-    case InMemoryFs.write_file(bash.fs, path, current_content <> content) do
-      {:ok, new_fs} ->
-        {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
+    case InMemoryFs.append_file(bash, path, content) do
+      {:ok, new_bash} ->
+        {%{result | stdout: "", stderr: ""}, new_bash}
 
       {:error, reason} ->
         error_msg = format_redirection_error(path, reason)
@@ -236,8 +224,8 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     path = Expansion.expand_redirect_target(bash, target)
     resolved = InMemoryFs.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} -> content
+    case InMemoryFs.read_file(bash, resolved) do
+      {:ok, content, _new_bash} -> content
       {:error, _} -> ""
     end
   end

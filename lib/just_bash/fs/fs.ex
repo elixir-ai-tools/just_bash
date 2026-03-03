@@ -129,4 +129,14 @@ defmodule JustBash.Fs do
   Get all paths in the filesystem.
   """
   defdelegate get_all_paths(fs), to: InMemoryFs
+
+  @doc """
+  Materialize a single file's lazy content to binary.
+  """
+  defdelegate materialize(fs, path), to: InMemoryFs
+
+  @doc """
+  Materialize all lazy file content to binary.
+  """
+  defdelegate materialize_all(fs), to: InMemoryFs
 end

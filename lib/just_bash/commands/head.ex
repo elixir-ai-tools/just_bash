@@ -29,10 +29,10 @@ defmodule JustBash.Commands.Head do
   defp head_file(bash, file, n) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} ->
+    case InMemoryFs.read_file(bash, resolved) do
+      {:ok, content, new_bash} ->
         output = format_head_output(content, n)
-        {Command.ok(output), bash}
+        {Command.ok(output), new_bash}
 
       {:error, _} ->
         {Command.error("head: cannot open '#{file}' for reading: No such file or directory\n"),

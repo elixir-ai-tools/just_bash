@@ -24,9 +24,9 @@ defmodule JustBash.Commands.Source do
       [filename | _extra_args] ->
         resolved = InMemoryFs.resolve_path(bash.cwd, filename)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
-          {:ok, content} ->
-            execute_script_content(bash, content)
+        case InMemoryFs.read_file(bash, resolved) do
+          {:ok, content, new_bash} ->
+            execute_script_content(new_bash, content)
 
           {:error, :enoent} ->
             {%{

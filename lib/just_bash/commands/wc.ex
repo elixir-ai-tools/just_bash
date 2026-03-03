@@ -16,10 +16,10 @@ defmodule JustBash.Commands.Wc do
       [file] ->
         resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
-          {:ok, content} ->
+        case InMemoryFs.read_file(bash, resolved) do
+          {:ok, content, new_bash} ->
             output = format_output(content, file, flags)
-            {Command.ok(output), bash}
+            {Command.ok(output), new_bash}
 
           {:error, _} ->
             {Command.error("wc: #{file}: No such file or directory\n"), bash}

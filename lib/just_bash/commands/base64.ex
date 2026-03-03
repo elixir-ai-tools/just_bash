@@ -90,8 +90,8 @@ defmodule JustBash.Commands.Base64 do
   defp read_single_file(bash, file, acc) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, data} -> {:cont, {:ok, acc <> data}}
+    case InMemoryFs.read_file(bash, resolved) do
+      {:ok, data, _new_bash} -> {:cont, {:ok, acc <> data}}
       {:error, _} -> {:halt, {:error, "base64: #{file}: No such file or directory\n"}}
     end
   end

@@ -93,8 +93,8 @@ defmodule JustBash.Commands.Comm do
   defp read_file(bash, file, _stdin) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} -> {:ok, content}
+    case InMemoryFs.read_file(bash, resolved) do
+      {:ok, content, _new_bash} -> {:ok, content}
       {:error, _} -> {:error, "comm: #{file}: No such file or directory\n"}
     end
   end

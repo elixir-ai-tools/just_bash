@@ -55,10 +55,10 @@ defmodule JustBash.Commands.Markdown do
 
   defp execute_with_opts(bash, opts, stdin) do
     case get_content(bash, opts, stdin) do
-      {:ok, content} ->
+      {:ok, content, new_bash} ->
         case render(content, opts) do
           {:ok, html} ->
-            {Command.ok(html), bash}
+            {Command.ok(html), new_bash}
 
           {:error, msg} ->
             {Command.error("markdown: #{msg}\n"), bash}
@@ -72,14 +72,14 @@ defmodule JustBash.Commands.Markdown do
   defp get_content(bash, %{file: file}, _stdin) when is_binary(file) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} -> {:ok, content}
+    case InMemoryFs.read_file(bash, resolved) do
+      {:ok, content, new_bash} -> {:ok, content, new_bash}
       {:error, _} -> {:error, "cannot read '#{file}'"}
     end
   end
 
-  defp get_content(_bash, _opts, stdin) do
-    {:ok, stdin}
+  defp get_content(bash, _opts, stdin) do
+    {:ok, stdin, bash}
   end
 
   defp render(content, opts) do

@@ -28,7 +28,7 @@ defmodule JustBash.Commands.File do
     Enum.reduce(opts.files, {"", 0}, fn file, {acc_out, acc_code} ->
       resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-      case detect_type(bash.fs, resolved, file) do
+      case detect_type(bash, resolved, file) do
         {:ok, type_info} ->
           line = format_success_line(opts, file, type_info)
           {acc_out <> line, acc_code}
@@ -98,14 +98,14 @@ defmodule JustBash.Commands.File do
     parse_args(rest, %{opts | files: opts.files ++ [file]})
   end
 
-  defp detect_type(fs, path, filename) do
-    case InMemoryFs.stat(fs, path) do
+  defp detect_type(bash, path, filename) do
+    case InMemoryFs.stat(bash.fs, path) do
       {:ok, %{is_directory: true}} ->
         {:ok, %{description: "directory", mime: "inode/directory"}}
 
       {:ok, %{is_file: true}} ->
-        case InMemoryFs.read_file(fs, path) do
-          {:ok, content} ->
+        case InMemoryFs.read_file(bash, path) do
+          {:ok, content, _new_bash} ->
             {:ok, detect_content_type(content, filename)}
 
           {:error, _} ->

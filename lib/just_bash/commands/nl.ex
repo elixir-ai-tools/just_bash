@@ -162,8 +162,8 @@ defmodule JustBash.Commands.Nl do
     Enum.reduce_while(files, {:ok, ""}, fn file, {:ok, acc} ->
       resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-      case InMemoryFs.read_file(bash.fs, resolved) do
-        {:ok, data} -> {:cont, {:ok, acc <> data}}
+      case InMemoryFs.read_file(bash, resolved) do
+        {:ok, data, _new_bash} -> {:cont, {:ok, acc <> data}}
         {:error, _} -> {:halt, {:error, "nl: #{file}: No such file or directory\n"}}
       end
     end)

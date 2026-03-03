@@ -159,8 +159,8 @@ defmodule JustBash.Commands.Awk do
     Enum.reduce_while(files, {:ok, ""}, fn file, {:ok, acc} ->
       resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-      case InMemoryFs.read_file(bash.fs, resolved) do
-        {:ok, content} -> {:cont, {:ok, acc <> content}}
+      case InMemoryFs.read_file(bash, resolved) do
+        {:ok, content, _new_bash} -> {:cont, {:ok, acc <> content}}
         {:error, _} -> {:halt, {:error, "awk: #{file}: No such file or directory\n"}}
       end
     end)

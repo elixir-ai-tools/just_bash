@@ -43,8 +43,8 @@ defmodule JustBash.Commands.Sort do
   defp get_content(bash, [file | _], _stdin) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, c} -> c
+    case InMemoryFs.read_file(bash, resolved) do
+      {:ok, c, _new_bash} -> c
       {:error, _} -> ""
     end
   end
@@ -69,8 +69,24 @@ defmodule JustBash.Commands.Sort do
     Enum.sort_by(lines, &String.downcase/1, sort_direction(flags.r))
   end
 
-  defp sort_lines(lines, %{r: true}), do: Enum.sort(lines, &>=/2)
-  defp sort_lines(lines, _flags), do: Enum.sort(lines, &<=/2)
+  defp sort_lines(lines, %{r: true}), do: Enum.sort(lines, &locale_compare(&2, &1))
+  defp sort_lines(lines, _flags), do: Enum.sort(lines, &locale_compare/2)
+
+  # Locale-aware comparison: case-insensitive primary, case-sensitive tiebreaker
+  # This matches bash's default collation behavior (lowercase before uppercase)
+  defp locale_compare(a, b) do
+    a_lower = String.downcase(a)
+    b_lower = String.downcase(b)
+
+    cond do
+      a_lower < b_lower -> true
+      a_lower > b_lower -> false
+      # Equal case-insensitively: prefer lowercase before uppercase
+      # In ASCII: lowercase > uppercase (a=97, A=65), so a > A
+      # But we want lowercase first, so: a < A means a > A in ASCII
+      true -> a > b
+    end
+  end
 
   defp parse_key_spec(spec) when is_integer(spec), do: {spec, nil}
 
