@@ -57,6 +57,7 @@ defmodule JustBash do
             env: %{},
             cwd: "/home/user",
             functions: %{},
+            custom_builtin_registry: nil,
             exit_code: 0,
             last_exit_code: 0,
             network: %{enabled: false, allow_list: []},
@@ -87,6 +88,7 @@ defmodule JustBash do
           env: map(),
           cwd: String.t(),
           functions: map(),
+          custom_builtin_registry: {module(), term()} | nil,
           exit_code: non_neg_integer(),
           last_exit_code: non_neg_integer(),
           network: network_config(),
@@ -125,6 +127,7 @@ defmodule JustBash do
     cwd = Keyword.get(opts, :cwd, "/home/user")
     network = Keyword.get(opts, :network, %{enabled: false, allow_list: []})
     http_client = Keyword.get(opts, :http_client)
+    custom_builtin_registry = Keyword.get(opts, :custom_builtin_registry, nil)
 
     default_env = %{
       "HOME" => cwd,
@@ -142,6 +145,7 @@ defmodule JustBash do
       env: Map.merge(default_env, env),
       cwd: cwd,
       functions: %{},
+      custom_builtin_registry: custom_builtin_registry,
       exit_code: 0,
       last_exit_code: 0,
       network: Map.merge(%{enabled: false, allow_list: []}, network),

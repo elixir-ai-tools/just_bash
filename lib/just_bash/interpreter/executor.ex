@@ -600,9 +600,12 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   defp execute_builtin(bash, cmd, args, stdin) do
-    case Registry.get(cmd) do
+    case Registry.get(bash, cmd) do
       nil ->
         {%{stdout: "", stderr: "bash: #{cmd}: command not found\n", exit_code: 127}, bash}
+
+      builtin when is_function(builtin, 3) ->
+        builtin.(bash, args, stdin)
 
       module ->
         module.execute(bash, args, stdin)
