@@ -87,18 +87,54 @@ defmodule JustBash.Commands.Registry do
   @doc """
   Get the module that implements the given command.
   """
-  @spec get(String.t()) :: module() | nil
-  def get(name), do: Map.get(@commands, name)
+  @spec get(JustBash.t(), String.t()) :: module() | nil
+  def get(bash, cmd) do
+    get_custom(bash, cmd) || Map.get(@commands, cmd)
+  end
 
   @doc """
   Check if a command exists.
   """
-  @spec exists?(String.t()) :: boolean()
-  def exists?(name), do: Map.has_key?(@commands, name)
+  @spec exists?(JustBash.t(), String.t()) :: boolean()
+  def exists?(bash, name) do
+    Map.has_key?(@commands, name) || exists_custom?(bash, name)
+  end
 
   @doc """
   List all available command names.
   """
-  @spec list() :: [String.t()]
-  def list, do: Map.keys(@commands)
+  @spec list(JustBash.t()) :: [String.t()]
+  def list(bash) do
+    Enum.uniq(Map.keys(@commands) ++ list_custom(bash))
+  end
+
+  defp get_custom(%JustBash{custom_builtin_registry: nil}, _cmd), do: nil
+
+  defp get_custom(%JustBash{custom_builtin_registry: module}, cmd) when is_atom(module) do
+    module.get(cmd)
+  end
+
+  defp get_custom(%JustBash{custom_builtin_registry: {module, ctx}}, cmd) do
+    module.get(cmd, ctx)
+  end
+
+  defp exists_custom?(%JustBash{custom_builtin_registry: nil}, _cmd), do: false
+
+  defp exists_custom?(%JustBash{custom_builtin_registry: module}, cmd) when is_atom(module) do
+    module.exists?(cmd)
+  end
+
+  defp exists_custom?(%JustBash{custom_builtin_registry: {module, ctx}}, cmd) do
+    module.exists?(cmd, ctx)
+  end
+
+  defp list_custom(%JustBash{custom_builtin_registry: nil}), do: []
+
+  defp list_custom(%JustBash{custom_builtin_registry: module}) when is_atom(module) do
+    module.list()
+  end
+
+  defp list_custom(%JustBash{custom_builtin_registry: {module, ctx}}) do
+    module.list(ctx)
+  end
 end

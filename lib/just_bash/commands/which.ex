@@ -28,7 +28,7 @@ defmodule JustBash.Commands.Which do
 
     {output, all_found} =
       Enum.reduce(opts.names, {"", true}, fn name, {acc_out, acc_found} ->
-        paths = find_command(bash.fs, path_dirs, name, opts.show_all)
+        paths = find_command(bash, path_dirs, name, opts.show_all)
         accumulate_paths(paths, acc_out, acc_found, opts.silent)
       end)
 
@@ -74,7 +74,7 @@ defmodule JustBash.Commands.Which do
     parse_args(rest, %{opts | names: opts.names ++ [name]})
   end
 
-  defp find_command(fs, path_dirs, name, show_all) do
+  defp find_command(%{fs: fs} = bash, path_dirs, name, show_all) do
     results =
       Enum.flat_map(path_dirs, fn dir ->
         if dir == "" do
@@ -83,7 +83,7 @@ defmodule JustBash.Commands.Which do
           full_path = Path.join(dir, name)
 
           cond do
-            Registry.exists?(name) ->
+            Registry.exists?(bash, name) ->
               [full_path]
 
             file_exists?(fs, full_path) ->
