@@ -1,0 +1,220 @@
+{
+  "suite": "special_variables",
+  "cases": [
+    {
+      "name": "exit code variable $?: exit code after true",
+      "script": "true; echo $?",
+      "content_hash": "df0f4683dee462bc"
+    },
+    {
+      "name": "exit code variable $?: exit code after false",
+      "script": "false; echo $?",
+      "content_hash": "c7e8e5ddce1c3f3f"
+    },
+    {
+      "name": "exit code variable $?: exit code after command",
+      "script": "echo hello >/dev/null; echo $?",
+      "content_hash": "e3c969f1fe2d9d8e"
+    },
+    {
+      "name": "exit code variable $?: exit code after failed command",
+      "script": "test -f /nonexistent_file_12345; echo $?",
+      "content_hash": "75a296a2f29c071a"
+    },
+    {
+      "name": "exit code variable $?: exit code from subshell",
+      "script": "(exit 42); echo $?",
+      "content_hash": "fa1f65ad276edb88"
+    },
+    {
+      "name": "exit code variable $?: exit code preserved across commands",
+      "script": "false; x=$?; echo $x",
+      "content_hash": "84f77a8815191dbd"
+    },
+    {
+      "name": "argument count $#: zero arguments",
+      "script": "set --; echo $#",
+      "content_hash": "d31b9cd41629fc2a"
+    },
+    {
+      "name": "argument count $#: one argument",
+      "script": "set -- a; echo $#",
+      "content_hash": "7644e19fe1723383"
+    },
+    {
+      "name": "argument count $#: multiple arguments",
+      "script": "set -- a b c; echo $#",
+      "content_hash": "86fe3c3525a600ea"
+    },
+    {
+      "name": "argument count $#: many arguments",
+      "script": "set -- 1 2 3 4 5 6 7 8 9 10; echo $#",
+      "content_hash": "e4b4dde22df247ca"
+    },
+    {
+      "name": "argument count $#: after shift",
+      "script": "set -- a b c; shift; echo $#",
+      "content_hash": "26e66459e6f4f259"
+    },
+    {
+      "name": "argument count $#: after shift 2",
+      "script": "set -- a b c d e; shift 2; echo $#",
+      "content_hash": "7f284c4e82afc018"
+    },
+    {
+      "name": "positional parameters $1 $2 etc: first positional",
+      "script": "set -- first second third; echo $1",
+      "content_hash": "d8fa31cbd3ffad3d"
+    },
+    {
+      "name": "positional parameters $1 $2 etc: second positional",
+      "script": "set -- first second third; echo $2",
+      "content_hash": "4d06bc535e3fe389"
+    },
+    {
+      "name": "positional parameters $1 $2 etc: third positional",
+      "script": "set -- first second third; echo $3",
+      "content_hash": "12f1026c6812ec14"
+    },
+    {
+      "name": "positional parameters $1 $2 etc: undefined positional",
+      "script": "set -- a b; echo $5",
+      "content_hash": "474affe1716a053b"
+    },
+    {
+      "name": "positional parameters $1 $2 etc: positional after shift",
+      "script": "set -- a b c d; shift; echo $1 $2 $3",
+      "content_hash": "385195c3addaddd6"
+    },
+    {
+      "name": "positional parameters $1 $2 etc: ninth positional",
+      "script": "set -- 1 2 3 4 5 6 7 8 9 10; echo $9",
+      "content_hash": "7b1302ece8fc9747"
+    },
+    {
+      "name": "positional parameters $1 $2 etc: all positional in string",
+      "script": "set -- a b c; echo \"1=$1 2=$2 3=$3\"",
+      "content_hash": "e22ccd0d5e4a8eba"
+    },
+    {
+      "name": "all arguments $@ and $*: $@ unquoted",
+      "script": "set -- a b c; echo $@",
+      "content_hash": "b73bc2e71fc73404"
+    },
+    {
+      "name": "all arguments $@ and $*: $* unquoted",
+      "script": "set -- a b c; echo $*",
+      "content_hash": "0ebd68b4a885378d"
+    },
+    {
+      "name": "all arguments $@ and $*: $@ quoted",
+      "script": "set -- a b c; echo \"$@\"",
+      "content_hash": "c1716ca2e46f3fb9"
+    },
+    {
+      "name": "all arguments $@ and $*: $* quoted",
+      "script": "set -- a b c; echo \"$*\"",
+      "content_hash": "0f426dfe2689c0c6"
+    },
+    {
+      "name": "all arguments $@ and $*: $@ with spaces in args",
+      "script": "set -- 'a b' 'c d' e; for arg in \"$@\"; do echo \"[$arg]\"; done",
+      "content_hash": "41a425aaa11cfa81"
+    },
+    {
+      "name": "all arguments $@ and $*: $* with spaces in args",
+      "script": "set -- 'a b' 'c d' e; echo \"$*\"",
+      "content_hash": "5959f9d9dec8cfa6"
+    },
+    {
+      "name": "all arguments $@ and $*: empty $@",
+      "script": "set --; echo \"[$@]\"",
+      "content_hash": "8565e107718ea3a3"
+    },
+    {
+      "name": "all arguments $@ and $*: empty $*",
+      "script": "set --; echo \"[$*]\"",
+      "content_hash": "0ff7954907576ebf"
+    },
+    {
+      "name": "all arguments $@ and $*: $@ in for loop",
+      "script": "set -- x y z; for i in \"$@\"; do echo $i; done",
+      "content_hash": "1a0052c6e6971e2c"
+    },
+    {
+      "name": "all arguments $@ and $*: $* as single string",
+      "script": "set -- one two three; x=\"$*\"; echo $x",
+      "content_hash": "c282cea84db02e1b"
+    },
+    {
+      "name": "special variables in functions: function $# differs from script $#",
+      "script": "set -- a b\nf() { echo \"func args: $#\"; }\nf x y z\necho \"script args: $#\"\n",
+      "content_hash": "a0a3534ffce074dc"
+    },
+    {
+      "name": "special variables in functions: function positional parameters",
+      "script": "f() { echo \"$1 $2 $3\"; }\nf one two three\n",
+      "content_hash": "179143fb90219cc6"
+    },
+    {
+      "name": "special variables in functions: function $@ iteration",
+      "script": "f() { for arg in \"$@\"; do echo \"arg: $arg\"; done; }\nf alpha beta gamma\n",
+      "content_hash": "75c0505851f29087"
+    },
+    {
+      "name": "negation with !: negate true",
+      "script": "! true; echo $?",
+      "content_hash": "967caf2066fd5e65"
+    },
+    {
+      "name": "negation with !: negate false",
+      "script": "! false; echo $?",
+      "content_hash": "10136aa77ef0504e"
+    },
+    {
+      "name": "negation with !: negate command",
+      "script": "! test -f /nonexistent; echo $?",
+      "content_hash": "e11f2e8654013748"
+    },
+    {
+      "name": "process-related special variables: RANDOM produces numbers",
+      "script": "x=$RANDOM; test -n \"$x\" && echo ok || echo empty",
+      "content_hash": "0cd387ce2e3c96aa"
+    },
+    {
+      "name": "PIPESTATUS array: PIPESTATUS after simple pipeline",
+      "script": "echo hello | cat; echo ${PIPESTATUS[0]} ${PIPESTATUS[1]}",
+      "content_hash": "54b6949fe1dc4193"
+    },
+    {
+      "name": "PIPESTATUS array: PIPESTATUS with failed first command",
+      "script": "false | cat; echo ${PIPESTATUS[0]} ${PIPESTATUS[1]}",
+      "content_hash": "16c4d7fca519c0ba"
+    },
+    {
+      "name": "PIPESTATUS array: PIPESTATUS with failed last command",
+      "script": "echo hello | false; echo ${PIPESTATUS[0]} ${PIPESTATUS[1]}",
+      "content_hash": "02bb347697c49b02"
+    },
+    {
+      "name": "PIPESTATUS array: PIPESTATUS all elements",
+      "script": "true | false | true; echo ${PIPESTATUS[@]}",
+      "content_hash": "8b233c41acdafeba"
+    },
+    {
+      "name": "PIPESTATUS array: PIPESTATUS single command",
+      "script": "true; echo ${PIPESTATUS[0]}",
+      "content_hash": "5a7d2a2ee636e665"
+    },
+    {
+      "name": "PIPESTATUS array: PIPESTATUS reset after each pipeline",
+      "script": "false | true; x=\"${PIPESTATUS[@]}\"; true; echo \"$x\" ${PIPESTATUS[@]}",
+      "content_hash": "2b4a005cf8df0240"
+    },
+    {
+      "name": "PIPESTATUS array: PIPESTATUS length",
+      "script": "echo a | cat | cat; echo ${#PIPESTATUS[@]}",
+      "content_hash": "ec0ff99488fea3b7"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "suite": "brace_expansion",
+  "cases": [
+    {
+      "name": "brace expansion comparison: simple list",
+      "script": "echo {a,b,c}",
+      "content_hash": "d8c2c6362179a3f2"
+    },
+    {
+      "name": "brace expansion comparison: numeric range",
+      "script": "echo {1..5}",
+      "content_hash": "35c938ff1684404e"
+    },
+    {
+      "name": "brace expansion comparison: descending range",
+      "script": "echo {5..1}",
+      "content_hash": "feb3846174cfdbc1"
+    },
+    {
+      "name": "brace expansion comparison: character range",
+      "script": "echo {a..e}",
+      "content_hash": "19229f0671092fb5"
+    },
+    {
+      "name": "brace expansion comparison: with prefix",
+      "script": "echo pre{a,b,c}",
+      "content_hash": "365c7f6f9c6a8460"
+    },
+    {
+      "name": "brace expansion comparison: with suffix",
+      "script": "echo {a,b,c}post",
+      "content_hash": "5d8eee60a55a489b"
+    },
+    {
+      "name": "brace expansion comparison: with prefix and suffix",
+      "script": "echo pre{a,b,c}post",
+      "content_hash": "c33e1c55c719b927"
+    },
+    {
+      "name": "brace expansion comparison: nested braces",
+      "script": "echo {a,{b,c}}",
+      "content_hash": "42b1099960fceafe"
+    },
+    {
+      "name": "brace expansion comparison: multiple expansions",
+      "script": "echo {a,b}{1,2}",
+      "content_hash": "72b51f499b6a6ea3"
+    },
+    {
+      "name": "brace expansion comparison: single element not expanded",
+      "script": "echo {a}",
+      "content_hash": "b2349ec9efafa5b9"
+    },
+    {
+      "name": "brace expansion comparison: empty braces literal",
+      "script": "echo {}",
+      "content_hash": "06e7c9ede1bcb7f0"
+    },
+    {
+      "name": "brace expansion comparison: negative range",
+      "script": "echo {-2..2}",
+      "content_hash": "7e46ffffc9dafd74"
+    }
+  ]
+}

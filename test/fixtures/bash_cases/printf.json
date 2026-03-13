@@ -1,0 +1,35 @@
+{
+  "suite": "printf",
+  "cases": [
+    {
+      "name": "printf comparison extended: hex lowercase",
+      "script": "printf '%x\n' 255",
+      "content_hash": "4e56c7105f7d86cc"
+    },
+    {
+      "name": "printf comparison extended: hex uppercase",
+      "script": "printf '%X\n' 255",
+      "content_hash": "43138d10ffac2f16"
+    },
+    {
+      "name": "printf comparison extended: octal",
+      "script": "printf '%o\n' 64",
+      "content_hash": "6aa80f9ecf313f55"
+    },
+    {
+      "name": "printf comparison extended: string with width",
+      "script": "printf '%10s\n' 'hi'",
+      "content_hash": "ac11afebf0560e53"
+    },
+    {
+      "name": "printf comparison extended: left aligned",
+      "script": "printf '%-10s|\n' 'hi'",
+      "content_hash": "e2ccfdb0cc46d95c"
+    },
+    {
+      "name": "printf comparison extended: multiple arguments",
+      "script": "printf '%s %s\n' hello world",
+      "content_hash": "366c416b9b99284a"
+    }
+  ]
+}

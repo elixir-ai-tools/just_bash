@@ -1,0 +1,33 @@
+{
+  "results": [
+    {
+      "content_hash": "d2931595772053d0",
+      "exit_code": 0,
+      "name": "while read loops: basic while read",
+      "stderr": "",
+      "stdout": "got: a\ngot: b\ngot: c\n"
+    },
+    {
+      "content_hash": "d486dfd1a156caee",
+      "exit_code": 0,
+      "name": "while read loops: while read terminates on EOF",
+      "stderr": "",
+      "stdout": "1\n2\n3\ndone\n"
+    },
+    {
+      "content_hash": "9f599332c65357c4",
+      "exit_code": 0,
+      "name": "while read loops: while read with head",
+      "stderr": "",
+      "stdout": "x=1\nx=2\nx=3\n"
+    },
+    {
+      "content_hash": "e1f5149e5f41b68f",
+      "exit_code": 0,
+      "name": "while read loops: read returns 1 on empty input",
+      "stderr": "",
+      "stdout": "0\n"
+    }
+  ],
+  "suite": "while_read"
+}

@@ -1,0 +1,306 @@
+{
+  "results": [
+    {
+      "content_hash": "7890094fd11e0360",
+      "exit_code": 0,
+      "name": "arithmetic expansion comparison: simple addition",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "680b8109fb55ec21",
+      "exit_code": 0,
+      "name": "arithmetic expansion comparison: nested parentheses",
+      "stderr": "",
+      "stdout": "7\n"
+    },
+    {
+      "content_hash": "b635558522ef0fb9",
+      "exit_code": 0,
+      "name": "arithmetic expansion comparison: double nested",
+      "stderr": "",
+      "stdout": "10\n"
+    },
+    {
+      "content_hash": "8ef3a93fa1773033",
+      "exit_code": 0,
+      "name": "arithmetic expansion comparison: complex expression",
+      "stderr": "",
+      "stdout": "45\n"
+    },
+    {
+      "content_hash": "a132ec0010d9cf35",
+      "exit_code": 0,
+      "name": "arithmetic expansion comparison: power",
+      "stderr": "",
+      "stdout": "1024\n"
+    },
+    {
+      "content_hash": "f91fca87575c5c04",
+      "exit_code": 0,
+      "name": "arithmetic expansion comparison: modulo",
+      "stderr": "",
+      "stdout": "2\n"
+    },
+    {
+      "content_hash": "296e5d48e718e554",
+      "exit_code": 0,
+      "name": "arithmetic expansion comparison: comparison",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "d97a9f82123ca040",
+      "exit_code": 0,
+      "name": "arithmetic expansion comparison: ternary",
+      "stderr": "",
+      "stdout": "100\n"
+    },
+    {
+      "content_hash": "e8c33a23cb973cfd",
+      "exit_code": 0,
+      "name": "arithmetic expansion comparison: with variables",
+      "stderr": "",
+      "stdout": "8\n"
+    },
+    {
+      "content_hash": "7673fef0342b38a1",
+      "exit_code": 0,
+      "name": "arithmetic edge cases comparison: negative numbers",
+      "stderr": "",
+      "stdout": "-2\n"
+    },
+    {
+      "content_hash": "cae5e66fe97d5e32",
+      "exit_code": 0,
+      "name": "arithmetic edge cases comparison: negative modulo",
+      "stderr": "",
+      "stdout": "-1\n"
+    },
+    {
+      "content_hash": "ba1d9dafbcb7be57",
+      "exit_code": 0,
+      "name": "arithmetic edge cases comparison: bitwise and",
+      "stderr": "",
+      "stdout": "8\n"
+    },
+    {
+      "content_hash": "f6bb6f6092624f38",
+      "exit_code": 0,
+      "name": "arithmetic edge cases comparison: bitwise or",
+      "stderr": "",
+      "stdout": "14\n"
+    },
+    {
+      "content_hash": "6c9e8e582d282c07",
+      "exit_code": 0,
+      "name": "arithmetic edge cases comparison: bitwise xor",
+      "stderr": "",
+      "stdout": "6\n"
+    },
+    {
+      "content_hash": "5f7f7fd0f9b29dae",
+      "exit_code": 0,
+      "name": "arithmetic edge cases comparison: left shift",
+      "stderr": "",
+      "stdout": "16\n"
+    },
+    {
+      "content_hash": "db000c55f351a678",
+      "exit_code": 0,
+      "name": "arithmetic edge cases comparison: right shift",
+      "stderr": "",
+      "stdout": "4\n"
+    },
+    {
+      "content_hash": "11f73869c9216e2b",
+      "exit_code": 0,
+      "name": "arithmetic edge cases comparison: pre increment",
+      "stderr": "",
+      "stdout": "6 6\n"
+    },
+    {
+      "content_hash": "4fbfa4941445ee9d",
+      "exit_code": 0,
+      "name": "arithmetic edge cases comparison: post increment",
+      "stderr": "",
+      "stdout": "5 6\n"
+    },
+    {
+      "content_hash": "7d5c568065313241",
+      "exit_code": 0,
+      "name": "hex and octal literals: hex literal lowercase",
+      "stderr": "",
+      "stdout": "31\n"
+    },
+    {
+      "content_hash": "49bfe7ec1f870a79",
+      "exit_code": 0,
+      "name": "hex and octal literals: hex literal uppercase",
+      "stderr": "",
+      "stdout": "31\n"
+    },
+    {
+      "content_hash": "ee612686905f7d5a",
+      "exit_code": 0,
+      "name": "hex and octal literals: hex in expression",
+      "stderr": "",
+      "stdout": "31\n"
+    },
+    {
+      "content_hash": "5813fcda9cd58e0a",
+      "exit_code": 0,
+      "name": "hex and octal literals: octal literal",
+      "stderr": "",
+      "stdout": "15\n"
+    },
+    {
+      "content_hash": "f828394a88c1ff52",
+      "exit_code": 0,
+      "name": "hex and octal literals: octal in expression",
+      "stderr": "",
+      "stdout": "16\n"
+    },
+    {
+      "content_hash": "a136e56af55e80e1",
+      "exit_code": 0,
+      "name": "hex and octal literals: mixed bases",
+      "stderr": "",
+      "stdout": "34\n"
+    },
+    {
+      "content_hash": "0d71f958544c1e5a",
+      "exit_code": 0,
+      "name": "bitwise NOT: bitwise not of zero",
+      "stderr": "",
+      "stdout": "-1\n"
+    },
+    {
+      "content_hash": "53f99c846d3e23a0",
+      "exit_code": 0,
+      "name": "bitwise NOT: bitwise not of positive",
+      "stderr": "",
+      "stdout": "-6\n"
+    },
+    {
+      "content_hash": "a94636fc9e95a8c5",
+      "exit_code": 0,
+      "name": "bitwise NOT: bitwise not of negative one",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "00c1319b5d7113ef",
+      "exit_code": 0,
+      "name": "bitwise NOT: double bitwise not",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "82b9947ea19a23fe",
+      "exit_code": 0,
+      "name": "bitwise NOT: bitwise not in expression",
+      "stderr": "",
+      "stdout": "250\n"
+    },
+    {
+      "content_hash": "903e5574a9720994",
+      "exit_code": 0,
+      "name": "increment and decrement: pre-decrement",
+      "stderr": "",
+      "stdout": "4 4\n"
+    },
+    {
+      "content_hash": "01f017f6e4a51d75",
+      "exit_code": 0,
+      "name": "increment and decrement: post-decrement",
+      "stderr": "",
+      "stdout": "5 4\n"
+    },
+    {
+      "content_hash": "4843388a0b0e6085",
+      "exit_code": 0,
+      "name": "increment and decrement: multiple increments",
+      "stderr": "",
+      "stdout": "0 1 2\n"
+    },
+    {
+      "content_hash": "3b264953f8bcf79a",
+      "exit_code": 0,
+      "name": "increment and decrement: increment in expression",
+      "stderr": "",
+      "stdout": "12\n"
+    },
+    {
+      "content_hash": "b2468fb87df154ab",
+      "exit_code": 0,
+      "name": "compound assignment: add-assign",
+      "stderr": "",
+      "stdout": "15 15\n"
+    },
+    {
+      "content_hash": "b98be789ac483cce",
+      "exit_code": 0,
+      "name": "compound assignment: subtract-assign",
+      "stderr": "",
+      "stdout": "7 7\n"
+    },
+    {
+      "content_hash": "d6e2dba7001045d2",
+      "exit_code": 0,
+      "name": "compound assignment: multiply-assign",
+      "stderr": "",
+      "stdout": "20 20\n"
+    },
+    {
+      "content_hash": "45f21335e072f107",
+      "exit_code": 0,
+      "name": "compound assignment: divide-assign",
+      "stderr": "",
+      "stdout": "5 5\n"
+    },
+    {
+      "content_hash": "178bf4edce12ed50",
+      "exit_code": 0,
+      "name": "compound assignment: modulo-assign",
+      "stderr": "",
+      "stdout": "1 1\n"
+    },
+    {
+      "content_hash": "7b869c9e29a59569",
+      "exit_code": 0,
+      "name": "logical operators: logical and true",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "a394a861b7b53d95",
+      "exit_code": 0,
+      "name": "logical operators: logical and false",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "d3c82a8ca20e8523",
+      "exit_code": 0,
+      "name": "logical operators: logical or true",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "d4470f51ceaa3b95",
+      "exit_code": 0,
+      "name": "logical operators: logical or false",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "52d2fae724c55734",
+      "exit_code": 0,
+      "name": "logical operators: logical not",
+      "stderr": "",
+      "stdout": "1 0\n"
+    }
+  ],
+  "suite": "arithmetic"
+}

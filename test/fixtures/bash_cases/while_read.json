@@ -1,0 +1,25 @@
+{
+  "suite": "while_read",
+  "cases": [
+    {
+      "name": "while read loops: basic while read",
+      "script": "echo -e \"a\\nb\\nc\" | while read x; do echo \"got: $x\"; done",
+      "content_hash": "d2931595772053d0"
+    },
+    {
+      "name": "while read loops: while read terminates on EOF",
+      "script": "echo -e \"1\\n2\\n3\" | while read n; do echo $n; done; echo done",
+      "content_hash": "d486dfd1a156caee"
+    },
+    {
+      "name": "while read loops: while read with head",
+      "script": "echo -e \"1\\n2\\n3\\n4\\n5\" | head -3 | while read x; do echo \"x=$x\"; done",
+      "content_hash": "9f599332c65357c4"
+    },
+    {
+      "name": "while read loops: read returns 1 on empty input",
+      "script": "echo \"\" | read x; echo $?",
+      "content_hash": "e1f5149e5f41b68f"
+    }
+  ]
+}

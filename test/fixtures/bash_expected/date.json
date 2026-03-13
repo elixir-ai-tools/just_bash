@@ -1,0 +1,215 @@
+{
+  "results": [
+    {
+      "content_hash": "b0cdf6f3bcbfa8ff",
+      "exit_code": 0,
+      "name": "date format strings: year format %Y",
+      "stderr": "",
+      "stdout": "2024\n"
+    },
+    {
+      "content_hash": "40c84a842ddfadf4",
+      "exit_code": 0,
+      "name": "date format strings: month format %m",
+      "stderr": "",
+      "stdout": "06\n"
+    },
+    {
+      "content_hash": "980b02f4c5b2fecc",
+      "exit_code": 0,
+      "name": "date format strings: day format %d",
+      "stderr": "",
+      "stdout": "15\n"
+    },
+    {
+      "content_hash": "ce01b8835f6f7513",
+      "exit_code": 0,
+      "name": "date format strings: hour format %H",
+      "stderr": "",
+      "stdout": "10\n"
+    },
+    {
+      "content_hash": "0b16867215294bcc",
+      "exit_code": 0,
+      "name": "date format strings: minute format %M",
+      "stderr": "",
+      "stdout": "30\n"
+    },
+    {
+      "content_hash": "5ba22b349a782abd",
+      "exit_code": 0,
+      "name": "date format strings: second format %S",
+      "stderr": "",
+      "stdout": "00\n"
+    },
+    {
+      "content_hash": "da261861eebfd030",
+      "exit_code": 0,
+      "name": "date format strings: combined date format %Y-%m-%d",
+      "stderr": "",
+      "stdout": "2024-06-15\n"
+    },
+    {
+      "content_hash": "e1c00cca549416a7",
+      "exit_code": 0,
+      "name": "date format strings: combined time format %H:%M:%S",
+      "stderr": "",
+      "stdout": "10:30:00\n"
+    },
+    {
+      "content_hash": "ebc926124376362d",
+      "exit_code": 0,
+      "name": "date format strings: combined datetime format",
+      "stderr": "",
+      "stdout": "2024-06-15 10:30:00\n"
+    },
+    {
+      "content_hash": "9e592f17c1727b75",
+      "exit_code": 0,
+      "name": "date day and month names: short day name %a (Saturday)",
+      "stderr": "",
+      "stdout": "Sat\n"
+    },
+    {
+      "content_hash": "be4d320fe825de1e",
+      "exit_code": 0,
+      "name": "date day and month names: full day name %A (Saturday)",
+      "stderr": "",
+      "stdout": "Saturday\n"
+    },
+    {
+      "content_hash": "52a3dad58b74780d",
+      "exit_code": 0,
+      "name": "date day and month names: short month name %b (June)",
+      "stderr": "",
+      "stdout": "Jun\n"
+    },
+    {
+      "content_hash": "e1a47f3ae12d8250",
+      "exit_code": 0,
+      "name": "date day and month names: full month name %B (June)",
+      "stderr": "",
+      "stdout": "June\n"
+    },
+    {
+      "content_hash": "7c0a93a9ac84ae6d",
+      "exit_code": 0,
+      "name": "date day and month names: Monday %a",
+      "stderr": "",
+      "stdout": "Mon\n"
+    },
+    {
+      "content_hash": "77a686c65a285286",
+      "exit_code": 0,
+      "name": "date day and month names: Sunday %a",
+      "stderr": "",
+      "stdout": "Sun\n"
+    },
+    {
+      "content_hash": "e4cedb8d18dc3470",
+      "exit_code": 0,
+      "name": "date special formats: day of year %j",
+      "stderr": "",
+      "stdout": "167\n"
+    },
+    {
+      "content_hash": "b898720a6bb53d4c",
+      "exit_code": 0,
+      "name": "date special formats: day of week %u (Mon=1, Sun=7)",
+      "stderr": "",
+      "stdout": "6\n"
+    },
+    {
+      "content_hash": "2d6ee05c1fa24980",
+      "exit_code": 0,
+      "name": "date special formats: day of week %w (Sun=0, Sat=6)",
+      "stderr": "",
+      "stdout": "6\n"
+    },
+    {
+      "content_hash": "3338a39f6808811c",
+      "exit_code": 0,
+      "name": "date special formats: unix timestamp %s",
+      "stderr": "",
+      "stdout": "1718409600\n"
+    },
+    {
+      "content_hash": "7f38e84c0a3ebc5e",
+      "exit_code": 0,
+      "name": "date special formats: literal percent %%",
+      "stderr": "",
+      "stdout": "%\n"
+    },
+    {
+      "content_hash": "34b5aa2f6156cac0",
+      "exit_code": 0,
+      "name": "date special formats: newline %n",
+      "stderr": "",
+      "stdout": "line1\nline2\n"
+    },
+    {
+      "content_hash": "6ce5077f564ed6ec",
+      "exit_code": 0,
+      "name": "date special formats: tab %t",
+      "stderr": "",
+      "stdout": "col1\tcol2\n"
+    },
+    {
+      "content_hash": "7f1de17e50d0065e",
+      "exit_code": 0,
+      "name": "date edge cases: year boundary",
+      "stderr": "",
+      "stdout": "2024-12-31\n"
+    },
+    {
+      "content_hash": "e23518f0a09c15be",
+      "exit_code": 0,
+      "name": "date edge cases: leap year",
+      "stderr": "",
+      "stdout": "2024-02-29\n"
+    },
+    {
+      "content_hash": "a3ca2291bb9c5101",
+      "exit_code": 0,
+      "name": "date edge cases: first day of year",
+      "stderr": "",
+      "stdout": "001\n"
+    },
+    {
+      "content_hash": "c7598d252d2e6568",
+      "exit_code": 0,
+      "name": "date edge cases: last day of year",
+      "stderr": "",
+      "stdout": "366\n"
+    },
+    {
+      "content_hash": "f458333328fd15cc",
+      "exit_code": 0,
+      "name": "date edge cases: midnight",
+      "stderr": "",
+      "stdout": "00:00:00\n"
+    },
+    {
+      "content_hash": "3f3cbadc3b4e33aa",
+      "exit_code": 0,
+      "name": "date edge cases: end of day",
+      "stderr": "",
+      "stdout": "23:59:59\n"
+    },
+    {
+      "content_hash": "ea04fd23c5b30ad2",
+      "exit_code": 0,
+      "name": "date edge cases: January month names",
+      "stderr": "",
+      "stdout": "Jan January\n"
+    },
+    {
+      "content_hash": "5a6a55747f2bb7bb",
+      "exit_code": 0,
+      "name": "date edge cases: December month names",
+      "stderr": "",
+      "stdout": "Dec December\n"
+    }
+  ],
+  "suite": "date"
+}

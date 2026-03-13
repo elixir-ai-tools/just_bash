@@ -1,0 +1,40 @@
+{
+  "results": [
+    {
+      "content_hash": "14c509554f86b39b",
+      "exit_code": 0,
+      "name": "head tail comparison: head default",
+      "stderr": "",
+      "stdout": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n"
+    },
+    {
+      "content_hash": "29fa4dad563fa5db",
+      "exit_code": 0,
+      "name": "head tail comparison: head specific count",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "8d2da53d9e554254",
+      "exit_code": 0,
+      "name": "head tail comparison: tail default",
+      "stderr": "",
+      "stdout": "2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n"
+    },
+    {
+      "content_hash": "59b3374f31f2cfb4",
+      "exit_code": 0,
+      "name": "head tail comparison: tail specific count",
+      "stderr": "",
+      "stdout": "4\n5\n"
+    },
+    {
+      "content_hash": "e50482750515ec6f",
+      "exit_code": 0,
+      "name": "head tail comparison: tail from line",
+      "stderr": "",
+      "stdout": "3\n4\n5\n"
+    }
+  ],
+  "suite": "head_tail"
+}

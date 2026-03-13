@@ -1,0 +1,115 @@
+{
+  "suite": "sort",
+  "cases": [
+    {
+      "name": "sort comparison: basic sort",
+      "script": "echo -e 'c\na\nb' | sort",
+      "content_hash": "3f5076e66dc4c65f"
+    },
+    {
+      "name": "sort comparison: reverse sort",
+      "script": "echo -e 'c\na\nb' | sort -r",
+      "content_hash": "7a12b7f448e9610e"
+    },
+    {
+      "name": "sort comparison: numeric sort",
+      "script": "echo -e '10\n2\n1' | sort -n",
+      "content_hash": "f008487f521fd591"
+    },
+    {
+      "name": "sort comparison: unique sort",
+      "script": "echo -e 'a\nb\na\nc\nb' | sort -u",
+      "content_hash": "fbadda57a6babdb5"
+    },
+    {
+      "name": "sort comparison: sort by field",
+      "script": "echo -e 'b 2\na 1\nc 3' | sort -k2 -n",
+      "content_hash": "c8eab2a9d56e45e7"
+    },
+    {
+      "name": "sort edge cases: empty input",
+      "script": "echo -n '' | sort",
+      "content_hash": "b52521917e9065e6"
+    },
+    {
+      "name": "sort edge cases: single line",
+      "script": "echo 'hello' | sort",
+      "content_hash": "02ebd5d02a9999f6"
+    },
+    {
+      "name": "sort edge cases: already sorted",
+      "script": "echo -e 'a\nb\nc' | sort",
+      "content_hash": "cfb088c3024ec23e"
+    },
+    {
+      "name": "sort edge cases: reverse already sorted",
+      "script": "echo -e 'c\nb\na' | sort -r",
+      "content_hash": "1eee14fb08e912ec"
+    },
+    {
+      "name": "sort edge cases: numeric with negative numbers",
+      "script": "echo -e '5\n-3\n0\n-10\n7' | sort -n",
+      "content_hash": "67aa2e99b18db94b"
+    },
+    {
+      "name": "sort edge cases: numeric with leading zeros",
+      "script": "echo -e '010\n2\n001' | sort -n",
+      "content_hash": "9809a1edf1e044e7"
+    },
+    {
+      "name": "sort edge cases: case insensitive sort",
+      "script": "echo -e 'Banana\napple\nCherry' | sort -f",
+      "content_hash": "be0bd506d92113ac"
+    },
+    {
+      "name": "sort edge cases: sort combined flags -rn",
+      "script": "echo -e '10\n2\n1' | sort -rn",
+      "content_hash": "b41fe1e4549c579c"
+    },
+    {
+      "name": "sort edge cases: sort combined flags -nu",
+      "script": "echo -e '3\n1\n2\n1\n3' | sort -nu",
+      "content_hash": "fa28c5306681a832"
+    },
+    {
+      "name": "sort edge cases: sort with whitespace lines",
+      "script": "echo -e 'b\n   \na\n\nc' | sort",
+      "content_hash": "172bf325b25ee076"
+    },
+    {
+      "name": "sort edge cases: sort duplicate lines",
+      "script": "echo -e 'a\na\na' | sort",
+      "content_hash": "7a3c47270f7aa365"
+    },
+    {
+      "name": "sort edge cases: sort with mixed case",
+      "script": "echo -e 'a\nA\nb\nB' | sort",
+      "content_hash": "94db895358e55b64"
+    },
+    {
+      "name": "sort edge cases: numeric sort with non-numeric lines",
+      "script": "echo -e '10\nabc\n5' | sort -n",
+      "content_hash": "8b779992c7160483"
+    },
+    {
+      "name": "sort edge cases: sort by second field",
+      "script": "echo -e 'x 3\ny 1\nz 2' | sort -k2,2n",
+      "content_hash": "8eec9d3d59300bac"
+    },
+    {
+      "name": "sort edge cases: sort by field range",
+      "script": "echo -e 'a b c\nd e f\ng h i' | sort -k1,2",
+      "content_hash": "c4238dac521bdf47"
+    },
+    {
+      "name": "sort edge cases: sort field with custom delimiter",
+      "script": "echo -e 'c:3\na:1\nb:2' | sort -t: -k2 -n",
+      "content_hash": "399ac3d0cdc1c999"
+    },
+    {
+      "name": "sort edge cases: sort unique with duplicates",
+      "script": "echo -e 'apple\norange\napple\nbanana\norange' | sort -u",
+      "content_hash": "fa500cf6a7273f90"
+    }
+  ]
+}

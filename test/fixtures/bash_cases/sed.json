@@ -1,0 +1,155 @@
+{
+  "suite": "sed",
+  "cases": [
+    {
+      "name": "sed comparison: basic substitution",
+      "script": "echo 'hello' | sed 's/l/L/'",
+      "content_hash": "c70fbd00e1040f93"
+    },
+    {
+      "name": "sed comparison: global substitution",
+      "script": "echo 'hello' | sed 's/l/L/g'",
+      "content_hash": "f136517d9f124864"
+    },
+    {
+      "name": "sed comparison: delete line",
+      "script": "echo -e 'a\nb\nc' | sed '2d'",
+      "content_hash": "a93d7f2a182c438a"
+    },
+    {
+      "name": "sed comparison: print specific line",
+      "script": "echo -e 'a\nb\nc' | sed -n '2p'",
+      "content_hash": "ecf2be369d113c2f"
+    },
+    {
+      "name": "sed comparison: address range",
+      "script": "echo -e 'a\nb\nc\nd' | sed -n '2,3p'",
+      "content_hash": "9c4667c5292cdd6b"
+    },
+    {
+      "name": "sed comparison: regex address",
+      "script": "echo -e 'foo\nbar\nbaz' | sed -n '/ba/p'",
+      "content_hash": "9ba5552b9df4fd95"
+    },
+    {
+      "name": "sed comparison: substitution with ampersand",
+      "script": "echo 'hello' | sed 's/l/[&]/g'",
+      "content_hash": "5d40145e14c0b10a"
+    },
+    {
+      "name": "sed comparison: case insensitive",
+      "script": "echo 'HELLO' | sed 's/hello/world/i'",
+      "content_hash": "a87c9df0e3af199b"
+    },
+    {
+      "name": "sed comparison: multiple expressions",
+      "script": "echo 'abc' | sed -e 's/a/A/' -e 's/c/C/'",
+      "content_hash": "d024077a3cb05d32"
+    },
+    {
+      "name": "sed comparison: transliterate",
+      "script": "echo 'hello' | sed 'y/aeiou/AEIOU/'",
+      "content_hash": "bda1bd0cb6938f0e"
+    },
+    {
+      "name": "sed comparison: backreference simple",
+      "script": "echo 'foo' | sed 's/\\(foo\\)/\\1bar/'",
+      "content_hash": "7ad38fb87c906478"
+    },
+    {
+      "name": "sed comparison: backreference with multiple groups",
+      "script": "echo 'hello world' | sed 's/\\(.*\\) \\(.*\\)/\\2 \\1/'",
+      "content_hash": "87f89a664dc2f2ff"
+    },
+    {
+      "name": "sed comparison: backreference in replacement",
+      "script": "echo 'test123' | sed 's/\\([a-z]*\\)\\([0-9]*\\)/[\\1]-[\\2]/'",
+      "content_hash": "d1535b7f4f606bbd"
+    },
+    {
+      "name": "sed comparison: nth occurrence substitution",
+      "script": "echo 'xxx' | sed 's/x/y/2'",
+      "content_hash": "833d5264d388ba12"
+    },
+    {
+      "name": "sed comparison: nth occurrence with larger n",
+      "script": "echo 'aaaaa' | sed 's/a/b/3'",
+      "content_hash": "9b1ce507fa5c27ca"
+    },
+    {
+      "name": "sed comparison: regex address range",
+      "script": "echo -e 'start\\nfoo\\nbar\\nend\\nbaz' | sed -n '/start/,/end/p'",
+      "content_hash": "35aa38f9a272556e"
+    },
+    {
+      "name": "sed comparison: regex address range with substitution",
+      "script": "echo -e 'begin\\nx\\ny\\nfinish\\nz' | sed '/begin/,/finish/s/x/X/g'",
+      "content_hash": "4182bcda776755c8"
+    },
+    {
+      "name": "sed comparison: append command",
+      "script": "echo -e 'a\\nb\\nc' | sed $'2a\\\\\\nappended text'",
+      "content_hash": "59e79898f807b232"
+    },
+    {
+      "name": "sed comparison: insert command",
+      "script": "echo -e 'a\\nb\\nc' | sed $'2i\\\\\\ninserted text'",
+      "content_hash": "0462b685c1702cdc"
+    },
+    {
+      "name": "sed comparison: delete with address range",
+      "script": "echo -e 'a\\nb\\nc\\nd\\ne' | sed '2,4d'",
+      "content_hash": "a470f58c0d883d0e"
+    },
+    {
+      "name": "sed comparison: delete with regex",
+      "script": "echo -e 'foo\\nbar\\nbaz' | sed '/ba/d'",
+      "content_hash": "d88b8d3c7930531e"
+    },
+    {
+      "name": "sed comparison: change command",
+      "script": "echo -e 'a\\nb\\nc' | sed $'2c\\\\\\nchanged line'",
+      "content_hash": "008f079557f8f7be"
+    },
+    {
+      "name": "sed comparison: multiple commands with semicolon",
+      "script": "echo 'abc' | sed 's/a/A/; s/c/C/'",
+      "content_hash": "6ad932fb0f8cdde5"
+    },
+    {
+      "name": "sed comparison: numbered substitution with ampersand",
+      "script": "echo 'xxx' | sed 's/x/(&)/2'",
+      "content_hash": "bb07957a14f57047"
+    },
+    {
+      "name": "sed comparison: empty regex uses last regex",
+      "script": "echo 'hello' | sed 's/l/L/; s//R/'",
+      "content_hash": "125a7c72dbcafe9b"
+    },
+    {
+      "name": "sed comparison: substitution with delimiter change",
+      "script": "echo '/path/to/file' | sed 's#/path#/new#'",
+      "content_hash": "eeb5f1bb5c199a30"
+    },
+    {
+      "name": "sed comparison: multiple line addresses",
+      "script": "echo -e 'a\\nb\\nc\\nd' | sed -n '1p; 3p'",
+      "content_hash": "dc92f4d0f1422f5d"
+    },
+    {
+      "name": "sed comparison: negated address",
+      "script": "echo -e 'a\\nb\\nc' | sed -n '/b/!p'",
+      "content_hash": "6c669cf7781d06f3"
+    },
+    {
+      "name": "sed comparison: last line address",
+      "script": "echo -e 'a\\nb\\nc' | sed -n '$p'",
+      "content_hash": "e836daa3c5368ded"
+    },
+    {
+      "name": "sed comparison: first line address",
+      "script": "echo -e 'a\\nb\\nc' | sed -n '1p'",
+      "content_hash": "1fae5020ebf39c26"
+    }
+  ]
+}

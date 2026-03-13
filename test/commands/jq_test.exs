@@ -390,8 +390,9 @@ defmodule JustBash.Commands.JqTest do
       assert result.exit_code == 0
       lines = String.split(String.trim(result.stdout), "\n")
       # jq always quotes strings in CSV output
+      # credo:disable-for-next-line Credo.Check.Readability.StringSigils
       assert "\"name\",\"age\"" in lines
-      assert "\"alice\",30" in lines
+      assert ~s("alice",30) in lines
     end
   end
 end

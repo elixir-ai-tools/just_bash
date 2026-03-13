@@ -1,0 +1,200 @@
+{
+  "suite": "quoting",
+  "cases": [
+    {
+      "name": "quoting comparison: double quotes preserve spaces",
+      "script": "echo \"hello   world\"",
+      "content_hash": "0e6cc20b95d2b1ef"
+    },
+    {
+      "name": "quoting comparison: single quotes are literal",
+      "script": "echo '$HOME'",
+      "content_hash": "cab946bcbc80c7a6"
+    },
+    {
+      "name": "quoting comparison: double quotes expand variables",
+      "script": "x=test; echo \"value: $x\"",
+      "content_hash": "463eb257fae62d3a"
+    },
+    {
+      "name": "quoting comparison: escaped dollar in double quotes",
+      "script": "echo \"\\$HOME\"",
+      "content_hash": "413c0ef85dc6b772"
+    },
+    {
+      "name": "quoting comparison: mixed quoting",
+      "script": "echo 'single'\"double\"unquoted",
+      "content_hash": "36f908decffeeb2c"
+    },
+    {
+      "name": "quoting edge cases comparison: escaped double quote",
+      "script": "echo \"it's \\\"quoted\\\"\"",
+      "content_hash": "10e62c4d8c333d2d"
+    },
+    {
+      "name": "quoting edge cases comparison: single quote escape",
+      "script": "echo 'it'\\''s quoted'",
+      "content_hash": "f8e84094682e990c"
+    },
+    {
+      "name": "quoting edge cases comparison: dollar literal in single quotes",
+      "script": "echo '$HOME'",
+      "content_hash": "cab946bcbc80c7a6"
+    },
+    {
+      "name": "quoting edge cases comparison: empty string argument",
+      "script": "echo '' 'a'",
+      "content_hash": "45fa454110edfdc6"
+    },
+    {
+      "name": "quoting edge cases comparison: word splitting",
+      "script": "x='a   b'; echo $x",
+      "content_hash": "59aa1db8315bc731"
+    },
+    {
+      "name": "quoting edge cases comparison: no word splitting in quotes",
+      "script": "x='a   b'; echo \"$x\"",
+      "content_hash": "ae2bf2de9b641b78"
+    },
+    {
+      "name": "single quotes inside double quotes: apostrophe in string",
+      "script": "X=\"it's\"; echo \"$X\"",
+      "content_hash": "10720b123e7e47cd"
+    },
+    {
+      "name": "single quotes inside double quotes: SQL-style single quotes",
+      "script": "X=\"VALUES ('hello')\"; echo \"$X\"",
+      "content_hash": "3d1654163a0fe944"
+    },
+    {
+      "name": "single quotes inside double quotes: multiple single quotes",
+      "script": "X=\"'a' 'b' 'c'\"; echo \"$X\"",
+      "content_hash": "1c0aaa80ad27941e"
+    },
+    {
+      "name": "single quotes inside double quotes: building SQL string incrementally",
+      "script": "SQL=\"INSERT INTO t VALUES ('x');\"; SQL=\"$SQL INSERT INTO t VALUES ('y');\"; echo \"$SQL\"",
+      "content_hash": "652559764de79a51"
+    },
+    {
+      "name": "single quotes inside double quotes: single quote at boundaries (1)",
+      "script": "X=\"'start\"; echo \"$X\"",
+      "content_hash": "8f0f5c0279fb0777"
+    },
+    {
+      "name": "single quotes inside double quotes: single quote at boundaries (2)",
+      "script": "X=\"end'\"; echo \"$X\"",
+      "content_hash": "e130d5e0beeccbb3"
+    },
+    {
+      "name": "echo -e escape sequences: newline escape",
+      "script": "echo -e \"hello\\nworld\"",
+      "content_hash": "4a68f775388c91ae"
+    },
+    {
+      "name": "echo -e escape sequences: tab escape",
+      "script": "echo -e \"col1\\tcol2\"",
+      "content_hash": "51a278acb67ab291"
+    },
+    {
+      "name": "echo -e escape sequences: carriage return escape",
+      "script": "echo -e \"hello\\rworld\"",
+      "content_hash": "f81a53739fcad8d2"
+    },
+    {
+      "name": "echo -e escape sequences: backslash escape",
+      "script": "echo -e \"back\\\\\\\\slash\"",
+      "content_hash": "89cfe6aab12b0b53"
+    },
+    {
+      "name": "echo -e escape sequences: hex escape lowercase",
+      "script": "echo -e '\\x41'",
+      "content_hash": "be2af40c47f86339"
+    },
+    {
+      "name": "echo -e escape sequences: hex escape uppercase",
+      "script": "echo -e '\\x41\\x42\\x43'",
+      "content_hash": "c85c5ae8f0887be6"
+    },
+    {
+      "name": "echo -e escape sequences: hex escape mixed",
+      "script": "echo -e 'hex:\\x48\\x45\\x4c\\x4c\\x4f'",
+      "content_hash": "a937327b6b82c29f"
+    },
+    {
+      "name": "echo -e escape sequences: octal escape",
+      "script": "echo -e '\\101'",
+      "content_hash": "7f84f6faa7d42629"
+    },
+    {
+      "name": "echo -e escape sequences: octal escape multiple",
+      "script": "echo -e '\\101\\102\\103'",
+      "content_hash": "5f0efcae3f7a9cda"
+    },
+    {
+      "name": "echo -e escape sequences: mixed text and hex",
+      "script": "echo -e 'before\\x41after'",
+      "content_hash": "7fefabe610f41d98"
+    },
+    {
+      "name": "echo -e escape sequences: mixed text and octal",
+      "script": "echo -e 'before\\101after'",
+      "content_hash": "567bcc5f2f830405"
+    },
+    {
+      "name": "$'...' ANSI-C quoting: tab in dollar-single-quote",
+      "script": "echo $'tab\\ttab'",
+      "content_hash": "0055f1f19de4e208"
+    },
+    {
+      "name": "$'...' ANSI-C quoting: newline in dollar-single-quote",
+      "script": "echo $'line1\\nline2'",
+      "content_hash": "65d0d23c20c9474b"
+    },
+    {
+      "name": "$'...' ANSI-C quoting: hex in dollar-single-quote",
+      "script": "echo $'\\x41\\x42\\x43'",
+      "content_hash": "ca1d72f57e16c0eb"
+    },
+    {
+      "name": "$'...' ANSI-C quoting: octal in dollar-single-quote",
+      "script": "echo $'\\101\\102\\103'",
+      "content_hash": "1832f1f5cd9dfa8a"
+    },
+    {
+      "name": "$'...' ANSI-C quoting: backslash in dollar-single-quote",
+      "script": "echo $'back\\\\slash'",
+      "content_hash": "8fe9be39f1caa0c1"
+    },
+    {
+      "name": "$'...' ANSI-C quoting: single quote in dollar-single-quote",
+      "script": "echo $'it\\'s quoted'",
+      "content_hash": "b2badc4493d424d2"
+    },
+    {
+      "name": "$'...' ANSI-C quoting: double quote in dollar-single-quote",
+      "script": "echo $'say \"hello\"'",
+      "content_hash": "939773c880c53b9c"
+    },
+    {
+      "name": "$'...' ANSI-C quoting: mixed escapes",
+      "script": "echo $'A:\\x41 tab:\\t newline:\\n'",
+      "content_hash": "487a310900241246"
+    },
+    {
+      "name": "undefined variable behavior: undefined variable expands to empty",
+      "script": "echo \"$undefined_var_xyz\"",
+      "content_hash": "11c8ffff769568b7"
+    },
+    {
+      "name": "undefined variable behavior: undefined with braces",
+      "script": "x=hello; echo \"$x\"",
+      "content_hash": "a0259929e1387474"
+    },
+    {
+      "name": "undefined variable behavior: undefined unquoted",
+      "script": "echo $undefined_var_xyz end",
+      "content_hash": "6618c80ba5823924"
+    }
+  ]
+}

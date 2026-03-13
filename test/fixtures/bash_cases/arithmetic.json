@@ -1,0 +1,220 @@
+{
+  "suite": "arithmetic",
+  "cases": [
+    {
+      "name": "arithmetic expansion comparison: simple addition",
+      "script": "echo $((1 + 2))",
+      "content_hash": "7890094fd11e0360"
+    },
+    {
+      "name": "arithmetic expansion comparison: nested parentheses",
+      "script": "echo $((1 + (2 * 3)))",
+      "content_hash": "680b8109fb55ec21"
+    },
+    {
+      "name": "arithmetic expansion comparison: double nested",
+      "script": "echo $((1 + (2 + (3 + 4))))",
+      "content_hash": "b635558522ef0fb9"
+    },
+    {
+      "name": "arithmetic expansion comparison: complex expression",
+      "script": "echo $(((2 + 3) * (4 + 5)))",
+      "content_hash": "8ef3a93fa1773033"
+    },
+    {
+      "name": "arithmetic expansion comparison: power",
+      "script": "echo $((2 ** 10))",
+      "content_hash": "a132ec0010d9cf35"
+    },
+    {
+      "name": "arithmetic expansion comparison: modulo",
+      "script": "echo $((17 % 5))",
+      "content_hash": "f91fca87575c5c04"
+    },
+    {
+      "name": "arithmetic expansion comparison: comparison",
+      "script": "echo $((5 > 3))",
+      "content_hash": "296e5d48e718e554"
+    },
+    {
+      "name": "arithmetic expansion comparison: ternary",
+      "script": "echo $((5 > 3 ? 100 : 0))",
+      "content_hash": "d97a9f82123ca040"
+    },
+    {
+      "name": "arithmetic expansion comparison: with variables",
+      "script": "x=5; y=3; echo $((x + y))",
+      "content_hash": "e8c33a23cb973cfd"
+    },
+    {
+      "name": "arithmetic edge cases comparison: negative numbers",
+      "script": "echo $((-5 + 3))",
+      "content_hash": "7673fef0342b38a1"
+    },
+    {
+      "name": "arithmetic edge cases comparison: negative modulo",
+      "script": "echo $((-7 % 3))",
+      "content_hash": "cae5e66fe97d5e32"
+    },
+    {
+      "name": "arithmetic edge cases comparison: bitwise and",
+      "script": "echo $((12 & 10))",
+      "content_hash": "ba1d9dafbcb7be57"
+    },
+    {
+      "name": "arithmetic edge cases comparison: bitwise or",
+      "script": "echo $((12 | 10))",
+      "content_hash": "f6bb6f6092624f38"
+    },
+    {
+      "name": "arithmetic edge cases comparison: bitwise xor",
+      "script": "echo $((12 ^ 10))",
+      "content_hash": "6c9e8e582d282c07"
+    },
+    {
+      "name": "arithmetic edge cases comparison: left shift",
+      "script": "echo $((1 << 4))",
+      "content_hash": "5f7f7fd0f9b29dae"
+    },
+    {
+      "name": "arithmetic edge cases comparison: right shift",
+      "script": "echo $((16 >> 2))",
+      "content_hash": "db000c55f351a678"
+    },
+    {
+      "name": "arithmetic edge cases comparison: pre increment",
+      "script": "x=5; echo $((++x)) $x",
+      "content_hash": "11f73869c9216e2b"
+    },
+    {
+      "name": "arithmetic edge cases comparison: post increment",
+      "script": "x=5; echo $((x++)) $x",
+      "content_hash": "4fbfa4941445ee9d"
+    },
+    {
+      "name": "hex and octal literals: hex literal lowercase",
+      "script": "echo $((0x1f))",
+      "content_hash": "7d5c568065313241"
+    },
+    {
+      "name": "hex and octal literals: hex literal uppercase",
+      "script": "echo $((0X1F))",
+      "content_hash": "49bfe7ec1f870a79"
+    },
+    {
+      "name": "hex and octal literals: hex in expression",
+      "script": "echo $((0x10 + 0x0f))",
+      "content_hash": "ee612686905f7d5a"
+    },
+    {
+      "name": "hex and octal literals: octal literal",
+      "script": "echo $((017))",
+      "content_hash": "5813fcda9cd58e0a"
+    },
+    {
+      "name": "hex and octal literals: octal in expression",
+      "script": "echo $((010 + 010))",
+      "content_hash": "f828394a88c1ff52"
+    },
+    {
+      "name": "hex and octal literals: mixed bases",
+      "script": "echo $((0x10 + 010 + 10))",
+      "content_hash": "a136e56af55e80e1"
+    },
+    {
+      "name": "bitwise NOT: bitwise not of zero",
+      "script": "echo $((~0))",
+      "content_hash": "0d71f958544c1e5a"
+    },
+    {
+      "name": "bitwise NOT: bitwise not of positive",
+      "script": "echo $((~5))",
+      "content_hash": "53f99c846d3e23a0"
+    },
+    {
+      "name": "bitwise NOT: bitwise not of negative one",
+      "script": "echo $((~-1))",
+      "content_hash": "a94636fc9e95a8c5"
+    },
+    {
+      "name": "bitwise NOT: double bitwise not",
+      "script": "echo $((~~5))",
+      "content_hash": "00c1319b5d7113ef"
+    },
+    {
+      "name": "bitwise NOT: bitwise not in expression",
+      "script": "echo $((~5 & 0xff))",
+      "content_hash": "82b9947ea19a23fe"
+    },
+    {
+      "name": "increment and decrement: pre-decrement",
+      "script": "x=5; echo $((--x)) $x",
+      "content_hash": "903e5574a9720994"
+    },
+    {
+      "name": "increment and decrement: post-decrement",
+      "script": "x=5; echo $((x--)) $x",
+      "content_hash": "01f017f6e4a51d75"
+    },
+    {
+      "name": "increment and decrement: multiple increments",
+      "script": "x=0; echo $((x++)) $((x++)) $((x++))",
+      "content_hash": "4843388a0b0e6085"
+    },
+    {
+      "name": "increment and decrement: increment in expression",
+      "script": "x=5; echo $((x++ + ++x))",
+      "content_hash": "3b264953f8bcf79a"
+    },
+    {
+      "name": "compound assignment: add-assign",
+      "script": "x=10; echo $((x += 5)) $x",
+      "content_hash": "b2468fb87df154ab"
+    },
+    {
+      "name": "compound assignment: subtract-assign",
+      "script": "x=10; echo $((x -= 3)) $x",
+      "content_hash": "b98be789ac483cce"
+    },
+    {
+      "name": "compound assignment: multiply-assign",
+      "script": "x=10; echo $((x *= 2)) $x",
+      "content_hash": "d6e2dba7001045d2"
+    },
+    {
+      "name": "compound assignment: divide-assign",
+      "script": "x=10; echo $((x /= 2)) $x",
+      "content_hash": "45f21335e072f107"
+    },
+    {
+      "name": "compound assignment: modulo-assign",
+      "script": "x=10; echo $((x %= 3)) $x",
+      "content_hash": "178bf4edce12ed50"
+    },
+    {
+      "name": "logical operators: logical and true",
+      "script": "echo $((5 && 3))",
+      "content_hash": "7b869c9e29a59569"
+    },
+    {
+      "name": "logical operators: logical and false",
+      "script": "echo $((5 && 0))",
+      "content_hash": "a394a861b7b53d95"
+    },
+    {
+      "name": "logical operators: logical or true",
+      "script": "echo $((0 || 3))",
+      "content_hash": "d3c82a8ca20e8523"
+    },
+    {
+      "name": "logical operators: logical or false",
+      "script": "echo $((0 || 0))",
+      "content_hash": "d4470f51ceaa3b95"
+    },
+    {
+      "name": "logical operators: logical not",
+      "script": "echo $((!0)) $((!5))",
+      "content_hash": "52d2fae724c55734"
+    }
+  ]
+}

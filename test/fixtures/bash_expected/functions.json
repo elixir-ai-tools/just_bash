@@ -1,0 +1,159 @@
+{
+  "results": [
+    {
+      "content_hash": "257c7a51ca160d21",
+      "exit_code": 0,
+      "name": "function definition and calling: basic function with parens syntax",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "653c22ba75ccd317",
+      "exit_code": 0,
+      "name": "function definition and calling: function keyword syntax",
+      "stderr": "",
+      "stdout": "hi\n"
+    },
+    {
+      "content_hash": "04fbc43b7967d5ac",
+      "exit_code": 0,
+      "name": "function definition and calling: function with arguments",
+      "stderr": "",
+      "stdout": "8\n"
+    },
+    {
+      "content_hash": "29b79e748aa5ba31",
+      "exit_code": 0,
+      "name": "function definition and calling: function with local variable",
+      "stderr": "",
+      "stdout": "10\n"
+    },
+    {
+      "content_hash": "9eafb31b876bab5d",
+      "exit_code": 0,
+      "name": "function definition and calling: local variable isolation",
+      "stderr": "",
+      "stdout": "inner\nouter\n"
+    },
+    {
+      "content_hash": "1f0ec2648e8b44c9",
+      "exit_code": 0,
+      "name": "function definition and calling: function output capture",
+      "stderr": "",
+      "stdout": "result\n"
+    },
+    {
+      "content_hash": "466364bbaf72dcd4",
+      "exit_code": 0,
+      "name": "function definition and calling: function can be overwritten",
+      "stderr": "",
+      "stdout": "second\n"
+    },
+    {
+      "content_hash": "6e57c926b766f5bf",
+      "exit_code": 0,
+      "name": "function definition and calling: function with default parameter pattern",
+      "stderr": "",
+      "stdout": "default\n"
+    },
+    {
+      "content_hash": "a2a7bbf74655b32a",
+      "exit_code": 0,
+      "name": "function definition and calling: function with default parameter override",
+      "stderr": "",
+      "stdout": "custom\n"
+    },
+    {
+      "content_hash": "140bec46783f4e9a",
+      "exit_code": 0,
+      "name": "function definition and calling: function with multiple outputs",
+      "stderr": "",
+      "stdout": "line1\nline2\n"
+    },
+    {
+      "content_hash": "3c8e1a81bb59e129",
+      "exit_code": 0,
+      "name": "function arguments and positional parameters: access multiple arguments",
+      "stderr": "",
+      "stdout": "a b c\n"
+    },
+    {
+      "content_hash": "26371186cbdaf5de",
+      "exit_code": 0,
+      "name": "function arguments and positional parameters: argument count in function",
+      "stderr": "",
+      "stdout": "4\n"
+    },
+    {
+      "content_hash": "fbfb9e659f597f88",
+      "exit_code": 0,
+      "name": "function arguments and positional parameters: all arguments with @",
+      "stderr": "",
+      "stdout": "one two three\n"
+    },
+    {
+      "content_hash": "1f96711f5646e551",
+      "exit_code": 0,
+      "name": "function arguments and positional parameters: all arguments with *",
+      "stderr": "",
+      "stdout": "one two three\n"
+    },
+    {
+      "content_hash": "23785c05d8c23f84",
+      "exit_code": 0,
+      "name": "function arguments and positional parameters: undefined argument is empty",
+      "stderr": "",
+      "stdout": "[only_one][][]\n"
+    },
+    {
+      "content_hash": "360ea50f5d460723",
+      "exit_code": 0,
+      "name": "function with complex bodies: function with loop",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "3079b08b56915228",
+      "exit_code": 0,
+      "name": "function with complex bodies: function with conditional",
+      "stderr": "",
+      "stdout": "ok\n"
+    },
+    {
+      "content_hash": "05605b37fb1a9af8",
+      "exit_code": 0,
+      "name": "function with complex bodies: function calling another function",
+      "stderr": "",
+      "stdout": "inner\nouter\n"
+    },
+    {
+      "content_hash": "53e4fd877d38a258",
+      "exit_code": 0,
+      "name": "function with complex bodies: recursive function",
+      "stderr": "",
+      "stdout": "3\n2\n1\n"
+    },
+    {
+      "content_hash": "9e2e7bf15f03d5c7",
+      "exit_code": 0,
+      "name": "function exit codes: function returns 0 by default",
+      "stderr": "",
+      "stdout": "hi\n0\n"
+    },
+    {
+      "content_hash": "e2eb08b0330c2fb4",
+      "exit_code": 0,
+      "name": "function exit codes: function returns exit code of last command",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "e7efd0859b79f421",
+      "exit_code": 0,
+      "name": "function exit codes: function returns success from last command",
+      "stderr": "",
+      "stdout": "0\n"
+    }
+  ],
+  "suite": "functions"
+}

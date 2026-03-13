@@ -21,9 +21,14 @@ defmodule JustBash do
 
   ## Security Model
 
+  JustBash treats shell code as untrusted and sandboxes it in memory. Custom commands passed via
+  `:commands` are trusted host-side extensions supplied by the library caller, and JustBash does
+  not sandbox them or provide safety guarantees for them.
+
   - All execution happens in memory
   - No access to the real filesystem by default
   - No network access by default
+  - Custom commands are outside the sandbox and can bypass filesystem and network restrictions
   - Execution limits to prevent infinite loops
 
   ## Sigil
@@ -53,10 +58,31 @@ defmodule JustBash do
   alias JustBash.Parser
   alias JustBash.Parser.Lexer
 
+  @protected_builtin_names [
+    ".",
+    "break",
+    "cd",
+    "continue",
+    "declare",
+    "exit",
+    "export",
+    "getopts",
+    "local",
+    "read",
+    "return",
+    "set",
+    "shift",
+    "source",
+    "trap",
+    "typeset",
+    "unset"
+  ]
+
   defstruct fs: nil,
             env: %{},
             cwd: "/home/user",
             functions: %{},
+            commands: %{},
             exit_code: 0,
             last_exit_code: 0,
             network: %{enabled: false, allow_list: []},
@@ -87,6 +113,7 @@ defmodule JustBash do
           env: map(),
           cwd: String.t(),
           functions: map(),
+          commands: %{String.t() => module()},
           exit_code: non_neg_integer(),
           last_exit_code: non_neg_integer(),
           network: network_config(),
@@ -102,6 +129,14 @@ defmodule JustBash do
   - `:files` - Initial files as a map of path => content
   - `:env` - Initial environment variables
   - `:cwd` - Starting working directory (default: "/home/user")
+  - `:commands` - Custom commands as a map of name => module implementing `JustBash.Commands.Command`.
+    Custom commands are trusted host-side extensions supplied by the library caller. They run
+    arbitrary Elixir code, are not constrained by the virtual filesystem or `:network` sandbox,
+    and are outside JustBash's safety guarantees. Registration keys must be declared in the
+    module's `names/0`, and aliases from `names/0` are registered automatically.
+    Custom commands override regular builtins but are overridden by shell functions. Protected
+    stateful builtins such as `cd` and `export` cannot be overridden.
+    Dispatch order: shell functions > custom commands > builtins.
   - `:network` - Network configuration map with:
     - `:enabled` - Whether network access is allowed (default: false)
     - `:allow_list` - List of allowed hosts/patterns (default: [] = all allowed when enabled)
@@ -112,6 +147,7 @@ defmodule JustBash do
       bash = JustBash.new()
       bash = JustBash.new(files: %{"/data/file.txt" => "content"})
       bash = JustBash.new(env: %{"MY_VAR" => "value"}, cwd: "/app")
+      bash = JustBash.new(commands: %{"python" => MyPythonCommand})
       bash = JustBash.new(network: %{enabled: true})
       bash = JustBash.new(network: %{enabled: true, allow_list: ["api.example.com", "*.github.com"]})
 
@@ -123,6 +159,7 @@ defmodule JustBash do
     files = Keyword.get(opts, :files, %{})
     env = Keyword.get(opts, :env, %{})
     cwd = Keyword.get(opts, :cwd, "/home/user")
+    commands = opts |> Keyword.get(:commands, %{}) |> normalize_commands!()
     network = Keyword.get(opts, :network, %{enabled: false, allow_list: []})
     http_client = Keyword.get(opts, :http_client)
 
@@ -142,11 +179,79 @@ defmodule JustBash do
       env: Map.merge(default_env, env),
       cwd: cwd,
       functions: %{},
+      commands: commands,
       exit_code: 0,
       last_exit_code: 0,
       network: Map.merge(%{enabled: false, allow_list: []}, network),
       http_client: http_client
     }
+  end
+
+  defp normalize_commands!(commands) when is_map(commands) do
+    Enum.reduce(commands, %{}, fn {name, module}, acc ->
+      names = validate_command_registration!(name, module)
+
+      Enum.reduce(names, acc, fn alias_name, current_acc ->
+        if alias_name in @protected_builtin_names do
+          raise ArgumentError,
+                "custom command #{inspect(module)} cannot override protected builtin #{inspect(alias_name)}"
+        end
+
+        case Map.get(current_acc, alias_name) do
+          nil ->
+            Map.put(current_acc, alias_name, module)
+
+          ^module ->
+            current_acc
+
+          other_module ->
+            raise ArgumentError,
+                  "custom command name #{inspect(alias_name)} is already registered to #{inspect(other_module)}"
+        end
+      end)
+    end)
+  end
+
+  defp normalize_commands!(commands) do
+    raise ArgumentError, "expected :commands to be a map, got: #{inspect(commands)}"
+  end
+
+  # Validates the registration and returns the list of names from the module.
+  # Called once per registration entry to avoid double-calling names/0.
+  defp validate_command_registration!(name, module) when is_binary(name) and is_atom(module) do
+    if name == "" do
+      raise ArgumentError,
+            "custom command name must not be empty"
+    end
+
+    if name in @protected_builtin_names do
+      raise ArgumentError,
+            "custom commands cannot override protected builtin #{inspect(name)}"
+    end
+
+    unless function_exported?(module, :execute, 3) and function_exported?(module, :names, 0) do
+      raise ArgumentError,
+            "custom command #{inspect(module)} must export execute/3 and names/0"
+    end
+
+    names = module.names()
+
+    unless is_list(names) and names != [] and Enum.all?(names, &(is_binary(&1) and &1 != "")) do
+      raise ArgumentError,
+            "custom command #{inspect(module)} must return a non-empty list of non-empty names from names/0"
+    end
+
+    unless name in names do
+      raise ArgumentError,
+            "custom command #{inspect(module)} was registered as #{inspect(name)} but names/0 returns #{inspect(names)}"
+    end
+
+    names
+  end
+
+  defp validate_command_registration!(name, module) do
+    raise ArgumentError,
+          "invalid custom command registration #{inspect(name)} => #{inspect(module)}; expected a string name and module"
   end
 
   defp init_filesystem(files) do

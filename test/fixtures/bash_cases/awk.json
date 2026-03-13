@@ -1,0 +1,535 @@
+{
+  "suite": "awk",
+  "cases": [
+    {
+      "name": "awk field access comparison: awk print field",
+      "script": "echo 'a b c' | awk '{print $2}'",
+      "content_hash": "b9986da7c57ecb26"
+    },
+    {
+      "name": "awk field access comparison: awk print first field",
+      "script": "echo 'hello world' | awk '{print $1}'",
+      "content_hash": "78581bb9bf6cd298"
+    },
+    {
+      "name": "awk field access comparison: awk print entire line with $0",
+      "script": "echo 'hello world' | awk '{print $0}'",
+      "content_hash": "1db16336bf1d8c77"
+    },
+    {
+      "name": "awk field access comparison: awk print multiple fields",
+      "script": "echo 'a b c d' | awk '{print $1, $3}'",
+      "content_hash": "2412bfc41dd3124c"
+    },
+    {
+      "name": "awk field access comparison: awk access field beyond NF",
+      "script": "echo 'a b c' | awk '{print $10}'",
+      "content_hash": "79e7f72291c25a89"
+    },
+    {
+      "name": "awk field access comparison: awk print $NF (last field)",
+      "script": "echo 'a b c d' | awk '{print $NF}'",
+      "content_hash": "9593e6be478beaa2"
+    },
+    {
+      "name": "awk field separator comparison: awk with field separator",
+      "script": "echo 'a,b,c' | awk -F, '{print $2}'",
+      "content_hash": "89bbede0029dc19f"
+    },
+    {
+      "name": "awk field separator comparison: awk with colon separator",
+      "script": "echo 'x:y:z' | awk -F: '{print $2}'",
+      "content_hash": "271e75e62bcdad05"
+    },
+    {
+      "name": "awk field separator comparison: awk with tab separator",
+      "script": "printf 'a\\tb\\tc\\n' | awk -F'\\t' '{print $2}'",
+      "content_hash": "0425e7511d2bf4a2"
+    },
+    {
+      "name": "awk field separator comparison: awk default whitespace splitting collapses spaces",
+      "script": "echo 'a    b    c' | awk '{print $2}'",
+      "content_hash": "fbc524bb6497b2da"
+    },
+    {
+      "name": "awk built-in variables comparison: awk NR line number",
+      "script": "echo -e 'a\\nb' | awk '{print NR, $0}'",
+      "content_hash": "c2228923f9184115"
+    },
+    {
+      "name": "awk built-in variables comparison: awk NF field count",
+      "script": "echo 'a b c d' | awk '{print NF}'",
+      "content_hash": "4ca8381c980457d1"
+    },
+    {
+      "name": "awk built-in variables comparison: awk NF with varying fields per line",
+      "script": "echo -e 'one\\ntwo three\\na b c d' | awk '{print NF}'",
+      "content_hash": "4a041f906582aced"
+    },
+    {
+      "name": "awk built-in variables comparison: awk NF is 0 for empty line",
+      "script": "echo '' | awk '{print NF}'",
+      "content_hash": "5d636e8964f603a6"
+    },
+    {
+      "name": "awk built-in variables comparison: awk FS variable in BEGIN",
+      "script": "echo 'a,b,c' | awk 'BEGIN{FS=\",\"}{print $2}'",
+      "content_hash": "9a86b6f2776e0637"
+    },
+    {
+      "name": "awk built-in variables comparison: awk OFS variable",
+      "script": "echo 'a b c' | awk 'BEGIN{OFS=\"-\"}{print $1, $2, $3}'",
+      "content_hash": "064424c702ec6fe1"
+    },
+    {
+      "name": "awk built-in variables comparison: awk ORS variable",
+      "script": "echo -e 'a\\nb' | awk 'BEGIN{ORS=\";\"}{print $0}'",
+      "content_hash": "b6dcdc2bcf08caa7"
+    },
+    {
+      "name": "awk BEGIN and END comparison: awk sum in END block",
+      "script": "echo -e '1\\n2\\n3' | awk '{s+=$1} END {print s}'",
+      "content_hash": "8768d77329d0017c"
+    },
+    {
+      "name": "awk BEGIN and END comparison: awk BEGIN block before processing",
+      "script": "echo 'x' | awk 'BEGIN{print \"start\"}{print $0}'",
+      "content_hash": "9396cdb0440c4769"
+    },
+    {
+      "name": "awk BEGIN and END comparison: awk END block after processing",
+      "script": "echo -e 'a\\nb' | awk '{print $0}END{print \"done\"}'",
+      "content_hash": "5df6d27b6facaf22"
+    },
+    {
+      "name": "awk BEGIN and END comparison: awk BEGIN only no input",
+      "script": "awk 'BEGIN{print \"hello\"}'",
+      "content_hash": "c3ea17a15b3cc967"
+    },
+    {
+      "name": "awk BEGIN and END comparison: awk count lines in END",
+      "script": "echo -e 'a\\nb\\nc' | awk '{count++}END{print count}'",
+      "content_hash": "c5997619810392f7"
+    },
+    {
+      "name": "awk BEGIN and END comparison: awk multiple BEGIN blocks",
+      "script": "awk 'BEGIN{print \"a\"}BEGIN{print \"b\"}'",
+      "content_hash": "dca889111b06f440"
+    },
+    {
+      "name": "awk BEGIN and END comparison: awk multiple END blocks",
+      "script": "echo 'x' | awk 'END{print \"a\"}END{print \"b\"}'",
+      "content_hash": "09f1d5f1c9cd3e3f"
+    },
+    {
+      "name": "awk pattern matching comparison: awk regex pattern filter",
+      "script": "echo -e 'apple\\nbanana\\napricot' | awk '/^a/{print}'",
+      "content_hash": "f35dda4a1a805ee2"
+    },
+    {
+      "name": "awk pattern matching comparison: awk regex pattern without action",
+      "script": "echo -e 'foo\\nbar\\nbaz' | awk '/ba/'",
+      "content_hash": "3151e7a5c669c693"
+    },
+    {
+      "name": "awk pattern matching comparison: awk NR condition ==",
+      "script": "echo -e 'line1\\nline2\\nline3' | awk 'NR==2{print}'",
+      "content_hash": "e9c677d3bd000300"
+    },
+    {
+      "name": "awk pattern matching comparison: awk NR condition >",
+      "script": "echo -e 'line1\\nline2\\nline3' | awk 'NR>1{print}'",
+      "content_hash": "80b3480e917eafa7"
+    },
+    {
+      "name": "awk pattern matching comparison: awk NR condition <",
+      "script": "echo -e 'line1\\nline2\\nline3' | awk 'NR<3{print}'",
+      "content_hash": "821a9e368028ce13"
+    },
+    {
+      "name": "awk pattern matching comparison: awk field equality condition",
+      "script": "echo -e 'yes hello\\nno goodbye\\nyes world' | awk '$1==\"yes\"{print $2}'",
+      "content_hash": "683ae6e823e4b2b2"
+    },
+    {
+      "name": "awk pattern matching comparison: awk field regex match ~",
+      "script": "echo -e 'abc 1\\nxyz 2\\nabc 3' | awk '$1 ~ /^a/{print $2}'",
+      "content_hash": "e76af43ca7c97c42"
+    },
+    {
+      "name": "awk pattern matching comparison: awk field > numeric condition",
+      "script": "echo -e '5\\n15\\n25' | awk '$1>10{print}'",
+      "content_hash": "1ba7ac15e758bec8"
+    },
+    {
+      "name": "awk pattern matching comparison: awk field >= numeric condition",
+      "script": "echo -e '5\\n10\\n15' | awk '$1>=10{print}'",
+      "content_hash": "7efbd735f033920a"
+    },
+    {
+      "name": "awk arithmetic comparison: awk addition",
+      "script": "echo '10 20' | awk '{print $1 + $2}'",
+      "content_hash": "2e51b564d2d3b81c"
+    },
+    {
+      "name": "awk arithmetic comparison: awk subtraction",
+      "script": "echo '10 3' | awk '{print $1 - $2}'",
+      "content_hash": "80fd6ea8f7f289cf"
+    },
+    {
+      "name": "awk arithmetic comparison: awk multiplication",
+      "script": "echo '6 7' | awk '{print $1 * $2}'",
+      "content_hash": "a37bf07c008f639f"
+    },
+    {
+      "name": "awk arithmetic comparison: awk division",
+      "script": "echo '20 4' | awk '{print $1 / $2}'",
+      "content_hash": "72db3cad8c771ffb"
+    },
+    {
+      "name": "awk arithmetic comparison: awk modulo",
+      "script": "awk 'BEGIN{print 17 % 5}'",
+      "content_hash": "406a79cbf46cf3ec"
+    },
+    {
+      "name": "awk arithmetic comparison: awk power with ^",
+      "script": "awk 'BEGIN{print 2^10}'",
+      "content_hash": "8daf38f432393a4f"
+    },
+    {
+      "name": "awk arithmetic comparison: awk compound += assignment",
+      "script": "echo -e '10\\n20\\n30' | awk 'BEGIN{sum=0}{sum+=$1}END{print sum}'",
+      "content_hash": "6299e7475c5bb8c7"
+    },
+    {
+      "name": "awk arithmetic comparison: awk compound -= assignment",
+      "script": "awk 'BEGIN{x=10; x-=3; print x}'",
+      "content_hash": "eb7eb080558af651"
+    },
+    {
+      "name": "awk arithmetic comparison: awk compound *= assignment",
+      "script": "awk 'BEGIN{x=5; x*=3; print x}'",
+      "content_hash": "fadbff9ae926c196"
+    },
+    {
+      "name": "awk arithmetic comparison: awk compound /= assignment",
+      "script": "awk 'BEGIN{x=20; x/=4; print x}'",
+      "content_hash": "19ad5e4e6f2f5c44"
+    },
+    {
+      "name": "awk arithmetic comparison: awk increment ++",
+      "script": "awk 'BEGIN{x=5; x++; print x}'",
+      "content_hash": "77e3103abccb80bb"
+    },
+    {
+      "name": "awk arithmetic comparison: awk pre-increment ++x",
+      "script": "awk 'BEGIN{x=5; ++x; print x}'",
+      "content_hash": "ff144503234bafee"
+    },
+    {
+      "name": "awk arithmetic comparison: awk decrement --",
+      "script": "awk 'BEGIN{x=5; x--; print x}'",
+      "content_hash": "fc373c00584f2288"
+    },
+    {
+      "name": "awk arithmetic comparison: awk pre-decrement --x",
+      "script": "awk 'BEGIN{x=5; --x; print x}'",
+      "content_hash": "d9c2809306db4c32"
+    },
+    {
+      "name": "awk string functions comparison: awk length() no argument",
+      "script": "echo 'hello' | awk '{print length()}'",
+      "content_hash": "86a79bc710b217b0"
+    },
+    {
+      "name": "awk string functions comparison: awk length() with argument",
+      "script": "echo 'hello world' | awk '{print length($1)}'",
+      "content_hash": "59a5eea767012cf4"
+    },
+    {
+      "name": "awk string functions comparison: awk substr() with start only",
+      "script": "echo 'hello' | awk '{print substr($0, 3)}'",
+      "content_hash": "13d7d32c37efc072"
+    },
+    {
+      "name": "awk string functions comparison: awk substr() with start and length",
+      "script": "echo 'hello world' | awk '{print substr($0, 1, 5)}'",
+      "content_hash": "4b0a4e6347409401"
+    },
+    {
+      "name": "awk string functions comparison: awk tolower()",
+      "script": "echo 'HELLO World' | awk '{print tolower($0)}'",
+      "content_hash": "37270a3c18cb7980"
+    },
+    {
+      "name": "awk string functions comparison: awk toupper()",
+      "script": "echo 'hello World' | awk '{print toupper($0)}'",
+      "content_hash": "12cdd32f4b056d42"
+    },
+    {
+      "name": "awk string functions comparison: awk index() finds substring",
+      "script": "echo 'hello world' | awk '{print index($0, \"wor\")}'",
+      "content_hash": "fed4182c8845585e"
+    },
+    {
+      "name": "awk string functions comparison: awk index() not found",
+      "script": "echo 'hello world' | awk '{print index($0, \"xyz\")}'",
+      "content_hash": "96b357210d5bc566"
+    },
+    {
+      "name": "awk string functions comparison: awk sprintf() basic",
+      "script": "awk 'BEGIN{s=sprintf(\"%05d\", 42); print s}'",
+      "content_hash": "1c83e8a8e16a9c72"
+    },
+    {
+      "name": "awk string functions comparison: awk sprintf() with string",
+      "script": "awk 'BEGIN{s=sprintf(\"Hello %s!\", \"World\"); print s}'",
+      "content_hash": "477c5551dfacc809"
+    },
+    {
+      "name": "awk printf comparison: awk printf %s",
+      "script": "echo 'hello world' | awk '{printf \"%s!\\n\", $1}'",
+      "content_hash": "c3011d7c9e450841"
+    },
+    {
+      "name": "awk printf comparison: awk printf %d",
+      "script": "echo '42' | awk '{printf \"num: %d\\n\", $1}'",
+      "content_hash": "a87dbcd9ea4856c8"
+    },
+    {
+      "name": "awk printf comparison: awk printf width specifier",
+      "script": "awk 'BEGIN{printf \"%5d\\n\", 42}'",
+      "content_hash": "6b598af844436b8f"
+    },
+    {
+      "name": "awk printf comparison: awk printf left justify",
+      "script": "awk 'BEGIN{printf \"%-5d|\\n\", 42}'",
+      "content_hash": "1a0c5c302ae208b4"
+    },
+    {
+      "name": "awk printf comparison: awk printf float precision",
+      "script": "awk 'BEGIN{printf \"%.2f\\n\", 3.14159}'",
+      "content_hash": "24856b131773f312"
+    },
+    {
+      "name": "awk printf comparison: awk printf multiple arguments",
+      "script": "echo 'John 25' | awk '{printf \"%s is %d years old\\n\", $1, $2}'",
+      "content_hash": "18d2144bb5b256d9"
+    },
+    {
+      "name": "awk printf comparison: awk printf with dollar sign",
+      "script": "echo 'Alice 1000' | awk '{printf \"%-10s $%d\\n\", $1, $2}'",
+      "content_hash": "18055af682ce9f2c"
+    },
+    {
+      "name": "awk gsub and sub comparison: awk gsub replaces all",
+      "script": "echo 'hello world' | awk '{gsub(/o/, \"0\"); print}'",
+      "content_hash": "3857bbbd1d3a7ab2"
+    },
+    {
+      "name": "awk gsub and sub comparison: awk sub replaces first only",
+      "script": "echo 'hello world' | awk '{sub(/o/, \"0\"); print}'",
+      "content_hash": "bdb18e02ed19dd03"
+    },
+    {
+      "name": "awk gsub and sub comparison: awk gsub on specific field",
+      "script": "echo 'foo bar' | awk '{gsub(/o/, \"0\", $1); print $1}'",
+      "content_hash": "22682a66b8c05801"
+    },
+    {
+      "name": "awk gsub and sub comparison: awk gsub multiple chars",
+      "script": "echo 'aaa bbb aaa' | awk '{gsub(/a/, \"x\"); print}'",
+      "content_hash": "6112d057998a92d4"
+    },
+    {
+      "name": "awk if-else comparison: awk simple if condition",
+      "script": "echo -e '5\\n15\\n25' | awk '{if ($1 > 10) print \"big\"; else print \"small\"}'",
+      "content_hash": "4b272a65e43f4cf0"
+    },
+    {
+      "name": "awk if-else comparison: awk if with == comparison",
+      "script": "echo -e '1\\n2\\n1' | awk '{if ($1 == 1) print \"one\"; else print \"other\"}'",
+      "content_hash": "6c92f1264bbdcb88"
+    },
+    {
+      "name": "awk if-else comparison: awk if with string comparison",
+      "script": "echo -e 'yes\\nno\\nyes' | awk '{if ($1 == \"yes\") print \"Y\"; else print \"N\"}'",
+      "content_hash": "1c032bee135ddbb2"
+    },
+    {
+      "name": "awk ternary operator comparison: awk ternary in print",
+      "script": "echo -e '5\\n15' | awk '{print ($1 > 10) ? \"big\" : \"small\"}'",
+      "content_hash": "7831d30184c0e4f8"
+    },
+    {
+      "name": "awk ternary operator comparison: awk ternary with arithmetic",
+      "script": "awk 'BEGIN{x=5; print (x>3) ? x*2 : x}'",
+      "content_hash": "a42d2ad5c57b7de3"
+    },
+    {
+      "name": "awk loops comparison: awk for loop basic",
+      "script": "awk 'BEGIN{for(i=1;i<=3;i++)print i}'",
+      "content_hash": "081b984943030443"
+    },
+    {
+      "name": "awk loops comparison: awk for loop with sum",
+      "script": "awk 'BEGIN{sum=0; for(i=1;i<=5;i++){sum+=i}; print sum}'",
+      "content_hash": "4a6b6b6b254846f6"
+    },
+    {
+      "name": "awk loops comparison: awk while loop basic",
+      "script": "awk 'BEGIN{i=1; while(i<=3){print i; i++}}'",
+      "content_hash": "a50e73c9069d235c"
+    },
+    {
+      "name": "awk loops comparison: awk while with break",
+      "script": "awk 'BEGIN{i=1; while(i<=10){if(i>3)break; print i; i++}}'",
+      "content_hash": "9b48ce02d3b3823c"
+    },
+    {
+      "name": "awk loops comparison: awk while with continue",
+      "script": "awk 'BEGIN{i=0; while(i<5){i++; if(i==3)continue; print i}}'",
+      "content_hash": "b10baec674824461"
+    },
+    {
+      "name": "awk loops comparison: awk nested for loops",
+      "script": "awk 'BEGIN{for(i=1;i<=2;i++){for(j=1;j<=2;j++){print i,j}}}'",
+      "content_hash": "5aea3e8aeb9edeea"
+    },
+    {
+      "name": "awk arrays comparison: awk array assignment and access",
+      "script": "awk 'BEGIN{a[\"x\"]=5; print a[\"x\"]}'",
+      "content_hash": "c386278c4c636d57"
+    },
+    {
+      "name": "awk arrays comparison: awk array increment",
+      "script": "echo -e 'a\\na\\nb\\na' | awk '{count[$1]++} END{print count[\"a\"]}'",
+      "content_hash": "05681d7b07f74060"
+    },
+    {
+      "name": "awk arrays comparison: awk in operator",
+      "script": "awk 'BEGIN{a[1]=1; print (1 in a), (2 in a)}'",
+      "content_hash": "974bc05e0cb1c300"
+    },
+    {
+      "name": "awk arrays comparison: awk delete array element",
+      "script": "awk 'BEGIN{a[1]=1; a[2]=2; delete a[1]; print (1 in a), (2 in a)}'",
+      "content_hash": "4e4b6f5d6b8caed3"
+    },
+    {
+      "name": "awk arrays comparison: awk array with string keys",
+      "script": "awk 'BEGIN{a[\"foo\"]=\"bar\"; print a[\"foo\"]}'",
+      "content_hash": "64e0a0b62b20ffba"
+    },
+    {
+      "name": "awk control flow comparison: awk next skips to next record",
+      "script": "echo -e '1\\n2\\n3\\n4' | awk '$1==2{next} {print}'",
+      "content_hash": "9d00c9cfa006f36f"
+    },
+    {
+      "name": "awk control flow comparison: awk exit terminates processing",
+      "script": "echo -e '1\\n2\\n3\\n4' | awk '{print; if(NR==2)exit}'",
+      "content_hash": "c5a3cea95e2ceb05"
+    },
+    {
+      "name": "awk control flow comparison: awk exit with code",
+      "script": "awk 'BEGIN{exit 42}'; echo $?",
+      "content_hash": "df5ddfa0511c1176"
+    },
+    {
+      "name": "awk logical operators comparison: awk logical AND",
+      "script": "awk 'BEGIN{print (1 && 1), (1 && 0), (0 && 1)}'",
+      "content_hash": "b6e43dd45574f7a0"
+    },
+    {
+      "name": "awk logical operators comparison: awk logical OR",
+      "script": "awk 'BEGIN{print (1 || 0), (0 || 1), (0 || 0)}'",
+      "content_hash": "67cd16ab901cb596"
+    },
+    {
+      "name": "awk logical operators comparison: awk logical NOT",
+      "script": "awk 'BEGIN{print !0, !1}'",
+      "content_hash": "18e1be6ca39f7151"
+    },
+    {
+      "name": "awk math functions comparison: awk int() truncates",
+      "script": "awk 'BEGIN{print int(3.7), int(-3.7)}'",
+      "content_hash": "a7a43909c31d3969"
+    },
+    {
+      "name": "awk math functions comparison: awk sqrt()",
+      "script": "awk 'BEGIN{print int(sqrt(16))}'",
+      "content_hash": "5f73615394080163"
+    },
+    {
+      "name": "awk math functions comparison: awk sin() and cos()",
+      "script": "awk 'BEGIN{print int(sin(0)), int(cos(0))}'",
+      "content_hash": "99bcb1fa0755e5a5"
+    },
+    {
+      "name": "awk math functions comparison: awk exp() and log()",
+      "script": "awk 'BEGIN{print int(exp(0)), int(log(1))}'",
+      "content_hash": "c203544a149362a4"
+    },
+    {
+      "name": "awk real-world patterns comparison: awk sum column values",
+      "script": "echo -e 'item1 10\\nitem2 20\\nitem3 30' | awk '{sum+=$2}END{print sum}'",
+      "content_hash": "71343f46f85629b1"
+    },
+    {
+      "name": "awk real-world patterns comparison: awk calculate average",
+      "script": "echo -e '10\\n20\\n30' | awk '{sum+=$1; count++}END{print sum/count}'",
+      "content_hash": "a893ab4d5efe0c74"
+    },
+    {
+      "name": "awk real-world patterns comparison: awk find max value",
+      "script": "echo -e '10\\n25\\n15\\n30\\n5' | awk 'BEGIN{max=0}$1>max{max=$1}END{print max}'",
+      "content_hash": "8a28162d21754478"
+    },
+    {
+      "name": "awk real-world patterns comparison: awk find min value",
+      "script": "echo -e '10\\n25\\n15\\n30\\n5' | awk 'BEGIN{min=9999}$1<min{min=$1}END{print min}'",
+      "content_hash": "b5fa51cee6b917e3"
+    },
+    {
+      "name": "awk real-world patterns comparison: awk skip header row",
+      "script": "echo -e 'name,age\\nAlice,30\\nBob,25' | awk -F, 'NR>1{print $1}'",
+      "content_hash": "eec4ed4edce7c06c"
+    },
+    {
+      "name": "awk real-world patterns comparison: awk count pattern matches",
+      "script": "echo -e 'INFO: start\\nERROR: fail\\nINFO: done\\nERROR: crash' | awk '/ERROR/{count++}END{print count}'",
+      "content_hash": "f6efb20f6efb9689"
+    },
+    {
+      "name": "awk real-world patterns comparison: awk transform to uppercase",
+      "script": "echo -e 'john doe\\njane smith' | awk '{print toupper($1), toupper($2)}'",
+      "content_hash": "e1a26511989709c9"
+    },
+    {
+      "name": "awk edge cases comparison: awk empty input",
+      "script": "echo -n '' | awk '{print $1}'",
+      "content_hash": "04e249544306b95b"
+    },
+    {
+      "name": "awk edge cases comparison: awk single line no newline",
+      "script": "echo -n 'hello' | awk '{print $1}'",
+      "content_hash": "3d042ddb6a768aee"
+    },
+    {
+      "name": "awk edge cases comparison: awk special characters in data",
+      "script": "echo 'hello! @#' | awk '{print $1}'",
+      "content_hash": "41f73a1e9190e871"
+    },
+    {
+      "name": "awk edge cases comparison: awk uninitialized variable is zero",
+      "script": "echo 'x' | awk '{print x + 5}'",
+      "content_hash": "0ccca034a4e42554"
+    },
+    {
+      "name": "awk edge cases comparison: awk string coercion in arithmetic",
+      "script": "echo '10abc 5' | awk '{print $1 + $2}'",
+      "content_hash": "587a86f56c3a1f53"
+    }
+  ]
+}

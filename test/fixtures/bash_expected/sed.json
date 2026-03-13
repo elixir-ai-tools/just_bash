@@ -1,0 +1,215 @@
+{
+  "results": [
+    {
+      "content_hash": "c70fbd00e1040f93",
+      "exit_code": 0,
+      "name": "sed comparison: basic substitution",
+      "stderr": "",
+      "stdout": "heLlo\n"
+    },
+    {
+      "content_hash": "f136517d9f124864",
+      "exit_code": 0,
+      "name": "sed comparison: global substitution",
+      "stderr": "",
+      "stdout": "heLLo\n"
+    },
+    {
+      "content_hash": "a93d7f2a182c438a",
+      "exit_code": 0,
+      "name": "sed comparison: delete line",
+      "stderr": "",
+      "stdout": "a\nc\n"
+    },
+    {
+      "content_hash": "ecf2be369d113c2f",
+      "exit_code": 0,
+      "name": "sed comparison: print specific line",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "9c4667c5292cdd6b",
+      "exit_code": 0,
+      "name": "sed comparison: address range",
+      "stderr": "",
+      "stdout": "b\nc\n"
+    },
+    {
+      "content_hash": "9ba5552b9df4fd95",
+      "exit_code": 0,
+      "name": "sed comparison: regex address",
+      "stderr": "",
+      "stdout": "bar\nbaz\n"
+    },
+    {
+      "content_hash": "5d40145e14c0b10a",
+      "exit_code": 0,
+      "name": "sed comparison: substitution with ampersand",
+      "stderr": "",
+      "stdout": "he[l][l]o\n"
+    },
+    {
+      "content_hash": "a87c9df0e3af199b",
+      "exit_code": 0,
+      "name": "sed comparison: case insensitive",
+      "stderr": "",
+      "stdout": "world\n"
+    },
+    {
+      "content_hash": "d024077a3cb05d32",
+      "exit_code": 0,
+      "name": "sed comparison: multiple expressions",
+      "stderr": "",
+      "stdout": "AbC\n"
+    },
+    {
+      "content_hash": "bda1bd0cb6938f0e",
+      "exit_code": 0,
+      "name": "sed comparison: transliterate",
+      "stderr": "",
+      "stdout": "hEllO\n"
+    },
+    {
+      "content_hash": "7ad38fb87c906478",
+      "exit_code": 0,
+      "name": "sed comparison: backreference simple",
+      "stderr": "",
+      "stdout": "foobar\n"
+    },
+    {
+      "content_hash": "87f89a664dc2f2ff",
+      "exit_code": 0,
+      "name": "sed comparison: backreference with multiple groups",
+      "stderr": "",
+      "stdout": "world hello\n"
+    },
+    {
+      "content_hash": "d1535b7f4f606bbd",
+      "exit_code": 0,
+      "name": "sed comparison: backreference in replacement",
+      "stderr": "",
+      "stdout": "[test]-[123]\n"
+    },
+    {
+      "content_hash": "833d5264d388ba12",
+      "exit_code": 0,
+      "name": "sed comparison: nth occurrence substitution",
+      "stderr": "",
+      "stdout": "xyx\n"
+    },
+    {
+      "content_hash": "9b1ce507fa5c27ca",
+      "exit_code": 0,
+      "name": "sed comparison: nth occurrence with larger n",
+      "stderr": "",
+      "stdout": "aabaa\n"
+    },
+    {
+      "content_hash": "35aa38f9a272556e",
+      "exit_code": 0,
+      "name": "sed comparison: regex address range",
+      "stderr": "",
+      "stdout": "start\nfoo\nbar\nend\n"
+    },
+    {
+      "content_hash": "4182bcda776755c8",
+      "exit_code": 0,
+      "name": "sed comparison: regex address range with substitution",
+      "stderr": "",
+      "stdout": "begin\nX\ny\nfinish\nz\n"
+    },
+    {
+      "content_hash": "59e79898f807b232",
+      "exit_code": 0,
+      "name": "sed comparison: append command",
+      "stderr": "",
+      "stdout": "a\nb\nappended text\nc\n"
+    },
+    {
+      "content_hash": "0462b685c1702cdc",
+      "exit_code": 0,
+      "name": "sed comparison: insert command",
+      "stderr": "",
+      "stdout": "a\ninserted text\nb\nc\n"
+    },
+    {
+      "content_hash": "a470f58c0d883d0e",
+      "exit_code": 0,
+      "name": "sed comparison: delete with address range",
+      "stderr": "",
+      "stdout": "a\ne\n"
+    },
+    {
+      "content_hash": "d88b8d3c7930531e",
+      "exit_code": 0,
+      "name": "sed comparison: delete with regex",
+      "stderr": "",
+      "stdout": "foo\n"
+    },
+    {
+      "content_hash": "008f079557f8f7be",
+      "exit_code": 0,
+      "name": "sed comparison: change command",
+      "stderr": "",
+      "stdout": "a\nchanged line\nc\n"
+    },
+    {
+      "content_hash": "6ad932fb0f8cdde5",
+      "exit_code": 0,
+      "name": "sed comparison: multiple commands with semicolon",
+      "stderr": "",
+      "stdout": "AbC\n"
+    },
+    {
+      "content_hash": "bb07957a14f57047",
+      "exit_code": 0,
+      "name": "sed comparison: numbered substitution with ampersand",
+      "stderr": "",
+      "stdout": "x(x)x\n"
+    },
+    {
+      "content_hash": "125a7c72dbcafe9b",
+      "exit_code": 0,
+      "name": "sed comparison: empty regex uses last regex",
+      "stderr": "",
+      "stdout": "heLRo\n"
+    },
+    {
+      "content_hash": "eeb5f1bb5c199a30",
+      "exit_code": 0,
+      "name": "sed comparison: substitution with delimiter change",
+      "stderr": "",
+      "stdout": "/new/to/file\n"
+    },
+    {
+      "content_hash": "dc92f4d0f1422f5d",
+      "exit_code": 0,
+      "name": "sed comparison: multiple line addresses",
+      "stderr": "",
+      "stdout": "a\nc\n"
+    },
+    {
+      "content_hash": "6c669cf7781d06f3",
+      "exit_code": 0,
+      "name": "sed comparison: negated address",
+      "stderr": "",
+      "stdout": "a\nc\n"
+    },
+    {
+      "content_hash": "e836daa3c5368ded",
+      "exit_code": 0,
+      "name": "sed comparison: last line address",
+      "stderr": "",
+      "stdout": "c\n"
+    },
+    {
+      "content_hash": "1fae5020ebf39c26",
+      "exit_code": 0,
+      "name": "sed comparison: first line address",
+      "stderr": "",
+      "stdout": "a\n"
+    }
+  ],
+  "suite": "sed"
+}

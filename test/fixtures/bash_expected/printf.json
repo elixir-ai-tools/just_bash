@@ -1,0 +1,47 @@
+{
+  "results": [
+    {
+      "content_hash": "4e56c7105f7d86cc",
+      "exit_code": 0,
+      "name": "printf comparison extended: hex lowercase",
+      "stderr": "",
+      "stdout": "ff\n"
+    },
+    {
+      "content_hash": "43138d10ffac2f16",
+      "exit_code": 0,
+      "name": "printf comparison extended: hex uppercase",
+      "stderr": "",
+      "stdout": "FF\n"
+    },
+    {
+      "content_hash": "6aa80f9ecf313f55",
+      "exit_code": 0,
+      "name": "printf comparison extended: octal",
+      "stderr": "",
+      "stdout": "100\n"
+    },
+    {
+      "content_hash": "ac11afebf0560e53",
+      "exit_code": 0,
+      "name": "printf comparison extended: string with width",
+      "stderr": "",
+      "stdout": "        hi\n"
+    },
+    {
+      "content_hash": "e2ccfdb0cc46d95c",
+      "exit_code": 0,
+      "name": "printf comparison extended: left aligned",
+      "stderr": "",
+      "stdout": "hi        |\n"
+    },
+    {
+      "content_hash": "366c416b9b99284a",
+      "exit_code": 0,
+      "name": "printf comparison extended: multiple arguments",
+      "stderr": "",
+      "stdout": "hello world\n"
+    }
+  ],
+  "suite": "printf"
+}

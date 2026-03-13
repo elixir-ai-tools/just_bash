@@ -1,0 +1,194 @@
+{
+  "results": [
+    {
+      "content_hash": "d8429219968956ee",
+      "exit_code": 0,
+      "name": "star glob pattern: star matches all files",
+      "stderr": "",
+      "stdout": "a.txt b.txt\n"
+    },
+    {
+      "content_hash": "cc0f57cd5627ea8a",
+      "exit_code": 0,
+      "name": "star glob pattern: star with prefix",
+      "stderr": "",
+      "stdout": "file1 file2\n"
+    },
+    {
+      "content_hash": "68111f1ce0a0e599",
+      "exit_code": 0,
+      "name": "star glob pattern: star with suffix",
+      "stderr": "",
+      "stdout": "app.log test.log\n"
+    },
+    {
+      "content_hash": "b7de082b2bafa18e",
+      "exit_code": 0,
+      "name": "star glob pattern: star no match returns literal",
+      "stderr": "",
+      "stdout": "*.xyz\n"
+    },
+    {
+      "content_hash": "f7e4a22bbd2ed849",
+      "exit_code": 0,
+      "name": "star glob pattern: star in for loop",
+      "stderr": "",
+      "stdout": "a\nb\n"
+    },
+    {
+      "content_hash": "315e06e9d2be8713",
+      "exit_code": 0,
+      "name": "question mark pattern: question mark single char",
+      "stderr": "",
+      "stdout": "a1 a2\n"
+    },
+    {
+      "content_hash": "c80a4584df9f553b",
+      "exit_code": 0,
+      "name": "question mark pattern: question mark in middle",
+      "stderr": "",
+      "stdout": "cat cot cut\n"
+    },
+    {
+      "content_hash": "d384dac002d4f9fd",
+      "exit_code": 0,
+      "name": "question mark pattern: multiple question marks",
+      "stderr": "",
+      "stdout": "abc\n"
+    },
+    {
+      "content_hash": "0fb4d562ab9fd862",
+      "exit_code": 0,
+      "name": "glob quoting: quoted glob is literal",
+      "stderr": "",
+      "stdout": "*.txt\n"
+    },
+    {
+      "content_hash": "d31101ce964acd13",
+      "exit_code": 0,
+      "name": "glob quoting: single quoted glob is literal",
+      "stderr": "",
+      "stdout": "*.txt\n"
+    },
+    {
+      "content_hash": "757aa65f4b4f81fc",
+      "exit_code": 0,
+      "name": "glob quoting: escaped star is literal",
+      "stderr": "",
+      "stdout": "*.txt\n"
+    },
+    {
+      "content_hash": "683be6d745998d9d",
+      "exit_code": 0,
+      "name": "glob with paths: absolute path glob",
+      "stderr": "",
+      "stdout": "/tmp/gt/x.txt\n"
+    },
+    {
+      "content_hash": "a1c82b79147fc4b0",
+      "exit_code": 0,
+      "name": "glob with paths: relative path glob",
+      "stderr": "",
+      "stdout": "sub/a\n"
+    },
+    {
+      "content_hash": "bcc8ec6a9433d9ad",
+      "exit_code": 0,
+      "name": "glob expansion in commands: glob in ls",
+      "stderr": "",
+      "stdout": "2\n"
+    },
+    {
+      "content_hash": "bcd7f0c7aacf1734",
+      "exit_code": 0,
+      "name": "glob expansion in commands: glob in cat",
+      "stderr": "",
+      "stdout": "a\nb\n"
+    },
+    {
+      "content_hash": "850f5966e6619be3",
+      "exit_code": 0,
+      "name": "glob expansion in commands: glob count with wc",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "d149a7e137c8492c",
+      "exit_code": 0,
+      "name": "glob edge cases: empty directory",
+      "stderr": "",
+      "stdout": "*\n"
+    },
+    {
+      "content_hash": "fc59d3296938aabc",
+      "exit_code": 0,
+      "name": "glob edge cases: dot files not matched by star",
+      "stderr": "",
+      "stdout": "visible\n"
+    },
+    {
+      "content_hash": "28dc720242b11509",
+      "exit_code": 0,
+      "name": "glob edge cases: multiple patterns",
+      "stderr": "",
+      "stdout": "a.txt b.log\n"
+    },
+    {
+      "content_hash": "737a1200dc375a9f",
+      "exit_code": 0,
+      "name": "directory wildcards: star in directory segment",
+      "stderr": "",
+      "stdout": "/tmp/gt/foo/x.txt\n"
+    },
+    {
+      "content_hash": "257a7eee6b0e28ce",
+      "exit_code": 0,
+      "name": "directory wildcards: star in directory segment matches multiple",
+      "stderr": "",
+      "stdout": "/tmp/gt/a/file.txt /tmp/gt/b/file.txt\n"
+    },
+    {
+      "content_hash": "be2c5a21558550ed",
+      "exit_code": 0,
+      "name": "directory wildcards: star in directory segment with file pattern",
+      "stderr": "",
+      "stdout": "/tmp/gt/sub1/a.log /tmp/gt/sub2/b.log\n"
+    },
+    {
+      "content_hash": "5fdc98066ab367d5",
+      "exit_code": 0,
+      "name": "directory wildcards: question mark in directory segment",
+      "stderr": "",
+      "stdout": "/tmp/gt/d1/f /tmp/gt/d2/f\n"
+    },
+    {
+      "content_hash": "592a20eb0836fdd1",
+      "exit_code": 0,
+      "name": "directory wildcards: directory wildcard no match returns literal",
+      "stderr": "",
+      "stdout": "/tmp/gt/*/missing.txt\n"
+    },
+    {
+      "content_hash": "1517f737043daf53",
+      "exit_code": 0,
+      "name": "directory wildcards: multiple directory wildcards",
+      "stderr": "",
+      "stdout": "/tmp/gt/a/x/f /tmp/gt/b/y/f\n"
+    },
+    {
+      "content_hash": "eee07e893701fa2a",
+      "exit_code": 0,
+      "name": "directory wildcards: trailing slash preserved in directory glob",
+      "stderr": "",
+      "stdout": "/tmp/gt/a/\n/tmp/gt/b/\n"
+    },
+    {
+      "content_hash": "4e8e7e86304b6cc7",
+      "exit_code": 0,
+      "name": "directory wildcards: trailing slash used in path construction",
+      "stderr": "",
+      "stdout": "/tmp/gt/sub/file.txt\n"
+    }
+  ],
+  "suite": "globs"
+}

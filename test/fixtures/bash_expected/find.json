@@ -1,0 +1,131 @@
+{
+  "results": [
+    {
+      "content_hash": "819788c0f3d201c6",
+      "exit_code": 0,
+      "name": "find basic usage: find current directory",
+      "stderr": "",
+      "stdout": "/tmp/findtest/a.txt\n/tmp/findtest/sub/b.txt\n"
+    },
+    {
+      "content_hash": "eee07bb14b0e2878",
+      "exit_code": 0,
+      "name": "find basic usage: find by name pattern",
+      "stderr": "",
+      "stdout": "/tmp/findtest2/bar.txt\n/tmp/findtest2/foo.txt\n"
+    },
+    {
+      "content_hash": "5b79d91b68e03330",
+      "exit_code": 0,
+      "name": "find basic usage: find directories only",
+      "stderr": "",
+      "stdout": "/tmp/findtest3\n/tmp/findtest3/sub1\n/tmp/findtest3/sub1/sub2\n"
+    },
+    {
+      "content_hash": "b3d7a008633a994e",
+      "exit_code": 0,
+      "name": "find basic usage: find files only",
+      "stderr": "",
+      "stdout": "/tmp/findtest4/file1.txt\n/tmp/findtest4/sub/file2.txt\n"
+    },
+    {
+      "content_hash": "addd8efec112a117",
+      "exit_code": 0,
+      "name": "find depth control: find with maxdepth 1",
+      "stderr": "",
+      "stdout": "/tmp/findtest5\n/tmp/findtest5/a\n/tmp/findtest5/top.txt\n"
+    },
+    {
+      "content_hash": "6aea0d6561062a2b",
+      "exit_code": 0,
+      "name": "find depth control: find with maxdepth 2",
+      "stderr": "",
+      "stdout": "/tmp/findtest6\n/tmp/findtest6/a\n/tmp/findtest6/a/b\n/tmp/findtest6/a/mid.txt\n/tmp/findtest6/top.txt\n"
+    },
+    {
+      "content_hash": "c9d5973b1a25b233",
+      "exit_code": 0,
+      "name": "find depth control: find with mindepth 1",
+      "stderr": "",
+      "stdout": "/tmp/findtest7/file.txt\n/tmp/findtest7/sub\n"
+    },
+    {
+      "content_hash": "11d51c7f67ef89db",
+      "exit_code": 0,
+      "name": "find depth control: find with mindepth 2",
+      "stderr": "",
+      "stdout": "/tmp/findtest8/a/b\n/tmp/findtest8/a/b/deep.txt\n/tmp/findtest8/a/file.txt\n"
+    },
+    {
+      "content_hash": "a3a80a4dcfd2a3ee",
+      "exit_code": 0,
+      "name": "find name matching: find with wildcard prefix",
+      "stderr": "",
+      "stdout": "/tmp/findtest9/test_file.txt\n"
+    },
+    {
+      "content_hash": "59c746915b1f738c",
+      "exit_code": 0,
+      "name": "find name matching: find with wildcard suffix",
+      "stderr": "",
+      "stdout": "/tmp/findtest10/data.txt\n/tmp/findtest10/file.txt\n"
+    },
+    {
+      "content_hash": "94d84d31116a09ab",
+      "exit_code": 0,
+      "name": "find name matching: find case insensitive with iname",
+      "stderr": "",
+      "stdout": "/tmp/findtest11/README.md\n/tmp/findtest11/Readme.doc\n/tmp/findtest11/readme.txt\n"
+    },
+    {
+      "content_hash": "1bf15b445c0e5223",
+      "exit_code": 0,
+      "name": "find name matching: find with question mark wildcard",
+      "stderr": "",
+      "stdout": "/tmp/findtest12/a1.txt\n/tmp/findtest12/ab.txt\n"
+    },
+    {
+      "content_hash": "58d0cc784092037a",
+      "exit_code": 0,
+      "name": "find edge cases: find empty directory",
+      "stderr": "",
+      "stdout": "/tmp/findtest13\n"
+    },
+    {
+      "content_hash": "2d885dd83799f8c8",
+      "exit_code": 0,
+      "name": "find edge cases: find with print0 flag",
+      "stderr": "",
+      "stdout": "44\n"
+    },
+    {
+      "content_hash": "aad22245618bb571",
+      "exit_code": 0,
+      "name": "find edge cases: find current directory implicit",
+      "stderr": "",
+      "stdout": "./file.txt\n"
+    },
+    {
+      "content_hash": "e04b2f0d8b477e53",
+      "exit_code": 0,
+      "name": "find edge cases: find multiple paths",
+      "stderr": "",
+      "stdout": "/tmp/findtest16a/a.txt\n/tmp/findtest16b/b.txt\n"
+    },
+    {
+      "content_hash": "252fa9fc4c258e1d",
+      "exit_code": 0,
+      "name": "find combined predicates: find type and name",
+      "stderr": "",
+      "stdout": "/tmp/findtest17/file.txt\n"
+    },
+    {
+      "content_hash": "9e10df922fb9cc77",
+      "exit_code": 0,
+      "name": "find combined predicates: find maxdepth and type",
+      "stderr": "",
+      "stdout": "/tmp/findtest18/top.txt\n"
+    }
+  ],
+  "suite": "find"
+}

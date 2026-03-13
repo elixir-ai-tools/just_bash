@@ -1,0 +1,278 @@
+{
+  "results": [
+    {
+      "content_hash": "0e6cc20b95d2b1ef",
+      "exit_code": 0,
+      "name": "quoting comparison: double quotes preserve spaces",
+      "stderr": "",
+      "stdout": "hello   world\n"
+    },
+    {
+      "content_hash": "cab946bcbc80c7a6",
+      "exit_code": 0,
+      "name": "quoting comparison: single quotes are literal",
+      "stderr": "",
+      "stdout": "$HOME\n"
+    },
+    {
+      "content_hash": "463eb257fae62d3a",
+      "exit_code": 0,
+      "name": "quoting comparison: double quotes expand variables",
+      "stderr": "",
+      "stdout": "value: test\n"
+    },
+    {
+      "content_hash": "413c0ef85dc6b772",
+      "exit_code": 0,
+      "name": "quoting comparison: escaped dollar in double quotes",
+      "stderr": "",
+      "stdout": "$HOME\n"
+    },
+    {
+      "content_hash": "36f908decffeeb2c",
+      "exit_code": 0,
+      "name": "quoting comparison: mixed quoting",
+      "stderr": "",
+      "stdout": "singledoubleunquoted\n"
+    },
+    {
+      "content_hash": "10e62c4d8c333d2d",
+      "exit_code": 0,
+      "name": "quoting edge cases comparison: escaped double quote",
+      "stderr": "",
+      "stdout": "it's \"quoted\"\n"
+    },
+    {
+      "content_hash": "f8e84094682e990c",
+      "exit_code": 0,
+      "name": "quoting edge cases comparison: single quote escape",
+      "stderr": "",
+      "stdout": "it's quoted\n"
+    },
+    {
+      "content_hash": "cab946bcbc80c7a6",
+      "exit_code": 0,
+      "name": "quoting edge cases comparison: dollar literal in single quotes",
+      "stderr": "",
+      "stdout": "$HOME\n"
+    },
+    {
+      "content_hash": "45fa454110edfdc6",
+      "exit_code": 0,
+      "name": "quoting edge cases comparison: empty string argument",
+      "stderr": "",
+      "stdout": " a\n"
+    },
+    {
+      "content_hash": "59aa1db8315bc731",
+      "exit_code": 0,
+      "name": "quoting edge cases comparison: word splitting",
+      "stderr": "",
+      "stdout": "a b\n"
+    },
+    {
+      "content_hash": "ae2bf2de9b641b78",
+      "exit_code": 0,
+      "name": "quoting edge cases comparison: no word splitting in quotes",
+      "stderr": "",
+      "stdout": "a   b\n"
+    },
+    {
+      "content_hash": "10720b123e7e47cd",
+      "exit_code": 0,
+      "name": "single quotes inside double quotes: apostrophe in string",
+      "stderr": "",
+      "stdout": "it's\n"
+    },
+    {
+      "content_hash": "3d1654163a0fe944",
+      "exit_code": 0,
+      "name": "single quotes inside double quotes: SQL-style single quotes",
+      "stderr": "",
+      "stdout": "VALUES ('hello')\n"
+    },
+    {
+      "content_hash": "1c0aaa80ad27941e",
+      "exit_code": 0,
+      "name": "single quotes inside double quotes: multiple single quotes",
+      "stderr": "",
+      "stdout": "'a' 'b' 'c'\n"
+    },
+    {
+      "content_hash": "652559764de79a51",
+      "exit_code": 0,
+      "name": "single quotes inside double quotes: building SQL string incrementally",
+      "stderr": "",
+      "stdout": "INSERT INTO t VALUES ('x'); INSERT INTO t VALUES ('y');\n"
+    },
+    {
+      "content_hash": "8f0f5c0279fb0777",
+      "exit_code": 0,
+      "name": "single quotes inside double quotes: single quote at boundaries (1)",
+      "stderr": "",
+      "stdout": "'start\n"
+    },
+    {
+      "content_hash": "e130d5e0beeccbb3",
+      "exit_code": 0,
+      "name": "single quotes inside double quotes: single quote at boundaries (2)",
+      "stderr": "",
+      "stdout": "end'\n"
+    },
+    {
+      "content_hash": "4a68f775388c91ae",
+      "exit_code": 0,
+      "name": "echo -e escape sequences: newline escape",
+      "stderr": "",
+      "stdout": "hello\nworld\n"
+    },
+    {
+      "content_hash": "51a278acb67ab291",
+      "exit_code": 0,
+      "name": "echo -e escape sequences: tab escape",
+      "stderr": "",
+      "stdout": "col1\tcol2\n"
+    },
+    {
+      "content_hash": "f81a53739fcad8d2",
+      "exit_code": 0,
+      "name": "echo -e escape sequences: carriage return escape",
+      "stderr": "",
+      "stdout": "hello\rworld\n"
+    },
+    {
+      "content_hash": "89cfe6aab12b0b53",
+      "exit_code": 0,
+      "name": "echo -e escape sequences: backslash escape",
+      "stderr": "",
+      "stdout": "back\\slash\n"
+    },
+    {
+      "content_hash": "be2af40c47f86339",
+      "exit_code": 0,
+      "name": "echo -e escape sequences: hex escape lowercase",
+      "stderr": "",
+      "stdout": "A\n"
+    },
+    {
+      "content_hash": "c85c5ae8f0887be6",
+      "exit_code": 0,
+      "name": "echo -e escape sequences: hex escape uppercase",
+      "stderr": "",
+      "stdout": "ABC\n"
+    },
+    {
+      "content_hash": "a937327b6b82c29f",
+      "exit_code": 0,
+      "name": "echo -e escape sequences: hex escape mixed",
+      "stderr": "",
+      "stdout": "hex:HELLO\n"
+    },
+    {
+      "content_hash": "7f84f6faa7d42629",
+      "exit_code": 0,
+      "name": "echo -e escape sequences: octal escape",
+      "stderr": "",
+      "stdout": "\\101\n"
+    },
+    {
+      "content_hash": "5f0efcae3f7a9cda",
+      "exit_code": 0,
+      "name": "echo -e escape sequences: octal escape multiple",
+      "stderr": "",
+      "stdout": "\\101\\102\\103\n"
+    },
+    {
+      "content_hash": "7fefabe610f41d98",
+      "exit_code": 0,
+      "name": "echo -e escape sequences: mixed text and hex",
+      "stderr": "",
+      "stdout": "beforeAafter\n"
+    },
+    {
+      "content_hash": "567bcc5f2f830405",
+      "exit_code": 0,
+      "name": "echo -e escape sequences: mixed text and octal",
+      "stderr": "",
+      "stdout": "before\\101after\n"
+    },
+    {
+      "content_hash": "0055f1f19de4e208",
+      "exit_code": 0,
+      "name": "$'...' ANSI-C quoting: tab in dollar-single-quote",
+      "stderr": "",
+      "stdout": "tab\ttab\n"
+    },
+    {
+      "content_hash": "65d0d23c20c9474b",
+      "exit_code": 0,
+      "name": "$'...' ANSI-C quoting: newline in dollar-single-quote",
+      "stderr": "",
+      "stdout": "line1\nline2\n"
+    },
+    {
+      "content_hash": "ca1d72f57e16c0eb",
+      "exit_code": 0,
+      "name": "$'...' ANSI-C quoting: hex in dollar-single-quote",
+      "stderr": "",
+      "stdout": "ABC\n"
+    },
+    {
+      "content_hash": "1832f1f5cd9dfa8a",
+      "exit_code": 0,
+      "name": "$'...' ANSI-C quoting: octal in dollar-single-quote",
+      "stderr": "",
+      "stdout": "ABC\n"
+    },
+    {
+      "content_hash": "8fe9be39f1caa0c1",
+      "exit_code": 0,
+      "name": "$'...' ANSI-C quoting: backslash in dollar-single-quote",
+      "stderr": "",
+      "stdout": "back\\slash\n"
+    },
+    {
+      "content_hash": "b2badc4493d424d2",
+      "exit_code": 0,
+      "name": "$'...' ANSI-C quoting: single quote in dollar-single-quote",
+      "stderr": "",
+      "stdout": "it's quoted\n"
+    },
+    {
+      "content_hash": "939773c880c53b9c",
+      "exit_code": 0,
+      "name": "$'...' ANSI-C quoting: double quote in dollar-single-quote",
+      "stderr": "",
+      "stdout": "say \"hello\"\n"
+    },
+    {
+      "content_hash": "487a310900241246",
+      "exit_code": 0,
+      "name": "$'...' ANSI-C quoting: mixed escapes",
+      "stderr": "",
+      "stdout": "A:A tab:\t newline:\n\n"
+    },
+    {
+      "content_hash": "11c8ffff769568b7",
+      "exit_code": 0,
+      "name": "undefined variable behavior: undefined variable expands to empty",
+      "stderr": "",
+      "stdout": "\n"
+    },
+    {
+      "content_hash": "a0259929e1387474",
+      "exit_code": 0,
+      "name": "undefined variable behavior: undefined with braces",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "6618c80ba5823924",
+      "exit_code": 0,
+      "name": "undefined variable behavior: undefined unquoted",
+      "stderr": "",
+      "stdout": "end\n"
+    }
+  ],
+  "suite": "quoting"
+}

@@ -46,5 +46,19 @@ defmodule JustBash.Shell.RedirectionsTest do
       {result2, _} = JustBash.exec(bash, "cat $FILE")
       assert result2.stdout == "content\n"
     end
+
+    test "stdin redirection after stdout redirection" do
+      bash = JustBash.new(files: %{"/in.txt" => "hello"})
+      {_, bash} = JustBash.exec(bash, "cat > /out.txt < /in.txt")
+      {result, _} = JustBash.exec(bash, "cat /out.txt")
+      assert result.stdout == "hello"
+    end
+
+    test "stdin redirection before stdout redirection" do
+      bash = JustBash.new(files: %{"/in.txt" => "hello"})
+      {_, bash} = JustBash.exec(bash, "cat < /in.txt > /out.txt")
+      {result, _} = JustBash.exec(bash, "cat /out.txt")
+      assert result.stdout == "hello"
+    end
   end
 end

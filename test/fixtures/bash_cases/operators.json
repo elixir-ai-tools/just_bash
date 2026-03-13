@@ -1,0 +1,33 @@
+{
+  "suite": "operators",
+  "cases": [
+    {
+      "name": "operators comparison: and operator success",
+      "script": "true && echo yes",
+      "content_hash": "e8fc1dd8f7cd3027"
+    },
+    {
+      "name": "operators comparison: and operator failure",
+      "script": "false && echo yes",
+      "opts": {
+        "ignore_exit": true
+      },
+      "content_hash": "97fc285b16d8e98f"
+    },
+    {
+      "name": "operators comparison: or operator success",
+      "script": "true || echo no",
+      "content_hash": "a9c8ab61eee9fd60"
+    },
+    {
+      "name": "operators comparison: or operator failure",
+      "script": "false || echo yes",
+      "content_hash": "7270a8ba3e19c181"
+    },
+    {
+      "name": "operators comparison: mixed operators",
+      "script": "false && echo no || echo yes",
+      "content_hash": "dd249c1153883661"
+    }
+  ]
+}

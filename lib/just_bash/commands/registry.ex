@@ -81,7 +81,22 @@ defmodule JustBash.Commands.Registry do
     "shift" => Commands.Shift,
     "return" => Commands.Return,
     "getopts" => Commands.Getopts,
-    "trap" => Commands.Trap
+    "trap" => Commands.Trap,
+    "eval" => Commands.Eval,
+    "command" => Commands.CommandBuiltin,
+    "uname" => Commands.Uname,
+    "sha256sum" => Commands.Sha256sum,
+    "shasum" => Commands.Shasum,
+    "chmod" => Commands.Chmod,
+    "chown" => Commands.Chown,
+    "wget" => Commands.Wget,
+    "mktemp" => Commands.Mktemp,
+    "whoami" => Commands.Whoami,
+    "id" => Commands.Id,
+    "realpath" => Commands.Realpath,
+    "nproc" => Commands.Nproc,
+    "arch" => Commands.Arch,
+    "yes" => Commands.Yes
   }
 
   @doc """

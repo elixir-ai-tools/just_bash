@@ -26,15 +26,34 @@ defmodule JustBash.Commands.Local do
     # Handle assignment syntax: name=value
     case String.split(arg, "=", parts: 2) do
       [name, value] when name != "" ->
-        # Value is already expanded
-        %{bash | env: Map.put(bash.env, name, value)}
+        # Value is already expanded; track as local for function scope cleanup
+        env =
+          bash.env
+          |> Map.put(name, value)
+          |> track_local(name)
+
+        %{bash | env: env}
 
       [name] when name != "" ->
         # Just declaring a variable without value - set to empty
-        %{bash | env: Map.put(bash.env, name, "")}
+        env =
+          bash.env
+          |> Map.put(name, "")
+          |> track_local(name)
+
+        %{bash | env: env}
 
       _ ->
         bash
+    end
+  end
+
+  # Register a variable name as local so execute_function can revert it
+  defp track_local(env, name) do
+    case Map.get(env, "__locals__") do
+      %MapSet{} = locals -> Map.put(env, "__locals__", MapSet.put(locals, name))
+      # Not inside a function — local has no effect on scoping
+      _ -> env
     end
   end
 end

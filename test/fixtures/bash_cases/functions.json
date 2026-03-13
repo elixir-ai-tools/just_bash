@@ -1,0 +1,115 @@
+{
+  "suite": "functions",
+  "cases": [
+    {
+      "name": "function definition and calling: basic function with parens syntax",
+      "script": "greet() { echo \"hello\"; }; greet",
+      "content_hash": "257c7a51ca160d21"
+    },
+    {
+      "name": "function definition and calling: function keyword syntax",
+      "script": "function greet { echo \"hi\"; }; greet",
+      "content_hash": "653c22ba75ccd317"
+    },
+    {
+      "name": "function definition and calling: function with arguments",
+      "script": "add() { echo $(($1 + $2)); }; add 3 5",
+      "content_hash": "04fbc43b7967d5ac"
+    },
+    {
+      "name": "function definition and calling: function with local variable",
+      "script": "counter() { local x=10; echo $x; }; counter",
+      "content_hash": "29b79e748aa5ba31"
+    },
+    {
+      "name": "function definition and calling: local variable isolation",
+      "script": "x=outer; inner() { local x=inner; echo $x; }; inner; echo $x",
+      "content_hash": "9eafb31b876bab5d"
+    },
+    {
+      "name": "function definition and calling: function output capture",
+      "script": "get_val() { echo \"result\"; }; out=$(get_val); echo $out",
+      "content_hash": "1f0ec2648e8b44c9"
+    },
+    {
+      "name": "function definition and calling: function can be overwritten",
+      "script": "f() { echo \"first\"; }; f() { echo \"second\"; }; f",
+      "content_hash": "466364bbaf72dcd4"
+    },
+    {
+      "name": "function definition and calling: function with default parameter pattern",
+      "script": "with_default() { echo \"${1:-default}\"; }; with_default",
+      "content_hash": "6e57c926b766f5bf"
+    },
+    {
+      "name": "function definition and calling: function with default parameter override",
+      "script": "with_default() { echo \"${1:-default}\"; }; with_default custom",
+      "content_hash": "a2a7bbf74655b32a"
+    },
+    {
+      "name": "function definition and calling: function with multiple outputs",
+      "script": "multi() { echo \"line1\"; echo \"line2\"; }; multi",
+      "content_hash": "140bec46783f4e9a"
+    },
+    {
+      "name": "function arguments and positional parameters: access multiple arguments",
+      "script": "f() { echo \"$1 $2 $3\"; }; f a b c",
+      "content_hash": "3c8e1a81bb59e129"
+    },
+    {
+      "name": "function arguments and positional parameters: argument count in function",
+      "script": "f() { echo $#; }; f a b c d",
+      "content_hash": "26371186cbdaf5de"
+    },
+    {
+      "name": "function arguments and positional parameters: all arguments with @",
+      "script": "f() { echo \"$@\"; }; f one two three",
+      "content_hash": "fbfb9e659f597f88"
+    },
+    {
+      "name": "function arguments and positional parameters: all arguments with *",
+      "script": "f() { echo \"$*\"; }; f one two three",
+      "content_hash": "1f96711f5646e551"
+    },
+    {
+      "name": "function arguments and positional parameters: undefined argument is empty",
+      "script": "f() { echo \"[$1][$2][$3]\"; }; f only_one",
+      "content_hash": "23785c05d8c23f84"
+    },
+    {
+      "name": "function with complex bodies: function with loop",
+      "script": "loop_func() { for i in 1 2 3; do echo $i; done; }; loop_func",
+      "content_hash": "360ea50f5d460723"
+    },
+    {
+      "name": "function with complex bodies: function with conditional",
+      "script": "check() { if [ \"$1\" = \"yes\" ]; then echo \"ok\"; else echo \"no\"; fi; }; check yes",
+      "content_hash": "3079b08b56915228"
+    },
+    {
+      "name": "function with complex bodies: function calling another function",
+      "script": "inner() { echo \"inner\"; }; outer() { inner; echo \"outer\"; }; outer",
+      "content_hash": "05605b37fb1a9af8"
+    },
+    {
+      "name": "function with complex bodies: recursive function",
+      "script": "countdown() { if [ $1 -gt 0 ]; then echo $1; countdown $(($1 - 1)); fi; }; countdown 3",
+      "content_hash": "53e4fd877d38a258"
+    },
+    {
+      "name": "function exit codes: function returns 0 by default",
+      "script": "f() { echo hi; }; f; echo $?",
+      "content_hash": "9e2e7bf15f03d5c7"
+    },
+    {
+      "name": "function exit codes: function returns exit code of last command",
+      "script": "f() { false; }; f; echo $?",
+      "content_hash": "e2eb08b0330c2fb4"
+    },
+    {
+      "name": "function exit codes: function returns success from last command",
+      "script": "f() { false; true; }; f; echo $?",
+      "content_hash": "e7efd0859b79f421"
+    }
+  ]
+}

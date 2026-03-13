@@ -1,0 +1,355 @@
+{
+  "results": [
+    {
+      "content_hash": "b450c625459667a9",
+      "exit_code": 0,
+      "name": "for loop basics: for loop with list",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "92f154801826d862",
+      "exit_code": 0,
+      "name": "for loop basics: for loop with range",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "1be589a2cc252f51",
+      "exit_code": 0,
+      "name": "for loop basics: for loop with quoted string",
+      "stderr": "",
+      "stdout": "[a b]\n[c]\n"
+    },
+    {
+      "content_hash": "b128e9f20da3ab78",
+      "exit_code": 0,
+      "name": "for loop basics: for loop with variable",
+      "stderr": "",
+      "stdout": "x\ny\nz\n"
+    },
+    {
+      "content_hash": "14fd346529e24389",
+      "exit_code": 0,
+      "name": "for loop basics: for loop empty list",
+      "stderr": "",
+      "stdout": "done\n"
+    },
+    {
+      "content_hash": "a5cc0e8b7a997141",
+      "exit_code": 0,
+      "name": "for loop basics: for loop single item",
+      "stderr": "",
+      "stdout": "only\n"
+    },
+    {
+      "content_hash": "ead18a7cf2a3e3dc",
+      "exit_code": 0,
+      "name": "for loop basics: for loop with glob pattern",
+      "stderr": "",
+      "stdout": "a.txt\nb.txt\n"
+    },
+    {
+      "content_hash": "2ff668cf5c713e47",
+      "exit_code": 0,
+      "name": "while loop: basic while",
+      "stderr": "",
+      "stdout": "3\n2\n1\n"
+    },
+    {
+      "content_hash": "04cc3e25c98d1845",
+      "exit_code": 0,
+      "name": "while loop: while with false condition",
+      "stderr": "",
+      "stdout": "done\n"
+    },
+    {
+      "content_hash": "bcea1dfb1c9775ae",
+      "exit_code": 0,
+      "name": "while loop: while count up",
+      "stderr": "",
+      "stdout": "0\n1\n2\n"
+    },
+    {
+      "content_hash": "9f17ed8132c971ce",
+      "exit_code": 0,
+      "name": "while loop: while with command condition",
+      "stderr": "",
+      "stdout": "0\n1\n"
+    },
+    {
+      "content_hash": "fa2cafc412b7598b",
+      "exit_code": 0,
+      "name": "until loop: basic until",
+      "stderr": "",
+      "stdout": "0\n1\n2\n"
+    },
+    {
+      "content_hash": "5361aa71ca997956",
+      "exit_code": 0,
+      "name": "until loop: until with true condition",
+      "stderr": "",
+      "stdout": "done\n"
+    },
+    {
+      "content_hash": "daacbd56bcd1d6ff",
+      "exit_code": 0,
+      "name": "until loop: until count down",
+      "stderr": "",
+      "stdout": "3\n2\n1\n"
+    },
+    {
+      "content_hash": "d4b250e8ce45021c",
+      "exit_code": 0,
+      "name": "break statement: break in for loop",
+      "stderr": "",
+      "stdout": "1\n2\n"
+    },
+    {
+      "content_hash": "56ea4a93dd02de36",
+      "exit_code": 0,
+      "name": "break statement: break in while loop",
+      "stderr": "",
+      "stdout": "1\n2\n"
+    },
+    {
+      "content_hash": "e8a4ebd06aea0ac4",
+      "exit_code": 0,
+      "name": "break statement: break with level 1",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "abd601f05bfd423b",
+      "exit_code": 0,
+      "name": "break statement: break with level 2 in nested loops",
+      "stderr": "",
+      "stdout": "1a\nouter done\n"
+    },
+    {
+      "content_hash": "cba4f19ccb664e56",
+      "exit_code": 0,
+      "name": "break statement: break only inner loop",
+      "stderr": "",
+      "stdout": "1a\ni=1 done\n2a\ni=2 done\n"
+    },
+    {
+      "content_hash": "9f5c5fd57695b98f",
+      "exit_code": 0,
+      "name": "continue statement: continue in for loop",
+      "stderr": "",
+      "stdout": "1\n2\n4\n5\n"
+    },
+    {
+      "content_hash": "7f6249afe428e994",
+      "exit_code": 0,
+      "name": "continue statement: continue in while loop",
+      "stderr": "",
+      "stdout": "1\n2\n4\n5\n"
+    },
+    {
+      "content_hash": "80f3e35c7f053e37",
+      "exit_code": 0,
+      "name": "continue statement: continue with level 1",
+      "stderr": "",
+      "stdout": "1\n3\n"
+    },
+    {
+      "content_hash": "e85b3677da893611",
+      "exit_code": 0,
+      "name": "continue statement: continue with level 2 in nested loops",
+      "stderr": "",
+      "stdout": "i=1 start\n1a\ni=2 start\n2a\ni=3 start\n3a\n"
+    },
+    {
+      "content_hash": "88c61024a832601d",
+      "exit_code": 0,
+      "name": "if statements: if true",
+      "stderr": "",
+      "stdout": "yes\n"
+    },
+    {
+      "content_hash": "01dca3e806140d9c",
+      "exit_code": 0,
+      "name": "if statements: if false with else",
+      "stderr": "",
+      "stdout": "no\n"
+    },
+    {
+      "content_hash": "69dc48c9b2921f74",
+      "exit_code": 0,
+      "name": "if statements: if elif else",
+      "stderr": "",
+      "stdout": "two\n"
+    },
+    {
+      "content_hash": "ea840e93a61eaabe",
+      "exit_code": 0,
+      "name": "if statements: multiple elif",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "27a2826a22180b8a",
+      "exit_code": 0,
+      "name": "if statements: nested if",
+      "stderr": "",
+      "stdout": "both\n"
+    },
+    {
+      "content_hash": "718dc92d242802e9",
+      "exit_code": 0,
+      "name": "if statements: if with command",
+      "stderr": "",
+      "stdout": "ok\n"
+    },
+    {
+      "content_hash": "9a98f476b60a490c",
+      "exit_code": 0,
+      "name": "if statements: if with negation",
+      "stderr": "",
+      "stdout": "not false\n"
+    },
+    {
+      "content_hash": "3428aa5476a339f2",
+      "exit_code": 0,
+      "name": "case statement: simple case",
+      "stderr": "",
+      "stdout": "B\n"
+    },
+    {
+      "content_hash": "7b9dc3cb6b6fe80b",
+      "exit_code": 0,
+      "name": "case statement: case with default",
+      "stderr": "",
+      "stdout": "default\n"
+    },
+    {
+      "content_hash": "a00550fa6c58f884",
+      "exit_code": 0,
+      "name": "case statement: case with pattern",
+      "stderr": "",
+      "stdout": "starts with h\n"
+    },
+    {
+      "content_hash": "120c5862757b6009",
+      "exit_code": 0,
+      "name": "case statement: case with multiple patterns",
+      "stderr": "",
+      "stdout": "xyz\n"
+    },
+    {
+      "content_hash": "5affda3cfd793f3b",
+      "exit_code": 0,
+      "name": "case statement: case with bracket pattern",
+      "stderr": "",
+      "stdout": "starts with t\n"
+    },
+    {
+      "content_hash": "90520b109e8f81e4",
+      "exit_code": 0,
+      "name": "case statement: case empty match",
+      "stderr": "",
+      "stdout": "empty\n"
+    },
+    {
+      "content_hash": "a50ef426ae63a0f8",
+      "exit_code": 0,
+      "name": "case statement: case no match",
+      "stderr": "",
+      "stdout": "done\n"
+    },
+    {
+      "content_hash": "da9f5618be88afc9",
+      "exit_code": 0,
+      "name": "case statement: case with question mark",
+      "stderr": "",
+      "stdout": "a + one char\n"
+    },
+    {
+      "content_hash": "57744c6e22870425",
+      "exit_code": 0,
+      "name": "compound commands: command list with semicolons",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "a2cf6af19068873e",
+      "exit_code": 0,
+      "name": "compound commands: command list with &&",
+      "stderr": "",
+      "stdout": "success\n"
+    },
+    {
+      "content_hash": "82cb43f569d04d72",
+      "exit_code": 0,
+      "name": "compound commands: command list with || (short circuit)",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "70d9adbb0e21f5ba",
+      "exit_code": 0,
+      "name": "compound commands: command list with || (fallback)",
+      "stderr": "",
+      "stdout": "fallback\n"
+    },
+    {
+      "content_hash": "1374b652558ed0f8",
+      "exit_code": 0,
+      "name": "compound commands: combined && and ||",
+      "stderr": "",
+      "stdout": "yes\n"
+    },
+    {
+      "content_hash": "632d0ef28991f6b9",
+      "exit_code": 0,
+      "name": "compound commands: combined && and || with false",
+      "stderr": "",
+      "stdout": "no\n"
+    },
+    {
+      "content_hash": "71af50f4d345cbcd",
+      "exit_code": 0,
+      "name": "compound commands: subshell",
+      "stderr": "",
+      "stdout": "in subshell\n\n"
+    },
+    {
+      "content_hash": "4cfb95d738f4e5b3",
+      "exit_code": 0,
+      "name": "compound commands: command group",
+      "stderr": "",
+      "stdout": "a\nb\n"
+    },
+    {
+      "content_hash": "df0f4683dee462bc",
+      "exit_code": 0,
+      "name": "exit codes: successful command",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "c7e8e5ddce1c3f3f",
+      "exit_code": 0,
+      "name": "exit codes: failed command",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "0a1a798720399270",
+      "exit_code": 0,
+      "name": "exit codes: last command in pipeline",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "fa1f65ad276edb88",
+      "exit_code": 0,
+      "name": "exit codes: custom exit code",
+      "stderr": "",
+      "stdout": "42\n"
+    }
+  ],
+  "suite": "control_flow"
+}

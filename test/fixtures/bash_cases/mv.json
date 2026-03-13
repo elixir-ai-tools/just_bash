@@ -1,0 +1,35 @@
+{
+  "suite": "mv",
+  "cases": [
+    {
+      "name": "mv comparison: moves a file and removes the source",
+      "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir $D; echo hi > $D/src; mv $D/src $D/dst; cat $D/dst; [ -f $D/src ] && echo bad || echo ok; rm -rf $D",
+      "content_hash": "a21c2cf795a50911"
+    },
+    {
+      "name": "mv comparison: moves a file into an existing directory",
+      "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir $D; mkdir $D/dir; echo hi > $D/src; mv $D/src $D/dir; cat $D/dir/src; rm -rf $D",
+      "content_hash": "b70e9699981f292d"
+    },
+    {
+      "name": "mv comparison: moves a directory into an existing directory",
+      "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir $D; mkdir $D/srcdir; mkdir $D/dstdir; echo hi > $D/srcdir/file; mv $D/srcdir $D/dstdir; cat $D/dstdir/srcdir/file; rm -rf $D",
+      "content_hash": "d008dd414fe5079c"
+    },
+    {
+      "name": "mv comparison: mv to the same path is a no-op",
+      "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir $D; echo hi > $D/file; mv $D/file $D/file 2>/dev/null; cat $D/file; rm -rf $D",
+      "content_hash": "9924cc41e539f00e"
+    },
+    {
+      "name": "mv comparison: overwrites an existing destination file",
+      "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir $D; echo old > $D/dest; echo new > $D/src; mv $D/src $D/dest; cat $D/dest; rm -rf $D",
+      "content_hash": "e2aed3231edb15cf"
+    },
+    {
+      "name": "mv comparison: moves a symlink without dereferencing it",
+      "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir $D; cd $D; echo hi > target; ln -s target link; mv link moved; readlink moved; cat moved; rm -rf $D",
+      "content_hash": "265f43784862815d"
+    }
+  ]
+}

@@ -226,6 +226,7 @@ defmodule JustBash.Interpreter.Executor do
   def execute_command(bash, command, stdin \\ "")
 
   def execute_command(bash, %AST.SimpleCommand{name: nil, assignments: assignments}, _stdin) do
+    # credo:disable-for-next-line Credo.Check.Readability.PreferImplicitTry
     try do
       new_bash = execute_assignments(bash, assignments)
       {%{stdout: "", stderr: "", exit_code: 0}, new_bash}
@@ -300,7 +301,7 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   def execute_command(bash, %AST.ConditionalCommand{expression: expr}, _stdin) do
-    result = Conditional.evaluate(bash, expr)
+    {result, bash} = Conditional.evaluate(bash, expr)
     exit_code = if result, do: 0, else: 1
     {%{stdout: "", stderr: "", exit_code: exit_code}, bash}
   end
@@ -337,7 +338,13 @@ defmodule JustBash.Interpreter.Executor do
     {result, exec_bash} =
       case Map.get(temp_bash.functions, cmd_name) do
         nil ->
-          execute_builtin(temp_bash, cmd_name, expanded_args, effective_stdin)
+          case Map.get(temp_bash.commands, cmd_name) do
+            nil ->
+              execute_builtin(temp_bash, cmd_name, expanded_args, effective_stdin)
+
+            module ->
+              execute_custom_command(temp_bash, cmd_name, module, expanded_args, effective_stdin)
+          end
 
         func_body ->
           execute_function(temp_bash, func_body, expanded_args)
@@ -525,6 +532,12 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   defp execute_function(bash, body, args) do
+    # Save caller's positional parameters so we can restore them after the function
+    caller_positionals = save_positional_params(bash.env)
+
+    # Save which local-scoped variables the caller already has tracked (for nesting)
+    caller_locals = Map.get(bash.env, "__locals__")
+
     positional_env =
       args
       |> Enum.with_index(1)
@@ -533,9 +546,74 @@ defmodule JustBash.Interpreter.Executor do
       |> Map.put("@", Enum.join(args, " "))
       |> Map.put("*", Enum.join(args, " "))
 
-    func_bash = %{bash | env: Map.merge(bash.env, positional_env)}
-    {result, _func_final_bash} = execute_body(func_bash, [body])
-    {%{stdout: result.stdout, stderr: result.stderr, exit_code: result.exit_code}, bash}
+    # Start a fresh local-variable tracker for this function scope
+    func_env =
+      bash.env
+      |> Map.merge(positional_env)
+      |> Map.put("__locals__", MapSet.new())
+
+    func_bash = %{bash | env: func_env}
+    {result, func_final_bash} = execute_body(func_bash, [body])
+
+    # Propagate all side effects (env, fs, functions, etc.) but:
+    # 1. Restore the caller's positional parameters ($1..$N, $#, $@, $*)
+    # 2. Revert local variables to their caller values (or remove if new)
+    local_names = Map.get(func_final_bash.env, "__locals__", MapSet.new())
+
+    restored_env =
+      func_final_bash.env
+      |> strip_positional_params()
+      |> Map.merge(caller_positionals)
+      |> revert_locals(local_names, bash.env)
+      |> Map.delete("__locals__")
+
+    # Restore caller's __locals__ tracker if it had one (for nested function calls)
+    restored_env =
+      if caller_locals, do: Map.put(restored_env, "__locals__", caller_locals), else: restored_env
+
+    final_bash = %{func_final_bash | env: restored_env}
+    {%{stdout: result.stdout, stderr: result.stderr, exit_code: result.exit_code}, final_bash}
+  end
+
+  # Save the current positional parameters ($1..$N, $#, $@, $*) from env
+  defp save_positional_params(env) do
+    count =
+      case Map.get(env, "#") do
+        nil -> 0
+        n -> String.to_integer(n)
+      end
+
+    positionals =
+      if count > 0 do
+        for i <- 1..count, into: %{} do
+          {to_string(i), Map.get(env, to_string(i), "")}
+        end
+      else
+        %{}
+      end
+
+    positionals
+    |> Map.put("#", Map.get(env, "#", "0"))
+    |> Map.put("@", Map.get(env, "@", ""))
+    |> Map.put("*", Map.get(env, "*", ""))
+  end
+
+  # Remove all positional parameters from env (numeric keys + #, @, *)
+  defp strip_positional_params(env) do
+    Enum.reject(env, fn {key, _} ->
+      key in ["#", "@", "*"] or match?({_, ""}, Integer.parse(key))
+    end)
+    |> Map.new()
+  end
+
+  # Revert local variables to their caller values (or remove if they didn't exist)
+  defp revert_locals(env, local_names, caller_env) do
+    Enum.reduce(local_names, env, fn name, acc ->
+      case Map.fetch(caller_env, name) do
+        {:ok, old_value} -> Map.put(acc, name, old_value)
+        :error -> Map.delete(acc, name)
+      end
+    end)
   end
 
   defp execute_assignments(bash, assignments) do
@@ -607,5 +685,36 @@ defmodule JustBash.Interpreter.Executor do
       module ->
         module.execute(bash, args, stdin)
     end
+  end
+
+  @control_signal_keys [:__break__, :__continue__, :__return__]
+
+  defp execute_custom_command(bash, cmd_name, module, args, stdin) do
+    # credo:disable-for-next-line Credo.Check.Readability.PreferImplicitTry
+    try do
+      case module.execute(bash, args, stdin) do
+        {%{stdout: stdout, stderr: stderr, exit_code: exit_code} = result, %JustBash{} = new_bash}
+        when is_binary(stdout) and is_binary(stderr) and is_integer(exit_code) and exit_code >= 0 ->
+          # Strip any internal control-flow signals that could leak from custom commands
+          {Map.drop(result, @control_signal_keys), new_bash}
+
+        _ ->
+          custom_command_error(bash, cmd_name, "custom command returned an invalid result")
+      end
+    rescue
+      error ->
+        message =
+          "custom command crashed (#{inspect(error.__struct__)}: #{Exception.message(error)})"
+
+        custom_command_error(bash, cmd_name, message)
+    catch
+      kind, reason ->
+        message = "custom command #{kind}: #{inspect(reason)}"
+        custom_command_error(bash, cmd_name, message)
+    end
+  end
+
+  defp custom_command_error(bash, cmd_name, message) do
+    {%{stdout: "", stderr: "bash: #{cmd_name}: #{message}\n", exit_code: 1}, bash}
   end
 end

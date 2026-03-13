@@ -41,14 +41,14 @@ defmodule JustBash.Commands.Sed.Executor do
     # - last_regex: tracks the last regex used for empty pattern substitution
     initial_exec_state = %{range_state: %{}, last_regex: nil}
 
-    {output, _final_exec_state} =
+    {output_iodata, _final_exec_state} =
       lines
       |> Enum.with_index(1)
-      |> Enum.reduce({"", initial_exec_state}, fn {line, line_num}, {output, exec_state} ->
+      |> Enum.reduce({[], initial_exec_state}, fn {line, line_num}, {output, exec_state} ->
         process_line(line, line_num, total_lines, commands, silent, output, exec_state)
       end)
 
-    output
+    IO.iodata_to_binary(output_iodata)
   end
 
   defp process_line(line, line_num, total_lines, commands, silent, output, exec_state) do
@@ -70,38 +70,29 @@ defmodule JustBash.Commands.Sed.Executor do
         apply_command(cmd, cmd_idx, state, es)
       end)
 
+    inserted = if final_line_state.inserted, do: [final_line_state.inserted, "\n"], else: []
+    appended = if final_line_state.appended, do: [final_line_state.appended, "\n"], else: []
+
     new_output =
       cond do
         final_line_state.changed != nil ->
-          # c command: replace line entirely, ignore deleted/printed
-          inserted = if final_line_state.inserted, do: final_line_state.inserted <> "\n", else: ""
-          appended = if final_line_state.appended, do: final_line_state.appended <> "\n", else: ""
-          output <> inserted <> final_line_state.changed <> "\n" <> appended
+          [output, inserted, final_line_state.changed, "\n", appended]
 
         final_line_state.deleted ->
-          # Still output inserted/appended even if line deleted
-          inserted = if final_line_state.inserted, do: final_line_state.inserted <> "\n", else: ""
-          appended = if final_line_state.appended, do: final_line_state.appended <> "\n", else: ""
-          output <> inserted <> appended
+          [output, inserted, appended]
 
         silent ->
-          inserted = if final_line_state.inserted, do: final_line_state.inserted <> "\n", else: ""
-          appended = if final_line_state.appended, do: final_line_state.appended <> "\n", else: ""
-
           if final_line_state.printed do
-            output <> inserted <> final_line_state.pattern_space <> "\n" <> appended
+            [output, inserted, final_line_state.pattern_space, "\n", appended]
           else
-            output <> inserted <> appended
+            [output, inserted, appended]
           end
 
         true ->
           extra =
-            if final_line_state.printed, do: final_line_state.pattern_space <> "\n", else: ""
+            if final_line_state.printed, do: [final_line_state.pattern_space, "\n"], else: []
 
-          inserted = if final_line_state.inserted, do: final_line_state.inserted <> "\n", else: ""
-          appended = if final_line_state.appended, do: final_line_state.appended <> "\n", else: ""
-
-          output <> inserted <> final_line_state.pattern_space <> "\n" <> appended <> extra
+          [output, inserted, final_line_state.pattern_space, "\n", appended, extra]
       end
 
     {new_output, new_exec_state}
@@ -274,84 +265,104 @@ defmodule JustBash.Commands.Sed.Executor do
       nil ->
         {pattern_space, false}
 
-      [{start, len} | groups] ->
-        pre = String.slice(pattern_space, 0, start)
-        post = String.slice(pattern_space, start + len, String.length(pattern_space))
-        group_values = Enum.map(groups, fn {s, l} -> String.slice(pattern_space, s, l) end)
-        replaced = expand_backreferences(replacement, pattern_space, start, len, group_values)
-        {pre <> replaced <> post, true}
+      [{start, len} | group_indices] ->
+        group_values = extract_group_values(group_indices, pattern_space)
+        full_match = :binary.part(pattern_space, start, len)
+        expanded = expand_replacement(replacement, full_match, group_values)
+
+        result =
+          [
+            :binary.part(pattern_space, 0, start),
+            expanded | tail_part(pattern_space, start + len)
+          ]
+          |> IO.iodata_to_binary()
+
+        {result, true}
     end
   end
 
   defp nth_substitute(regex, pattern_space, replacement, nth) do
-    # Get all matches
     case Regex.scan(regex, pattern_space, return: :index) do
       [] ->
         {pattern_space, false}
 
       matches when length(matches) < nth ->
-        # Not enough matches - don't replace anything
         {pattern_space, false}
 
       matches ->
-        # Replace the nth match (1-indexed)
-        match_to_replace = Enum.at(matches, nth - 1)
-        [{start, len} | group_indices] = match_to_replace
-
-        pre = String.slice(pattern_space, 0, start)
-        post = String.slice(pattern_space, start + len, String.length(pattern_space))
+        [{start, len} | group_indices] = Enum.at(matches, nth - 1)
         group_values = extract_group_values(group_indices, pattern_space)
-        replaced = expand_backreferences(replacement, pattern_space, start, len, group_values)
-        {pre <> replaced <> post, true}
+        full_match = :binary.part(pattern_space, start, len)
+        expanded = expand_replacement(replacement, full_match, group_values)
+
+        result =
+          [
+            :binary.part(pattern_space, 0, start),
+            expanded | tail_part(pattern_space, start + len)
+          ]
+          |> IO.iodata_to_binary()
+
+        {result, true}
     end
   end
 
   defp global_replace_with_backrefs(regex, string, replacement) do
-    # Track if we had any matches
-    had_match = Regex.match?(regex, string)
-
-    if had_match do
-      # Use Regex.scan to get all matches with capture groups, then manually replace
-      result = do_global_replace(regex, string, replacement)
-      {result, true}
-    else
-      {string, false}
-    end
-  end
-
-  defp do_global_replace(regex, string, replacement) do
-    # Get all matches with their positions
     case Regex.scan(regex, string, return: :index) do
       [] ->
-        string
+        {string, false}
 
       matches ->
-        # Process matches from end to start so positions stay valid
-        matches
-        |> Enum.reverse()
-        |> Enum.reduce(string, fn match_indices, acc ->
-          apply_single_match(match_indices, acc, replacement)
-        end)
+        has_ampersand = String.contains?(replacement, "&")
+        has_backrefs = String.contains?(replacement, "\\")
+
+        result =
+          build_global_replacement(matches, string, replacement, 0, has_ampersand, has_backrefs)
+          |> IO.iodata_to_binary()
+
+        {result, true}
     end
   end
 
-  defp apply_single_match(match_indices, acc, replacement) do
-    [{start, len} | group_indices] = match_indices
-    full_match = String.slice(acc, start, len)
-    group_values = extract_group_values(group_indices, acc)
-
-    # Expand & to full match
-    expanded = String.replace(replacement, "&", full_match)
-    # Expand numbered backrefs
-    expanded = expand_numbered_backrefs(expanded, group_values)
-
-    # Replace in string
-    String.slice(acc, 0, start) <> expanded <> String.slice(acc, start + len, String.length(acc))
+  # Walk matches left-to-right, building iodata: [gap, replacement, gap, replacement, ... tail]
+  defp build_global_replacement([], string, _replacement, pos, _has_amp, _has_backref) do
+    [tail_part(string, pos)]
   end
 
-  defp extract_group_values(group_indices, acc) do
+  defp build_global_replacement(
+         [match | rest],
+         string,
+         replacement,
+         pos,
+         has_amp,
+         has_backref
+       ) do
+    [{start, len} | group_indices] = match
+    gap = :binary.part(string, pos, start - pos)
+
+    expanded =
+      if has_amp or has_backref do
+        full_match = :binary.part(string, start, len)
+        group_values = extract_group_values(group_indices, string)
+        expand_replacement(replacement, full_match, group_values)
+      else
+        replacement
+      end
+
+    [
+      gap,
+      expanded
+      | build_global_replacement(rest, string, replacement, start + len, has_amp, has_backref)
+    ]
+  end
+
+  # Returns the tail of a binary from byte offset `pos` to end.
+  defp tail_part(string, pos) do
+    [:binary.part(string, pos, byte_size(string) - pos)]
+  end
+
+  defp extract_group_values(group_indices, string) do
     Enum.map(group_indices, fn {s, l} ->
-      if s >= 0, do: String.slice(acc, s, l), else: ""
+      if s >= 0, do: :binary.part(string, s, l), else: ""
     end)
   end
 
@@ -361,12 +372,20 @@ defmodule JustBash.Commands.Sed.Executor do
     |> String.replace("\\t", "\t")
   end
 
-  defp expand_backreferences(replacement, original, start, len, groups) do
-    matched = String.slice(original, start, len)
+  # Expand & (full match) and \1-\9 (capture groups) in replacement string.
+  defp expand_replacement(replacement, full_match, groups) do
+    replacement =
+      if String.contains?(replacement, "&") do
+        String.replace(replacement, "&", full_match)
+      else
+        replacement
+      end
 
-    replacement
-    |> String.replace("&", matched)
-    |> expand_numbered_backrefs(groups)
+    if String.contains?(replacement, "\\") do
+      expand_numbered_backrefs(replacement, groups)
+    else
+      replacement
+    end
   end
 
   defp expand_numbered_backrefs(str, groups) do

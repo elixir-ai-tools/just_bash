@@ -120,6 +120,8 @@ defmodule JustBash.Commands.Curl do
       data_raw: [long: "--data-raw", type: :string],
       output_file: [short: "-o", long: "--output", type: :string],
       silent: [short: "-s", long: "--silent", type: :boolean],
+      show_error: [short: "-S", long: "--show-error", type: :boolean],
+      fail_on_error: [short: "-f", long: "--fail", type: :boolean],
       include_headers: [short: "-i", long: "--include", type: :boolean],
       head_only: [short: "-I", long: "--head", type: :boolean],
       follow_redirects: [short: "-L", long: "--location", type: :boolean],

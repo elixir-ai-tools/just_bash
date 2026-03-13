@@ -1,0 +1,159 @@
+{
+  "results": [
+    {
+      "content_hash": "3678c28d2829d690",
+      "exit_code": 0,
+      "name": "error output comparison: command not found exit code",
+      "stderr": "",
+      "stdout": "127\n"
+    },
+    {
+      "content_hash": "919f79add47e64d4",
+      "exit_code": 0,
+      "name": "error output comparison: cat nonexistent file",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "c7e8e5ddce1c3f3f",
+      "exit_code": 0,
+      "name": "exit code handling: false command",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "df0f4683dee462bc",
+      "exit_code": 0,
+      "name": "exit code handling: true command",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "967caf2066fd5e65",
+      "exit_code": 0,
+      "name": "exit code handling: negated true",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "10136aa77ef0504e",
+      "exit_code": 0,
+      "name": "exit code handling: negated false",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "fa1f65ad276edb88",
+      "exit_code": 0,
+      "name": "exit code handling: subshell exit",
+      "stderr": "",
+      "stdout": "42\n"
+    },
+    {
+      "content_hash": "b96ac833cf302b44",
+      "exit_code": 0,
+      "name": "exit code handling: subshell exit zero",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "0a1a798720399270",
+      "exit_code": 0,
+      "name": "exit code handling: pipeline exit code is last command",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "1f72454d3a0a4df3",
+      "exit_code": 0,
+      "name": "exit code handling: pipeline exit code with true last",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "9e379946b6cdd460",
+      "exit_code": 0,
+      "name": "exit code handling: command chain with semicolon",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "fb8d27f60a49f717",
+      "exit_code": 0,
+      "name": "exit code handling: test command exit codes",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "c2894f70151bd1b1",
+      "exit_code": 0,
+      "name": "exit code handling: test command failure",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "546d8d45b6251b37",
+      "exit_code": 0,
+      "name": "error suppression: suppress stderr with 2>/dev/null",
+      "stderr": "",
+      "stdout": "done\n"
+    },
+    {
+      "content_hash": "eabae5cc04758edf",
+      "exit_code": 0,
+      "name": "error suppression: grep no match exit code",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "84cbb60d5d25fbaa",
+      "exit_code": 0,
+      "name": "error suppression: test -f on nonexistent file",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "7e8195935adc7971",
+      "exit_code": 0,
+      "name": "error suppression: test -d on nonexistent dir",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "a2cf6af19068873e",
+      "exit_code": 0,
+      "name": "AND/OR operators with exit codes: AND with success",
+      "stderr": "",
+      "stdout": "success\n"
+    },
+    {
+      "content_hash": "827c82b5d6eb89b8",
+      "exit_code": 0,
+      "name": "AND/OR operators with exit codes: AND with failure",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "b9566250bbe625a5",
+      "exit_code": 0,
+      "name": "AND/OR operators with exit codes: OR with success",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "70d9adbb0e21f5ba",
+      "exit_code": 0,
+      "name": "AND/OR operators with exit codes: OR with failure",
+      "stderr": "",
+      "stdout": "fallback\n"
+    },
+    {
+      "content_hash": "9d9fafef07b760cb",
+      "exit_code": 0,
+      "name": "AND/OR operators with exit codes: chained AND/OR",
+      "stderr": "",
+      "stdout": "end\n"
+    }
+  ],
+  "suite": "error_output"
+}

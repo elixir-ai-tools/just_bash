@@ -1,0 +1,215 @@
+{
+  "results": [
+    {
+      "content_hash": "8177cd9c688c6ebb",
+      "exit_code": 0,
+      "name": "seq command: seq simple range",
+      "stderr": "",
+      "stdout": "1\n2\n3\n4\n5\n"
+    },
+    {
+      "content_hash": "115298865b7f8dfd",
+      "exit_code": 0,
+      "name": "seq command: seq single number",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "3bb385677de5543a",
+      "exit_code": 0,
+      "name": "seq command: seq with step",
+      "stderr": "",
+      "stdout": "1\n3\n5\n7\n9\n"
+    },
+    {
+      "content_hash": "1d27275f56141f71",
+      "exit_code": 0,
+      "name": "seq command: seq descending",
+      "stderr": "",
+      "stdout": "5\n4\n3\n2\n1\n"
+    },
+    {
+      "content_hash": "96c6160c148e16da",
+      "exit_code": 0,
+      "name": "seq command: seq in for loop",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "7813c7311da6eddc",
+      "exit_code": 0,
+      "name": "seq command: seq single value",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "2134f6d7f3205240",
+      "exit_code": 0,
+      "name": "seq command: seq negative range",
+      "stderr": "",
+      "stdout": "-3\n-2\n-1\n"
+    },
+    {
+      "content_hash": "3d7c875a93148ce6",
+      "exit_code": 0,
+      "name": "basename command: basename simple",
+      "stderr": "",
+      "stdout": "file.txt\n"
+    },
+    {
+      "content_hash": "0aa4284f001ef9d6",
+      "exit_code": 0,
+      "name": "basename command: basename with suffix",
+      "stderr": "",
+      "stdout": "file\n"
+    },
+    {
+      "content_hash": "2722fab0fa67b548",
+      "exit_code": 0,
+      "name": "basename command: basename no path",
+      "stderr": "",
+      "stdout": "file.txt\n"
+    },
+    {
+      "content_hash": "29f134175e58732d",
+      "exit_code": 0,
+      "name": "basename command: basename trailing slash",
+      "stderr": "",
+      "stdout": "dir\n"
+    },
+    {
+      "content_hash": "ef4edea63f245b9e",
+      "exit_code": 0,
+      "name": "basename command: basename root",
+      "stderr": "",
+      "stdout": "/\n"
+    },
+    {
+      "content_hash": "6dc7c8bad39fea28",
+      "exit_code": 0,
+      "name": "basename command: basename multiple slashes",
+      "stderr": "",
+      "stdout": "file\n"
+    },
+    {
+      "content_hash": "c9d7fef07a2be7e1",
+      "exit_code": 0,
+      "name": "basename command: basename suffix no match",
+      "stderr": "",
+      "stdout": "file.txt\n"
+    },
+    {
+      "content_hash": "640b845921d34be4",
+      "exit_code": 0,
+      "name": "dirname command: dirname simple",
+      "stderr": "",
+      "stdout": "/path/to\n"
+    },
+    {
+      "content_hash": "23ec434d2d9ebccf",
+      "exit_code": 0,
+      "name": "dirname command: dirname no path",
+      "stderr": "",
+      "stdout": ".\n"
+    },
+    {
+      "content_hash": "6161cfa4e7b57432",
+      "exit_code": 0,
+      "name": "dirname command: dirname trailing slash",
+      "stderr": "",
+      "stdout": "/path/to\n"
+    },
+    {
+      "content_hash": "cdb8c3172e56e03f",
+      "exit_code": 0,
+      "name": "dirname command: dirname root file",
+      "stderr": "",
+      "stdout": "/\n"
+    },
+    {
+      "content_hash": "43f8e4082df042df",
+      "exit_code": 0,
+      "name": "dirname command: dirname root",
+      "stderr": "",
+      "stdout": "/\n"
+    },
+    {
+      "content_hash": "aed69e9fb92d57b0",
+      "exit_code": 0,
+      "name": "dirname command: dirname relative path",
+      "stderr": "",
+      "stdout": "path/to\n"
+    },
+    {
+      "content_hash": "8fbbd52d24154c2b",
+      "exit_code": 0,
+      "name": "dirname command: dirname single component",
+      "stderr": "",
+      "stdout": ".\n"
+    },
+    {
+      "content_hash": "ffb0d364562e18a5",
+      "exit_code": 0,
+      "name": "tee command: tee to file",
+      "stderr": "",
+      "stdout": "hello\nhello\n"
+    },
+    {
+      "content_hash": "a8f2e0d1e71d3be2",
+      "exit_code": 0,
+      "name": "tee command: tee passes through",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "45fbfb183c5a4924",
+      "exit_code": 0,
+      "name": "tee command: tee append mode",
+      "stderr": "",
+      "stdout": "first\nsecond\n"
+    },
+    {
+      "content_hash": "ca2444afc603fd04",
+      "exit_code": 0,
+      "name": "xargs command: xargs simple",
+      "stderr": "",
+      "stdout": "a b c\n"
+    },
+    {
+      "content_hash": "8a1a48730557e098",
+      "exit_code": 0,
+      "name": "xargs command: xargs with echo -n limit",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "5021ce67c9fd2764",
+      "exit_code": 0,
+      "name": "xargs command: xargs from multiple lines",
+      "stderr": "",
+      "stdout": "a b c\n"
+    },
+    {
+      "content_hash": "bcbd7985128a1b9b",
+      "exit_code": 0,
+      "name": "utilities in pipelines: seq piped to wc",
+      "stderr": "",
+      "stdout": "10\n"
+    },
+    {
+      "content_hash": "e07ec1e165debb30",
+      "exit_code": 0,
+      "name": "utilities in pipelines: basename in command substitution",
+      "stderr": "",
+      "stdout": "script\n"
+    },
+    {
+      "content_hash": "9ef47f99884d2553",
+      "exit_code": 0,
+      "name": "utilities in pipelines: dirname and basename together",
+      "stderr": "",
+      "stdout": "/usr/local/bin/bash\n"
+    }
+  ],
+  "suite": "utilities"
+}

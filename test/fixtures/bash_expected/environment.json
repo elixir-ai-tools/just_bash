@@ -1,0 +1,208 @@
+{
+  "results": [
+    {
+      "content_hash": "56d56aa7b9fe6c5f",
+      "exit_code": 0,
+      "name": "basic variables: simple assignment and echo",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "9dcc2e142ba8781b",
+      "exit_code": 0,
+      "name": "basic variables: assignment with quotes",
+      "stderr": "",
+      "stdout": "hello world\n"
+    },
+    {
+      "content_hash": "d6eba6a54b450541",
+      "exit_code": 0,
+      "name": "basic variables: empty assignment",
+      "stderr": "",
+      "stdout": "[]\n"
+    },
+    {
+      "content_hash": "c90e33758df2d88f",
+      "exit_code": 0,
+      "name": "basic variables: variable expansion in assignment",
+      "stderr": "",
+      "stdout": "hello_world\n"
+    },
+    {
+      "content_hash": "e9a2b965a2666f14",
+      "exit_code": 0,
+      "name": "basic variables: append pattern",
+      "stderr": "",
+      "stdout": "start_end\n"
+    },
+    {
+      "content_hash": "fc238260e7958a07",
+      "exit_code": 0,
+      "name": "export: export existing variable",
+      "stderr": "",
+      "stdout": "value\n"
+    },
+    {
+      "content_hash": "8f8b9c794c14c855",
+      "exit_code": 0,
+      "name": "export: export with value",
+      "stderr": "",
+      "stdout": "newvalue\n"
+    },
+    {
+      "content_hash": "4dd76ba134251cb6",
+      "exit_code": 0,
+      "name": "export: multiple export",
+      "stderr": "",
+      "stdout": "1 2 3\n"
+    },
+    {
+      "content_hash": "204c662690c92ca4",
+      "exit_code": 0,
+      "name": "export: export persists to subshell",
+      "stderr": "",
+      "stdout": "value\n"
+    },
+    {
+      "content_hash": "534b52b299e00b2f",
+      "exit_code": 0,
+      "name": "unset: unset variable",
+      "stderr": "",
+      "stdout": "before:value\nafter:[]\n"
+    },
+    {
+      "content_hash": "eebdfe2a87741e24",
+      "exit_code": 0,
+      "name": "unset: unset nonexistent",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "ea11321aa5b7120a",
+      "exit_code": 0,
+      "name": "unset: unset then reassign",
+      "stderr": "",
+      "stdout": "second\n"
+    },
+    {
+      "content_hash": "bd19160355d65642",
+      "exit_code": 0,
+      "name": "printenv: printenv specific variable",
+      "stderr": "",
+      "stdout": "testval\n"
+    },
+    {
+      "content_hash": "dee3a73ad02caf67",
+      "exit_code": 0,
+      "name": "printenv: printenv nonexistent",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "338a54f5a067d093",
+      "exit_code": 0,
+      "name": "subshell isolation: subshell variable not visible in parent",
+      "stderr": "",
+      "stdout": "outer\n"
+    },
+    {
+      "content_hash": "935246a7bf0b39c9",
+      "exit_code": 0,
+      "name": "subshell isolation: parent variable visible in subshell",
+      "stderr": "",
+      "stdout": "parent\n"
+    },
+    {
+      "content_hash": "6d2fb9146ab6d595",
+      "exit_code": 0,
+      "name": "subshell isolation: command substitution inherits env",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "01dcdbe0f6a5f798",
+      "exit_code": 0,
+      "name": "default environment: HOME exists",
+      "stderr": "",
+      "stdout": "yes\n"
+    },
+    {
+      "content_hash": "ff7304bb232a1f49",
+      "exit_code": 0,
+      "name": "default environment: PWD exists",
+      "stderr": "",
+      "stdout": "yes\n"
+    },
+    {
+      "content_hash": "01a26f204a103833",
+      "exit_code": 0,
+      "name": "default environment: PATH exists",
+      "stderr": "",
+      "stdout": "yes\n"
+    },
+    {
+      "content_hash": "e733c175f2d867cc",
+      "exit_code": 0,
+      "name": "empty vs unset: empty uses default with colon",
+      "stderr": "",
+      "stdout": "default\n"
+    },
+    {
+      "content_hash": "a2e68a4125406ff1",
+      "exit_code": 0,
+      "name": "empty vs unset: unset uses default",
+      "stderr": "",
+      "stdout": "default\n"
+    },
+    {
+      "content_hash": "6053d769d38c9d0d",
+      "exit_code": 0,
+      "name": "empty vs unset: empty without colon does not use default",
+      "stderr": "",
+      "stdout": "\n"
+    },
+    {
+      "content_hash": "8e9d51c90fd73b4d",
+      "exit_code": 0,
+      "name": "empty vs unset: unset without colon uses default",
+      "stderr": "",
+      "stdout": "default\n"
+    },
+    {
+      "content_hash": "df0f4683dee462bc",
+      "exit_code": 0,
+      "name": "special variables: $? after true",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "c7e8e5ddce1c3f3f",
+      "exit_code": 0,
+      "name": "special variables: $? after false",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "ceecb68f38718c8f",
+      "exit_code": 0,
+      "name": "special variables: $$ is numeric",
+      "stderr": "",
+      "stdout": "yes\n"
+    },
+    {
+      "content_hash": "41b8c49b7cb0bc02",
+      "exit_code": 0,
+      "name": "IFS: default IFS word splitting",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "643af90ab30709c2",
+      "exit_code": 0,
+      "name": "IFS: custom IFS",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    }
+  ],
+  "suite": "environment"
+}

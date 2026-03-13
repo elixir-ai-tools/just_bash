@@ -1,0 +1,747 @@
+{
+  "results": [
+    {
+      "content_hash": "b9986da7c57ecb26",
+      "exit_code": 0,
+      "name": "awk field access comparison: awk print field",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "78581bb9bf6cd298",
+      "exit_code": 0,
+      "name": "awk field access comparison: awk print first field",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "1db16336bf1d8c77",
+      "exit_code": 0,
+      "name": "awk field access comparison: awk print entire line with $0",
+      "stderr": "",
+      "stdout": "hello world\n"
+    },
+    {
+      "content_hash": "2412bfc41dd3124c",
+      "exit_code": 0,
+      "name": "awk field access comparison: awk print multiple fields",
+      "stderr": "",
+      "stdout": "a c\n"
+    },
+    {
+      "content_hash": "79e7f72291c25a89",
+      "exit_code": 0,
+      "name": "awk field access comparison: awk access field beyond NF",
+      "stderr": "",
+      "stdout": "\n"
+    },
+    {
+      "content_hash": "9593e6be478beaa2",
+      "exit_code": 0,
+      "name": "awk field access comparison: awk print $NF (last field)",
+      "stderr": "",
+      "stdout": "d\n"
+    },
+    {
+      "content_hash": "89bbede0029dc19f",
+      "exit_code": 0,
+      "name": "awk field separator comparison: awk with field separator",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "271e75e62bcdad05",
+      "exit_code": 0,
+      "name": "awk field separator comparison: awk with colon separator",
+      "stderr": "",
+      "stdout": "y\n"
+    },
+    {
+      "content_hash": "0425e7511d2bf4a2",
+      "exit_code": 0,
+      "name": "awk field separator comparison: awk with tab separator",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "fbc524bb6497b2da",
+      "exit_code": 0,
+      "name": "awk field separator comparison: awk default whitespace splitting collapses spaces",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "c2228923f9184115",
+      "exit_code": 0,
+      "name": "awk built-in variables comparison: awk NR line number",
+      "stderr": "",
+      "stdout": "1 a\n2 b\n"
+    },
+    {
+      "content_hash": "4ca8381c980457d1",
+      "exit_code": 0,
+      "name": "awk built-in variables comparison: awk NF field count",
+      "stderr": "",
+      "stdout": "4\n"
+    },
+    {
+      "content_hash": "4a041f906582aced",
+      "exit_code": 0,
+      "name": "awk built-in variables comparison: awk NF with varying fields per line",
+      "stderr": "",
+      "stdout": "1\n2\n4\n"
+    },
+    {
+      "content_hash": "5d636e8964f603a6",
+      "exit_code": 0,
+      "name": "awk built-in variables comparison: awk NF is 0 for empty line",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "9a86b6f2776e0637",
+      "exit_code": 0,
+      "name": "awk built-in variables comparison: awk FS variable in BEGIN",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "064424c702ec6fe1",
+      "exit_code": 0,
+      "name": "awk built-in variables comparison: awk OFS variable",
+      "stderr": "",
+      "stdout": "a-b-c\n"
+    },
+    {
+      "content_hash": "b6dcdc2bcf08caa7",
+      "exit_code": 0,
+      "name": "awk built-in variables comparison: awk ORS variable",
+      "stderr": "",
+      "stdout": "a;b;"
+    },
+    {
+      "content_hash": "8768d77329d0017c",
+      "exit_code": 0,
+      "name": "awk BEGIN and END comparison: awk sum in END block",
+      "stderr": "",
+      "stdout": "6\n"
+    },
+    {
+      "content_hash": "9396cdb0440c4769",
+      "exit_code": 0,
+      "name": "awk BEGIN and END comparison: awk BEGIN block before processing",
+      "stderr": "",
+      "stdout": "start\nx\n"
+    },
+    {
+      "content_hash": "5df6d27b6facaf22",
+      "exit_code": 0,
+      "name": "awk BEGIN and END comparison: awk END block after processing",
+      "stderr": "",
+      "stdout": "a\nb\ndone\n"
+    },
+    {
+      "content_hash": "c3ea17a15b3cc967",
+      "exit_code": 0,
+      "name": "awk BEGIN and END comparison: awk BEGIN only no input",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "c5997619810392f7",
+      "exit_code": 0,
+      "name": "awk BEGIN and END comparison: awk count lines in END",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "dca889111b06f440",
+      "exit_code": 0,
+      "name": "awk BEGIN and END comparison: awk multiple BEGIN blocks",
+      "stderr": "",
+      "stdout": "a\nb\n"
+    },
+    {
+      "content_hash": "09f1d5f1c9cd3e3f",
+      "exit_code": 0,
+      "name": "awk BEGIN and END comparison: awk multiple END blocks",
+      "stderr": "",
+      "stdout": "a\nb\n"
+    },
+    {
+      "content_hash": "f35dda4a1a805ee2",
+      "exit_code": 0,
+      "name": "awk pattern matching comparison: awk regex pattern filter",
+      "stderr": "",
+      "stdout": "apple\napricot\n"
+    },
+    {
+      "content_hash": "3151e7a5c669c693",
+      "exit_code": 0,
+      "name": "awk pattern matching comparison: awk regex pattern without action",
+      "stderr": "",
+      "stdout": "bar\nbaz\n"
+    },
+    {
+      "content_hash": "e9c677d3bd000300",
+      "exit_code": 0,
+      "name": "awk pattern matching comparison: awk NR condition ==",
+      "stderr": "",
+      "stdout": "line2\n"
+    },
+    {
+      "content_hash": "80b3480e917eafa7",
+      "exit_code": 0,
+      "name": "awk pattern matching comparison: awk NR condition >",
+      "stderr": "",
+      "stdout": "line2\nline3\n"
+    },
+    {
+      "content_hash": "821a9e368028ce13",
+      "exit_code": 0,
+      "name": "awk pattern matching comparison: awk NR condition <",
+      "stderr": "",
+      "stdout": "line1\nline2\n"
+    },
+    {
+      "content_hash": "683ae6e823e4b2b2",
+      "exit_code": 0,
+      "name": "awk pattern matching comparison: awk field equality condition",
+      "stderr": "",
+      "stdout": "hello\nworld\n"
+    },
+    {
+      "content_hash": "e76af43ca7c97c42",
+      "exit_code": 0,
+      "name": "awk pattern matching comparison: awk field regex match ~",
+      "stderr": "",
+      "stdout": "1\n3\n"
+    },
+    {
+      "content_hash": "1ba7ac15e758bec8",
+      "exit_code": 0,
+      "name": "awk pattern matching comparison: awk field > numeric condition",
+      "stderr": "",
+      "stdout": "15\n25\n"
+    },
+    {
+      "content_hash": "7efbd735f033920a",
+      "exit_code": 0,
+      "name": "awk pattern matching comparison: awk field >= numeric condition",
+      "stderr": "",
+      "stdout": "10\n15\n"
+    },
+    {
+      "content_hash": "2e51b564d2d3b81c",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk addition",
+      "stderr": "",
+      "stdout": "30\n"
+    },
+    {
+      "content_hash": "80fd6ea8f7f289cf",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk subtraction",
+      "stderr": "",
+      "stdout": "7\n"
+    },
+    {
+      "content_hash": "a37bf07c008f639f",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk multiplication",
+      "stderr": "",
+      "stdout": "42\n"
+    },
+    {
+      "content_hash": "72db3cad8c771ffb",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk division",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "406a79cbf46cf3ec",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk modulo",
+      "stderr": "",
+      "stdout": "2\n"
+    },
+    {
+      "content_hash": "8daf38f432393a4f",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk power with ^",
+      "stderr": "",
+      "stdout": "1024\n"
+    },
+    {
+      "content_hash": "6299e7475c5bb8c7",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk compound += assignment",
+      "stderr": "",
+      "stdout": "60\n"
+    },
+    {
+      "content_hash": "eb7eb080558af651",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk compound -= assignment",
+      "stderr": "",
+      "stdout": "7\n"
+    },
+    {
+      "content_hash": "fadbff9ae926c196",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk compound *= assignment",
+      "stderr": "",
+      "stdout": "15\n"
+    },
+    {
+      "content_hash": "19ad5e4e6f2f5c44",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk compound /= assignment",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "77e3103abccb80bb",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk increment ++",
+      "stderr": "",
+      "stdout": "6\n"
+    },
+    {
+      "content_hash": "ff144503234bafee",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk pre-increment ++x",
+      "stderr": "",
+      "stdout": "6\n"
+    },
+    {
+      "content_hash": "fc373c00584f2288",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk decrement --",
+      "stderr": "",
+      "stdout": "4\n"
+    },
+    {
+      "content_hash": "d9c2809306db4c32",
+      "exit_code": 0,
+      "name": "awk arithmetic comparison: awk pre-decrement --x",
+      "stderr": "",
+      "stdout": "4\n"
+    },
+    {
+      "content_hash": "86a79bc710b217b0",
+      "exit_code": 0,
+      "name": "awk string functions comparison: awk length() no argument",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "59a5eea767012cf4",
+      "exit_code": 0,
+      "name": "awk string functions comparison: awk length() with argument",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "13d7d32c37efc072",
+      "exit_code": 0,
+      "name": "awk string functions comparison: awk substr() with start only",
+      "stderr": "",
+      "stdout": "llo\n"
+    },
+    {
+      "content_hash": "4b0a4e6347409401",
+      "exit_code": 0,
+      "name": "awk string functions comparison: awk substr() with start and length",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "37270a3c18cb7980",
+      "exit_code": 0,
+      "name": "awk string functions comparison: awk tolower()",
+      "stderr": "",
+      "stdout": "hello world\n"
+    },
+    {
+      "content_hash": "12cdd32f4b056d42",
+      "exit_code": 0,
+      "name": "awk string functions comparison: awk toupper()",
+      "stderr": "",
+      "stdout": "HELLO WORLD\n"
+    },
+    {
+      "content_hash": "fed4182c8845585e",
+      "exit_code": 0,
+      "name": "awk string functions comparison: awk index() finds substring",
+      "stderr": "",
+      "stdout": "7\n"
+    },
+    {
+      "content_hash": "96b357210d5bc566",
+      "exit_code": 0,
+      "name": "awk string functions comparison: awk index() not found",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "1c83e8a8e16a9c72",
+      "exit_code": 0,
+      "name": "awk string functions comparison: awk sprintf() basic",
+      "stderr": "",
+      "stdout": "00042\n"
+    },
+    {
+      "content_hash": "477c5551dfacc809",
+      "exit_code": 0,
+      "name": "awk string functions comparison: awk sprintf() with string",
+      "stderr": "",
+      "stdout": "Hello World!\n"
+    },
+    {
+      "content_hash": "c3011d7c9e450841",
+      "exit_code": 0,
+      "name": "awk printf comparison: awk printf %s",
+      "stderr": "",
+      "stdout": "hello!\n"
+    },
+    {
+      "content_hash": "a87dbcd9ea4856c8",
+      "exit_code": 0,
+      "name": "awk printf comparison: awk printf %d",
+      "stderr": "",
+      "stdout": "num: 42\n"
+    },
+    {
+      "content_hash": "6b598af844436b8f",
+      "exit_code": 0,
+      "name": "awk printf comparison: awk printf width specifier",
+      "stderr": "",
+      "stdout": "   42\n"
+    },
+    {
+      "content_hash": "1a0c5c302ae208b4",
+      "exit_code": 0,
+      "name": "awk printf comparison: awk printf left justify",
+      "stderr": "",
+      "stdout": "42   |\n"
+    },
+    {
+      "content_hash": "24856b131773f312",
+      "exit_code": 0,
+      "name": "awk printf comparison: awk printf float precision",
+      "stderr": "",
+      "stdout": "3.14\n"
+    },
+    {
+      "content_hash": "18d2144bb5b256d9",
+      "exit_code": 0,
+      "name": "awk printf comparison: awk printf multiple arguments",
+      "stderr": "",
+      "stdout": "John is 25 years old\n"
+    },
+    {
+      "content_hash": "18055af682ce9f2c",
+      "exit_code": 0,
+      "name": "awk printf comparison: awk printf with dollar sign",
+      "stderr": "",
+      "stdout": "Alice      $1000\n"
+    },
+    {
+      "content_hash": "3857bbbd1d3a7ab2",
+      "exit_code": 0,
+      "name": "awk gsub and sub comparison: awk gsub replaces all",
+      "stderr": "",
+      "stdout": "hell0 w0rld\n"
+    },
+    {
+      "content_hash": "bdb18e02ed19dd03",
+      "exit_code": 0,
+      "name": "awk gsub and sub comparison: awk sub replaces first only",
+      "stderr": "",
+      "stdout": "hell0 world\n"
+    },
+    {
+      "content_hash": "22682a66b8c05801",
+      "exit_code": 0,
+      "name": "awk gsub and sub comparison: awk gsub on specific field",
+      "stderr": "",
+      "stdout": "f00\n"
+    },
+    {
+      "content_hash": "6112d057998a92d4",
+      "exit_code": 0,
+      "name": "awk gsub and sub comparison: awk gsub multiple chars",
+      "stderr": "",
+      "stdout": "xxx bbb xxx\n"
+    },
+    {
+      "content_hash": "4b272a65e43f4cf0",
+      "exit_code": 0,
+      "name": "awk if-else comparison: awk simple if condition",
+      "stderr": "",
+      "stdout": "small\nbig\nbig\n"
+    },
+    {
+      "content_hash": "6c92f1264bbdcb88",
+      "exit_code": 0,
+      "name": "awk if-else comparison: awk if with == comparison",
+      "stderr": "",
+      "stdout": "one\nother\none\n"
+    },
+    {
+      "content_hash": "1c032bee135ddbb2",
+      "exit_code": 0,
+      "name": "awk if-else comparison: awk if with string comparison",
+      "stderr": "",
+      "stdout": "Y\nN\nY\n"
+    },
+    {
+      "content_hash": "7831d30184c0e4f8",
+      "exit_code": 0,
+      "name": "awk ternary operator comparison: awk ternary in print",
+      "stderr": "",
+      "stdout": "small\nbig\n"
+    },
+    {
+      "content_hash": "a42d2ad5c57b7de3",
+      "exit_code": 0,
+      "name": "awk ternary operator comparison: awk ternary with arithmetic",
+      "stderr": "",
+      "stdout": "10\n"
+    },
+    {
+      "content_hash": "081b984943030443",
+      "exit_code": 0,
+      "name": "awk loops comparison: awk for loop basic",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "4a6b6b6b254846f6",
+      "exit_code": 0,
+      "name": "awk loops comparison: awk for loop with sum",
+      "stderr": "",
+      "stdout": "15\n"
+    },
+    {
+      "content_hash": "a50e73c9069d235c",
+      "exit_code": 0,
+      "name": "awk loops comparison: awk while loop basic",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "9b48ce02d3b3823c",
+      "exit_code": 0,
+      "name": "awk loops comparison: awk while with break",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "b10baec674824461",
+      "exit_code": 0,
+      "name": "awk loops comparison: awk while with continue",
+      "stderr": "",
+      "stdout": "1\n2\n4\n5\n"
+    },
+    {
+      "content_hash": "5aea3e8aeb9edeea",
+      "exit_code": 0,
+      "name": "awk loops comparison: awk nested for loops",
+      "stderr": "",
+      "stdout": "1 1\n1 2\n2 1\n2 2\n"
+    },
+    {
+      "content_hash": "c386278c4c636d57",
+      "exit_code": 0,
+      "name": "awk arrays comparison: awk array assignment and access",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "05681d7b07f74060",
+      "exit_code": 0,
+      "name": "awk arrays comparison: awk array increment",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "974bc05e0cb1c300",
+      "exit_code": 0,
+      "name": "awk arrays comparison: awk in operator",
+      "stderr": "",
+      "stdout": "1 0\n"
+    },
+    {
+      "content_hash": "4e4b6f5d6b8caed3",
+      "exit_code": 0,
+      "name": "awk arrays comparison: awk delete array element",
+      "stderr": "",
+      "stdout": "0 1\n"
+    },
+    {
+      "content_hash": "64e0a0b62b20ffba",
+      "exit_code": 0,
+      "name": "awk arrays comparison: awk array with string keys",
+      "stderr": "",
+      "stdout": "bar\n"
+    },
+    {
+      "content_hash": "9d00c9cfa006f36f",
+      "exit_code": 0,
+      "name": "awk control flow comparison: awk next skips to next record",
+      "stderr": "",
+      "stdout": "1\n3\n4\n"
+    },
+    {
+      "content_hash": "c5a3cea95e2ceb05",
+      "exit_code": 0,
+      "name": "awk control flow comparison: awk exit terminates processing",
+      "stderr": "",
+      "stdout": "1\n2\n"
+    },
+    {
+      "content_hash": "df5ddfa0511c1176",
+      "exit_code": 0,
+      "name": "awk control flow comparison: awk exit with code",
+      "stderr": "",
+      "stdout": "42\n"
+    },
+    {
+      "content_hash": "b6e43dd45574f7a0",
+      "exit_code": 0,
+      "name": "awk logical operators comparison: awk logical AND",
+      "stderr": "",
+      "stdout": "1 0 0\n"
+    },
+    {
+      "content_hash": "67cd16ab901cb596",
+      "exit_code": 0,
+      "name": "awk logical operators comparison: awk logical OR",
+      "stderr": "",
+      "stdout": "1 1 0\n"
+    },
+    {
+      "content_hash": "18e1be6ca39f7151",
+      "exit_code": 0,
+      "name": "awk logical operators comparison: awk logical NOT",
+      "stderr": "",
+      "stdout": "1 0\n"
+    },
+    {
+      "content_hash": "a7a43909c31d3969",
+      "exit_code": 0,
+      "name": "awk math functions comparison: awk int() truncates",
+      "stderr": "",
+      "stdout": "3 -3\n"
+    },
+    {
+      "content_hash": "5f73615394080163",
+      "exit_code": 0,
+      "name": "awk math functions comparison: awk sqrt()",
+      "stderr": "",
+      "stdout": "4\n"
+    },
+    {
+      "content_hash": "99bcb1fa0755e5a5",
+      "exit_code": 0,
+      "name": "awk math functions comparison: awk sin() and cos()",
+      "stderr": "",
+      "stdout": "0 1\n"
+    },
+    {
+      "content_hash": "c203544a149362a4",
+      "exit_code": 0,
+      "name": "awk math functions comparison: awk exp() and log()",
+      "stderr": "",
+      "stdout": "1 0\n"
+    },
+    {
+      "content_hash": "71343f46f85629b1",
+      "exit_code": 0,
+      "name": "awk real-world patterns comparison: awk sum column values",
+      "stderr": "",
+      "stdout": "60\n"
+    },
+    {
+      "content_hash": "a893ab4d5efe0c74",
+      "exit_code": 0,
+      "name": "awk real-world patterns comparison: awk calculate average",
+      "stderr": "",
+      "stdout": "20\n"
+    },
+    {
+      "content_hash": "8a28162d21754478",
+      "exit_code": 0,
+      "name": "awk real-world patterns comparison: awk find max value",
+      "stderr": "",
+      "stdout": "30\n"
+    },
+    {
+      "content_hash": "b5fa51cee6b917e3",
+      "exit_code": 0,
+      "name": "awk real-world patterns comparison: awk find min value",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "eec4ed4edce7c06c",
+      "exit_code": 0,
+      "name": "awk real-world patterns comparison: awk skip header row",
+      "stderr": "",
+      "stdout": "Alice\nBob\n"
+    },
+    {
+      "content_hash": "f6efb20f6efb9689",
+      "exit_code": 0,
+      "name": "awk real-world patterns comparison: awk count pattern matches",
+      "stderr": "",
+      "stdout": "2\n"
+    },
+    {
+      "content_hash": "e1a26511989709c9",
+      "exit_code": 0,
+      "name": "awk real-world patterns comparison: awk transform to uppercase",
+      "stderr": "",
+      "stdout": "JOHN DOE\nJANE SMITH\n"
+    },
+    {
+      "content_hash": "04e249544306b95b",
+      "exit_code": 0,
+      "name": "awk edge cases comparison: awk empty input",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "3d042ddb6a768aee",
+      "exit_code": 0,
+      "name": "awk edge cases comparison: awk single line no newline",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "41f73a1e9190e871",
+      "exit_code": 0,
+      "name": "awk edge cases comparison: awk special characters in data",
+      "stderr": "",
+      "stdout": "hello!\n"
+    },
+    {
+      "content_hash": "0ccca034a4e42554",
+      "exit_code": 0,
+      "name": "awk edge cases comparison: awk uninitialized variable is zero",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "587a86f56c3a1f53",
+      "exit_code": 0,
+      "name": "awk edge cases comparison: awk string coercion in arithmetic",
+      "stderr": "",
+      "stdout": "15\n"
+    }
+  ],
+  "suite": "awk"
+}

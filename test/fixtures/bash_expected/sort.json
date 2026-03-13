@@ -1,0 +1,159 @@
+{
+  "results": [
+    {
+      "content_hash": "3f5076e66dc4c65f",
+      "exit_code": 0,
+      "name": "sort comparison: basic sort",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "7a12b7f448e9610e",
+      "exit_code": 0,
+      "name": "sort comparison: reverse sort",
+      "stderr": "",
+      "stdout": "c\nb\na\n"
+    },
+    {
+      "content_hash": "f008487f521fd591",
+      "exit_code": 0,
+      "name": "sort comparison: numeric sort",
+      "stderr": "",
+      "stdout": "1\n2\n10\n"
+    },
+    {
+      "content_hash": "fbadda57a6babdb5",
+      "exit_code": 0,
+      "name": "sort comparison: unique sort",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "c8eab2a9d56e45e7",
+      "exit_code": 0,
+      "name": "sort comparison: sort by field",
+      "stderr": "",
+      "stdout": "a 1\nb 2\nc 3\n"
+    },
+    {
+      "content_hash": "b52521917e9065e6",
+      "exit_code": 0,
+      "name": "sort edge cases: empty input",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "02ebd5d02a9999f6",
+      "exit_code": 0,
+      "name": "sort edge cases: single line",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "cfb088c3024ec23e",
+      "exit_code": 0,
+      "name": "sort edge cases: already sorted",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "1eee14fb08e912ec",
+      "exit_code": 0,
+      "name": "sort edge cases: reverse already sorted",
+      "stderr": "",
+      "stdout": "c\nb\na\n"
+    },
+    {
+      "content_hash": "67aa2e99b18db94b",
+      "exit_code": 0,
+      "name": "sort edge cases: numeric with negative numbers",
+      "stderr": "",
+      "stdout": "-10\n-3\n0\n5\n7\n"
+    },
+    {
+      "content_hash": "9809a1edf1e044e7",
+      "exit_code": 0,
+      "name": "sort edge cases: numeric with leading zeros",
+      "stderr": "",
+      "stdout": "001\n2\n010\n"
+    },
+    {
+      "content_hash": "be0bd506d92113ac",
+      "exit_code": 0,
+      "name": "sort edge cases: case insensitive sort",
+      "stderr": "",
+      "stdout": "apple\nBanana\nCherry\n"
+    },
+    {
+      "content_hash": "b41fe1e4549c579c",
+      "exit_code": 0,
+      "name": "sort edge cases: sort combined flags -rn",
+      "stderr": "",
+      "stdout": "10\n2\n1\n"
+    },
+    {
+      "content_hash": "fa28c5306681a832",
+      "exit_code": 0,
+      "name": "sort edge cases: sort combined flags -nu",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "172bf325b25ee076",
+      "exit_code": 0,
+      "name": "sort edge cases: sort with whitespace lines",
+      "stderr": "",
+      "stdout": "\n   \na\nb\nc\n"
+    },
+    {
+      "content_hash": "7a3c47270f7aa365",
+      "exit_code": 0,
+      "name": "sort edge cases: sort duplicate lines",
+      "stderr": "",
+      "stdout": "a\na\na\n"
+    },
+    {
+      "content_hash": "94db895358e55b64",
+      "exit_code": 0,
+      "name": "sort edge cases: sort with mixed case",
+      "stderr": "",
+      "stdout": "A\nB\na\nb\n"
+    },
+    {
+      "content_hash": "8b779992c7160483",
+      "exit_code": 0,
+      "name": "sort edge cases: numeric sort with non-numeric lines",
+      "stderr": "",
+      "stdout": "abc\n5\n10\n"
+    },
+    {
+      "content_hash": "8eec9d3d59300bac",
+      "exit_code": 0,
+      "name": "sort edge cases: sort by second field",
+      "stderr": "",
+      "stdout": "y 1\nz 2\nx 3\n"
+    },
+    {
+      "content_hash": "c4238dac521bdf47",
+      "exit_code": 0,
+      "name": "sort edge cases: sort by field range",
+      "stderr": "",
+      "stdout": "a b c\nd e f\ng h i\n"
+    },
+    {
+      "content_hash": "399ac3d0cdc1c999",
+      "exit_code": 0,
+      "name": "sort edge cases: sort field with custom delimiter",
+      "stderr": "",
+      "stdout": "a:1\nb:2\nc:3\n"
+    },
+    {
+      "content_hash": "fa500cf6a7273f90",
+      "exit_code": 0,
+      "name": "sort edge cases: sort unique with duplicates",
+      "stderr": "",
+      "stdout": "apple\nbanana\norange\n"
+    }
+  ],
+  "suite": "sort"
+}

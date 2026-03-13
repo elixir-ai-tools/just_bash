@@ -93,8 +93,9 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   defp classify_redirection(2, :">>", _target), do: :stderr_append
   defp classify_redirection(_fd, :>, _target), do: :stdout_write
   defp classify_redirection(_fd, :">>", _target), do: :stdout_append
-  defp classify_redirection(1, :">&", "2"), do: :stdout_to_stderr
-  defp classify_redirection(2, :">&", "1"), do: :stderr_to_stdout
+  # >&2 without explicit fd defaults to 1>&2 (stdout to stderr)
+  defp classify_redirection(fd, :">&", "2") when fd in [nil, 1], do: :stdout_to_stderr
+  defp classify_redirection(fd, :">&", "1") when fd in [nil, 2], do: :stderr_to_stdout
   defp classify_redirection(_fd, :">&", "-"), do: :close_fd
   defp classify_redirection(_fd, :<, _target), do: :stdin_read
   defp classify_redirection(_fd, _operator, _target), do: :noop
@@ -221,7 +222,18 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   defp clear_stream(result, :stdout), do: %{result | stdout: ""}
   defp clear_stream(result, :stderr), do: %{result | stderr: ""}
 
-  defp format_redirection_error(path, :eisdir), do: "bash: #{path}: Is a directory\n"
+  defp format_redirection_error(path, reason) do
+    msg =
+      case reason do
+        :eisdir -> "Is a directory"
+        :enoent -> "No such file or directory"
+        :enotdir -> "Not a directory"
+        :eacces -> "Permission denied"
+        other -> "#{other}"
+      end
+
+    "bash: #{path}: #{msg}\n"
+  end
 
   # --- Stdin Content Extraction ---
 
@@ -253,8 +265,8 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     ""
   end
 
-  defp extract_stdin_content(_bash, [_ | rest]) do
-    extract_stdin_content(nil, rest)
+  defp extract_stdin_content(bash, [_ | rest]) do
+    extract_stdin_content(bash, rest)
   end
 
   defp extract_stdin_content(_bash, []) do

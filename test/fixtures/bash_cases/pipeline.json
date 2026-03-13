@@ -1,0 +1,20 @@
+{
+  "suite": "pipeline",
+  "cases": [
+    {
+      "name": "pipeline comparison: simple pipe",
+      "script": "echo hello | cat",
+      "content_hash": "588d8c36feba9caf"
+    },
+    {
+      "name": "pipeline comparison: multiple pipes",
+      "script": "echo 'c\na\nb' | sort | head -1",
+      "content_hash": "4788a1a25ca58381"
+    },
+    {
+      "name": "pipeline comparison: with grep",
+      "script": "echo -e 'foo\nbar\nbaz' | grep bar",
+      "content_hash": "d03c83a62a46e74c"
+    }
+  ]
+}

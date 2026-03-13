@@ -1,0 +1,85 @@
+{
+  "suite": "uniq",
+  "cases": [
+    {
+      "name": "uniq comparison: basic uniq",
+      "script": "echo -e 'a\na\nb\nb\nc' | uniq",
+      "content_hash": "ce230f223f2ce5be"
+    },
+    {
+      "name": "uniq comparison: uniq duplicates only",
+      "script": "echo -e 'a\na\nb\nc\nc' | uniq -d",
+      "content_hash": "f8030665b6adbc6d"
+    },
+    {
+      "name": "uniq comparison: uniq unique only",
+      "script": "echo -e 'a\na\nb\nc\nc' | uniq -u",
+      "content_hash": "0cfad673f603d7b0"
+    },
+    {
+      "name": "uniq edge cases: empty input",
+      "script": "echo -n '' | uniq",
+      "content_hash": "9123e7c065b0395f"
+    },
+    {
+      "name": "uniq edge cases: single line",
+      "script": "echo 'hello' | uniq",
+      "content_hash": "587ce3fb23fc02f2"
+    },
+    {
+      "name": "uniq edge cases: no duplicates",
+      "script": "echo -e 'a\nb\nc' | uniq",
+      "content_hash": "aa1fd657148735e2"
+    },
+    {
+      "name": "uniq edge cases: all duplicates",
+      "script": "echo -e 'a\na\na\na' | uniq",
+      "content_hash": "d39366295c911973"
+    },
+    {
+      "name": "uniq edge cases: alternating duplicates",
+      "script": "echo -e 'a\nb\na\nb\na' | uniq",
+      "content_hash": "6df3d1e4869f3789"
+    },
+    {
+      "name": "uniq edge cases: duplicates only with no duplicates",
+      "script": "echo -e 'a\nb\nc' | uniq -d",
+      "content_hash": "07bb360bc43b7a94"
+    },
+    {
+      "name": "uniq edge cases: unique only with all duplicates",
+      "script": "echo -e 'a\na\nb\nb' | uniq -u",
+      "content_hash": "93259be9fa43d1e6"
+    },
+    {
+      "name": "uniq edge cases: uniq preserves order",
+      "script": "echo -e 'z\nz\na\na\nm\nm' | uniq",
+      "content_hash": "f69c5489a449c595"
+    },
+    {
+      "name": "uniq edge cases: uniq with mixed consecutive and non-consecutive",
+      "script": "echo -e 'a\na\nb\nb\na\na' | uniq",
+      "content_hash": "33966d7fc1ffd29a"
+    },
+    {
+      "name": "uniq edge cases: uniq combined -du flags (shows nothing)",
+      "script": "echo -e 'a\na\nb' | uniq -du",
+      "content_hash": "9054da918f4e2608"
+    },
+    {
+      "name": "uniq edge cases: duplicates only multiple groups",
+      "script": "echo -e 'a\na\na\nb\nb\nc\nc\nc\nc' | uniq -d",
+      "content_hash": "3242bce76b65fb61"
+    },
+    {
+      "name": "uniq edge cases: unique only single occurrence",
+      "script": "echo -e 'a\nb\nb\nc' | uniq -u",
+      "content_hash": "a52c1de43bc0eca0"
+    },
+    {
+      "name": "uniq edge cases: uniq with whitespace differences",
+      "script": "echo -e 'a b\na  b\na b' | uniq",
+      "content_hash": "ccb477de347066c3"
+    }
+  ]
+}
