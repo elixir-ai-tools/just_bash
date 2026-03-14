@@ -1,0 +1,125 @@
+{
+  "suite": "arrays",
+  "cases": [
+    {
+      "name": "array literal syntax: basic array creation and indexing",
+      "script": "arr=(a b c); echo \"${arr[0]}\"",
+      "content_hash": "24f93e44d5169d23"
+    },
+    {
+      "name": "array literal syntax: access second element",
+      "script": "arr=(x y z); echo \"${arr[1]}\"",
+      "content_hash": "66053e4c7d8c707d"
+    },
+    {
+      "name": "array literal syntax: access third element",
+      "script": "arr=(one two three); echo \"${arr[2]}\"",
+      "content_hash": "dd53e8acacb6647d"
+    },
+    {
+      "name": "array literal syntax: plain variable equals first element",
+      "script": "arr=(first second third); echo \"$arr\"",
+      "content_hash": "a44a30994886ad71"
+    },
+    {
+      "name": "array all elements: all elements with @",
+      "script": "arr=(one two three); echo \"${arr[@]}\"",
+      "content_hash": "b0dfda719cfbc4d7"
+    },
+    {
+      "name": "array all elements: all elements with *",
+      "script": "arr=(x y z); echo \"${arr[*]}\"",
+      "content_hash": "089aed3b9e1cc7fd"
+    },
+    {
+      "name": "array all elements: single element array with @",
+      "script": "arr=(only); echo \"${arr[@]}\"",
+      "content_hash": "4c905c44f5c7254e"
+    },
+    {
+      "name": "array all elements: empty array with @",
+      "script": "arr=(); echo \"${arr[@]}\"",
+      "content_hash": "bfb8c0b65c1dabce"
+    },
+    {
+      "name": "array length: array element count",
+      "script": "arr=(a b c d e); echo \"${#arr[@]}\"",
+      "content_hash": "7f9ded02bf58ac83"
+    },
+    {
+      "name": "array length: empty array length",
+      "script": "arr=(); echo \"${#arr[@]}\"",
+      "content_hash": "da516870cd648ca9"
+    },
+    {
+      "name": "array length: single element array length",
+      "script": "arr=(one); echo \"${#arr[@]}\"",
+      "content_hash": "1806bded13dfd1ad"
+    },
+    {
+      "name": "array length: element string length",
+      "script": "arr=(hello world); echo \"${#arr[0]}\"",
+      "content_hash": "b79fc98cd710eb90"
+    },
+    {
+      "name": "array with variable expansion: array with variable values",
+      "script": "x=foo; y=bar; arr=($x $y baz); echo \"${arr[@]}\"",
+      "content_hash": "fe9adf31ea885de4"
+    },
+    {
+      "name": "array with variable expansion: array with command substitution",
+      "script": "arr=($(echo a b c)); echo \"${arr[@]}\"",
+      "content_hash": "71e1cdbf260369b1"
+    },
+    {
+      "name": "positional parameters: set positional params",
+      "script": "set -- one two three; echo \"$1 $2 $3\"",
+      "content_hash": "9cb136cbc77f900e"
+    },
+    {
+      "name": "positional parameters: all positional with @",
+      "script": "set -- a b c; echo \"$@\"",
+      "content_hash": "c1716ca2e46f3fb9"
+    },
+    {
+      "name": "positional parameters: all positional with *",
+      "script": "set -- x y z; echo \"$*\"",
+      "content_hash": "c2c4604ac0b8cc52"
+    },
+    {
+      "name": "positional parameters: positional count",
+      "script": "set -- a b c d; echo \"$#\"",
+      "content_hash": "e813cb87fcc4539c"
+    },
+    {
+      "name": "positional parameters: empty positional params",
+      "script": "set --; echo \"$#\"",
+      "content_hash": "f14efeadc39dab36"
+    },
+    {
+      "name": "word splitting and iteration: iterate over word split string",
+      "script": "items=\"x y z\"; for item in $items; do echo \"$item\"; done",
+      "content_hash": "611492b1f15b58d9"
+    },
+    {
+      "name": "word splitting and iteration: iterate over array elements unquoted",
+      "script": "arr=(a b c); for item in ${arr[@]}; do echo \"$item\"; done",
+      "content_hash": "7f011d845be9325d"
+    },
+    {
+      "name": "array edge cases: array with spaces in elements using quotes",
+      "script": "arr=(\"hello world\" \"foo bar\"); echo \"${arr[0]}\"",
+      "content_hash": "e214a822fde0c7de"
+    },
+    {
+      "name": "array edge cases: array element assignment",
+      "script": "arr=(a b c); arr[1]=changed; echo \"${arr[@]}\"",
+      "content_hash": "2cd579f54a52f933"
+    },
+    {
+      "name": "array edge cases: array out of bounds returns empty",
+      "script": "arr=(a b); echo \"[${arr[99]}]\"",
+      "content_hash": "d045477b8f54d73a"
+    }
+  ]
+}

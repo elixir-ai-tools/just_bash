@@ -29,24 +29,38 @@ defmodule JustBash.Interpreter.Executor.Conditional do
 
   @doc """
   Evaluate a conditional expression AST node.
-  Returns `true` or `false`.
+  Returns `{result, updated_bash}` where result is `true` or `false`.
+  The bash struct may be updated (e.g. `BASH_REMATCH` after `=~`).
   """
-  @spec evaluate(JustBash.t(), AST.conditional_expression()) :: boolean()
+  @spec evaluate(JustBash.t(), AST.conditional_expression()) :: {boolean(), JustBash.t()}
   def evaluate(bash, %AST.CondWord{word: word}) do
     value = Expansion.expand_word_parts_simple(bash, word.parts)
-    value != ""
+    {value != "", bash}
   end
 
   def evaluate(bash, %AST.CondNot{operand: operand}) do
-    not evaluate(bash, operand)
+    {result, bash} = evaluate(bash, operand)
+    {not result, bash}
   end
 
   def evaluate(bash, %AST.CondAnd{left: left, right: right}) do
-    evaluate(bash, left) and evaluate(bash, right)
+    {left_result, bash} = evaluate(bash, left)
+
+    if left_result do
+      evaluate(bash, right)
+    else
+      {false, bash}
+    end
   end
 
   def evaluate(bash, %AST.CondOr{left: left, right: right}) do
-    evaluate(bash, left) or evaluate(bash, right)
+    {left_result, bash} = evaluate(bash, left)
+
+    if left_result do
+      {true, bash}
+    else
+      evaluate(bash, right)
+    end
   end
 
   def evaluate(bash, %AST.CondGroup{expression: expr}) do
@@ -56,7 +70,7 @@ defmodule JustBash.Interpreter.Executor.Conditional do
   def evaluate(bash, %AST.CondUnary{operator: op, operand: word}) do
     path = Expansion.expand_word_parts_simple(bash, word.parts)
     resolved = InMemoryFs.resolve_path(bash.cwd, path)
-    evaluate_unary(bash, op, path, resolved)
+    {evaluate_unary(bash, op, path, resolved), bash}
   end
 
   def evaluate(bash, %AST.CondBinary{operator: op, left: left_word, right: right_word}) do
@@ -130,9 +144,10 @@ defmodule JustBash.Interpreter.Executor.Conditional do
 
   defp evaluate_binary(bash, op, left, right) do
     case binary_op_type(op) do
-      :integer_comparison -> evaluate_integer_comparison(op, left, right)
-      :file_comparison -> evaluate_file_comparison(bash, op, left, right)
-      :string_comparison -> evaluate_string_comparison(op, left, right)
+      :integer_comparison -> {evaluate_integer_comparison(op, left, right), bash}
+      :file_comparison -> {evaluate_file_comparison(bash, op, left, right), bash}
+      :regex_match -> evaluate_regex_match(bash, left, right)
+      :string_comparison -> {evaluate_string_comparison(op, left, right), bash}
     end
   end
 
@@ -140,6 +155,7 @@ defmodule JustBash.Interpreter.Executor.Conditional do
     do: :integer_comparison
 
   defp binary_op_type(op) when op in [:"-nt", :"-ot", :"-ef"], do: :file_comparison
+  defp binary_op_type(:=~), do: :regex_match
   defp binary_op_type(_), do: :string_comparison
 
   defp evaluate_integer_comparison(:"-eq", left, right),
@@ -167,7 +183,6 @@ defmodule JustBash.Interpreter.Executor.Conditional do
   defp evaluate_string_comparison(:=, left, right), do: left == right
   defp evaluate_string_comparison(:==, left, right), do: pattern_match?(left, right)
   defp evaluate_string_comparison(:!=, left, right), do: not pattern_match?(left, right)
-  defp evaluate_string_comparison(:=~, left, right), do: regex_match?(left, right)
   defp evaluate_string_comparison(:<, left, right), do: left < right
   defp evaluate_string_comparison(:>, left, right), do: left > right
   defp evaluate_string_comparison(_, _left, _right), do: false
@@ -194,11 +209,45 @@ defmodule JustBash.Interpreter.Executor.Conditional do
     end
   end
 
-  defp regex_match?(str, pattern) do
+  # Evaluate =~ regex match and populate BASH_REMATCH
+  defp evaluate_regex_match(bash, str, pattern) do
     case Regex.compile(pattern) do
-      {:ok, regex} -> Regex.match?(regex, str)
-      {:error, _} -> false
+      {:ok, regex} ->
+        case Regex.run(regex, str) do
+          nil ->
+            {false, clear_bash_rematch(bash)}
+
+          matches ->
+            {true, set_bash_rematch(bash, matches)}
+        end
+
+      {:error, _} ->
+        {false, clear_bash_rematch(bash)}
     end
+  end
+
+  # Set BASH_REMATCH[0], BASH_REMATCH[1], etc. from regex match results
+  defp set_bash_rematch(bash, matches) do
+    env = clear_bash_rematch_env(bash.env)
+
+    env =
+      matches
+      |> Enum.with_index()
+      |> Enum.reduce(env, fn {value, idx}, acc ->
+        Map.put(acc, "BASH_REMATCH[#{idx}]", value)
+      end)
+
+    %{bash | env: env}
+  end
+
+  # Clear all BASH_REMATCH entries from env
+  defp clear_bash_rematch(bash) do
+    %{bash | env: clear_bash_rematch_env(bash.env)}
+  end
+
+  defp clear_bash_rematch_env(env) do
+    Enum.reject(env, fn {key, _} -> String.starts_with?(key, "BASH_REMATCH[") end)
+    |> Map.new()
   end
 
   # --- File System Helpers ---

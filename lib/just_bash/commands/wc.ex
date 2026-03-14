@@ -13,22 +13,63 @@ defmodule JustBash.Commands.Wc do
     {flags, files} = parse_flags(args)
 
     case files do
+      [] ->
+        output = format_output(stdin, nil, flags)
+        {Command.ok(output), bash}
+
       [file] ->
+        wc_single_file(bash, file, flags)
+
+      multiple ->
+        wc_multiple_files(bash, multiple, flags)
+    end
+  end
+
+  defp wc_single_file(bash, file, flags) do
+    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+
+    case InMemoryFs.read_file(bash.fs, resolved) do
+      {:ok, content} ->
+        output = format_output(content, file, flags)
+        {Command.ok(output), bash}
+
+      {:error, _} ->
+        {Command.error("wc: #{file}: No such file or directory\n"), bash}
+    end
+  end
+
+  defp wc_multiple_files(bash, files, flags) do
+    {outputs, total_counts, err_acc, exit_code} =
+      Enum.reduce(files, {[], %{lines: 0, words: 0, bytes: 0}, [], 0}, fn file,
+                                                                          {out_acc, totals,
+                                                                           err_acc, code} ->
         resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
         case InMemoryFs.read_file(bash.fs, resolved) do
           {:ok, content} ->
-            output = format_output(content, file, flags)
-            {Command.ok(output), bash}
+            counts = count_content(content)
+
+            new_totals = %{
+              lines: totals.lines + counts.lines,
+              words: totals.words + counts.words,
+              bytes: totals.bytes + counts.bytes
+            }
+
+            line = format_output(content, file, flags)
+            {[line | out_acc], new_totals, err_acc, code}
 
           {:error, _} ->
-            {Command.error("wc: #{file}: No such file or directory\n"), bash}
+            err = "wc: #{file}: No such file or directory\n"
+            {out_acc, totals, [err | err_acc], 1}
         end
+      end)
 
-      [] ->
-        output = format_output(stdin, nil, flags)
-        {Command.ok(output), bash}
-    end
+    total_line = format_counts(total_counts, flags, true) <> " total\n"
+    stdout = (Enum.reverse(outputs) ++ [total_line]) |> Enum.join()
+    stderr = err_acc |> Enum.reverse() |> Enum.join()
+
+    result = %{stdout: stdout, stderr: stderr, exit_code: exit_code}
+    {result, bash}
   end
 
   defp format_output(content, file, flags) do

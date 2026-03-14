@@ -92,16 +92,19 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
 
   @doc false
   def expand_array_all(bash, arr_name) do
+    prefix = "#{arr_name}["
+
     bash.env
     |> Enum.filter(fn {key, _} ->
-      case Regex.run(~r/^#{Regex.escape(arr_name)}\[(\d+)\]$/, key) do
-        [_, _idx] -> true
-        nil -> false
-      end
+      String.starts_with?(key, prefix) and String.ends_with?(key, "]")
     end)
     |> Enum.map(fn {key, value} ->
-      [_, idx] = Regex.run(~r/\[(\d+)\]$/, key)
-      {String.to_integer(idx), value}
+      # Extract the subscript between [ and ]
+      subscript =
+        key
+        |> String.slice(String.length(prefix)..-2//1)
+
+      {subscript, value}
     end)
     |> Enum.sort_by(&elem(&1, 0))
     |> Enum.map_join(" ", &elem(&1, 1))
@@ -109,22 +112,55 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
 
   @doc false
   def expand_array_index(bash, arr_name, index_str) do
-    index =
-      case Integer.parse(index_str) do
-        {n, ""} ->
-          n
+    if associative_array?(bash, arr_name) do
+      # Expand variable references in subscript (e.g., $key -> its value)
+      expanded_index = expand_subscript_vars(bash, index_str)
+      key = "#{arr_name}[#{expanded_index}]"
+      Map.get(bash.env, key, "")
+    else
+      index =
+        case Integer.parse(index_str) do
+          {n, ""} ->
+            n
 
-        _ ->
-          expr = Arithmetic.parse(index_str)
+          _ ->
+            expr = Arithmetic.parse(index_str)
 
-          case Arithmetic.evaluate(expr, bash.env) do
-            {:ok, n, _env} -> n
-            {:error, :division_by_zero, _env} -> raise ArithmeticError, message: "division by 0"
-          end
-      end
+            case Arithmetic.evaluate(expr, bash.env) do
+              {:ok, n, _env} -> n
+              {:error, :division_by_zero, _env} -> raise ArithmeticError, message: "division by 0"
+            end
+        end
 
-    key = "#{arr_name}[#{index}]"
-    Map.get(bash.env, key, "")
+      key = "#{arr_name}[#{index}]"
+      Map.get(bash.env, key, "")
+    end
+  end
+
+  defp associative_array?(bash, arr_name) do
+    Map.has_key?(bash.env, "__assoc__#{arr_name}")
+  end
+
+  # Expand $var and ${var} references within array subscript strings,
+  # and strip surrounding quotes (bash ignores quotes in subscripts).
+  defp expand_subscript_vars(bash, str) do
+    str
+    |> strip_subscript_quotes()
+    |> then(
+      &Regex.replace(~r/\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}/, &1, fn _, name ->
+        Map.get(bash.env, name, "")
+      end)
+    )
+    |> then(
+      &Regex.replace(~r/\$([a-zA-Z_][a-zA-Z0-9_]*)/, &1, fn _, name ->
+        Map.get(bash.env, name, "")
+      end)
+    )
+  end
+
+  # Strip surrounding double or single quotes from array subscript strings
+  defp strip_subscript_quotes(str) do
+    Regex.replace(~r/["']/, str, "")
   end
 
   # Special variables that are always considered "set" for nounset purposes
@@ -292,9 +328,17 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
     {apply_case_modification(str, direction, all), []}
   end
 
-  defp expand_with_operation(bash, _name, value, %AST.Indirection{}) do
-    var_name = value || ""
-    {Map.get(bash.env, var_name, ""), []}
+  defp expand_with_operation(bash, name, value, %AST.Indirection{}) do
+    if String.ends_with?(name, "[@]") or String.ends_with?(name, "[*]") do
+      # ${!arr[@]} or ${!arr[*]} — list array keys
+      arr_name = String.replace(name, ~r/\[[@*]\]$/, "")
+      keys = extract_array_keys(bash.env, arr_name)
+      {Enum.join(keys, " "), []}
+    else
+      # ${!VAR} — simple indirection
+      var_name = value || ""
+      {Map.get(bash.env, var_name, ""), []}
+    end
   end
 
   defp expand_with_operation(_bash, _name, value, %AST.ErrorIfUnset{
@@ -317,6 +361,19 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
   end
 
   # Helper functions
+
+  defp extract_array_keys(env, arr_name) do
+    prefix = arr_name <> "["
+
+    env
+    |> Enum.filter(fn {k, _v} ->
+      String.starts_with?(k, prefix) and not String.starts_with?(k, "__")
+    end)
+    |> Enum.map(fn {k, _v} ->
+      k |> String.trim_leading(prefix) |> String.trim_trailing("]")
+    end)
+    |> Enum.sort()
+  end
 
   defp count_array_elements(bash, arr_name) do
     bash.env

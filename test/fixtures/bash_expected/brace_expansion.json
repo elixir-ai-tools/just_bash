@@ -1,0 +1,89 @@
+{
+  "results": [
+    {
+      "content_hash": "d8c2c6362179a3f2",
+      "exit_code": 0,
+      "name": "brace expansion comparison: simple list",
+      "stderr": "",
+      "stdout": "a b c\n"
+    },
+    {
+      "content_hash": "35c938ff1684404e",
+      "exit_code": 0,
+      "name": "brace expansion comparison: numeric range",
+      "stderr": "",
+      "stdout": "1 2 3 4 5\n"
+    },
+    {
+      "content_hash": "feb3846174cfdbc1",
+      "exit_code": 0,
+      "name": "brace expansion comparison: descending range",
+      "stderr": "",
+      "stdout": "5 4 3 2 1\n"
+    },
+    {
+      "content_hash": "19229f0671092fb5",
+      "exit_code": 0,
+      "name": "brace expansion comparison: character range",
+      "stderr": "",
+      "stdout": "a b c d e\n"
+    },
+    {
+      "content_hash": "365c7f6f9c6a8460",
+      "exit_code": 0,
+      "name": "brace expansion comparison: with prefix",
+      "stderr": "",
+      "stdout": "prea preb prec\n"
+    },
+    {
+      "content_hash": "5d8eee60a55a489b",
+      "exit_code": 0,
+      "name": "brace expansion comparison: with suffix",
+      "stderr": "",
+      "stdout": "apost bpost cpost\n"
+    },
+    {
+      "content_hash": "c33e1c55c719b927",
+      "exit_code": 0,
+      "name": "brace expansion comparison: with prefix and suffix",
+      "stderr": "",
+      "stdout": "preapost prebpost precpost\n"
+    },
+    {
+      "content_hash": "42b1099960fceafe",
+      "exit_code": 0,
+      "name": "brace expansion comparison: nested braces",
+      "stderr": "",
+      "stdout": "a b c\n"
+    },
+    {
+      "content_hash": "72b51f499b6a6ea3",
+      "exit_code": 0,
+      "name": "brace expansion comparison: multiple expansions",
+      "stderr": "",
+      "stdout": "a1 a2 b1 b2\n"
+    },
+    {
+      "content_hash": "b2349ec9efafa5b9",
+      "exit_code": 0,
+      "name": "brace expansion comparison: single element not expanded",
+      "stderr": "",
+      "stdout": "{a}\n"
+    },
+    {
+      "content_hash": "06e7c9ede1bcb7f0",
+      "exit_code": 0,
+      "name": "brace expansion comparison: empty braces literal",
+      "stderr": "",
+      "stdout": "{}\n"
+    },
+    {
+      "content_hash": "7e46ffffc9dafd74",
+      "exit_code": 0,
+      "name": "brace expansion comparison: negative range",
+      "stderr": "",
+      "stdout": "-2 -1 0 1 2\n"
+    }
+  ],
+  "suite": "brace_expansion"
+}

@@ -1,0 +1,25 @@
+{
+  "suite": "tr",
+  "cases": [
+    {
+      "name": "tr comparison: tr single char replacement",
+      "script": "echo 'hello' | tr 'l' 'L'",
+      "content_hash": "6046d9a105bb2587"
+    },
+    {
+      "name": "tr comparison: tr space to newline",
+      "script": "echo 'a b c' | tr ' ' '\\n'",
+      "content_hash": "f1a8ed920f4a00e3"
+    },
+    {
+      "name": "tr comparison: tr delete characters",
+      "script": "echo 'hello' | tr -d 'l'",
+      "content_hash": "a8231e24a2dcd8e3"
+    },
+    {
+      "name": "tr comparison: tr character range lowercase to uppercase",
+      "script": "echo 'hello' | tr 'a-z' 'A-Z'",
+      "content_hash": "c8c8bd742115f8a7"
+    }
+  ]
+}

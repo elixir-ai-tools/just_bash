@@ -1,0 +1,215 @@
+{
+  "results": [
+    {
+      "content_hash": "cc30f007e5a8c457",
+      "exit_code": 0,
+      "name": "grep basic matching: basic match",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "eabae5cc04758edf",
+      "exit_code": 0,
+      "name": "grep basic matching: no match returns exit 1",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "3fd6de94aea9f434",
+      "exit_code": 0,
+      "name": "grep basic matching: multiple matching lines",
+      "stderr": "",
+      "stdout": "apple\nbanana\napricot\n"
+    },
+    {
+      "content_hash": "887ba932f0528f68",
+      "exit_code": 0,
+      "name": "grep basic matching: grep from stdin",
+      "stderr": "",
+      "stdout": "hello world\n"
+    },
+    {
+      "content_hash": "3fac7d6f453aa5b7",
+      "exit_code": 0,
+      "name": "grep flags: grep -n line numbers",
+      "stderr": "",
+      "stdout": "2:b\n"
+    },
+    {
+      "content_hash": "20a3db49a13f7d72",
+      "exit_code": 0,
+      "name": "grep flags: grep -i case insensitive",
+      "stderr": "",
+      "stdout": "Hello\nHELLO\nhello\n"
+    },
+    {
+      "content_hash": "f6f12b7d303de3a5",
+      "exit_code": 0,
+      "name": "grep flags: grep -v inverted match",
+      "stderr": "",
+      "stdout": "a\nc\n"
+    },
+    {
+      "content_hash": "26a2b46371db10b2",
+      "exit_code": 0,
+      "name": "grep flags: grep -c count",
+      "stderr": "",
+      "stdout": "2\n"
+    },
+    {
+      "content_hash": "e5c6a8a49e73bf0d",
+      "exit_code": 0,
+      "name": "grep flags: grep -w word match",
+      "stderr": "",
+      "stdout": "foo\nbar foo baz\n"
+    },
+    {
+      "content_hash": "8a05668d00d2d3e6",
+      "exit_code": 0,
+      "name": "grep flags: grep -F fixed string",
+      "stderr": "",
+      "stdout": "test.*pattern\n"
+    },
+    {
+      "content_hash": "75edd807bae1039b",
+      "exit_code": 0,
+      "name": "grep flags: grep -q quiet mode success",
+      "stderr": "",
+      "stdout": "found\n"
+    },
+    {
+      "content_hash": "7c6cd8c8b8122c52",
+      "exit_code": 0,
+      "name": "grep flags: grep -q quiet mode failure",
+      "stderr": "",
+      "stdout": "not found\n"
+    },
+    {
+      "content_hash": "749435dcac4a3347",
+      "exit_code": 0,
+      "name": "grep flags: grep -E extended regex alternation",
+      "stderr": "",
+      "stdout": "foo\nbar\n"
+    },
+    {
+      "content_hash": "5b62a4891ae4b24d",
+      "exit_code": 0,
+      "name": "grep flags: grep -E extended regex plus",
+      "stderr": "",
+      "stdout": "ab\naab\naaab\n"
+    },
+    {
+      "content_hash": "66533bbd264b9c98",
+      "exit_code": 0,
+      "name": "grep flags: grep -o only matching",
+      "stderr": "",
+      "stdout": "wor\n"
+    },
+    {
+      "content_hash": "507d2baf9aa854ac",
+      "exit_code": 0,
+      "name": "grep patterns and anchors: caret anchor start of line",
+      "stderr": "",
+      "stdout": "hello\nhello world\n"
+    },
+    {
+      "content_hash": "f5a970bb10a190cb",
+      "exit_code": 0,
+      "name": "grep patterns and anchors: dollar anchor end of line",
+      "stderr": "",
+      "stdout": "world\nhello world\n"
+    },
+    {
+      "content_hash": "52e0c1fe0cd06cbd",
+      "exit_code": 0,
+      "name": "grep patterns and anchors: dot matches any char",
+      "stderr": "",
+      "stdout": "abc\naXc\na c\n"
+    },
+    {
+      "content_hash": "1f68b641c7267c06",
+      "exit_code": 0,
+      "name": "grep patterns and anchors: character class digits",
+      "stderr": "",
+      "stdout": "123\na1b\n"
+    },
+    {
+      "content_hash": "a10392496b0413f0",
+      "exit_code": 0,
+      "name": "grep patterns and anchors: character class letters",
+      "stderr": "",
+      "stdout": "abc\n"
+    },
+    {
+      "content_hash": "d20834465985b7d3",
+      "exit_code": 0,
+      "name": "grep patterns and anchors: negated character class",
+      "stderr": "",
+      "stdout": "abc\na1b\n"
+    },
+    {
+      "content_hash": "e89a438c73e2136a",
+      "exit_code": 0,
+      "name": "grep patterns and anchors: star quantifier",
+      "stderr": "",
+      "stdout": "ac\nabc\nabbc\n"
+    },
+    {
+      "content_hash": "349c3e5568cb69b0",
+      "exit_code": 0,
+      "name": "grep patterns and anchors: escape special character",
+      "stderr": "",
+      "stdout": "a.b\n"
+    },
+    {
+      "content_hash": "45063798ac956ed4",
+      "exit_code": 0,
+      "name": "grep edge cases: empty pattern matches all",
+      "stderr": "",
+      "stdout": "a\nb\n"
+    },
+    {
+      "content_hash": "cbead1f983524aad",
+      "exit_code": 0,
+      "name": "grep edge cases: empty input",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "efc3520c20d78b41",
+      "exit_code": 0,
+      "name": "grep edge cases: special chars in input",
+      "stderr": "",
+      "stdout": "hello$world\n"
+    },
+    {
+      "content_hash": "1e65c783ebb80209",
+      "exit_code": 0,
+      "name": "grep edge cases: grep with pipe in pattern using -E",
+      "stderr": "",
+      "stdout": "cat\ndog\n"
+    },
+    {
+      "content_hash": "758e4a7607efa6e2",
+      "exit_code": 0,
+      "name": "grep combined flags: grep -in case insensitive with line numbers",
+      "stderr": "",
+      "stdout": "1:Hello\n3:HELLO\n"
+    },
+    {
+      "content_hash": "55653aa48342047b",
+      "exit_code": 0,
+      "name": "grep combined flags: grep -iv inverted case insensitive",
+      "stderr": "",
+      "stdout": "world\n"
+    },
+    {
+      "content_hash": "bf2808f23b3b4b52",
+      "exit_code": 0,
+      "name": "grep combined flags: grep -cv count inverted",
+      "stderr": "",
+      "stdout": "2\n"
+    }
+  ],
+  "suite": "grep"
+}

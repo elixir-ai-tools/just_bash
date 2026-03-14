@@ -1,0 +1,152 @@
+{
+  "results": [
+    {
+      "content_hash": "d34a7800e7f5b693",
+      "exit_code": 0,
+      "name": "wc basic usage: count lines words bytes from stdin",
+      "stderr": "",
+      "stdout": "      1       2      12\n"
+    },
+    {
+      "content_hash": "722ef365ed6f83e7",
+      "exit_code": 0,
+      "name": "wc basic usage: count single line",
+      "stderr": "",
+      "stdout": "      1       1       6\n"
+    },
+    {
+      "content_hash": "ba8be89f489df0c9",
+      "exit_code": 0,
+      "name": "wc basic usage: count multiple lines",
+      "stderr": "",
+      "stdout": "      3       3       6\n"
+    },
+    {
+      "content_hash": "6f957843eade2523",
+      "exit_code": 0,
+      "name": "wc individual flags: wc -l line count only",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "3ee3b2ad07071639",
+      "exit_code": 0,
+      "name": "wc individual flags: wc -w word count only",
+      "stderr": "",
+      "stdout": "4\n"
+    },
+    {
+      "content_hash": "ba53a586dc40f1a0",
+      "exit_code": 0,
+      "name": "wc individual flags: wc -c byte count only",
+      "stderr": "",
+      "stdout": "6\n"
+    },
+    {
+      "content_hash": "bb61861ac853c9ba",
+      "exit_code": 0,
+      "name": "wc individual flags: wc -l single line",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "9c6beec35f7c0fb4",
+      "exit_code": 0,
+      "name": "wc individual flags: wc -w single word",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "6e3eaaafff4f656e",
+      "exit_code": 0,
+      "name": "wc edge cases: empty input",
+      "stderr": "",
+      "stdout": "      0       0       0\n"
+    },
+    {
+      "content_hash": "50e735f96f07535f",
+      "exit_code": 0,
+      "name": "wc edge cases: empty input line count",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "8500fcb8b7976bc5",
+      "exit_code": 0,
+      "name": "wc edge cases: only whitespace",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "e6593076ae65534d",
+      "exit_code": 0,
+      "name": "wc edge cases: multiple spaces between words",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "7cb0f8bab9efafa0",
+      "exit_code": 0,
+      "name": "wc edge cases: tabs as separators",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "38e45c1ffcab8d13",
+      "exit_code": 0,
+      "name": "wc edge cases: newline only",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "0faf2c40ee3ba3ff",
+      "exit_code": 0,
+      "name": "wc edge cases: no trailing newline",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "034456d033f89a69",
+      "exit_code": 0,
+      "name": "wc with multiline input: count lines in multiline",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "85dba9ad33bfeb96",
+      "exit_code": 0,
+      "name": "wc with multiline input: count words across lines",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "45600417b7447173",
+      "exit_code": 0,
+      "name": "wc with multiline input: count bytes in multiline",
+      "stderr": "",
+      "stdout": "6\n"
+    },
+    {
+      "content_hash": "e1f095d1837fc478",
+      "exit_code": 0,
+      "name": "wc pipeline combinations: wc in middle of pipeline",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "1c1a580a9d09c023",
+      "exit_code": 0,
+      "name": "wc pipeline combinations: grep then wc",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "c15590eaab8f6602",
+      "exit_code": 0,
+      "name": "wc pipeline combinations: head then wc",
+      "stderr": "",
+      "stdout": "3\n"
+    }
+  ],
+  "suite": "wc"
+}

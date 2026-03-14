@@ -1,0 +1,33 @@
+{
+  "results": [
+    {
+      "content_hash": "6046d9a105bb2587",
+      "exit_code": 0,
+      "name": "tr comparison: tr single char replacement",
+      "stderr": "",
+      "stdout": "heLLo\n"
+    },
+    {
+      "content_hash": "f1a8ed920f4a00e3",
+      "exit_code": 0,
+      "name": "tr comparison: tr space to newline",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "a8231e24a2dcd8e3",
+      "exit_code": 0,
+      "name": "tr comparison: tr delete characters",
+      "stderr": "",
+      "stdout": "heo\n"
+    },
+    {
+      "content_hash": "c8c8bd742115f8a7",
+      "exit_code": 0,
+      "name": "tr comparison: tr character range lowercase to uppercase",
+      "stderr": "",
+      "stdout": "HELLO\n"
+    }
+  ],
+  "suite": "tr"
+}

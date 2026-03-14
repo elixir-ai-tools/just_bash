@@ -162,25 +162,46 @@ defmodule JustBash.Commands.ArgParser do
   end
 
   defp parse_short_flag(flag, args, ctx, opts, positional) do
-    case Map.get(ctx.short_map, flag) do
-      {name, spec} ->
-        handle_flag(name, spec, args, ctx, opts, positional)
-
-      nil ->
-        # Check if it's in long_map (some commands use -long-form)
-        case Map.get(ctx.long_map, flag) do
-          {name, spec} ->
-            handle_flag(name, spec, args, ctx, opts, positional)
-
-          nil ->
-            if ctx.allow_unknown do
-              parse_loop(args, ctx, opts, [flag | positional])
-            else
-              {:error, format_unknown_error(ctx.command, flag)}
-            end
-        end
+    with nil <- Map.get(ctx.short_map, flag),
+         nil <- Map.get(ctx.long_map, flag) do
+      handle_unknown_short_flag(flag, args, ctx, opts, positional)
+    else
+      {name, spec} -> handle_flag(name, spec, args, ctx, opts, positional)
     end
   end
+
+  defp handle_unknown_short_flag(flag, args, ctx, opts, positional) do
+    case expand_combined_flags(flag, ctx) do
+      {:ok, expanded} ->
+        parse_loop(expanded ++ args, ctx, opts, positional)
+
+      :error ->
+        if ctx.allow_unknown,
+          do: parse_loop(args, ctx, opts, [flag | positional]),
+          else: {:error, format_unknown_error(ctx.command, flag)}
+    end
+  end
+
+  # Expand combined short flags like -fsSL into [-f, -s, -S, -L].
+  # Only succeeds if ALL letters map to known boolean short flags.
+  defp expand_combined_flags("-" <> chars, ctx) when byte_size(chars) > 1 do
+    flags =
+      chars
+      |> String.graphemes()
+      |> Enum.map(fn c -> "-" <> c end)
+
+    all_boolean? =
+      Enum.all?(flags, fn f ->
+        case Map.get(ctx.short_map, f) do
+          {_name, spec} -> spec[:type] == :boolean
+          nil -> false
+        end
+      end)
+
+    if all_boolean?, do: {:ok, flags}, else: :error
+  end
+
+  defp expand_combined_flags(_, _ctx), do: :error
 
   defp handle_flag(name, spec, args, ctx, opts, positional) do
     case spec[:type] do

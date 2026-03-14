@@ -81,6 +81,18 @@ defmodule JustBash.Commands.TextProcessingTest do
       {result, _} = JustBash.exec(bash, "head /empty.txt")
       assert result.exit_code == 0
     end
+
+    test "head with multiple files shows headers" do
+      bash =
+        JustBash.new(files: %{"/a.txt" => "line1a\nline2a\n", "/b.txt" => "line1b\nline2b\n"})
+
+      {result, _} = JustBash.exec(bash, "head -n 1 /a.txt /b.txt")
+      assert result.exit_code == 0
+      assert result.stdout =~ "==> /a.txt <=="
+      assert result.stdout =~ "line1a"
+      assert result.stdout =~ "==> /b.txt <=="
+      assert result.stdout =~ "line1b"
+    end
   end
 
   describe "tail command" do
@@ -115,6 +127,18 @@ defmodule JustBash.Commands.TextProcessingTest do
       {result, _} = JustBash.exec(bash, "tail /nonexistent")
       assert result.exit_code == 1
       assert result.stderr =~ "No such file or directory"
+    end
+
+    test "tail with multiple files shows headers" do
+      bash =
+        JustBash.new(files: %{"/a.txt" => "line1a\nline2a\n", "/b.txt" => "line1b\nline2b\n"})
+
+      {result, _} = JustBash.exec(bash, "tail -n 1 /a.txt /b.txt")
+      assert result.exit_code == 0
+      assert result.stdout =~ "==> /a.txt <=="
+      assert result.stdout =~ "line2a"
+      assert result.stdout =~ "==> /b.txt <=="
+      assert result.stdout =~ "line2b"
     end
   end
 
@@ -621,6 +645,42 @@ defmodule JustBash.Commands.TextProcessingTest do
       assert result.exit_code == 1
       assert result.stderr =~ "missing operand"
     end
+
+    test "tr POSIX class [:upper:] to [:lower:] translates case" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo HELLO | tr '[:upper:]' '[:lower:]'")
+      assert result.stdout == "hello\n"
+    end
+
+    test "tr POSIX class [:lower:] to [:upper:] translates case" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo hello | tr '[:lower:]' '[:upper:]'")
+      assert result.stdout == "HELLO\n"
+    end
+
+    test "tr -s squeezes repeated characters" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo 'aabbcc' | tr -s 'a'")
+      assert result.stdout == "abbcc\n"
+    end
+
+    test "tr -s with two sets translates and squeezes" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo 'aabbcc' | tr -s 'abc' 'xyz'")
+      assert result.stdout == "xyz\n"
+    end
+
+    test "tr -d with POSIX class deletes digits" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo 'abc123def' | tr -d '[:digit:]'")
+      assert result.stdout == "abcdef\n"
+    end
+
+    test "tr -cs complement and squeeze" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo 'hello world foo' | tr -cs '[:alpha:]' '\\n'")
+      assert result.stdout == "hello\nworld\nfoo\n"
+    end
   end
 
   describe "sort command" do
@@ -658,6 +718,44 @@ defmodule JustBash.Commands.TextProcessingTest do
       bash = JustBash.new()
       {result, _} = JustBash.exec(bash, "echo -e 'c\\na\\nb' | sort")
       assert result.stdout == "a\nb\nc\n"
+    end
+
+    test "sort -k1,1nr respects reverse modifier in key spec" do
+      bash =
+        JustBash.new(
+          files: %{"/data.txt" => "      1 a\n      8 the\n      5 fox\n      4 dog\n"}
+        )
+
+      {result, _} = JustBash.exec(bash, "sort -k1,1nr /data.txt")
+      assert result.stdout == "      8 the\n      5 fox\n      4 dog\n      1 a\n"
+    end
+
+    test "sort -k1,1rn respects reverse modifier regardless of order" do
+      bash =
+        JustBash.new(
+          files: %{"/data.txt" => "      1 a\n      8 the\n      5 fox\n      4 dog\n"}
+        )
+
+      {result, _} = JustBash.exec(bash, "sort -k1,1rn /data.txt")
+      assert result.stdout == "      8 the\n      5 fox\n      4 dog\n      1 a\n"
+    end
+
+    test "sort with multiple -k keys sorts by first then second" do
+      bash =
+        JustBash.new(
+          files: %{"/data.txt" => "      8 the\n      5 fox\n      4 dog\n      1 a\n"}
+        )
+
+      {result, _} = JustBash.exec(bash, "sort -k1,1nr -k2,2 /data.txt")
+      assert result.stdout == "      8 the\n      5 fox\n      4 dog\n      1 a\n"
+    end
+
+    test "sort with multiple -k keys breaks ties with secondary key" do
+      bash =
+        JustBash.new(files: %{"/data.txt" => "2 cherry\n2 apple\n1 banana\n3 date\n"})
+
+      {result, _} = JustBash.exec(bash, "sort -k1,1nr -k2,2 /data.txt")
+      assert result.stdout == "3 date\n2 apple\n2 cherry\n1 banana\n"
     end
   end
 
@@ -719,6 +817,29 @@ defmodule JustBash.Commands.TextProcessingTest do
       {result, _} = JustBash.exec(bash, "wc /nonexistent")
       assert result.exit_code == 1
       assert result.stderr =~ "No such file or directory"
+    end
+
+    test "wc with multiple files" do
+      bash =
+        JustBash.new(files: %{"/a.txt" => "hello\nworld\n", "/b.txt" => "one two three\n"})
+
+      {result, _} = JustBash.exec(bash, "wc -l /a.txt /b.txt")
+      assert result.exit_code == 0
+      assert result.stdout =~ "2"
+      assert result.stdout =~ "/a.txt"
+      assert result.stdout =~ "1"
+      assert result.stdout =~ "/b.txt"
+      assert result.stdout =~ "total"
+    end
+
+    test "wc -c with multiple files" do
+      bash = JustBash.new(files: %{"/x.txt" => "abc", "/y.txt" => "defgh"})
+      {result, _} = JustBash.exec(bash, "wc -c /x.txt /y.txt")
+      assert result.exit_code == 0
+      assert result.stdout =~ "3"
+      assert result.stdout =~ "5"
+      assert result.stdout =~ "8"
+      assert result.stdout =~ "total"
     end
   end
 

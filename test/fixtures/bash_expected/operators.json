@@ -1,0 +1,40 @@
+{
+  "results": [
+    {
+      "content_hash": "e8fc1dd8f7cd3027",
+      "exit_code": 0,
+      "name": "operators comparison: and operator success",
+      "stderr": "",
+      "stdout": "yes\n"
+    },
+    {
+      "content_hash": "97fc285b16d8e98f",
+      "exit_code": 1,
+      "name": "operators comparison: and operator failure",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "a9c8ab61eee9fd60",
+      "exit_code": 0,
+      "name": "operators comparison: or operator success",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "7270a8ba3e19c181",
+      "exit_code": 0,
+      "name": "operators comparison: or operator failure",
+      "stderr": "",
+      "stdout": "yes\n"
+    },
+    {
+      "content_hash": "dd249c1153883661",
+      "exit_code": 0,
+      "name": "operators comparison: mixed operators",
+      "stderr": "",
+      "stdout": "yes\n"
+    }
+  ],
+  "suite": "operators"
+}

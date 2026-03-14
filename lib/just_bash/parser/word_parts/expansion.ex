@@ -138,7 +138,17 @@ defmodule JustBash.Parser.WordParts.Expansion do
   end
 
   defp parse_indirection_expansion(value, start) do
-    {name, _i} = collect_var_name(value, start)
+    {name, i} = collect_var_name(value, start)
+
+    name =
+      if String.at(value, i) == "[" do
+        bracket_end = Bracket.find_matching_bracket(value, i)
+        subscript = String.slice(value, (i + 1)..(bracket_end - 1)//1)
+        name <> "[" <> subscript <> "]"
+      else
+        name
+      end
+
     end_idx = Bracket.find_matching_brace(value, start - 2)
     {AST.parameter_expansion(name, %AST.Indirection{}), end_idx + 1}
   end

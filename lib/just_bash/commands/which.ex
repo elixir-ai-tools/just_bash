@@ -28,7 +28,9 @@ defmodule JustBash.Commands.Which do
 
     {output, all_found} =
       Enum.reduce(opts.names, {"", true}, fn name, {acc_out, acc_found} ->
-        paths = find_command(bash.fs, path_dirs, name, opts.show_all)
+        paths =
+          find_command(bash, path_dirs, name, opts.show_all)
+
         accumulate_paths(paths, acc_out, acc_found, opts.silent)
       end)
 
@@ -74,31 +76,52 @@ defmodule JustBash.Commands.Which do
     parse_args(rest, %{opts | names: opts.names ++ [name]})
   end
 
-  defp find_command(fs, path_dirs, name, show_all) do
-    results =
-      Enum.flat_map(path_dirs, fn dir ->
-        if dir == "" do
-          []
-        else
-          full_path = Path.join(dir, name)
+  defp find_command(bash, path_dirs, name, show_all) do
+    # Collect all locations where the command can be found, in priority order:
+    # 1. Shell functions
+    # 2. Custom commands
+    # 3. Builtins (reported as "name: shell built-in command")
+    # 4. PATH executables
+    function_hits =
+      if Map.has_key?(bash.functions, name), do: [name], else: []
 
-          cond do
-            Registry.exists?(name) ->
-              [full_path]
+    custom_hits =
+      if Map.has_key?(bash.commands, name), do: [name], else: []
 
-            file_exists?(fs, full_path) ->
-              [full_path]
+    builtin_hits =
+      if Registry.builtin?(name), do: ["#{name}: shell built-in command"], else: []
 
-            true ->
-              []
+    path_hits =
+      if Registry.builtin?(name) do
+        # Builtins don't have a real file on disk in JustBash
+        []
+      else
+        Enum.flat_map(path_dirs, fn dir ->
+          if dir == "" do
+            []
+          else
+            full_path = Path.join(dir, name)
+
+            cond do
+              Registry.exists?(name) ->
+                [full_path]
+
+              file_exists?(bash.fs, full_path) ->
+                [full_path]
+
+              true ->
+                []
+            end
           end
-        end
-      end)
+        end)
+      end
+
+    all_hits = function_hits ++ custom_hits ++ builtin_hits ++ Enum.uniq(path_hits)
 
     if show_all do
-      Enum.uniq(results)
+      all_hits
     else
-      Enum.take(results, 1)
+      Enum.take(all_hits, 1)
     end
   end
 

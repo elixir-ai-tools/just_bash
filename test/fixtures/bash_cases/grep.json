@@ -1,0 +1,155 @@
+{
+  "suite": "grep",
+  "cases": [
+    {
+      "name": "grep basic matching: basic match",
+      "script": "echo -e 'hello\\nworld' | grep 'hello'",
+      "content_hash": "cc30f007e5a8c457"
+    },
+    {
+      "name": "grep basic matching: no match returns exit 1",
+      "script": "echo 'hello' | grep 'xyz'; echo $?",
+      "content_hash": "eabae5cc04758edf"
+    },
+    {
+      "name": "grep basic matching: multiple matching lines",
+      "script": "echo -e 'apple\\nbanana\\napricot' | grep 'a'",
+      "content_hash": "3fd6de94aea9f434"
+    },
+    {
+      "name": "grep basic matching: grep from stdin",
+      "script": "echo 'hello world' | grep 'ell'",
+      "content_hash": "887ba932f0528f68"
+    },
+    {
+      "name": "grep flags: grep -n line numbers",
+      "script": "echo -e 'a\\nb\\nc' | grep -n 'b'",
+      "content_hash": "3fac7d6f453aa5b7"
+    },
+    {
+      "name": "grep flags: grep -i case insensitive",
+      "script": "echo -e 'Hello\\nHELLO\\nhello' | grep -i 'hello'",
+      "content_hash": "20a3db49a13f7d72"
+    },
+    {
+      "name": "grep flags: grep -v inverted match",
+      "script": "echo -e 'a\\nb\\nc' | grep -v 'b'",
+      "content_hash": "f6f12b7d303de3a5"
+    },
+    {
+      "name": "grep flags: grep -c count",
+      "script": "echo -e 'a\\nb\\na' | grep -c 'a'",
+      "content_hash": "26a2b46371db10b2"
+    },
+    {
+      "name": "grep flags: grep -w word match",
+      "script": "echo -e 'foo\\nfoobar\\nbar foo baz' | grep -w 'foo'",
+      "content_hash": "e5c6a8a49e73bf0d"
+    },
+    {
+      "name": "grep flags: grep -F fixed string",
+      "script": "echo 'test.*pattern' | grep -F '.*'",
+      "content_hash": "8a05668d00d2d3e6"
+    },
+    {
+      "name": "grep flags: grep -q quiet mode success",
+      "script": "echo 'test' | grep -q 'test' && echo 'found'",
+      "content_hash": "75edd807bae1039b"
+    },
+    {
+      "name": "grep flags: grep -q quiet mode failure",
+      "script": "echo 'test' | grep -q 'xyz' || echo 'not found'",
+      "content_hash": "7c6cd8c8b8122c52"
+    },
+    {
+      "name": "grep flags: grep -E extended regex alternation",
+      "script": "echo -e 'foo\\nbar\\nbaz' | grep -E 'foo|bar'",
+      "content_hash": "749435dcac4a3347"
+    },
+    {
+      "name": "grep flags: grep -E extended regex plus",
+      "script": "echo -e 'ab\\naab\\naaab' | grep -E 'a+b'",
+      "content_hash": "5b62a4891ae4b24d"
+    },
+    {
+      "name": "grep flags: grep -o only matching",
+      "script": "echo 'hello world' | grep -o 'wor'",
+      "content_hash": "66533bbd264b9c98"
+    },
+    {
+      "name": "grep patterns and anchors: caret anchor start of line",
+      "script": "echo -e 'hello\\nworld\\nhello world' | grep '^hello'",
+      "content_hash": "507d2baf9aa854ac"
+    },
+    {
+      "name": "grep patterns and anchors: dollar anchor end of line",
+      "script": "echo -e 'hello\\nworld\\nhello world' | grep 'world$'",
+      "content_hash": "f5a970bb10a190cb"
+    },
+    {
+      "name": "grep patterns and anchors: dot matches any char",
+      "script": "echo -e 'abc\\naXc\\na c' | grep 'a.c'",
+      "content_hash": "52e0c1fe0cd06cbd"
+    },
+    {
+      "name": "grep patterns and anchors: character class digits",
+      "script": "echo -e 'abc\\n123\\na1b' | grep '[0-9]'",
+      "content_hash": "1f68b641c7267c06"
+    },
+    {
+      "name": "grep patterns and anchors: character class letters",
+      "script": "echo -e '123\\nabc\\n456' | grep '[a-z]'",
+      "content_hash": "a10392496b0413f0"
+    },
+    {
+      "name": "grep patterns and anchors: negated character class",
+      "script": "echo -e 'abc\\n123\\na1b' | grep '[^0-9]'",
+      "content_hash": "d20834465985b7d3"
+    },
+    {
+      "name": "grep patterns and anchors: star quantifier",
+      "script": "echo -e 'ac\\nabc\\nabbc' | grep 'ab*c'",
+      "content_hash": "e89a438c73e2136a"
+    },
+    {
+      "name": "grep patterns and anchors: escape special character",
+      "script": "echo -e 'a.b\\naxb' | grep 'a\\.b'",
+      "content_hash": "349c3e5568cb69b0"
+    },
+    {
+      "name": "grep edge cases: empty pattern matches all",
+      "script": "echo -e 'a\\nb' | grep ''",
+      "content_hash": "45063798ac956ed4"
+    },
+    {
+      "name": "grep edge cases: empty input",
+      "script": "echo -n '' | grep 'a'; echo $?",
+      "content_hash": "cbead1f983524aad"
+    },
+    {
+      "name": "grep edge cases: special chars in input",
+      "script": "echo 'hello$world' | grep 'hello'",
+      "content_hash": "efc3520c20d78b41"
+    },
+    {
+      "name": "grep edge cases: grep with pipe in pattern using -E",
+      "script": "echo -e 'cat\\ndog\\nbird' | grep -E 'cat|dog'",
+      "content_hash": "1e65c783ebb80209"
+    },
+    {
+      "name": "grep combined flags: grep -in case insensitive with line numbers",
+      "script": "echo -e 'Hello\\nworld\\nHELLO' | grep -in 'hello'",
+      "content_hash": "758e4a7607efa6e2"
+    },
+    {
+      "name": "grep combined flags: grep -iv inverted case insensitive",
+      "script": "echo -e 'Hello\\nworld\\nHELLO' | grep -iv 'hello'",
+      "content_hash": "55653aa48342047b"
+    },
+    {
+      "name": "grep combined flags: grep -cv count inverted",
+      "script": "echo -e 'a\\nb\\na\\nc' | grep -cv 'a'",
+      "content_hash": "bf2808f23b3b4b52"
+    }
+  ]
+}

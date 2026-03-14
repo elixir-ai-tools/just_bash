@@ -177,6 +177,19 @@ defmodule JustBash.Commands.FileInfoTest do
       assert result.exit_code == 1
       assert result.stderr =~ "No such file"
     end
+
+    test "find -exec runs command on each match" do
+      bash =
+        JustBash.new(
+          files: %{"/dir/a.txt" => "hello", "/dir/b.txt" => "world", "/dir/c.md" => "skip"}
+        )
+
+      {result, _} = JustBash.exec(bash, "find /dir -name '*.txt' -exec echo found {} \\;")
+      assert result.stdout =~ "found"
+      assert result.stdout =~ "a.txt"
+      assert result.stdout =~ "b.txt"
+      refute result.stdout =~ "c.md"
+    end
   end
 
   describe "tree command" do

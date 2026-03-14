@@ -371,8 +371,18 @@ defmodule JustBash.Parser.Compound do
 
           binary_cond_op?(parser, helpers) ->
             {op_token, parser} = helpers.advance(parser)
-            {right_word, parser} = parse_cond_word(parser, helpers)
             operator = String.to_atom(op_token.value)
+
+            {right_word, parser} =
+              if operator == :=~ do
+                # After =~, collect all tokens as a raw regex pattern until
+                # we hit ]], &&, or || — parentheses, pipes, etc. are regex
+                # metacharacters here, not shell syntax.
+                parse_regex_pattern(parser, helpers)
+              else
+                parse_cond_word(parser, helpers)
+              end
+
             {%AST.CondBinary{operator: operator, left: left_word, right: right_word}, parser}
 
           true ->
@@ -390,6 +400,56 @@ defmodule JustBash.Parser.Compound do
 
   defp binary_cond_op?(parser, helpers) do
     helpers.current(parser).value in @binary_ops
+  end
+
+  # Collect tokens as a raw regex pattern for the =~ operator.
+  # In bash, the RHS of =~ is an extended regex where (, ), |, etc.
+  # are regex metacharacters, not shell syntax. We consume tokens until
+  # we hit ]], &&, or || and concatenate them into a single word.
+  defp parse_regex_pattern(parser, helpers) do
+    stop_tokens = [:dbrack_end, :damp, :dpipe]
+    {parts, parser} = collect_regex_tokens(parser, helpers, stop_tokens, [])
+
+    case parts do
+      [] -> {AST.word([]), parser}
+      _ -> {AST.word(parts), parser}
+    end
+  end
+
+  defp collect_regex_tokens(parser, helpers, stop_tokens, acc) do
+    if helpers.check?(parser, stop_tokens) or helpers.check?(parser, [:eof]) do
+      {Enum.reverse(acc), parser}
+    else
+      {token, parser} = helpers.advance(parser)
+
+      part =
+        case token.type do
+          # Quoted strings or variable expansions need proper word parsing
+          t when t in [:word, :name, :number, :assignment_word] ->
+            helpers.parse_word_from_token(token).parts
+
+          # Tokens that are regex metacharacters but shell operators
+          :lparen ->
+            [%AST.Literal{value: "("}]
+
+          :rparen ->
+            [%AST.Literal{value: ")"}]
+
+          :pipe ->
+            [%AST.Literal{value: "|"}]
+
+          :bang ->
+            [%AST.Literal{value: "!"}]
+
+          :semi ->
+            [%AST.Literal{value: ";"}]
+
+          _ ->
+            [%AST.Literal{value: token.value}]
+        end
+
+      collect_regex_tokens(parser, helpers, stop_tokens, Enum.reverse(part) ++ acc)
+    end
   end
 
   defp parse_cond_word(parser, helpers) do

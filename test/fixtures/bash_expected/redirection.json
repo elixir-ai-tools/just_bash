@@ -1,0 +1,131 @@
+{
+  "results": [
+    {
+      "content_hash": "186ffc501451663c",
+      "exit_code": 0,
+      "name": "stdout redirection: redirect stdout to file and read back",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "56221b276d9b950d",
+      "exit_code": 0,
+      "name": "stdout redirection: append to file",
+      "stderr": "",
+      "stdout": "first\nsecond\n"
+    },
+    {
+      "content_hash": "e9eead40ea743d17",
+      "exit_code": 0,
+      "name": "stdout redirection: multiple appends",
+      "stderr": "",
+      "stdout": "line_a\nline_b\nline_c\n"
+    },
+    {
+      "content_hash": "546d8d45b6251b37",
+      "exit_code": 0,
+      "name": "stderr redirection: redirect stderr to dev null",
+      "stderr": "",
+      "stdout": "done\n"
+    },
+    {
+      "content_hash": "bd802433a594bb30",
+      "exit_code": 0,
+      "name": "stderr redirection: stderr to stdout with 2>&1",
+      "stderr": "",
+      "stdout": "stdout\n1\n"
+    },
+    {
+      "content_hash": "316096a54cabe868",
+      "exit_code": 0,
+      "name": "combined redirections: redirect both stdout and stderr with &>",
+      "stderr": "",
+      "stdout": "done\n"
+    },
+    {
+      "content_hash": "99b8b10840f076e3",
+      "exit_code": 0,
+      "name": "combined redirections: stderr to stdout then pipe",
+      "stderr": "",
+      "stdout": "2\n"
+    },
+    {
+      "content_hash": "61e71cb8a0252cf1",
+      "exit_code": 0,
+      "name": "here-strings: basic here-string",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "f0bb512fc5323584",
+      "exit_code": 0,
+      "name": "here-strings: here-string with variable",
+      "stderr": "",
+      "stdout": "hello world\n"
+    },
+    {
+      "content_hash": "9a7d7a16b65a03c1",
+      "exit_code": 0,
+      "name": "here-strings: here-string to command",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "af8d146fb1d2f140",
+      "exit_code": 0,
+      "name": "here-strings: here-string with spaces",
+      "stderr": "",
+      "stdout": "hello   world\n"
+    },
+    {
+      "content_hash": "e2d6b8632e1a4426",
+      "exit_code": 0,
+      "name": "heredoc: basic heredoc",
+      "stderr": "",
+      "stdout": "hello\nworld\n"
+    },
+    {
+      "content_hash": "907d60a13c913bd9",
+      "exit_code": 0,
+      "name": "heredoc: heredoc with variable expansion",
+      "stderr": "",
+      "stdout": "value: test\n"
+    },
+    {
+      "content_hash": "341289d3e44777ee",
+      "exit_code": 0,
+      "name": "heredoc: heredoc no expansion with single quotes",
+      "stderr": "",
+      "stdout": "value: $x\n"
+    },
+    {
+      "content_hash": "fe16f19c86a90dd6",
+      "exit_code": 0,
+      "name": "heredoc: heredoc with tabs stripped",
+      "stderr": "",
+      "stdout": "hello\nworld\n"
+    },
+    {
+      "content_hash": "0c6a0161f2f566c2",
+      "exit_code": 0,
+      "name": "input redirection: redirect stdin from file",
+      "stderr": "",
+      "stdout": "line1\n"
+    },
+    {
+      "content_hash": "121e1a3abab2b043",
+      "exit_code": 0,
+      "name": "input redirection: redirect stdin in pipeline",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "9284bd2b19804111",
+      "exit_code": 0,
+      "name": "file descriptor manipulation: duplicate file descriptor",
+      "stderr": "",
+      "stdout": "err\nout\n"
+    }
+  ],
+  "suite": "redirection"
+}

@@ -7,6 +7,8 @@ defmodule JustBash.Commands.AwkTest do
   """
   use ExUnit.Case, async: true
 
+  alias JustBash.Fs.InMemoryFs
+
   describe "basic field access" do
     test "print entire line with $0" do
       bash = JustBash.new(files: %{"/data.txt" => "hello world\nfoo bar\n"})
@@ -941,6 +943,503 @@ defmodule JustBash.Commands.AwkTest do
       bash = JustBash.new(files: %{"/data.txt" => "x\n"})
       {result, _} = JustBash.exec(bash, "awk 'BEGIN{r=rand(); print (r>=0 && r<1)}'")
       assert result.stdout == "1\n"
+    end
+  end
+
+  describe "multi-statement blocks" do
+    test "if body with multiple statements in braces" do
+      bash = JustBash.new(files: %{"/data.txt" => "1\n2\n3\n"})
+
+      cmd = "awk '{if ($1 > 1) { count++; print \"big:\", $1 }}' /data.txt"
+      {result, _} = JustBash.exec(bash, cmd)
+
+      assert result.stdout == "big: 2\nbig: 3\n"
+    end
+
+    test "if-else with multi-statement bodies" do
+      bash = JustBash.new(files: %{"/data.txt" => "a\nb\n"})
+
+      cmd =
+        "awk '{if (NR == 1) { x = \"first\"; print x } else { x = \"other\"; print x }}' /data.txt"
+
+      {result, _} = JustBash.exec(bash, cmd)
+
+      assert result.stdout == "first\nother\n"
+    end
+  end
+
+  describe "not operator in conditions" do
+    test "negation with ! in awk condition" do
+      bash = JustBash.new(files: %{"/data.txt" => "hello\nworld\n"})
+
+      cmd = "awk 'BEGIN{first=1} {if (!first) print \"not first:\", $0; first=0}' /data.txt"
+      {result, _} = JustBash.exec(bash, cmd)
+
+      assert result.stdout == "not first: world\n"
+    end
+
+    test "negation with ! in pattern" do
+      bash = JustBash.new(files: %{"/data.txt" => "yes\nno\nyes\n"})
+      {result, _} = JustBash.exec(bash, "awk '!/no/' /data.txt")
+      assert result.stdout == "yes\nyes\n"
+    end
+  end
+
+  describe "pre-increment and post-increment as expressions" do
+    test "pre-increment ++n used as array index" do
+      bash = JustBash.new(files: %{"/data.txt" => "a\nb\nc\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk '{ arr[++n] = $0 } END { for (i=1; i<=n; i++) print arr[i] }' /data.txt"
+        )
+
+      assert result.stdout == "a\nb\nc\n"
+    end
+
+    test "post-increment n++ used as array index" do
+      bash = JustBash.new(files: %{"/data.txt" => "a\nb\nc\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk '{ arr[n++] = $0 } END { for (i=0; i<n; i++) print arr[i] }' /data.txt"
+        )
+
+      assert result.stdout == "a\nb\nc\n"
+    end
+
+    test "pre-increment in arithmetic expression" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "echo 'x' | awk 'BEGIN { n=5 } { print ++n }'"
+        )
+
+      assert result.stdout == "6\n"
+    end
+
+    test "post-increment in arithmetic expression" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "echo 'x' | awk 'BEGIN { n=5 } { print n++ }'"
+        )
+
+      assert result.stdout == "5\n"
+    end
+  end
+
+  describe "print append redirection" do
+    test "print >> file appends output" do
+      bash = JustBash.new()
+
+      {result, bash} =
+        JustBash.exec(
+          bash,
+          "echo 'hello' | awk '{ print $0 >> \"/tmp/out.txt\" }'"
+        )
+
+      assert result.exit_code == 0
+
+      {result2, _} = JustBash.exec(bash, "cat /tmp/out.txt")
+      assert result2.stdout == "hello\n"
+    end
+
+    test "print >> file appends multiple lines" do
+      bash = JustBash.new(files: %{"/data.txt" => "a\nb\nc\n"})
+
+      {result, bash} =
+        JustBash.exec(
+          bash,
+          "awk '{ print $0 >> \"/tmp/out.txt\" }' /data.txt"
+        )
+
+      assert result.exit_code == 0
+
+      {result2, _} = JustBash.exec(bash, "cat /tmp/out.txt")
+      assert result2.stdout == "a\nb\nc\n"
+    end
+  end
+
+  describe "system() function" do
+    test "system() executes a command and returns exit code as statement" do
+      bash = JustBash.new(files: %{"/data.txt" => "hello\n"})
+
+      {result, bash} =
+        JustBash.exec(bash, "awk 'BEGIN { system(\"mkdir -p /output\") }' /data.txt")
+
+      assert result.exit_code == 0
+      {result2, _} = JustBash.exec(bash, "ls /output")
+      assert result2.exit_code == 0
+    end
+
+    test "system() return value is the exit code" do
+      bash = JustBash.new(files: %{"/data.txt" => "hello\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk 'BEGIN { rc = system(\"echo ok\"); print \"rc=\" rc }' /data.txt"
+        )
+
+      assert result.exit_code == 0
+      assert result.stdout =~ "rc=0"
+    end
+  end
+
+  describe "match() function" do
+    test "2-arg match returns position on match" do
+      bash = JustBash.new(files: %{"/data.txt" => "hello world\n"})
+      {result, _} = JustBash.exec(bash, "awk '{print match($0, /wor/)}' /data.txt")
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "7"
+    end
+
+    test "2-arg match returns 0 on no match" do
+      bash = JustBash.new(files: %{"/data.txt" => "hello world\n"})
+      {result, _} = JustBash.exec(bash, "awk '{print match($0, /xyz/)}' /data.txt")
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "0"
+    end
+
+    test "2-arg match sets RSTART and RLENGTH" do
+      bash = JustBash.new(files: %{"/data.txt" => "hello world\n"})
+
+      {result, _} =
+        JustBash.exec(bash, "awk '{match($0, /wor/); print RSTART, RLENGTH}' /data.txt")
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "7 3"
+    end
+
+    test "2-arg match sets RSTART=0 RLENGTH=-1 on no match" do
+      bash = JustBash.new(files: %{"/data.txt" => "hello world\n"})
+
+      {result, _} =
+        JustBash.exec(bash, "awk '{match($0, /xyz/); print RSTART, RLENGTH}' /data.txt")
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "0 -1"
+    end
+
+    test "3-arg match populates array with capture groups" do
+      bash = JustBash.new(files: %{"/data.txt" => "foo123bar\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk '{match($0, /([a-z]+)([0-9]+)/, arr); print arr[1], arr[2]}' /data.txt"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "foo 123"
+    end
+
+    test "3-arg match populates arr[0] with full match" do
+      bash = JustBash.new(files: %{"/data.txt" => "foo123bar\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk '{match($0, /[0-9]+/, arr); print arr[0]}' /data.txt"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "123"
+    end
+  end
+
+  describe "getline" do
+    test "getline reads from file in BEGIN block" do
+      bash = JustBash.new(files: %{"/data.txt" => "hello\nworld\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk 'BEGIN { while ((getline line < \"/data.txt\") > 0) print line }'"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "hello\nworld"
+    end
+
+    test "getline reads into variable from file" do
+      bash = JustBash.new(files: %{"/a.txt" => "alpha\nbeta\n", "/b.txt" => "one\ntwo\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk 'BEGIN { getline x < \"/a.txt\"; getline y < \"/b.txt\"; print x, y }'"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "alpha one"
+    end
+
+    test "getline returns 1 on success, 0 at EOF" do
+      bash = JustBash.new(files: %{"/data.txt" => "only\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk 'BEGIN { r1 = (getline line < \"/data.txt\"); r2 = (getline line < \"/data.txt\"); print r1, r2 }'"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "1 0"
+    end
+  end
+
+  describe "split() function" do
+    test "split as standalone statement populates array" do
+      bash = JustBash.new(files: %{"/d.txt" => "a:b:c\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk '{ split($0, parts, \":\"); print parts[1], parts[2], parts[3] }' /d.txt"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "a b c"
+    end
+
+    test "split with field and custom separator" do
+      bash = JustBash.new(files: %{"/d.txt" => "abc,2024,feat: add mode\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk -F',' '{ split($3, parts, \": \"); print parts[1], parts[2] }' /d.txt"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "feat add mode"
+    end
+
+    test "split return value is number of pieces" do
+      bash = JustBash.new(files: %{"/d.txt" => "a:b:c\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk '{ n = split($0, parts, \":\"); print n }' /d.txt"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "3"
+    end
+
+    test "split with default FS" do
+      bash = JustBash.new(files: %{"/d.txt" => "hello world foo\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk '{ split($0, a); print a[1], a[3] }' /d.txt"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "hello foo"
+    end
+  end
+
+  describe "regex matching with special characters" do
+    test "regex /=/ in condition" do
+      bash = JustBash.new(files: %{"/d.txt" => "FOO=bar\nBAZ=qux\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk '{ if ($0 ~ /=/) print \"match:\", $0 }' /d.txt"
+        )
+
+      assert result.exit_code == 0
+      assert result.stdout == "match: FOO=bar\nmatch: BAZ=qux\n"
+    end
+
+    test "field regex match $i ~ /pattern/" do
+      bash = JustBash.new(files: %{"/d.txt" => "ENV KEY=val OTHER\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk '{ for(i=1; i<=NF; i++) { if ($i ~ /=/) print $i } }' /d.txt"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "KEY=val"
+    end
+  end
+
+  describe "generic function call as statement" do
+    test "close() as standalone statement" do
+      bash =
+        JustBash.new(files: %{"/data.txt" => "hello\nworld\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk 'BEGIN { while ((getline line < \"/data.txt\") > 0) print line; close(\"/data.txt\") }'"
+        )
+
+      assert result.exit_code == 0
+      assert result.stdout =~ "hello"
+    end
+  end
+
+  describe "multi-file processing" do
+    test "FNR resets per file" do
+      bash =
+        JustBash.new(
+          files: %{
+            "/f1.txt" => "a\nb\n",
+            "/f2.txt" => "c\nd\n"
+          }
+        )
+
+      {result, _} =
+        JustBash.exec(bash, "awk '{ print FILENAME, FNR, NR }' /f1.txt /f2.txt")
+
+      lines = String.trim(result.stdout) |> String.split("\n")
+      assert length(lines) == 4
+      # FNR resets for second file, NR doesn't
+      assert Enum.at(lines, 0) =~ "1 1"
+      assert Enum.at(lines, 1) =~ "2 2"
+      assert Enum.at(lines, 2) =~ "1 3"
+      assert Enum.at(lines, 3) =~ "2 4"
+    end
+
+    test "FNR == NR idiom for two-file join" do
+      bash =
+        JustBash.new(
+          files: %{
+            "/lookup.txt" => "a 1\nb 2\nc 3\n",
+            "/data.txt" => "b hello\na world\n"
+          }
+        )
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk 'FNR == NR { lookup[$1] = $2; next } { print $1, lookup[$1] }' /lookup.txt /data.txt"
+        )
+
+      assert result.exit_code == 0
+      lines = String.trim(result.stdout) |> String.split("\n")
+      assert "b 2" in lines
+      assert "a 1" in lines
+    end
+
+    test "FILENAME is set correctly per file" do
+      bash =
+        JustBash.new(
+          files: %{
+            "/a.txt" => "line1\n",
+            "/b.txt" => "line2\n"
+          }
+        )
+
+      {result, _} =
+        JustBash.exec(bash, "awk '{ print FILENAME }' /a.txt /b.txt")
+
+      lines = String.trim(result.stdout) |> String.split("\n")
+      assert Enum.at(lines, 0) == "/a.txt"
+      assert Enum.at(lines, 1) == "/b.txt"
+    end
+  end
+
+  describe "asorti() function" do
+    test "asorti sorts array indices" do
+      bash = JustBash.new(files: %{"/d.txt" => "z 1\na 2\nm 3\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk '{ data[$1] = $2 } END { n = asorti(data, keys); for (i = 1; i <= n; i++) print keys[i] }' /d.txt"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "a\nm\nz"
+    end
+
+    test "asorti returns count of elements" do
+      bash = JustBash.new(files: %{"/d.txt" => "x\ny\nz\n"})
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "awk '{ data[$0] = 1 } END { n = asorti(data, keys); print n }' /d.txt"
+        )
+
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "3"
+    end
+  end
+
+  describe "printf redirect to variable filename" do
+    test "printf with > redirect to variable" do
+      bash = JustBash.new(files: %{"/d.txt" => "a,1\nb,2\nc,3\n"})
+
+      {result, updated_bash} =
+        JustBash.exec(
+          bash,
+          "awk -F',' 'BEGIN { f = \"/output.txt\" } { printf \"%s=%s\\n\", $1, $2 > f }' /d.txt"
+        )
+
+      assert result.exit_code == 0
+      {:ok, content} = InMemoryFs.read_file(updated_bash.fs, "/output.txt")
+      assert content == "a=1\nb=2\nc=3\n"
+    end
+
+    test "printf with >> append redirect to variable" do
+      bash = JustBash.new(files: %{"/d.txt" => "x\ny\n"})
+
+      {result, updated_bash} =
+        JustBash.exec(
+          bash,
+          "awk '{ printf \"%s\\n\", $0 >> \"/out.txt\" }' /d.txt"
+        )
+
+      assert result.exit_code == 0
+      {:ok, content} = InMemoryFs.read_file(updated_bash.fs, "/out.txt")
+      assert content == "x\ny\n"
+    end
+  end
+
+  describe "field assignment" do
+    test "$1 assignment replaces first field and reconstructs $0" do
+      bash = JustBash.new(files: %{"/d.txt" => "hello world\n"})
+      {result, _} = JustBash.exec(bash, ~s|awk '{$1="goodbye"; print}' /d.txt|)
+      assert result.exit_code == 0
+      assert result.stdout == "goodbye world\n"
+    end
+
+    test "$1 assignment to empty string removes first field" do
+      bash = JustBash.new(files: %{"/d.txt" => "a b c\n"})
+      {result, _} = JustBash.exec(bash, ~s|awk '{$1=""; print}' /d.txt|)
+      assert result.exit_code == 0
+      assert result.stdout == " b c\n"
+    end
+
+    test "$2 assignment changes second field" do
+      bash = JustBash.new(files: %{"/d.txt" => "one two three\n"})
+      {result, _} = JustBash.exec(bash, ~s|awk '{$2="TWO"; print}' /d.txt|)
+      assert result.exit_code == 0
+      assert result.stdout == "one TWO three\n"
+    end
+
+    test "field assignment with OFS" do
+      bash = JustBash.new(files: %{"/d.txt" => "a b c\n"})
+      {result, _} = JustBash.exec(bash, ~s|awk 'BEGIN{OFS=","}{$2="X"; print}' /d.txt|)
+      assert result.exit_code == 0
+      assert result.stdout == "a,X,c\n"
     end
   end
 end

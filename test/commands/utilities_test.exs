@@ -389,8 +389,8 @@ defmodule JustBash.Commands.UtilitiesTest do
 
     test "which finds multiple commands" do
       bash = JustBash.new()
-      {result, _} = JustBash.exec(bash, "which ls cat echo")
-      assert result.stdout == "/bin/ls\n/bin/cat\n/bin/echo\n"
+      {result, _} = JustBash.exec(bash, "which ls cat")
+      assert result.stdout == "/bin/ls\n/bin/cat\n"
       assert result.exit_code == 0
     end
 
@@ -440,6 +440,65 @@ defmodule JustBash.Commands.UtilitiesTest do
       bash = JustBash.new()
       {result, _} = JustBash.exec(bash, "which -as ls")
       assert result.stdout == ""
+      assert result.exit_code == 0
+    end
+
+    test "which reports builtins as shell built-in command" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "which echo")
+      assert result.stdout == "echo: shell built-in command\n"
+      assert result.exit_code == 0
+    end
+
+    test "which reports cd as builtin" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "which cd")
+      assert result.stdout == "cd: shell built-in command\n"
+      assert result.exit_code == 0
+    end
+
+    test "which reports external commands with path and builtins correctly" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "which ls echo grep")
+      assert result.stdout == "/bin/ls\necho: shell built-in command\n/bin/grep\n"
+      assert result.exit_code == 0
+    end
+  end
+
+  describe "type command" do
+    test "type identifies builtins" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "type echo")
+      assert result.stdout == "echo is a shell builtin\n"
+      assert result.exit_code == 0
+    end
+
+    test "type identifies external commands with path" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "type grep")
+      assert result.stdout == "grep is /bin/grep\n"
+      assert result.exit_code == 0
+    end
+
+    test "type identifies shell functions" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "myfunc() { echo hi; }\ntype myfunc")
+      assert result.stdout == "myfunc is a function\n"
+      assert result.exit_code == 0
+    end
+
+    test "type returns error for unknown commands" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "type nonexistent")
+      assert result.stderr =~ "not found"
+      assert result.exit_code == 1
+    end
+
+    test "type handles multiple arguments" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "type echo ls")
+      assert result.stdout =~ "echo is a shell builtin"
+      assert result.stdout =~ "ls is /bin/ls"
       assert result.exit_code == 0
     end
   end
@@ -549,6 +608,49 @@ defmodule JustBash.Commands.UtilitiesTest do
       bash = JustBash.new()
       {result, _} = JustBash.exec(bash, "echo '' | read x; echo \"got:$x:\"")
       assert result.stdout == "got::\n"
+    end
+
+    test "read splits into multiple variables on default IFS" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo 'hello world' | read a b; echo \"$a:$b\"")
+      assert result.stdout == "hello:world\n"
+    end
+
+    test "read splits into multiple variables with remainder in last" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, "echo 'one two three four' | read a b c; echo \"$a|$b|$c\"")
+
+      assert result.stdout == "one|two|three four\n"
+    end
+
+    test "read splits on custom IFS" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, "echo 'a,b,c' | IFS=, read x y z; echo \"$x|$y|$z\"")
+
+      assert result.stdout == "a|b|c\n"
+    end
+
+    test "read with fewer fields than variables sets extras to empty" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo 'hello' | read a b; echo \"$a|$b\"")
+      assert result.stdout == "hello|\n"
+    end
+
+    test "read with IFS in while loop for CSV processing" do
+      bash = JustBash.new(files: %{"/data.csv" => "id,name,age\n1,Alice,30\n2,Bob,25\n"})
+
+      script = """
+      sed '1d' /data.csv | while IFS=, read -r id name age; do
+        echo "$id:$name:$age"
+      done
+      """
+
+      {result, _} = JustBash.exec(bash, script)
+      assert result.stdout == "1:Alice:30\n2:Bob:25\n"
     end
   end
 

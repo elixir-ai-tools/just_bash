@@ -7,6 +7,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   """
 
   alias JustBash.Commands.Awk.{Formatter, Parser}
+  alias JustBash.Fs.InMemoryFs
 
   @type state :: %{
           nr: non_neg_integer(),
@@ -24,23 +25,21 @@ defmodule JustBash.Commands.Awk.Evaluator do
   @doc """
   Execute an AWK program against the given content.
 
-  Returns the output string.
-  """
-  @spec execute(String.t(), Parser.program(), %{field_separator: String.t(), variables: map()}) ::
-          String.t()
-  def execute(content, program, opts) do
-    lines = String.split(content, "\n", trim: false)
+  Accepts opts with :files as a list of {filename, content} tuples for
+  proper FNR/FILENAME multi-file support.
 
-    lines =
-      if List.last(lines) == "" do
-        List.delete_at(lines, -1)
-      else
-        lines
-      end
+  Returns {output, exit_code, file_outputs, bash}.
+  """
+  @spec execute(Parser.program(), map()) ::
+          {String.t(), non_neg_integer(), map(), JustBash.t() | nil}
+  def execute(program, opts) do
+    file_data = Map.get(opts, :files, [{"", ""}])
 
     state = %{
       nr: 0,
       nf: 0,
+      fnr: 0,
+      filename: "",
       fs: opts.field_separator,
       ofs: " ",
       ors: "\n",
@@ -48,7 +47,9 @@ defmodule JustBash.Commands.Awk.Evaluator do
       variables: opts.variables,
       arrays: %{},
       output: "",
-      exit_code: nil
+      exit_code: nil,
+      file_outputs: %{},
+      bash: Map.get(opts, :bash)
     }
 
     state = execute_begin_blocks(state, program.begin_blocks)
@@ -57,15 +58,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
       if state.exit_code != nil do
         state
       else
-        Enum.reduce_while(lines, state, fn line, s ->
-          new_state = process_line(line, program.main_rules, s)
-
-          if new_state.exit_code != nil do
-            {:halt, new_state}
-          else
-            {:cont, new_state}
-          end
-        end)
+        process_files(file_data, program.main_rules, state)
       end
 
     state =
@@ -75,7 +68,48 @@ defmodule JustBash.Commands.Awk.Evaluator do
         execute_end_blocks(state, program.end_blocks)
       end
 
-    {state.output, state.exit_code || 0}
+    {state.output, state.exit_code || 0, state.file_outputs, state.bash}
+  end
+
+  # Legacy 3-arity entry point for backward compatibility
+  @spec execute(String.t(), Parser.program(), map()) ::
+          {String.t(), non_neg_integer(), map(), JustBash.t() | nil}
+  def execute(content, program, opts) do
+    execute(program, Map.put(opts, :files, [{"", content}]))
+  end
+
+  defp process_files(file_data, rules, state) do
+    Enum.reduce_while(file_data, state, fn {filename, content}, acc_state ->
+      lines = split_content(content)
+      acc_state = %{acc_state | fnr: 0, filename: filename}
+
+      result =
+        Enum.reduce_while(lines, acc_state, fn line, s ->
+          new_state = process_line(line, rules, s)
+
+          if new_state.exit_code != nil do
+            {:halt, new_state}
+          else
+            {:cont, new_state}
+          end
+        end)
+
+      if result.exit_code != nil do
+        {:halt, result}
+      else
+        {:cont, result}
+      end
+    end)
+  end
+
+  defp split_content(content) do
+    lines = String.split(content, "\n", trim: false)
+
+    if List.last(lines) == "" do
+      List.delete_at(lines, -1)
+    else
+      lines
+    end
   end
 
   defp execute_begin_blocks(state, blocks) do
@@ -96,6 +130,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
     state = %{
       state
       | nr: state.nr + 1,
+        fnr: state.fnr + 1,
         nf: length(fields),
         fields: [line | fields]
     }
@@ -110,7 +145,9 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp apply_rules([], state), do: state
 
   defp apply_rules([{pattern, action} | rest], state) do
-    if pattern_matches?(pattern, state) do
+    {matches, state} = pattern_matches?(pattern, state)
+
+    if matches do
       case execute_statements_with_control(action, state) do
         {:next, new_state} ->
           # next: skip remaining rules for this line
@@ -143,13 +180,16 @@ defmodule JustBash.Commands.Awk.Evaluator do
     end
   end
 
-  defp pattern_matches?(nil, _state), do: true
+  defp pattern_matches?(nil, state), do: {true, state}
 
   defp pattern_matches?({:regex, pattern}, state) do
-    case Regex.compile(pattern) do
-      {:ok, regex} -> Regex.match?(regex, Enum.at(state.fields, 0, ""))
-      {:error, _} -> false
-    end
+    result =
+      case Regex.compile(pattern) do
+        {:ok, regex} -> Regex.match?(regex, Enum.at(state.fields, 0, ""))
+        {:error, _} -> false
+      end
+
+    {result, state}
   end
 
   defp pattern_matches?({:condition, condition}, state) do
@@ -158,15 +198,19 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   defp evaluate_condition(condition, state) when is_binary(condition) do
     # String-based condition (from old parser) - use regex parsing
-    case evaluate_nr_condition(condition, state) do
-      nil -> evaluate_field_or_default(condition, state)
-      result -> result
-    end
+    result =
+      case evaluate_nr_condition(condition, state) do
+        nil -> evaluate_field_or_default(condition, state)
+        result -> result
+      end
+
+    {result, state}
   end
 
   defp evaluate_condition(condition, state) when is_tuple(condition) do
-    # AST-based condition (from new parser) - evaluate expression directly
-    truthy?(evaluate_expression(condition, state))
+    # AST-based condition (from new parser) - evaluate expression with side effects
+    {value, state} = evaluate_expression_with_state(condition, state)
+    {truthy?(value), state}
   end
 
   defp evaluate_field_or_default(condition, state) do
@@ -289,9 +333,24 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   defp execute_statement(nil, state), do: state
 
+  defp execute_statement(%{statements: stmts}, state) do
+    Enum.reduce_while(stmts, state, fn stmt, acc_state ->
+      case execute_statement(stmt, acc_state) do
+        {:next, _} = signal -> {:halt, signal}
+        {:break, _} = signal -> {:halt, signal}
+        {:continue, _} = signal -> {:halt, signal}
+        new_state -> {:cont, new_state}
+      end
+    end)
+  end
+
   defp execute_statement({:print, {:comma_sep, args}}, state) do
     # Comma-separated: use OFS between values
-    values = Enum.map(args, &evaluate_expression(&1, state))
+    {values, state} =
+      Enum.map_reduce(args, state, fn arg, acc_state ->
+        evaluate_expression_with_state(arg, acc_state)
+      end)
+
     formatted = Enum.map(values, &format_output_value/1)
     output_line = Enum.join(formatted, state.ofs) <> state.ors
     %{state | output: state.output <> output_line}
@@ -299,7 +358,11 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   defp execute_statement({:print, {:concat, args}}, state) do
     # Space-separated in source: concatenate without separator
-    values = Enum.map(args, &evaluate_expression(&1, state))
+    {values, state} =
+      Enum.map_reduce(args, state, fn arg, acc_state ->
+        evaluate_expression_with_state(arg, acc_state)
+      end)
+
     formatted = Enum.map(values, &format_output_value/1)
     output_line = Enum.join(formatted, "") <> state.ors
     %{state | output: state.output <> output_line}
@@ -307,7 +370,11 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   defp execute_statement({:print, args}, state) when is_list(args) do
     # Legacy format - treat as comma-separated for backward compatibility
-    values = Enum.map(args, &evaluate_expression(&1, state))
+    {values, state} =
+      Enum.map_reduce(args, state, fn arg, acc_state ->
+        evaluate_expression_with_state(arg, acc_state)
+      end)
+
     formatted = Enum.map(values, &format_output_value/1)
     output_line = Enum.join(formatted, state.ofs) <> state.ors
     %{state | output: state.output <> output_line}
@@ -319,8 +386,87 @@ defmodule JustBash.Commands.Awk.Evaluator do
     %{state | output: state.output <> output}
   end
 
+  # Print/printf with output redirection to file (> and >>)
+  defp execute_statement({:print_redirect, {:comma_sep, args}, file_expr}, state) do
+    {values, state} =
+      Enum.map_reduce(args, state, fn arg, acc_state ->
+        evaluate_expression_with_state(arg, acc_state)
+      end)
+
+    filename = evaluate_expression(file_expr, state) |> to_string()
+    formatted = Enum.map(values, &format_output_value/1)
+    output_line = Enum.join(formatted, state.ofs) <> state.ors
+    # Overwrite: replace file content (but accumulate within same program run)
+    existing = Map.get(state.file_outputs, filename, "")
+    %{state | file_outputs: Map.put(state.file_outputs, filename, existing <> output_line)}
+  end
+
+  defp execute_statement({:print_append, {:comma_sep, args}, file_expr}, state) do
+    {values, state} =
+      Enum.map_reduce(args, state, fn arg, acc_state ->
+        evaluate_expression_with_state(arg, acc_state)
+      end)
+
+    filename = evaluate_expression(file_expr, state) |> to_string()
+    formatted = Enum.map(values, &format_output_value/1)
+    output_line = Enum.join(formatted, state.ofs) <> state.ors
+    existing = Map.get(state.file_outputs, filename, "")
+    %{state | file_outputs: Map.put(state.file_outputs, filename, existing <> output_line)}
+  end
+
+  defp execute_statement({:printf_redirect, {format, args}, file_expr}, state) do
+    values = Enum.map(args, &evaluate_expression(&1, state))
+    filename = evaluate_expression(file_expr, state) |> to_string()
+    output = Formatter.format_printf(format, values)
+    existing = Map.get(state.file_outputs, filename, "")
+    %{state | file_outputs: Map.put(state.file_outputs, filename, existing <> output)}
+  end
+
+  defp execute_statement({:printf_append, {format, args}, file_expr}, state) do
+    values = Enum.map(args, &evaluate_expression(&1, state))
+    filename = evaluate_expression(file_expr, state) |> to_string()
+    output = Formatter.format_printf(format, values)
+    existing = Map.get(state.file_outputs, filename, "")
+    %{state | file_outputs: Map.put(state.file_outputs, filename, existing <> output)}
+  end
+
+  defp execute_statement({:field_assign, index_expr, value_expr}, state) do
+    idx = evaluate_expression(index_expr, state) |> parse_number() |> round()
+    {raw_value, state} = evaluate_expression_with_state(value_expr, state)
+    value = to_string(raw_value)
+
+    # fields is [entire_line, field1, field2, ...]
+    # field N (1-based) is at index N in the list
+    current_fields = state.fields
+    nf = state.nf
+
+    if idx < 0 do
+      state
+    else
+      # Ensure the fields list is long enough (pad with empty strings)
+      new_nf = max(nf, idx)
+
+      padded_fields =
+        if length(current_fields) <= new_nf do
+          current_fields ++ List.duplicate("", new_nf + 1 - length(current_fields))
+        else
+          current_fields
+        end
+
+      # Replace field at index idx (1-based, so list index idx)
+      updated_fields = List.replace_at(padded_fields, idx, value)
+
+      # Reconstruct $0 from fields 1..new_nf joined by OFS
+      new_record = Enum.slice(updated_fields, 1, new_nf) |> Enum.join(state.ofs)
+      final_fields = List.replace_at(updated_fields, 0, new_record)
+
+      %{state | fields: final_fields, nf: new_nf}
+    end
+  end
+
   defp execute_statement({:assign, var, expr}, state) do
-    value = evaluate_expression(expr, state) |> to_string()
+    {raw_value, state} = evaluate_expression_with_state(expr, state)
+    value = to_string(raw_value)
 
     # Handle special variables
     case var do
@@ -389,7 +535,8 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   # Array operations
   defp execute_statement({:array_assign, array, key_expr, value_expr}, state) do
-    key = evaluate_expression(key_expr, state) |> to_string()
+    {key, state} = evaluate_expression_with_state(key_expr, state)
+    key = format_array_key(key)
     value = evaluate_expression(value_expr, state) |> to_string()
     arr = Map.get(state.arrays, array, %{})
     new_arr = Map.put(arr, key, value)
@@ -397,7 +544,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   defp execute_statement({:array_increment, array, key_expr}, state) do
-    key = evaluate_expression(key_expr, state) |> to_string()
+    key = evaluate_expression(key_expr, state) |> format_array_key()
     arr = Map.get(state.arrays, array, %{})
     current = Map.get(arr, key, "0") |> parse_number()
     new_arr = Map.put(arr, key, to_string(current + 1))
@@ -405,7 +552,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   defp execute_statement({:array_add_assign, array, key_expr, value_expr}, state) do
-    key = evaluate_expression(key_expr, state) |> to_string()
+    key = evaluate_expression(key_expr, state) |> format_array_key()
     value = evaluate_expression(value_expr, state) |> parse_number()
     arr = Map.get(state.arrays, array, %{})
     current = Map.get(arr, key, "0") |> parse_number()
@@ -414,7 +561,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   defp execute_statement({:delete_element, array, key_expr}, state) do
-    key = evaluate_expression(key_expr, state) |> to_string()
+    key = evaluate_expression(key_expr, state) |> format_array_key()
     arr = Map.get(state.arrays, array, %{})
     new_arr = Map.delete(arr, key)
     %{state | arrays: Map.put(state.arrays, array, new_arr)}
@@ -513,6 +660,19 @@ defmodule JustBash.Commands.Awk.Evaluator do
     end
   end
 
+  defp execute_statement({:gsub, pattern, replacement, {:variable, var}}, state) do
+    current = Map.get(state.variables, var, "")
+
+    case Regex.compile(pattern) do
+      {:ok, regex} ->
+        new_val = Regex.replace(regex, current, replacement)
+        %{state | variables: Map.put(state.variables, var, new_val)}
+
+      {:error, _} ->
+        state
+    end
+  end
+
   # sub(/pattern/, "replacement", target) - replace first occurrence only
   defp execute_statement({:sub, pattern, replacement, {:field, 0}}, state) do
     line = Enum.at(state.fields, 0, "")
@@ -542,6 +702,19 @@ defmodule JustBash.Commands.Awk.Evaluator do
     end
   end
 
+  defp execute_statement({:sub, pattern, replacement, {:variable, var}}, state) do
+    current = Map.get(state.variables, var, "")
+
+    case Regex.compile(pattern) do
+      {:ok, regex} ->
+        new_val = Regex.replace(regex, current, replacement, global: false)
+        %{state | variables: Map.put(state.variables, var, new_val)}
+
+      {:error, _} ->
+        state
+    end
+  end
+
   # Handle gsub/sub as function calls (new parser format)
   defp execute_statement({:call, "gsub", args}, state) do
     {pattern, replacement, target} = extract_gsub_args(args, state)
@@ -551,6 +724,172 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp execute_statement({:call, "sub", args}, state) do
     {pattern, replacement, target} = extract_gsub_args(args, state)
     execute_statement({:sub, pattern, replacement, target}, state)
+  end
+
+  # Handle getline as statement
+  defp execute_statement({:getline, _var, _file, _pipe} = expr, state) do
+    {_result, state} = evaluate_expression_with_state(expr, state)
+    state
+  end
+
+  # Handle match() as statement (needs state for RSTART/RLENGTH and optional array)
+  defp execute_statement({:call, "match", args}, state) do
+    {_result, state} = execute_match(args, state)
+    state
+  end
+
+  defp execute_statement({:call, "system", [cmd_expr]}, state) do
+    cmd = evaluate_expression(cmd_expr, state) |> to_string()
+    {exit_code, state} = execute_system_command(cmd, state)
+    # Store result in case it's also used as expression via evaluate_expression_with_state
+    %{state | variables: Map.put(state.variables, "__system_rc__", to_string(exit_code))}
+  end
+
+  # Handle split() as statement (needs to populate array in state)
+  defp execute_statement({:call, "split", args}, state) do
+    {_count, state} = execute_split(args, state)
+    state
+  end
+
+  # Handle asorti() as statement
+  defp execute_statement({:call, "asorti", args}, state) do
+    {_count, state} = execute_asorti(args, state)
+    state
+  end
+
+  # Generic catch-all for function calls as statements (e.g., close(), delete())
+  defp execute_statement({:call, name, args}, state) do
+    {_result, state} = evaluate_expression_with_state({:call, name, args}, state)
+    state
+  end
+
+  # match(string, regex [, array]) implementation
+  defp execute_match(args, state) do
+    {string, pattern, array_name} = extract_match_args(args, state)
+    regex = compile_awk_regex(pattern)
+
+    case Regex.run(regex, string, return: :index) do
+      nil ->
+        vars = state.variables |> Map.put("RSTART", "0") |> Map.put("RLENGTH", "-1")
+        {0, %{state | variables: vars}}
+
+      [{start, len} | group_indices] ->
+        rstart = start + 1
+
+        vars =
+          state.variables
+          |> Map.put("RSTART", to_string(rstart))
+          |> Map.put("RLENGTH", to_string(len))
+
+        state = %{state | variables: vars}
+
+        state =
+          case array_name do
+            nil ->
+              state
+
+            name ->
+              # Populate array: index 0 = full match, 1..n = capture groups
+              full_match = String.slice(string, start, len)
+              arr = %{"0" => full_match}
+
+              arr =
+                group_indices
+                |> Enum.with_index(1)
+                |> Enum.reduce(arr, fn {{gs, gl}, idx}, acc ->
+                  Map.put(acc, to_string(idx), String.slice(string, gs, gl))
+                end)
+
+              %{state | arrays: Map.put(state.arrays, name, arr)}
+          end
+
+        {rstart, state}
+    end
+  end
+
+  defp extract_match_args([str_expr, {:regex, pattern}], state) do
+    {to_string(evaluate_expression(str_expr, state)), pattern, nil}
+  end
+
+  defp extract_match_args([str_expr, {:regex, pattern}, {:variable, name}], state) do
+    {to_string(evaluate_expression(str_expr, state)), pattern, name}
+  end
+
+  defp extract_match_args([str_expr, pat_expr], state) do
+    {to_string(evaluate_expression(str_expr, state)),
+     to_string(evaluate_expression(pat_expr, state)), nil}
+  end
+
+  defp extract_match_args([str_expr, pat_expr, {:variable, name}], state) do
+    {to_string(evaluate_expression(str_expr, state)),
+     to_string(evaluate_expression(pat_expr, state)), name}
+  end
+
+  # split(string, array [, separator]) - splits string into array, returns count
+  defp execute_split(args, state) do
+    {str, array_name, sep} = extract_split_args(args, state)
+    parts = String.split(str, sep)
+
+    arr =
+      parts
+      |> Enum.with_index(1)
+      |> Enum.reduce(%{}, fn {part, idx}, acc ->
+        Map.put(acc, to_string(idx), part)
+      end)
+
+    state = %{state | arrays: Map.put(state.arrays, array_name, arr)}
+    {length(parts), state}
+  end
+
+  # asorti(source, dest) - sorts indices of source into dest[1], dest[2], ...
+  defp execute_asorti(args, state) do
+    {source_name, dest_name} = extract_asorti_args(args)
+    source = Map.get(state.arrays, source_name, %{})
+    sorted_keys = source |> Map.keys() |> Enum.sort()
+
+    dest =
+      sorted_keys
+      |> Enum.with_index(1)
+      |> Enum.reduce(%{}, fn {key, idx}, acc ->
+        Map.put(acc, to_string(idx), key)
+      end)
+
+    state = %{state | arrays: Map.put(state.arrays, dest_name, dest)}
+    {length(sorted_keys), state}
+  end
+
+  defp extract_asorti_args([{:variable, source}, {:variable, dest}]), do: {source, dest}
+  defp extract_asorti_args([{:literal, source}, {:variable, dest}]), do: {source, dest}
+  defp extract_asorti_args([{:variable, source}, {:literal, dest}]), do: {source, dest}
+  defp extract_asorti_args([{:literal, source}, {:literal, dest}]), do: {source, dest}
+
+  defp extract_split_args([str_expr, {:variable, array_name}, sep_expr], state) do
+    str = evaluate_expression(str_expr, state) |> to_string()
+    sep = evaluate_expression(sep_expr, state) |> to_string()
+    {str, array_name, sep}
+  end
+
+  defp extract_split_args([str_expr, {:variable, array_name}], state) do
+    str = evaluate_expression(str_expr, state) |> to_string()
+    {str, array_name, state.fs}
+  end
+
+  defp extract_split_args([str_expr, {:literal, array_name}, sep_expr], state) do
+    str = evaluate_expression(str_expr, state) |> to_string()
+    sep = evaluate_expression(sep_expr, state) |> to_string()
+    {str, array_name, sep}
+  end
+
+  defp extract_split_args([str_expr, {:literal, array_name}], state) do
+    str = evaluate_expression(str_expr, state) |> to_string()
+    {str, array_name, state.fs}
+  end
+
+  defp compile_awk_regex(pattern) do
+    case Regex.compile(pattern) do
+      {:ok, regex} -> regex
+      {:error, _} -> ~r/(?!)/
+    end
   end
 
   defp extract_gsub_args([{:regex, pattern}, replacement], _state) do
@@ -604,7 +943,9 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   defp execute_while_loop(cond_expr, body, state) do
-    if truthy?(evaluate_expression(cond_expr, state)) do
+    {cond_val, state} = evaluate_condition_with_state(cond_expr, state)
+
+    if truthy?(cond_val) do
       case execute_loop_body(body, state) do
         {:break, new_state} ->
           new_state
@@ -618,6 +959,18 @@ defmodule JustBash.Commands.Awk.Evaluator do
     else
       state
     end
+  end
+
+  # Evaluate condition while threading state (needed for getline in while conditions)
+  defp evaluate_condition_with_state({:>, left, right}, state) do
+    {left_val, state} = evaluate_expression_with_state(left, state)
+    {right_val, state} = evaluate_expression_with_state(right, state)
+    result = if parse_number(left_val) > parse_number(right_val), do: 1, else: 0
+    {result, state}
+  end
+
+  defp evaluate_condition_with_state(expr, state) do
+    {evaluate_expression(expr, state), state}
   end
 
   defp execute_do_while_loop(body, cond_expr, state) do
@@ -668,6 +1021,9 @@ defmodule JustBash.Commands.Awk.Evaluator do
         "NR" ->
           state.nr
 
+        "FNR" ->
+          Map.get(state, :fnr, state.nr)
+
         _ ->
           case Map.get(state.variables, var_name) do
             nil -> 0
@@ -680,6 +1036,8 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   def evaluate_expression({:variable, "NR"}, state), do: state.nr
   def evaluate_expression({:variable, "NF"}, state), do: state.nf
+  def evaluate_expression({:variable, "FNR"}, state), do: Map.get(state, :fnr, state.nr)
+  def evaluate_expression({:variable, "FILENAME"}, state), do: Map.get(state, :filename, "")
   def evaluate_expression({:variable, "FS"}, state), do: state.fs
   def evaluate_expression({:variable, "OFS"}, state), do: state.ofs
   def evaluate_expression({:variable, "ORS"}, state), do: state.ors
@@ -786,6 +1144,16 @@ defmodule JustBash.Commands.Awk.Evaluator do
     if truthy?(val), do: 0, else: 1
   end
 
+  # /regex/ as expression matches against $0 (equivalent to $0 ~ /regex/)
+  def evaluate_expression({:regex, pattern}, state) do
+    line = get_field(state, 0)
+
+    case Regex.compile(pattern) do
+      {:ok, re} -> if Regex.match?(re, line), do: 1, else: 0
+      _ -> 0
+    end
+  end
+
   # Unary minus
   def evaluate_expression({:negate, expr}, state) do
     val = evaluate_expression(expr, state) |> parse_number()
@@ -852,16 +1220,204 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   # "in" operator: key in array
   def evaluate_expression({:in, key_expr, array_name}, state) do
-    key = evaluate_expression(key_expr, state) |> to_string()
+    key = evaluate_expression(key_expr, state) |> format_array_key()
     arr = Map.get(state.arrays, array_name, %{})
     if Map.has_key?(arr, key), do: 1, else: 0
   end
 
+  # Increment/decrement as expressions (without state propagation - for backward compatibility)
+  def evaluate_expression({:increment, var}, state) do
+    # Post-increment: returns current value (side effect lost without state return)
+    current = Map.get(state.variables, var, "0")
+    parse_number(current)
+  end
+
+  def evaluate_expression({:pre_increment, var}, state) do
+    # Pre-increment: returns incremented value (side effect lost without state return)
+    current = Map.get(state.variables, var, "0")
+    parse_number(current) + 1
+  end
+
+  def evaluate_expression({:decrement, var}, state) do
+    current = Map.get(state.variables, var, "0")
+    parse_number(current)
+  end
+
+  def evaluate_expression({:pre_decrement, var}, state) do
+    current = Map.get(state.variables, var, "0")
+    parse_number(current) - 1
+  end
+
+  # Array element increment/decrement as expressions
+  def evaluate_expression({:array_increment, array, key_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> to_string()
+    arr = Map.get(state.arrays, array, %{})
+    Map.get(arr, key, "0") |> parse_number()
+  end
+
+  def evaluate_expression({:array_pre_increment, array, key_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> to_string()
+    arr = Map.get(state.arrays, array, %{})
+    Map.get(arr, key, "0") |> parse_number() |> Kernel.+(1)
+  end
+
+  def evaluate_expression({:array_decrement, array, key_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> to_string()
+    arr = Map.get(state.arrays, array, %{})
+    Map.get(arr, key, "0") |> parse_number()
+  end
+
+  def evaluate_expression({:array_pre_decrement, array, key_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> to_string()
+    arr = Map.get(state.arrays, array, %{})
+    Map.get(arr, key, "0") |> parse_number() |> Kernel.-(1)
+  end
+
   # Array access
   def evaluate_expression({:array_access, array_name, key_expr}, state) do
-    key = evaluate_expression(key_expr, state) |> to_string()
+    raw_key = evaluate_expression(key_expr, state)
+    key = format_array_key(raw_key)
     arr = Map.get(state.arrays, array_name, %{})
     Map.get(arr, key, "")
+  end
+
+  @doc """
+  Evaluate an expression and return both the value and potentially updated state.
+  Most expressions don't modify state, but increment/decrement expressions do.
+  """
+  def evaluate_expression_with_state({:increment, var}, state) do
+    current = Map.get(state.variables, var, "0")
+    current_num = parse_number(current)
+    new_state = %{state | variables: Map.put(state.variables, var, to_string(current_num + 1))}
+    {current_num, new_state}
+  end
+
+  def evaluate_expression_with_state({:pre_increment, var}, state) do
+    current = Map.get(state.variables, var, "0")
+    current_num = parse_number(current) + 1
+    new_state = %{state | variables: Map.put(state.variables, var, to_string(current_num))}
+    {current_num, new_state}
+  end
+
+  def evaluate_expression_with_state({:decrement, var}, state) do
+    current = Map.get(state.variables, var, "0")
+    current_num = parse_number(current)
+    new_state = %{state | variables: Map.put(state.variables, var, to_string(current_num - 1))}
+    {current_num, new_state}
+  end
+
+  def evaluate_expression_with_state({:pre_decrement, var}, state) do
+    current = Map.get(state.variables, var, "0")
+    current_num = parse_number(current) - 1
+    new_state = %{state | variables: Map.put(state.variables, var, to_string(current_num))}
+    {current_num, new_state}
+  end
+
+  # Logical not with potential side effects in subexpression
+  def evaluate_expression_with_state({:not, expr}, state) do
+    {val, state} = evaluate_expression_with_state(expr, state)
+    result = if truthy?(val), do: 0, else: 1
+    {result, state}
+  end
+
+  # Array element post-increment: arr[key]++ — returns old value, then increments
+  def evaluate_expression_with_state({:array_increment, array, key_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> format_array_key()
+    arr = Map.get(state.arrays, array, %{})
+    current = Map.get(arr, key, "0") |> parse_number()
+    new_arr = Map.put(arr, key, to_string(current + 1))
+    new_state = %{state | arrays: Map.put(state.arrays, array, new_arr)}
+    {current, new_state}
+  end
+
+  # Array element pre-increment: ++arr[key] — increments, then returns new value
+  def evaluate_expression_with_state({:array_pre_increment, array, key_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> format_array_key()
+    arr = Map.get(state.arrays, array, %{})
+    current = Map.get(arr, key, "0") |> parse_number()
+    new_val = current + 1
+    new_arr = Map.put(arr, key, to_string(new_val))
+    new_state = %{state | arrays: Map.put(state.arrays, array, new_arr)}
+    {new_val, new_state}
+  end
+
+  # Array element post-decrement: arr[key]--
+  def evaluate_expression_with_state({:array_decrement, array, key_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> format_array_key()
+    arr = Map.get(state.arrays, array, %{})
+    current = Map.get(arr, key, "0") |> parse_number()
+    new_arr = Map.put(arr, key, to_string(current - 1))
+    new_state = %{state | arrays: Map.put(state.arrays, array, new_arr)}
+    {current, new_state}
+  end
+
+  # Array element pre-decrement: --arr[key]
+  def evaluate_expression_with_state({:array_pre_decrement, array, key_expr}, state) do
+    key = evaluate_expression(key_expr, state) |> format_array_key()
+    arr = Map.get(state.arrays, array, %{})
+    current = Map.get(arr, key, "0") |> parse_number()
+    new_val = current - 1
+    new_arr = Map.put(arr, key, to_string(new_val))
+    new_state = %{state | arrays: Map.put(state.arrays, array, new_arr)}
+    {new_val, new_state}
+  end
+
+  # getline var < "file" — read next line from file into var
+  def evaluate_expression_with_state({:getline, var_name, file_expr, _pipe}, state) do
+    file_path =
+      case file_expr do
+        {:literal, path} -> path
+        expr -> to_string(evaluate_expression(expr, state))
+      end
+
+    # Resolve path against bash cwd
+    resolved = InMemoryFs.resolve_path(state.bash.cwd, file_path)
+
+    # Track file read positions in state.variables using a sentinel key
+    pos_key = "__getline_pos_#{resolved}__"
+    pos = parse_number(Map.get(state.variables, pos_key, "0")) |> trunc()
+
+    case InMemoryFs.read_file(state.bash.fs, resolved) do
+      {:ok, content} ->
+        lines = String.split(content, "\n", trim: true)
+
+        if pos < length(lines) do
+          line = Enum.at(lines, pos)
+
+          vars =
+            state.variables |> Map.put(var_name, line) |> Map.put(pos_key, to_string(pos + 1))
+
+          {1, %{state | variables: vars}}
+        else
+          # EOF
+          {0, state}
+        end
+
+      {:error, _} ->
+        {-1, state}
+    end
+  end
+
+  def evaluate_expression_with_state({:call, "match", args}, state) do
+    execute_match(args, state)
+  end
+
+  def evaluate_expression_with_state({:call, "split", args}, state) do
+    execute_split(args, state)
+  end
+
+  def evaluate_expression_with_state({:call, "asorti", args}, state) do
+    execute_asorti(args, state)
+  end
+
+  def evaluate_expression_with_state({:call, "system", [cmd_expr]}, state) do
+    cmd = evaluate_expression(cmd_expr, state) |> to_string()
+    {exit_code, state} = execute_system_command(cmd, state)
+    {exit_code, state}
+  end
+
+  def evaluate_expression_with_state(expr, state) do
+    {evaluate_expression(expr, state), state}
   end
 
   defp get_field(state, 0), do: Enum.at(state.fields, 0, "")
@@ -912,8 +1468,9 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   defp evaluate_condition_expr({:match, expr, pattern}, state) do
     value = evaluate_expression(expr, state) |> to_string()
+    pattern_str = unwrap_pattern(pattern)
 
-    case Regex.compile(pattern) do
+    case Regex.compile(pattern_str) do
       {:ok, regex} -> Regex.match?(regex, value)
       {:error, _} -> false
     end
@@ -922,6 +1479,15 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp evaluate_condition_expr({:truthy, expr}, state) do
     value = evaluate_expression(expr, state)
     truthy?(value)
+  end
+
+  defp evaluate_condition_expr({:not, expr}, state) do
+    not truthy?(evaluate_expression(expr, state))
+  end
+
+  # Catch-all: evaluate as expression and check truthiness
+  defp evaluate_condition_expr(expr, state) do
+    truthy?(evaluate_expression(expr, state))
   end
 
   defp compare_values(left, right, op) do
@@ -944,7 +1510,15 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp truthy?(0), do: false
   defp truthy?(n) when is_float(n) and n == 0.0, do: false
   defp truthy?(""), do: false
-  defp truthy?("0"), do: false
+
+  defp truthy?(s) when is_binary(s) do
+    # In awk, strings that look like zero are falsy in boolean context
+    case Float.parse(String.trim(s)) do
+      {val, ""} -> val != 0.0
+      _ -> true
+    end
+  end
+
   defp truthy?(_), do: true
 
   # AWK built-in functions
@@ -1040,9 +1614,37 @@ defmodule JustBash.Commands.Awk.Evaluator do
     0
   end
 
+  defp evaluate_function("match", [string, pattern], _state) do
+    regex = compile_awk_regex(to_string(pattern))
+
+    case Regex.run(regex, to_string(string), return: :index) do
+      nil -> 0
+      [{start, _len} | _] -> start + 1
+    end
+  end
+
+  # asorti is handled via evaluate_expression_with_state for state mutation
+  defp evaluate_function("asorti", _args, _state), do: 0
+
   defp evaluate_function(_name, _args, _state), do: ""
 
   # Format a value for output - integers print without .0
+  # Format array keys: 0.0 -> "0", 1.0 -> "1", "1.0" -> "1", etc.
+  defp format_array_key(value) when is_float(value) do
+    if trunc(value) == value, do: Integer.to_string(trunc(value)), else: Float.to_string(value)
+  end
+
+  defp format_array_key(value) when is_integer(value), do: Integer.to_string(value)
+
+  defp format_array_key(value) when is_binary(value) do
+    case Float.parse(value) do
+      {num, ""} when trunc(num) == num -> Integer.to_string(trunc(num))
+      _ -> value
+    end
+  end
+
+  defp format_array_key(value), do: to_string(value)
+
   defp format_output_value(value) when is_float(value) do
     if trunc(value) == value do
       Integer.to_string(trunc(value))
@@ -1084,4 +1686,19 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   def parse_number(_), do: 0.0
+
+  # Execute a shell command via JustBash.exec, returning {exit_code, updated_state}
+  defp execute_system_command(cmd, state) do
+    case state.bash do
+      nil ->
+        # No bash state available, can't execute
+        {1, state}
+
+      bash ->
+        {result, new_bash} = JustBash.exec(bash, cmd)
+        # system() in awk prints stdout to awk's output
+        new_output = state.output <> result.stdout
+        {result.exit_code, %{state | output: new_output, bash: new_bash}}
+    end
+  end
 end

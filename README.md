@@ -10,10 +10,15 @@ Supports optional network access via `curl` with secure-by-default URL filtering
 
 ## Security Model
 
+JustBash treats shell code as untrusted and sandboxes it in memory. Custom commands passed via
+`:commands` are trusted host-side extensions supplied by the library caller, and JustBash does not
+sandbox them or provide safety guarantees for them.
+
 - The shell only has access to the provided virtual filesystem
 - No access to the real filesystem by default
 - No network access by default
 - Network access can be enabled with URL allowlists
+- Custom commands are outside the sandbox and can bypass the virtual filesystem and network policy
 
 ## Installation
 
@@ -64,6 +69,40 @@ bash = JustBash.new(
   http_client: MyMockHttpClient
 )
 ```
+
+### Custom Commands
+
+Custom commands are trusted extensions supplied by the library caller, not untrusted shell input.
+JustBash does not sandbox them and does not provide safety guarantees for them.
+
+Register trusted host-side commands with `commands:`:
+
+```elixir
+defmodule MyApp.Commands.Greet do
+  @behaviour JustBash.Commands.Command
+
+  @impl true
+  def names, do: ["greet", "hello"]
+
+  @impl true
+  def execute(bash, args, _stdin) do
+    name = Enum.join(args, " ")
+    {%{stdout: "Hello, #{name}!\n", stderr: "", exit_code: 0}, bash}
+  end
+end
+
+bash = JustBash.new(commands: %{"greet" => MyApp.Commands.Greet})
+{result, _bash} = JustBash.exec(bash, "hello world")
+result.stdout  #=> "Hello, world!\n"
+```
+
+Important caveats:
+
+- Custom commands run arbitrary Elixir code in the host BEAM process
+- They are not restricted by the virtual filesystem or `network:` policy
+- Registration keys must appear in `names/0`; aliases from `names/0` are registered automatically
+- Shell functions still win over custom commands at execution time
+- Protected stateful builtins such as `cd`, `export`, `trap`, and `return` cannot be overridden
 
 ### Execute Script Files
 

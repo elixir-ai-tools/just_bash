@@ -1,0 +1,255 @@
+{
+  "suite": "control_flow",
+  "cases": [
+    {
+      "name": "for loop basics: for loop with list",
+      "script": "for i in a b c; do echo $i; done",
+      "content_hash": "b450c625459667a9"
+    },
+    {
+      "name": "for loop basics: for loop with range",
+      "script": "for i in {1..3}; do echo $i; done",
+      "content_hash": "92f154801826d862"
+    },
+    {
+      "name": "for loop basics: for loop with quoted string",
+      "script": "for i in 'a b' c; do echo \"[$i]\"; done",
+      "content_hash": "1be589a2cc252f51"
+    },
+    {
+      "name": "for loop basics: for loop with variable",
+      "script": "items='x y z'; for i in $items; do echo $i; done",
+      "content_hash": "b128e9f20da3ab78"
+    },
+    {
+      "name": "for loop basics: for loop empty list",
+      "script": "for i in; do echo $i; done; echo done",
+      "content_hash": "14fd346529e24389"
+    },
+    {
+      "name": "for loop basics: for loop single item",
+      "script": "for i in only; do echo $i; done",
+      "content_hash": "a5cc0e8b7a997141"
+    },
+    {
+      "name": "for loop basics: for loop with glob pattern",
+      "script": "mkdir -p /tmp/fortest\ntouch /tmp/fortest/a.txt /tmp/fortest/b.txt\nfor f in /tmp/fortest/*.txt; do basename $f; done | sort\n",
+      "content_hash": "ead18a7cf2a3e3dc"
+    },
+    {
+      "name": "while loop: basic while",
+      "script": "x=3; while [ $x -gt 0 ]; do echo $x; x=$((x-1)); done",
+      "content_hash": "2ff668cf5c713e47"
+    },
+    {
+      "name": "while loop: while with false condition",
+      "script": "while false; do echo never; done; echo done",
+      "content_hash": "04cc3e25c98d1845"
+    },
+    {
+      "name": "while loop: while count up",
+      "script": "x=0; while [ $x -lt 3 ]; do echo $x; x=$((x+1)); done",
+      "content_hash": "bcea1dfb1c9775ae"
+    },
+    {
+      "name": "while loop: while with command condition",
+      "script": "x=0; while test $x -lt 2; do echo $x; x=$((x+1)); done",
+      "content_hash": "9f17ed8132c971ce"
+    },
+    {
+      "name": "until loop: basic until",
+      "script": "x=0; until [ $x -ge 3 ]; do echo $x; x=$((x+1)); done",
+      "content_hash": "fa2cafc412b7598b"
+    },
+    {
+      "name": "until loop: until with true condition",
+      "script": "until true; do echo never; done; echo done",
+      "content_hash": "5361aa71ca997956"
+    },
+    {
+      "name": "until loop: until count down",
+      "script": "x=3; until [ $x -eq 0 ]; do echo $x; x=$((x-1)); done",
+      "content_hash": "daacbd56bcd1d6ff"
+    },
+    {
+      "name": "break statement: break in for loop",
+      "script": "for i in 1 2 3 4 5; do if [ $i -eq 3 ]; then break; fi; echo $i; done",
+      "content_hash": "d4b250e8ce45021c"
+    },
+    {
+      "name": "break statement: break in while loop",
+      "script": "x=0; while true; do x=$((x+1)); if [ $x -ge 3 ]; then break; fi; echo $x; done",
+      "content_hash": "56ea4a93dd02de36"
+    },
+    {
+      "name": "break statement: break with level 1",
+      "script": "for i in 1 2 3; do if [ $i -eq 2 ]; then break 1; fi; echo $i; done",
+      "content_hash": "e8a4ebd06aea0ac4"
+    },
+    {
+      "name": "break statement: break with level 2 in nested loops",
+      "script": "for i in 1 2; do\n  for j in a b c; do\n    if [ \"$j\" = \"b\" ]; then break 2; fi\n    echo \"$i$j\"\n  done\n  echo \"inner done\"\ndone\necho \"outer done\"\n",
+      "content_hash": "abd601f05bfd423b"
+    },
+    {
+      "name": "break statement: break only inner loop",
+      "script": "for i in 1 2; do\n  for j in a b c; do\n    if [ \"$j\" = \"b\" ]; then break; fi\n    echo \"$i$j\"\n  done\n  echo \"i=$i done\"\ndone\n",
+      "content_hash": "cba4f19ccb664e56"
+    },
+    {
+      "name": "continue statement: continue in for loop",
+      "script": "for i in 1 2 3 4 5; do if [ $i -eq 3 ]; then continue; fi; echo $i; done",
+      "content_hash": "9f5c5fd57695b98f"
+    },
+    {
+      "name": "continue statement: continue in while loop",
+      "script": "x=0; while [ $x -lt 5 ]; do x=$((x+1)); if [ $x -eq 3 ]; then continue; fi; echo $x; done",
+      "content_hash": "7f6249afe428e994"
+    },
+    {
+      "name": "continue statement: continue with level 1",
+      "script": "for i in 1 2 3; do if [ $i -eq 2 ]; then continue 1; fi; echo $i; done",
+      "content_hash": "80f3e35c7f053e37"
+    },
+    {
+      "name": "continue statement: continue with level 2 in nested loops",
+      "script": "for i in 1 2 3; do\n  echo \"i=$i start\"\n  for j in a b c; do\n    if [ \"$j\" = \"b\" ]; then continue 2; fi\n    echo \"$i$j\"\n  done\n  echo \"i=$i end\"\ndone\n",
+      "content_hash": "e85b3677da893611"
+    },
+    {
+      "name": "if statements: if true",
+      "script": "if true; then echo yes; fi",
+      "content_hash": "88c61024a832601d"
+    },
+    {
+      "name": "if statements: if false with else",
+      "script": "if false; then echo yes; else echo no; fi",
+      "content_hash": "01dca3e806140d9c"
+    },
+    {
+      "name": "if statements: if elif else",
+      "script": "x=2; if [ $x -eq 1 ]; then echo one; elif [ $x -eq 2 ]; then echo two; else echo other; fi",
+      "content_hash": "69dc48c9b2921f74"
+    },
+    {
+      "name": "if statements: multiple elif",
+      "script": "x=3; if [ $x -eq 1 ]; then echo 1; elif [ $x -eq 2 ]; then echo 2; elif [ $x -eq 3 ]; then echo 3; else echo x; fi",
+      "content_hash": "ea840e93a61eaabe"
+    },
+    {
+      "name": "if statements: nested if",
+      "script": "x=1; y=2; if [ $x -eq 1 ]; then if [ $y -eq 2 ]; then echo both; fi; fi",
+      "content_hash": "27a2826a22180b8a"
+    },
+    {
+      "name": "if statements: if with command",
+      "script": "if echo test >/dev/null; then echo ok; fi",
+      "content_hash": "718dc92d242802e9"
+    },
+    {
+      "name": "if statements: if with negation",
+      "script": "if ! false; then echo not false; fi",
+      "content_hash": "9a98f476b60a490c"
+    },
+    {
+      "name": "case statement: simple case",
+      "script": "x=b; case $x in a) echo A;; b) echo B;; esac",
+      "content_hash": "3428aa5476a339f2"
+    },
+    {
+      "name": "case statement: case with default",
+      "script": "x=z; case $x in a) echo A;; b) echo B;; *) echo default;; esac",
+      "content_hash": "7b9dc3cb6b6fe80b"
+    },
+    {
+      "name": "case statement: case with pattern",
+      "script": "x=hello; case $x in h*) echo starts with h;; *) echo other;; esac",
+      "content_hash": "a00550fa6c58f884"
+    },
+    {
+      "name": "case statement: case with multiple patterns",
+      "script": "x=y; case $x in a|b|c) echo abc;; x|y|z) echo xyz;; esac",
+      "content_hash": "120c5862757b6009"
+    },
+    {
+      "name": "case statement: case with bracket pattern",
+      "script": "x=test; case $x in [tT]*) echo starts with t;; esac",
+      "content_hash": "5affda3cfd793f3b"
+    },
+    {
+      "name": "case statement: case empty match",
+      "script": "x=''; case $x in '') echo empty;; *) echo not empty;; esac",
+      "content_hash": "90520b109e8f81e4"
+    },
+    {
+      "name": "case statement: case no match",
+      "script": "x=nomatch; case $x in a) echo A;; b) echo B;; esac; echo done",
+      "content_hash": "a50ef426ae63a0f8"
+    },
+    {
+      "name": "case statement: case with question mark",
+      "script": "x=ab; case $x in a?) echo 'a + one char';; *) echo other;; esac",
+      "content_hash": "da9f5618be88afc9"
+    },
+    {
+      "name": "compound commands: command list with semicolons",
+      "script": "echo a; echo b; echo c",
+      "content_hash": "57744c6e22870425"
+    },
+    {
+      "name": "compound commands: command list with &&",
+      "script": "true && echo success",
+      "content_hash": "a2cf6af19068873e"
+    },
+    {
+      "name": "compound commands: command list with || (short circuit)",
+      "script": "true || echo should not print",
+      "content_hash": "82cb43f569d04d72"
+    },
+    {
+      "name": "compound commands: command list with || (fallback)",
+      "script": "false || echo fallback",
+      "content_hash": "70d9adbb0e21f5ba"
+    },
+    {
+      "name": "compound commands: combined && and ||",
+      "script": "true && echo yes || echo no",
+      "content_hash": "1374b652558ed0f8"
+    },
+    {
+      "name": "compound commands: combined && and || with false",
+      "script": "false && echo yes || echo no",
+      "content_hash": "632d0ef28991f6b9"
+    },
+    {
+      "name": "compound commands: subshell",
+      "script": "(echo in subshell; x=1); echo $x",
+      "content_hash": "71af50f4d345cbcd"
+    },
+    {
+      "name": "compound commands: command group",
+      "script": "{ echo a; echo b; }",
+      "content_hash": "4cfb95d738f4e5b3"
+    },
+    {
+      "name": "exit codes: successful command",
+      "script": "true; echo $?",
+      "content_hash": "df0f4683dee462bc"
+    },
+    {
+      "name": "exit codes: failed command",
+      "script": "false; echo $?",
+      "content_hash": "c7e8e5ddce1c3f3f"
+    },
+    {
+      "name": "exit codes: last command in pipeline",
+      "script": "true | false; echo $?",
+      "content_hash": "0a1a798720399270"
+    },
+    {
+      "name": "exit codes: custom exit code",
+      "script": "(exit 42); echo $?",
+      "content_hash": "fa1f65ad276edb88"
+    }
+  ]
+}

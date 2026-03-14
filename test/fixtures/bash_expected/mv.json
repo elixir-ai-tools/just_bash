@@ -1,0 +1,47 @@
+{
+  "results": [
+    {
+      "content_hash": "a21c2cf795a50911",
+      "exit_code": 0,
+      "name": "mv comparison: moves a file and removes the source",
+      "stderr": "",
+      "stdout": "hi\nok\n"
+    },
+    {
+      "content_hash": "b70e9699981f292d",
+      "exit_code": 0,
+      "name": "mv comparison: moves a file into an existing directory",
+      "stderr": "",
+      "stdout": "hi\n"
+    },
+    {
+      "content_hash": "d008dd414fe5079c",
+      "exit_code": 0,
+      "name": "mv comparison: moves a directory into an existing directory",
+      "stderr": "",
+      "stdout": "hi\n"
+    },
+    {
+      "content_hash": "9924cc41e539f00e",
+      "exit_code": 0,
+      "name": "mv comparison: mv to the same path is a no-op",
+      "stderr": "",
+      "stdout": "hi\n"
+    },
+    {
+      "content_hash": "e2aed3231edb15cf",
+      "exit_code": 0,
+      "name": "mv comparison: overwrites an existing destination file",
+      "stderr": "",
+      "stdout": "new\n"
+    },
+    {
+      "content_hash": "265f43784862815d",
+      "exit_code": 0,
+      "name": "mv comparison: moves a symlink without dereferencing it",
+      "stderr": "",
+      "stdout": "target\nhi\n"
+    }
+  ],
+  "suite": "mv"
+}

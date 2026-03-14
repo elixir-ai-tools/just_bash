@@ -10,6 +10,7 @@ defmodule JustBash.MixProject do
       app: :just_bash,
       version: @version,
       elixir: "~> 1.15",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: @description,
@@ -35,6 +36,9 @@ defmodule JustBash.MixProject do
       mod: {JustBash.Application, []}
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "eval", "test/support"]
+  defp elixirc_paths(_), do: ["lib", "eval"]
 
   defp deps do
     [

@@ -1,0 +1,173 @@
+{
+  "results": [
+    {
+      "content_hash": "24f93e44d5169d23",
+      "exit_code": 0,
+      "name": "array literal syntax: basic array creation and indexing",
+      "stderr": "",
+      "stdout": "a\n"
+    },
+    {
+      "content_hash": "66053e4c7d8c707d",
+      "exit_code": 0,
+      "name": "array literal syntax: access second element",
+      "stderr": "",
+      "stdout": "y\n"
+    },
+    {
+      "content_hash": "dd53e8acacb6647d",
+      "exit_code": 0,
+      "name": "array literal syntax: access third element",
+      "stderr": "",
+      "stdout": "three\n"
+    },
+    {
+      "content_hash": "a44a30994886ad71",
+      "exit_code": 0,
+      "name": "array literal syntax: plain variable equals first element",
+      "stderr": "",
+      "stdout": "first\n"
+    },
+    {
+      "content_hash": "b0dfda719cfbc4d7",
+      "exit_code": 0,
+      "name": "array all elements: all elements with @",
+      "stderr": "",
+      "stdout": "one two three\n"
+    },
+    {
+      "content_hash": "089aed3b9e1cc7fd",
+      "exit_code": 0,
+      "name": "array all elements: all elements with *",
+      "stderr": "",
+      "stdout": "x y z\n"
+    },
+    {
+      "content_hash": "4c905c44f5c7254e",
+      "exit_code": 0,
+      "name": "array all elements: single element array with @",
+      "stderr": "",
+      "stdout": "only\n"
+    },
+    {
+      "content_hash": "bfb8c0b65c1dabce",
+      "exit_code": 0,
+      "name": "array all elements: empty array with @",
+      "stderr": "",
+      "stdout": "\n"
+    },
+    {
+      "content_hash": "7f9ded02bf58ac83",
+      "exit_code": 0,
+      "name": "array length: array element count",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "da516870cd648ca9",
+      "exit_code": 0,
+      "name": "array length: empty array length",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "1806bded13dfd1ad",
+      "exit_code": 0,
+      "name": "array length: single element array length",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "b79fc98cd710eb90",
+      "exit_code": 0,
+      "name": "array length: element string length",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "fe9adf31ea885de4",
+      "exit_code": 0,
+      "name": "array with variable expansion: array with variable values",
+      "stderr": "",
+      "stdout": "foo bar baz\n"
+    },
+    {
+      "content_hash": "71e1cdbf260369b1",
+      "exit_code": 0,
+      "name": "array with variable expansion: array with command substitution",
+      "stderr": "",
+      "stdout": "a b c\n"
+    },
+    {
+      "content_hash": "9cb136cbc77f900e",
+      "exit_code": 0,
+      "name": "positional parameters: set positional params",
+      "stderr": "",
+      "stdout": "one two three\n"
+    },
+    {
+      "content_hash": "c1716ca2e46f3fb9",
+      "exit_code": 0,
+      "name": "positional parameters: all positional with @",
+      "stderr": "",
+      "stdout": "a b c\n"
+    },
+    {
+      "content_hash": "c2c4604ac0b8cc52",
+      "exit_code": 0,
+      "name": "positional parameters: all positional with *",
+      "stderr": "",
+      "stdout": "x y z\n"
+    },
+    {
+      "content_hash": "e813cb87fcc4539c",
+      "exit_code": 0,
+      "name": "positional parameters: positional count",
+      "stderr": "",
+      "stdout": "4\n"
+    },
+    {
+      "content_hash": "f14efeadc39dab36",
+      "exit_code": 0,
+      "name": "positional parameters: empty positional params",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "611492b1f15b58d9",
+      "exit_code": 0,
+      "name": "word splitting and iteration: iterate over word split string",
+      "stderr": "",
+      "stdout": "x\ny\nz\n"
+    },
+    {
+      "content_hash": "7f011d845be9325d",
+      "exit_code": 0,
+      "name": "word splitting and iteration: iterate over array elements unquoted",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "e214a822fde0c7de",
+      "exit_code": 0,
+      "name": "array edge cases: array with spaces in elements using quotes",
+      "stderr": "",
+      "stdout": "hello world\n"
+    },
+    {
+      "content_hash": "2cd579f54a52f933",
+      "exit_code": 0,
+      "name": "array edge cases: array element assignment",
+      "stderr": "",
+      "stdout": "a changed c\n"
+    },
+    {
+      "content_hash": "d045477b8f54d73a",
+      "exit_code": 0,
+      "name": "array edge cases: array out of bounds returns empty",
+      "stderr": "",
+      "stdout": "[]\n"
+    }
+  ],
+  "suite": "arrays"
+}

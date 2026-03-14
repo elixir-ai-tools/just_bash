@@ -31,7 +31,8 @@ defmodule JustBash.FlagParser do
           :boolean => [atom()],
           :value => [atom()],
           :defaults => map(),
-          optional(:aliases) => map()
+          optional(:aliases) => map(),
+          optional(:multi_value) => [atom()]
         }
 
   @type parse_result :: {map(), [String.t()]}
@@ -93,7 +94,17 @@ defmodule JustBash.FlagParser do
         case remaining do
           [value | rest] ->
             parsed_value = parse_value(value)
-            {:ok, Map.put(flags, flag_atom, parsed_value), rest}
+            {:ok, put_flag(flags, flag_atom, parsed_value, spec), rest}
+
+          [] ->
+            :not_a_flag
+        end
+
+      flag_atom in Map.get(spec, :multi_value, []) ->
+        case remaining do
+          [value | rest] ->
+            parsed_value = parse_value(value)
+            {:ok, put_flag(flags, flag_atom, parsed_value, spec), rest}
 
           [] ->
             :not_a_flag
@@ -121,10 +132,11 @@ defmodule JustBash.FlagParser do
   defp try_attached_value_flag(flag_str, spec, flags) do
     <<first_char::binary-size(1), rest::binary>> = flag_str
     flag_atom = String.to_atom(first_char)
+    multi_value = Map.get(spec, :multi_value, [])
 
-    if flag_atom in spec.value and rest != "" do
+    if (flag_atom in spec.value or flag_atom in multi_value) and rest != "" do
       parsed_value = parse_value(rest)
-      {:ok, Map.put(flags, flag_atom, parsed_value)}
+      {:ok, put_flag(flags, flag_atom, parsed_value, spec)}
     else
       :error
     end
@@ -156,6 +168,17 @@ defmodule JustBash.FlagParser do
       end
     else
       :not_a_flag
+    end
+  end
+
+  defp put_flag(flags, flag_atom, value, spec) do
+    multi_value = Map.get(spec, :multi_value, [])
+
+    if flag_atom in multi_value do
+      existing = Map.get(flags, flag_atom, [])
+      Map.put(flags, flag_atom, existing ++ [value])
+    else
+      Map.put(flags, flag_atom, value)
     end
   end
 

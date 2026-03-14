@@ -1,0 +1,121 @@
+{
+  "suite": "error_output",
+  "cases": [
+    {
+      "name": "error output comparison: command not found exit code",
+      "script": "nonexistent_cmd_xyz 2>/dev/null; echo $?",
+      "opts": {
+        "ignore_exit": true
+      },
+      "content_hash": "3678c28d2829d690"
+    },
+    {
+      "name": "error output comparison: cat nonexistent file",
+      "script": "cat /nonexistent_file_xyz 2>/dev/null; echo $?",
+      "opts": {
+        "ignore_exit": true
+      },
+      "content_hash": "919f79add47e64d4"
+    },
+    {
+      "name": "exit code handling: false command",
+      "script": "false; echo $?",
+      "content_hash": "c7e8e5ddce1c3f3f"
+    },
+    {
+      "name": "exit code handling: true command",
+      "script": "true; echo $?",
+      "content_hash": "df0f4683dee462bc"
+    },
+    {
+      "name": "exit code handling: negated true",
+      "script": "! true; echo $?",
+      "content_hash": "967caf2066fd5e65"
+    },
+    {
+      "name": "exit code handling: negated false",
+      "script": "! false; echo $?",
+      "content_hash": "10136aa77ef0504e"
+    },
+    {
+      "name": "exit code handling: subshell exit",
+      "script": "(exit 42); echo $?",
+      "content_hash": "fa1f65ad276edb88"
+    },
+    {
+      "name": "exit code handling: subshell exit zero",
+      "script": "(exit 0); echo $?",
+      "content_hash": "b96ac833cf302b44"
+    },
+    {
+      "name": "exit code handling: pipeline exit code is last command",
+      "script": "true | false; echo $?",
+      "content_hash": "0a1a798720399270"
+    },
+    {
+      "name": "exit code handling: pipeline exit code with true last",
+      "script": "false | true; echo $?",
+      "content_hash": "1f72454d3a0a4df3"
+    },
+    {
+      "name": "exit code handling: command chain with semicolon",
+      "script": "false; true; echo $?",
+      "content_hash": "9e379946b6cdd460"
+    },
+    {
+      "name": "exit code handling: test command exit codes",
+      "script": "[ 1 -eq 1 ]; echo $?",
+      "content_hash": "fb8d27f60a49f717"
+    },
+    {
+      "name": "exit code handling: test command failure",
+      "script": "[ 1 -eq 2 ]; echo $?",
+      "content_hash": "c2894f70151bd1b1"
+    },
+    {
+      "name": "error suppression: suppress stderr with 2>/dev/null",
+      "script": "cat /nonexistent_xyz_file 2>/dev/null; echo done",
+      "content_hash": "546d8d45b6251b37"
+    },
+    {
+      "name": "error suppression: grep no match exit code",
+      "script": "echo 'hello' | grep 'xyz'; echo $?",
+      "content_hash": "eabae5cc04758edf"
+    },
+    {
+      "name": "error suppression: test -f on nonexistent file",
+      "script": "test -f /nonexistent_xyz_file; echo $?",
+      "content_hash": "84cbb60d5d25fbaa"
+    },
+    {
+      "name": "error suppression: test -d on nonexistent dir",
+      "script": "test -d /nonexistent_xyz_dir; echo $?",
+      "content_hash": "7e8195935adc7971"
+    },
+    {
+      "name": "AND/OR operators with exit codes: AND with success",
+      "script": "true && echo success",
+      "content_hash": "a2cf6af19068873e"
+    },
+    {
+      "name": "AND/OR operators with exit codes: AND with failure",
+      "script": "false && echo success; echo $?",
+      "content_hash": "827c82b5d6eb89b8"
+    },
+    {
+      "name": "AND/OR operators with exit codes: OR with success",
+      "script": "true || echo fallback",
+      "content_hash": "b9566250bbe625a5"
+    },
+    {
+      "name": "AND/OR operators with exit codes: OR with failure",
+      "script": "false || echo fallback",
+      "content_hash": "70d9adbb0e21f5ba"
+    },
+    {
+      "name": "AND/OR operators with exit codes: chained AND/OR",
+      "script": "false || true && echo end",
+      "content_hash": "9d9fafef07b760cb"
+    }
+  ]
+}

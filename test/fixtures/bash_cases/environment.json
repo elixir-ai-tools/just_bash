@@ -1,0 +1,150 @@
+{
+  "suite": "environment",
+  "cases": [
+    {
+      "name": "basic variables: simple assignment and echo",
+      "script": "MY_VAR=hello; echo $MY_VAR",
+      "content_hash": "56d56aa7b9fe6c5f"
+    },
+    {
+      "name": "basic variables: assignment with quotes",
+      "script": "VAR=\"hello world\"; echo \"$VAR\"",
+      "content_hash": "9dcc2e142ba8781b"
+    },
+    {
+      "name": "basic variables: empty assignment",
+      "script": "EMPTY=; echo \"[$EMPTY]\"",
+      "content_hash": "d6eba6a54b450541"
+    },
+    {
+      "name": "basic variables: variable expansion in assignment",
+      "script": "BASE=hello; DERIVED=${BASE}_world; echo $DERIVED",
+      "content_hash": "c90e33758df2d88f"
+    },
+    {
+      "name": "basic variables: append pattern",
+      "script": "X=start; X=${X}_end; echo $X",
+      "content_hash": "e9a2b965a2666f14"
+    },
+    {
+      "name": "export: export existing variable",
+      "script": "VAR=value; export VAR; echo $VAR",
+      "content_hash": "fc238260e7958a07"
+    },
+    {
+      "name": "export: export with value",
+      "script": "export NEW_VAR=newvalue; echo $NEW_VAR",
+      "content_hash": "8f8b9c794c14c855"
+    },
+    {
+      "name": "export: multiple export",
+      "script": "export A=1 B=2 C=3; echo $A $B $C",
+      "content_hash": "4dd76ba134251cb6"
+    },
+    {
+      "name": "export: export persists to subshell",
+      "script": "export PERSIST=value; result=$(echo $PERSIST); echo $result",
+      "content_hash": "204c662690c92ca4"
+    },
+    {
+      "name": "unset: unset variable",
+      "script": "VAR=value; echo before:$VAR; unset VAR; echo after:[$VAR]",
+      "content_hash": "534b52b299e00b2f"
+    },
+    {
+      "name": "unset: unset nonexistent",
+      "script": "unset NONEXISTENT; echo $?",
+      "content_hash": "eebdfe2a87741e24"
+    },
+    {
+      "name": "unset: unset then reassign",
+      "script": "VAR=first; unset VAR; VAR=second; echo $VAR",
+      "content_hash": "ea11321aa5b7120a"
+    },
+    {
+      "name": "printenv: printenv specific variable",
+      "script": "export MYVAR=testval; printenv MYVAR",
+      "content_hash": "bd19160355d65642"
+    },
+    {
+      "name": "printenv: printenv nonexistent",
+      "script": "printenv NONEXISTENT_VAR_12345; echo $?",
+      "content_hash": "dee3a73ad02caf67"
+    },
+    {
+      "name": "subshell isolation: subshell variable not visible in parent",
+      "script": "OUTER=outer; (OUTER=modified); echo $OUTER",
+      "content_hash": "338a54f5a067d093"
+    },
+    {
+      "name": "subshell isolation: parent variable visible in subshell",
+      "script": "PARENT=parent; result=$(echo $PARENT); echo $result",
+      "content_hash": "935246a7bf0b39c9"
+    },
+    {
+      "name": "subshell isolation: command substitution inherits env",
+      "script": "VAR=hello; echo $(echo $VAR)",
+      "content_hash": "6d2fb9146ab6d595"
+    },
+    {
+      "name": "default environment: HOME exists",
+      "script": "test -n \"$HOME\" && echo yes || echo no",
+      "content_hash": "01dcdbe0f6a5f798"
+    },
+    {
+      "name": "default environment: PWD exists",
+      "script": "test -n \"$PWD\" && echo yes || echo no",
+      "content_hash": "ff7304bb232a1f49"
+    },
+    {
+      "name": "default environment: PATH exists",
+      "script": "test -n \"$PATH\" && echo yes || echo no",
+      "content_hash": "01a26f204a103833"
+    },
+    {
+      "name": "empty vs unset: empty uses default with colon",
+      "script": "EMPTY=; echo \"${EMPTY:-default}\"",
+      "content_hash": "e733c175f2d867cc"
+    },
+    {
+      "name": "empty vs unset: unset uses default",
+      "script": "echo \"${NOTSET:-default}\"",
+      "content_hash": "a2e68a4125406ff1"
+    },
+    {
+      "name": "empty vs unset: empty without colon does not use default",
+      "script": "EMPTY=; echo \"${EMPTY-default}\"",
+      "content_hash": "6053d769d38c9d0d"
+    },
+    {
+      "name": "empty vs unset: unset without colon uses default",
+      "script": "echo \"${NOTSET-default}\"",
+      "content_hash": "8e9d51c90fd73b4d"
+    },
+    {
+      "name": "special variables: $? after true",
+      "script": "true; echo $?",
+      "content_hash": "df0f4683dee462bc"
+    },
+    {
+      "name": "special variables: $? after false",
+      "script": "false; echo $?",
+      "content_hash": "c7e8e5ddce1c3f3f"
+    },
+    {
+      "name": "special variables: $$ is numeric",
+      "script": "test $$ -gt 0 && echo yes || echo no",
+      "content_hash": "ceecb68f38718c8f"
+    },
+    {
+      "name": "IFS: default IFS word splitting",
+      "script": "words='a b c'; for w in $words; do echo $w; done",
+      "content_hash": "41b8c49b7cb0bc02"
+    },
+    {
+      "name": "IFS: custom IFS",
+      "script": "IFS=':'; str='a:b:c'; for w in $str; do echo $w; done",
+      "content_hash": "643af90ab30709c2"
+    }
+  ]
+}

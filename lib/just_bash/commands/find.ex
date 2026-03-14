@@ -22,9 +22,12 @@ defmodule JustBash.Commands.Find do
             find_in_path(bash, path, opts, acc)
           end)
 
-        output = format_results(results, opts.print0)
-
-        {%{stdout: output, stderr: stderr, exit_code: exit_code}, bash}
+        if opts.exec_cmd != nil do
+          execute_exec(bash, results, opts.exec_cmd, stderr, exit_code)
+        else
+          output = format_results(results, opts.print0)
+          {%{stdout: output, stderr: stderr, exit_code: exit_code}, bash}
+        end
     end
   end
 
@@ -49,7 +52,8 @@ defmodule JustBash.Commands.Find do
       maxdepth: nil,
       mindepth: nil,
       empty: false,
-      print0: false
+      print0: false,
+      exec_cmd: nil
     })
   end
 
@@ -97,12 +101,37 @@ defmodule JustBash.Commands.Find do
     parse_args(rest, %{opts | print0: true})
   end
 
+  defp parse_args(["-exec" | rest], opts) do
+    case parse_exec_args(rest, []) do
+      {:ok, cmd_parts, remaining} ->
+        parse_args(remaining, %{opts | exec_cmd: cmd_parts})
+
+      :error ->
+        {:error, "find: missing argument to `-exec'\n"}
+    end
+  end
+
   defp parse_args(["-" <> _ = arg | _rest], _opts) do
     {:error, "find: unknown predicate '#{arg}'\n"}
   end
 
   defp parse_args([path | rest], opts) do
     parse_args(rest, %{opts | paths: opts.paths ++ [path]})
+  end
+
+  # Parse -exec arguments until \; or ;
+  defp parse_exec_args([], _acc), do: :error
+
+  defp parse_exec_args([";" | rest], acc) do
+    {:ok, Enum.reverse(acc), rest}
+  end
+
+  defp parse_exec_args(["\\;" | rest], acc) do
+    {:ok, Enum.reverse(acc), rest}
+  end
+
+  defp parse_exec_args([arg | rest], acc) do
+    parse_exec_args(rest, [arg | acc])
   end
 
   defp find_recursive(fs, full_path, display_path, opts, depth) do
@@ -169,6 +198,25 @@ defmodule JustBash.Commands.Find do
 
   defp join_display_path(".", entry), do: "./#{entry}"
   defp join_display_path(path, entry), do: "#{path}/#{entry}"
+
+  defp execute_exec(bash, results, cmd_parts, stderr, exit_code) do
+    {output, bash, stderr, exit_code} =
+      Enum.reduce(results, {"", bash, stderr, exit_code}, fn path, {out, b, err, code} ->
+        cmd =
+          Enum.map_join(cmd_parts, " ", fn
+            "{}" -> path
+            part -> part
+          end)
+
+        {result, new_bash} = JustBash.exec(b, cmd)
+        new_out = out <> result.stdout
+        new_err = err <> result.stderr
+        new_code = if result.exit_code != 0, do: result.exit_code, else: code
+        {new_out, new_bash, new_err, new_code}
+      end)
+
+    {%{stdout: output, stderr: stderr, exit_code: exit_code}, bash}
+  end
 
   defp format_results([], _print0), do: ""
   defp format_results(results, true), do: Enum.join(results, "\0") <> "\0"

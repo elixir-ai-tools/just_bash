@@ -1,0 +1,250 @@
+{
+  "results": [
+    {
+      "content_hash": "e4909884c1e8c48e",
+      "exit_code": 0,
+      "name": "basic parameter expansion: simple variable",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "5dfb17f48822b379",
+      "exit_code": 0,
+      "name": "basic parameter expansion: braced variable",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "5f2553cd31db3084",
+      "exit_code": 0,
+      "name": "basic parameter expansion: unset variable is empty",
+      "stderr": "",
+      "stdout": "[]\n"
+    },
+    {
+      "content_hash": "3366510e2ea97aa7",
+      "exit_code": 0,
+      "name": "default value ${:-}: default value unset",
+      "stderr": "",
+      "stdout": "default\n"
+    },
+    {
+      "content_hash": "17c87adfb5d77038",
+      "exit_code": 0,
+      "name": "default value ${:-}: default value set",
+      "stderr": "",
+      "stdout": "value\n"
+    },
+    {
+      "content_hash": "bdd04dae98cb384e",
+      "exit_code": 0,
+      "name": "default value ${:-}: default value empty with colon",
+      "stderr": "",
+      "stdout": "default\n"
+    },
+    {
+      "content_hash": "6adf345b002b28b4",
+      "exit_code": 0,
+      "name": "default value ${:-}: default value empty without colon",
+      "stderr": "",
+      "stdout": "\n"
+    },
+    {
+      "content_hash": "f6451bdc3b8741c0",
+      "exit_code": 0,
+      "name": "default value ${:-}: nested default",
+      "stderr": "",
+      "stdout": "nested\n"
+    },
+    {
+      "content_hash": "9eb5ed8c6e859c6a",
+      "exit_code": 0,
+      "name": "assign default ${:=}: assign default when unset",
+      "stderr": "",
+      "stdout": "assigned\nassigned\n"
+    },
+    {
+      "content_hash": "5eb4439288cf3021",
+      "exit_code": 0,
+      "name": "assign default ${:=}: assign default when set",
+      "stderr": "",
+      "stdout": "existing\nexisting\n"
+    },
+    {
+      "content_hash": "a725c23c8ea4c431",
+      "exit_code": 0,
+      "name": "assign default ${:=}: assign default when empty",
+      "stderr": "",
+      "stdout": "assigned\nassigned\n"
+    },
+    {
+      "content_hash": "c122e81a520dd069",
+      "exit_code": 0,
+      "name": "alternative value ${:+}: alternative when set",
+      "stderr": "",
+      "stdout": "world\n"
+    },
+    {
+      "content_hash": "d647b82640c99c96",
+      "exit_code": 0,
+      "name": "alternative value ${:+}: alternative when unset",
+      "stderr": "",
+      "stdout": "\n"
+    },
+    {
+      "content_hash": "eab270ab6832393e",
+      "exit_code": 0,
+      "name": "alternative value ${:+}: alternative when empty with colon",
+      "stderr": "",
+      "stdout": "\n"
+    },
+    {
+      "content_hash": "f6e4061e4007af9c",
+      "exit_code": 0,
+      "name": "alternative value ${:+}: nested alternative",
+      "stderr": "",
+      "stdout": "helloworld\n"
+    },
+    {
+      "content_hash": "49d7b60919b35f4c",
+      "exit_code": 0,
+      "name": "length ${#}: string length",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "2e238c4ab7af35d6",
+      "exit_code": 0,
+      "name": "length ${#}: empty string length",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "670f15f7d5779d74",
+      "exit_code": 0,
+      "name": "length ${#}: unset variable length",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "0e13da803465eb2d",
+      "exit_code": 0,
+      "name": "substring ${:offset:length}: substring with offset and length",
+      "stderr": "",
+      "stdout": "ell\n"
+    },
+    {
+      "content_hash": "5395c3710eacf70f",
+      "exit_code": 0,
+      "name": "substring ${:offset:length}: substring offset only",
+      "stderr": "",
+      "stdout": "llo\n"
+    },
+    {
+      "content_hash": "3cefd8359376fd65",
+      "exit_code": 0,
+      "name": "substring ${:offset:length}: substring from start",
+      "stderr": "",
+      "stdout": "he\n"
+    },
+    {
+      "content_hash": "cd7f1bc5837c6faa",
+      "exit_code": 0,
+      "name": "substring ${:offset:length}: negative offset",
+      "stderr": "",
+      "stdout": "lo\n"
+    },
+    {
+      "content_hash": "3b90b0564dce0442",
+      "exit_code": 0,
+      "name": "pattern removal: suffix removal shortest",
+      "stderr": "",
+      "stdout": "file\n"
+    },
+    {
+      "content_hash": "7983cd16b2ee9521",
+      "exit_code": 0,
+      "name": "pattern removal: suffix removal longest",
+      "stderr": "",
+      "stdout": "file\n"
+    },
+    {
+      "content_hash": "4e721c40955582b4",
+      "exit_code": 0,
+      "name": "pattern removal: prefix removal shortest",
+      "stderr": "",
+      "stdout": "path/to/file\n"
+    },
+    {
+      "content_hash": "d36cddda01a992e3",
+      "exit_code": 0,
+      "name": "pattern removal: prefix removal longest",
+      "stderr": "",
+      "stdout": "file\n"
+    },
+    {
+      "content_hash": "52a9f51288197f1f",
+      "exit_code": 0,
+      "name": "pattern removal: no match suffix",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "83b3c83114ad77fc",
+      "exit_code": 0,
+      "name": "pattern removal: no match prefix",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "9824f92974633f4f",
+      "exit_code": 0,
+      "name": "pattern replacement: replace first occurrence",
+      "stderr": "",
+      "stdout": "heLlo\n"
+    },
+    {
+      "content_hash": "ccd7bc145cc60102",
+      "exit_code": 0,
+      "name": "pattern replacement: replace all occurrences",
+      "stderr": "",
+      "stdout": "heLLo\n"
+    },
+    {
+      "content_hash": "66bfa222a1e325d4",
+      "exit_code": 0,
+      "name": "pattern replacement: replace at start",
+      "stderr": "",
+      "stdout": "Hello\n"
+    },
+    {
+      "content_hash": "8654b66a75003756",
+      "exit_code": 0,
+      "name": "pattern replacement: replace at end",
+      "stderr": "",
+      "stdout": "hellO\n"
+    },
+    {
+      "content_hash": "aefd2a349b7a11fb",
+      "exit_code": 0,
+      "name": "pattern replacement: delete pattern",
+      "stderr": "",
+      "stdout": "helo\n"
+    },
+    {
+      "content_hash": "63d86870a86db3a0",
+      "exit_code": 0,
+      "name": "indirection ${!}: indirect variable reference",
+      "stderr": "",
+      "stdout": "value\n"
+    },
+    {
+      "content_hash": "4907dc85e7347d26",
+      "exit_code": 0,
+      "name": "indirection ${!}: indirect unset",
+      "stderr": "",
+      "stdout": "\n"
+    }
+  ],
+  "suite": "parameter_expansion"
+}

@@ -1,0 +1,65 @@
+{
+  "suite": "command_substitution",
+  "cases": [
+    {
+      "name": "command substitution comparison: simple command",
+      "script": "echo $(echo hello)",
+      "content_hash": "32bfb747f1b2c340"
+    },
+    {
+      "name": "command substitution comparison: nested command substitution",
+      "script": "echo $(echo $(echo nested))",
+      "content_hash": "3e78d1984cf84e25"
+    },
+    {
+      "name": "command substitution comparison: with arithmetic",
+      "script": "echo $(echo $((1 + 2)))",
+      "content_hash": "4b04a74aa311bc59"
+    },
+    {
+      "name": "command substitution comparison: backtick style",
+      "script": "echo `echo hello`",
+      "content_hash": "bd764ba6a01243f7"
+    },
+    {
+      "name": "command substitution with pipes: pipe in command substitution",
+      "script": "echo $(echo hello | cat)",
+      "content_hash": "d5a8f328adf5d410"
+    },
+    {
+      "name": "command substitution with pipes: pipe in quoted command substitution",
+      "script": "echo \"$(echo hello | cat)\"",
+      "content_hash": "b508cba231ae2f4e"
+    },
+    {
+      "name": "command substitution with pipes: command substitution with pipe as argument",
+      "script": "x=\"$(echo test | cat)\"; echo \"[$x]\"",
+      "content_hash": "a9041c60fc75cdbf"
+    },
+    {
+      "name": "command substitution with pipes: command substitution with pipe directly in test -z",
+      "script": "[ -z \"$(echo hello | cat)\" ] && echo empty || echo notempty",
+      "content_hash": "46e35ca66e44480b"
+    },
+    {
+      "name": "command substitution with pipes: command substitution with multiple pipes",
+      "script": "echo \"$(echo hello | cat | cat)\"",
+      "content_hash": "e0088dde2bcb3d60"
+    },
+    {
+      "name": "command substitution with pipes: command substitution preserves multiline output",
+      "script": "echo \"$(echo -e 'a\\nb\\nc' | cat)\"",
+      "content_hash": "ac29b26614d9ae5c"
+    },
+    {
+      "name": "command substitution with nested quotes: quoted command substitution with inner double quotes",
+      "script": "echo \"$(echo 'test')\"",
+      "content_hash": "54918093b6992480"
+    },
+    {
+      "name": "command substitution with nested quotes: quoted command substitution with grep pattern",
+      "script": "echo \"$(echo hello | grep 'hello')\"",
+      "content_hash": "cc7da0fc299de7f6"
+    }
+  ]
+}

@@ -81,8 +81,58 @@ defmodule JustBash.Commands.Registry do
     "shift" => Commands.Shift,
     "return" => Commands.Return,
     "getopts" => Commands.Getopts,
-    "trap" => Commands.Trap
+    "trap" => Commands.Trap,
+    "eval" => Commands.Eval,
+    "command" => Commands.CommandBuiltin,
+    "uname" => Commands.Uname,
+    "sha256sum" => Commands.Sha256sum,
+    "shasum" => Commands.Shasum,
+    "chmod" => Commands.Chmod,
+    "chown" => Commands.Chown,
+    "wget" => Commands.Wget,
+    "mktemp" => Commands.Mktemp,
+    "whoami" => Commands.Whoami,
+    "id" => Commands.Id,
+    "realpath" => Commands.Realpath,
+    "nproc" => Commands.Nproc,
+    "arch" => Commands.Arch,
+    "yes" => Commands.Yes,
+    "type" => Commands.Type
   }
+
+  # Shell builtins — commands that are part of the shell itself, not external programs.
+  # In real bash, these have no file on disk (or the file is a separate binary).
+  # `which` should report these as builtins, not fake paths.
+  @builtins MapSet.new([
+              "echo",
+              "printf",
+              "read",
+              "cd",
+              "pwd",
+              "export",
+              "unset",
+              "test",
+              "[",
+              "true",
+              ":",
+              "false",
+              "set",
+              "source",
+              ".",
+              "local",
+              "declare",
+              "typeset",
+              "break",
+              "continue",
+              "shift",
+              "return",
+              "trap",
+              "eval",
+              "command",
+              "getopts",
+              "exit",
+              "type"
+            ])
 
   @doc """
   Get the module that implements the given command.
@@ -95,6 +145,12 @@ defmodule JustBash.Commands.Registry do
   """
   @spec exists?(String.t()) :: boolean()
   def exists?(name), do: Map.has_key?(@commands, name)
+
+  @doc """
+  Check if a command is a shell builtin.
+  """
+  @spec builtin?(String.t()) :: boolean()
+  def builtin?(name), do: MapSet.member?(@builtins, name)
 
   @doc """
   List all available command names.

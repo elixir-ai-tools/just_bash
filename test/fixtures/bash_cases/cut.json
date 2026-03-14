@@ -1,0 +1,115 @@
+{
+  "suite": "cut",
+  "cases": [
+    {
+      "name": "cut comparison: cut field with delimiter",
+      "script": "echo 'a,b,c' | cut -d, -f2",
+      "content_hash": "3ac2e7eb388ec587"
+    },
+    {
+      "name": "cut comparison: cut multiple fields",
+      "script": "echo 'a,b,c,d' | cut -d, -f2,4",
+      "content_hash": "0f01571a17bcf85c"
+    },
+    {
+      "name": "cut comparison: cut field range",
+      "script": "echo 'a,b,c,d' | cut -d, -f2-3",
+      "content_hash": "50092d719b869423"
+    },
+    {
+      "name": "cut comparison: cut characters",
+      "script": "echo 'hello' | cut -c1-3",
+      "content_hash": "5f2b88d9b133e0a8"
+    },
+    {
+      "name": "cut comparison: cut from position to end",
+      "script": "echo 'hello' | cut -c3-",
+      "content_hash": "39913882f3278f27"
+    },
+    {
+      "name": "cut edge cases: single character",
+      "script": "echo 'hello' | cut -c1",
+      "content_hash": "948fb0ad9383482a"
+    },
+    {
+      "name": "cut edge cases: last character",
+      "script": "echo 'hello' | cut -c5",
+      "content_hash": "89311552f2472f33"
+    },
+    {
+      "name": "cut edge cases: character beyond length",
+      "script": "echo 'hi' | cut -c5",
+      "content_hash": "26344f1f976cfe35"
+    },
+    {
+      "name": "cut edge cases: first field",
+      "script": "echo 'a,b,c' | cut -d, -f1",
+      "content_hash": "149a48b060819a05"
+    },
+    {
+      "name": "cut edge cases: last field",
+      "script": "echo 'a,b,c' | cut -d, -f3",
+      "content_hash": "aba5694c2cc171bb"
+    },
+    {
+      "name": "cut edge cases: field beyond count",
+      "script": "echo 'a,b' | cut -d, -f5",
+      "content_hash": "47f13fec5152cd89"
+    },
+    {
+      "name": "cut edge cases: field range from start",
+      "script": "echo 'a,b,c,d' | cut -d, -f-2",
+      "content_hash": "9c553c2336f0620e"
+    },
+    {
+      "name": "cut edge cases: field range to end",
+      "script": "echo 'a,b,c,d' | cut -d, -f2-",
+      "content_hash": "929d0480421639f3"
+    },
+    {
+      "name": "cut edge cases: field with tab delimiter default",
+      "script": "printf 'a\tb\tc' | cut -f2",
+      "content_hash": "3603ba18cf568497"
+    },
+    {
+      "name": "cut edge cases: field with custom single-char delimiter",
+      "script": "echo 'a:b:c' | cut -d: -f2",
+      "content_hash": "a6b74b568e5edf88"
+    },
+    {
+      "name": "cut edge cases: field with space delimiter",
+      "script": "echo 'a b c' | cut -d' ' -f2",
+      "content_hash": "5b5c0a2b3c8da265"
+    },
+    {
+      "name": "cut edge cases: multiple character ranges",
+      "script": "echo 'hello world' | cut -c1-3,7-9",
+      "content_hash": "caeefede64da5365"
+    },
+    {
+      "name": "cut edge cases: overlapping character ranges",
+      "script": "echo 'hello' | cut -c1-3,2-4",
+      "content_hash": "adb1f7d716a37743"
+    },
+    {
+      "name": "cut edge cases: out of order fields (sorted output)",
+      "script": "echo 'a,b,c,d' | cut -d, -f3,1",
+      "content_hash": "21ca982306184d6a"
+    },
+    {
+      "name": "cut edge cases: empty input",
+      "script": "echo -n '' | cut -c1",
+      "content_hash": "9ad6622c6d38c51d"
+    },
+    {
+      "name": "cut edge cases: multiline input",
+      "script": "echo -e 'a,b,c\nd,e,f' | cut -d, -f2",
+      "content_hash": "72a0a73d38f9a99e"
+    },
+    {
+      "name": "cut edge cases: line without delimiter (no -s flag)",
+      "script": "echo 'no-comma' | cut -d, -f1",
+      "content_hash": "7a4d5965688ae9ec"
+    }
+  ]
+}

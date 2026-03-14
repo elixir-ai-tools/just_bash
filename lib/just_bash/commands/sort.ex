@@ -8,8 +8,9 @@ defmodule JustBash.Commands.Sort do
 
   @flag_spec %{
     boolean: [:r, :u, :n, :f],
-    value: [:k, :t],
-    defaults: %{r: false, u: false, n: false, f: false, k: nil, t: nil}
+    value: [:t],
+    multi_value: [:k],
+    defaults: %{r: false, u: false, n: false, f: false, k: [], t: nil}
   }
 
   @impl true
@@ -49,15 +50,21 @@ defmodule JustBash.Commands.Sort do
     end
   end
 
-  defp sort_lines(lines, %{k: key_spec} = flags) when key_spec != nil do
-    {field_num, _} = parse_key_spec(key_spec)
+  defp sort_lines(lines, %{k: key_specs} = flags) when key_specs != [] do
     delimiter = flags[:t] || " "
 
-    Enum.sort_by(
-      lines,
-      fn line -> get_sort_key(line, field_num, delimiter, flags.n, flags.f) end,
-      sort_direction(flags.r)
-    )
+    parsed_keys =
+      Enum.map(key_specs, fn spec ->
+        {field_num, modifiers} = parse_key_spec(spec)
+        numeric = modifiers[:numeric] || flags.n
+        fold_case = modifiers[:fold_case] || flags.f
+        reverse = modifiers[:reverse] || flags.r
+        {field_num, numeric, fold_case, reverse}
+      end)
+
+    Enum.sort(lines, fn a, b ->
+      compare_by_keys(a, b, parsed_keys, delimiter)
+    end)
   end
 
   defp sort_lines(lines, %{n: true} = flags) do
@@ -72,14 +79,56 @@ defmodule JustBash.Commands.Sort do
   defp sort_lines(lines, %{r: true}), do: Enum.sort(lines, &>=/2)
   defp sort_lines(lines, _flags), do: Enum.sort(lines, &<=/2)
 
+  defp compare_by_keys(_a, _b, [], _delimiter), do: true
+
+  defp compare_by_keys(a, b, [{field_num, numeric, fold_case, reverse} | rest], delimiter) do
+    key_a = get_sort_key(a, field_num, delimiter, numeric, fold_case)
+    key_b = get_sort_key(b, field_num, delimiter, numeric, fold_case)
+
+    cond do
+      key_a == key_b ->
+        compare_by_keys(a, b, rest, delimiter)
+
+      reverse ->
+        key_a > key_b
+
+      true ->
+        key_a < key_b
+    end
+  end
+
   defp parse_key_spec(spec) when is_integer(spec), do: {spec, nil}
 
   defp parse_key_spec(spec) when is_binary(spec) do
-    # Parse key spec like "2" or "2,2" or "2.3"
+    # Parse key spec like "2" or "2,2" or "2,2nr" or "1,1rn"
+    # Extract field number and modifiers (n=numeric, r=reverse, f=fold-case)
     case Integer.parse(spec) do
-      {n, _} -> {n, nil}
-      :error -> {1, nil}
+      {n, rest} ->
+        modifiers = parse_key_modifiers(rest)
+        {n, modifiers}
+
+      :error ->
+        {1, %{}}
     end
+  end
+
+  defp parse_key_modifiers(rest) do
+    # After the field number, there may be ",end" and then modifier chars
+    # e.g. ",2nr" or ",1rn" or "nr" or just ""
+    chars =
+      case String.split(rest, ",", parts: 2) do
+        [_] -> rest
+        [_, end_spec] -> end_spec
+      end
+
+    # Strip any leading digits (the end field number) to get modifier letters
+    modifier_str = String.replace(chars, ~r/^[\d.]*/, "")
+
+    %{
+      numeric: String.contains?(modifier_str, "n"),
+      reverse: String.contains?(modifier_str, "r"),
+      fold_case: String.contains?(modifier_str, "f")
+    }
   end
 
   defp get_sort_key(line, field_num, delimiter, numeric, fold_case) do

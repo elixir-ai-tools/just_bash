@@ -1,0 +1,901 @@
+{
+  "results": [
+    {
+      "content_hash": "44bbff86a8633701",
+      "exit_code": 0,
+      "name": "jq basic access comparison: jq identity filter",
+      "stderr": "",
+      "stdout": "{\"a\":1}\n"
+    },
+    {
+      "content_hash": "1ed00449cca8bc3f",
+      "exit_code": 0,
+      "name": "jq basic access comparison: jq field access",
+      "stderr": "",
+      "stdout": "\"alice\"\n"
+    },
+    {
+      "content_hash": "152ba0bf740c63b6",
+      "exit_code": 0,
+      "name": "jq basic access comparison: jq nested field access",
+      "stderr": "",
+      "stdout": "\"bob\"\n"
+    },
+    {
+      "content_hash": "826bf901da6887c1",
+      "exit_code": 0,
+      "name": "jq basic access comparison: jq array index",
+      "stderr": "",
+      "stdout": "20\n"
+    },
+    {
+      "content_hash": "f8180e583b61e018",
+      "exit_code": 0,
+      "name": "jq basic access comparison: jq array slice",
+      "stderr": "",
+      "stdout": "[2,3,4]\n"
+    },
+    {
+      "content_hash": "9056f8f06b1f2ccb",
+      "exit_code": 0,
+      "name": "jq basic access comparison: jq iterate array",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "4ceb3e60893b3bfa",
+      "exit_code": 0,
+      "name": "jq basic access comparison: jq access missing field returns null",
+      "stderr": "",
+      "stdout": "null\n"
+    },
+    {
+      "content_hash": "c44c2c14cbeef9e2",
+      "exit_code": 0,
+      "name": "jq basic access comparison: jq optional field access with ?",
+      "stderr": "",
+      "stdout": "null\n"
+    },
+    {
+      "content_hash": "7456320fd825c67a",
+      "exit_code": 0,
+      "name": "jq arithmetic comparison: jq addition",
+      "stderr": "",
+      "stdout": "8\n"
+    },
+    {
+      "content_hash": "c8185728f997c6a7",
+      "exit_code": 0,
+      "name": "jq arithmetic comparison: jq subtraction",
+      "stderr": "",
+      "stdout": "7\n"
+    },
+    {
+      "content_hash": "96d72219c6d3986d",
+      "exit_code": 0,
+      "name": "jq arithmetic comparison: jq multiplication",
+      "stderr": "",
+      "stdout": "10\n"
+    },
+    {
+      "content_hash": "fa557f6c502e4129",
+      "exit_code": 0,
+      "name": "jq arithmetic comparison: jq division",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "8547158b3e149406",
+      "exit_code": 0,
+      "name": "jq arithmetic comparison: jq modulo",
+      "stderr": "",
+      "stdout": "2\n"
+    },
+    {
+      "content_hash": "a0a697d7a132dc92",
+      "exit_code": 0,
+      "name": "jq arithmetic comparison: jq negative numbers",
+      "stderr": "",
+      "stdout": "-10\n"
+    },
+    {
+      "content_hash": "42105b8be46d344f",
+      "exit_code": 0,
+      "name": "jq arithmetic comparison: jq float arithmetic",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "46ddcfc563052db0",
+      "exit_code": 0,
+      "name": "jq comparison operators: jq greater than",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "27389c6920122011",
+      "exit_code": 0,
+      "name": "jq comparison operators: jq less than",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "38d3899bf6bea0a7",
+      "exit_code": 0,
+      "name": "jq comparison operators: jq greater than or equal",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "6df7cbfb3a0d9cb2",
+      "exit_code": 0,
+      "name": "jq comparison operators: jq less than or equal",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "a4b66bf39777f023",
+      "exit_code": 0,
+      "name": "jq comparison operators: jq equality",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "8d96850182328c92",
+      "exit_code": 0,
+      "name": "jq comparison operators: jq inequality",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "c5061563f0b58ebb",
+      "exit_code": 0,
+      "name": "jq logical operators comparison: jq and operator",
+      "stderr": "",
+      "stdout": "false\n"
+    },
+    {
+      "content_hash": "c03fb2b031f764c2",
+      "exit_code": 0,
+      "name": "jq logical operators comparison: jq or operator",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "a734557098b4bb01",
+      "exit_code": 0,
+      "name": "jq logical operators comparison: jq not operator",
+      "stderr": "",
+      "stdout": "false\n"
+    },
+    {
+      "content_hash": "427e88239aaf816d",
+      "exit_code": 0,
+      "name": "jq builtin functions comparison: jq length of string",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "0b008b62304f521d",
+      "exit_code": 0,
+      "name": "jq builtin functions comparison: jq length of array",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "2b0904684ed30eae",
+      "exit_code": 0,
+      "name": "jq builtin functions comparison: jq length of object",
+      "stderr": "",
+      "stdout": "2\n"
+    },
+    {
+      "content_hash": "f82ec8d714a95b26",
+      "exit_code": 0,
+      "name": "jq builtin functions comparison: jq keys",
+      "stderr": "",
+      "stdout": "[\"a\",\"b\"]\n"
+    },
+    {
+      "content_hash": "0c073198cca1eafb",
+      "exit_code": 0,
+      "name": "jq builtin functions comparison: jq type of string",
+      "stderr": "",
+      "stdout": "\"string\"\n"
+    },
+    {
+      "content_hash": "d38c2d6986c602ad",
+      "exit_code": 0,
+      "name": "jq builtin functions comparison: jq type of number",
+      "stderr": "",
+      "stdout": "\"number\"\n"
+    },
+    {
+      "content_hash": "b0bf03d5f1d28507",
+      "exit_code": 0,
+      "name": "jq builtin functions comparison: jq type of array",
+      "stderr": "",
+      "stdout": "\"array\"\n"
+    },
+    {
+      "content_hash": "93d01ff83bda06a7",
+      "exit_code": 0,
+      "name": "jq builtin functions comparison: jq type of object",
+      "stderr": "",
+      "stdout": "\"object\"\n"
+    },
+    {
+      "content_hash": "ef679ace8e985c37",
+      "exit_code": 0,
+      "name": "jq builtin functions comparison: jq type of boolean",
+      "stderr": "",
+      "stdout": "\"boolean\"\n"
+    },
+    {
+      "content_hash": "04adce4c55c6595b",
+      "exit_code": 0,
+      "name": "jq builtin functions comparison: jq type of null",
+      "stderr": "",
+      "stdout": "\"null\"\n"
+    },
+    {
+      "content_hash": "0f492ce51bfad2f5",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq first",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "4f647068a07803fd",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq last",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "c4d19ccfe0168d38",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq reverse",
+      "stderr": "",
+      "stdout": "[3,2,1]\n"
+    },
+    {
+      "content_hash": "68fb4849b8f9d39e",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq sort",
+      "stderr": "",
+      "stdout": "[1,2,3]\n"
+    },
+    {
+      "content_hash": "a0f4584aa41daffd",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq unique",
+      "stderr": "",
+      "stdout": "[1,2,3]\n"
+    },
+    {
+      "content_hash": "f458cc35177b09ee",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq flatten",
+      "stderr": "",
+      "stdout": "[1,2,3,4,5]\n"
+    },
+    {
+      "content_hash": "be2cca0119596e05",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq min",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "ecb738a60c52d5a3",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq max",
+      "stderr": "",
+      "stdout": "8\n"
+    },
+    {
+      "content_hash": "3a5cebb9ac6404f3",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq add numbers",
+      "stderr": "",
+      "stdout": "10\n"
+    },
+    {
+      "content_hash": "a7152db3a6aa465b",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq add strings",
+      "stderr": "",
+      "stdout": "\"abc\"\n"
+    },
+    {
+      "content_hash": "4525f4ef3089d630",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq nth element",
+      "stderr": "",
+      "stdout": "30\n"
+    },
+    {
+      "content_hash": "82c905b9caa0b7c6",
+      "exit_code": 0,
+      "name": "jq array functions comparison: jq group_by",
+      "stderr": "",
+      "stdout": "[[{\"a\":1},{\"a\":1}],[{\"a\":2}]]\n"
+    },
+    {
+      "content_hash": "edad9b87bf25ca72",
+      "exit_code": 0,
+      "name": "jq map and select comparison: jq map with arithmetic",
+      "stderr": "",
+      "stdout": "[2,4,6]\n"
+    },
+    {
+      "content_hash": "9b561751e1689405",
+      "exit_code": 0,
+      "name": "jq map and select comparison: jq map with field access",
+      "stderr": "",
+      "stdout": "[1,2]\n"
+    },
+    {
+      "content_hash": "5a4f13e076d03e0d",
+      "exit_code": 0,
+      "name": "jq map and select comparison: jq select greater than",
+      "stderr": "",
+      "stdout": "[3,4,5]\n"
+    },
+    {
+      "content_hash": "fcaf954fc4319d5c",
+      "exit_code": 0,
+      "name": "jq map and select comparison: jq select with equality",
+      "stderr": "",
+      "stdout": "[{\"a\":1}]\n"
+    },
+    {
+      "content_hash": "a006b35cc5e8e29a",
+      "exit_code": 0,
+      "name": "jq map and select comparison: jq map_values",
+      "stderr": "",
+      "stdout": "{\"a\":11,\"b\":12}\n"
+    },
+    {
+      "content_hash": "df60dc81715309bb",
+      "exit_code": 0,
+      "name": "jq map and select comparison: jq map_values with multiplication",
+      "stderr": "",
+      "stdout": "{\"x\":4,\"y\":6}\n"
+    },
+    {
+      "content_hash": "0c2f8e9102920008",
+      "exit_code": 0,
+      "name": "jq map and select comparison: jq map_values with string transformation",
+      "stderr": "",
+      "stdout": "{\"a\":\"HELLO\",\"b\":\"WORLD\"}\n"
+    },
+    {
+      "content_hash": "88b70ef974b492e6",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq ascii_downcase",
+      "stderr": "",
+      "stdout": "\"hello\"\n"
+    },
+    {
+      "content_hash": "db00a711497a2386",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq ascii_upcase",
+      "stderr": "",
+      "stdout": "\"HELLO\"\n"
+    },
+    {
+      "content_hash": "ead5b5bda55d4d7e",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq split",
+      "stderr": "",
+      "stdout": "[\"a\",\"b\",\"c\"]\n"
+    },
+    {
+      "content_hash": "76e9ad66f7343b27",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq join",
+      "stderr": "",
+      "stdout": "\"a-b-c\"\n"
+    },
+    {
+      "content_hash": "d510a33ce6498822",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq startswith true",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "31b9e181ca29e503",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq startswith false",
+      "stderr": "",
+      "stdout": "false\n"
+    },
+    {
+      "content_hash": "4f28b3752ac87b7d",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq endswith true",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "43af6f048e669a62",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq endswith false",
+      "stderr": "",
+      "stdout": "false\n"
+    },
+    {
+      "content_hash": "df8083c31e179dd7",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq contains string",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "53f4b0a3fe442800",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq ltrimstr",
+      "stderr": "",
+      "stdout": "\"world\"\n"
+    },
+    {
+      "content_hash": "9932894caaecf853",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq rtrimstr",
+      "stderr": "",
+      "stdout": "\"hello\"\n"
+    },
+    {
+      "content_hash": "af72fb5b6f87c99f",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq test regex match",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "5a8a0c5e4b2721d4",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq test regex no match",
+      "stderr": "",
+      "stdout": "false\n"
+    },
+    {
+      "content_hash": "027b8076db29a043",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq gsub replacement",
+      "stderr": "",
+      "stdout": "\"hell0 w0rld\"\n"
+    },
+    {
+      "content_hash": "ce99c221d65e1706",
+      "exit_code": 0,
+      "name": "jq string functions comparison: jq sub first replacement",
+      "stderr": "",
+      "stdout": "\"hell0 world\"\n"
+    },
+    {
+      "content_hash": "9d83a4feabd44eb6",
+      "exit_code": 0,
+      "name": "jq object construction comparison: jq object literal",
+      "stderr": "",
+      "stdout": "{\"a\":1,\"b\":2}\n"
+    },
+    {
+      "content_hash": "f1e84420d4f38124",
+      "exit_code": 0,
+      "name": "jq object construction comparison: jq object from input values",
+      "stderr": "",
+      "stdout": "{\"sum\":3}\n"
+    },
+    {
+      "content_hash": "69fe82f6fdab62b1",
+      "exit_code": 0,
+      "name": "jq object construction comparison: jq array construction",
+      "stderr": "",
+      "stdout": "[1,2]\n"
+    },
+    {
+      "content_hash": "b9bf8147c04620d4",
+      "exit_code": 0,
+      "name": "jq object construction comparison: jq object with dynamic key",
+      "stderr": "",
+      "stdout": "{\"name\":\"alice\"}\n"
+    },
+    {
+      "content_hash": "15cd14c222bb931c",
+      "exit_code": 0,
+      "name": "jq conditionals comparison: jq if-then-else true branch",
+      "stderr": "",
+      "stdout": "\"big\"\n"
+    },
+    {
+      "content_hash": "394e18b7136c7f49",
+      "exit_code": 0,
+      "name": "jq conditionals comparison: jq if-then-else false branch",
+      "stderr": "",
+      "stdout": "\"small\"\n"
+    },
+    {
+      "content_hash": "582105d1043a1fde",
+      "exit_code": 0,
+      "name": "jq conditionals comparison: jq alternative operator with null",
+      "stderr": "",
+      "stdout": "\"default\"\n"
+    },
+    {
+      "content_hash": "a997c68016a7f9b4",
+      "exit_code": 0,
+      "name": "jq conditionals comparison: jq alternative operator with value",
+      "stderr": "",
+      "stdout": "5\n"
+    },
+    {
+      "content_hash": "11d21d14f40a7504",
+      "exit_code": 0,
+      "name": "jq conditionals comparison: jq empty check",
+      "stderr": "",
+      "stdout": "\"empty\"\n"
+    },
+    {
+      "content_hash": "ca5ed8978a25e30d",
+      "exit_code": 0,
+      "name": "jq pipeline and multiple outputs comparison: jq multiple field access",
+      "stderr": "",
+      "stdout": "1\n2\n"
+    },
+    {
+      "content_hash": "659f2aec99e26a90",
+      "exit_code": 0,
+      "name": "jq pipeline and multiple outputs comparison: jq pipeline with filter",
+      "stderr": "",
+      "stdout": "3\n4\n5\n"
+    },
+    {
+      "content_hash": "c892400c31be2fb2",
+      "exit_code": 0,
+      "name": "jq pipeline and multiple outputs comparison: jq range function",
+      "stderr": "",
+      "stdout": "[0,1,2,3,4]\n"
+    },
+    {
+      "content_hash": "c62f3553452faab5",
+      "exit_code": 0,
+      "name": "jq pipeline and multiple outputs comparison: jq range with start and end",
+      "stderr": "",
+      "stdout": "[2,3,4]\n"
+    },
+    {
+      "content_hash": "2e20485891a14000",
+      "exit_code": 0,
+      "name": "jq format strings comparison: jq @csv with numbers",
+      "stderr": "",
+      "stdout": "1,2,3\n"
+    },
+    {
+      "content_hash": "aaa937d20a328b61",
+      "exit_code": 0,
+      "name": "jq format strings comparison: jq @csv with strings",
+      "stderr": "",
+      "stdout": "\"a\",\"b\",\"c\"\n"
+    },
+    {
+      "content_hash": "106fb954e7a1c03f",
+      "exit_code": 0,
+      "name": "jq format strings comparison: jq @tsv",
+      "stderr": "",
+      "stdout": "a\tb\tc\n"
+    },
+    {
+      "content_hash": "933f0ce379f709b1",
+      "exit_code": 0,
+      "name": "jq format strings comparison: jq @json",
+      "stderr": "",
+      "stdout": "{\"a\":1}\n"
+    },
+    {
+      "content_hash": "2f99a86a4f846d0d",
+      "exit_code": 0,
+      "name": "jq format strings comparison: jq @base64 encode",
+      "stderr": "",
+      "stdout": "aGVsbG8=\n"
+    },
+    {
+      "content_hash": "4998e7274b2d9845",
+      "exit_code": 0,
+      "name": "jq format strings comparison: jq @base64d decode",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "3dd802bd4003a26a",
+      "exit_code": 0,
+      "name": "jq format strings comparison: jq @uri encode",
+      "stderr": "",
+      "stdout": "hello%20world\n"
+    },
+    {
+      "content_hash": "fe1bdb7bbc717044",
+      "exit_code": 0,
+      "name": "jq format strings comparison: jq @html encode",
+      "stderr": "",
+      "stdout": "&lt;b&gt;test&lt;/b&gt;\n"
+    },
+    {
+      "content_hash": "9bcdeefe4a8930fb",
+      "exit_code": 0,
+      "name": "jq string interpolation comparison: jq simple interpolation",
+      "stderr": "",
+      "stdout": "Hello, alice!\n"
+    },
+    {
+      "content_hash": "bde37c053ee24178",
+      "exit_code": 0,
+      "name": "jq string interpolation comparison: jq multiple interpolations",
+      "stderr": "",
+      "stdout": "alice is 30 years old\n"
+    },
+    {
+      "content_hash": "1ad5d2f3e26adda9",
+      "exit_code": 0,
+      "name": "jq string interpolation comparison: jq interpolation with expression",
+      "stderr": "",
+      "stdout": "Sum: 5\n"
+    },
+    {
+      "content_hash": "6d26e9551d6ad179",
+      "exit_code": 0,
+      "name": "jq output options comparison: jq raw output -r",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "c8e9b50878844b25",
+      "exit_code": 0,
+      "name": "jq output options comparison: jq compact output -c",
+      "stderr": "",
+      "stdout": "{\"a\":1,\"b\":2}\n"
+    },
+    {
+      "content_hash": "209c45d41650247c",
+      "exit_code": 0,
+      "name": "jq output options comparison: jq sort keys -S",
+      "stderr": "",
+      "stdout": "{\"a\":1,\"b\":2}\n"
+    },
+    {
+      "content_hash": "c6f953c5dcd68ccc",
+      "exit_code": 0,
+      "name": "jq reduce and recursive descent comparison: jq reduce sum",
+      "stderr": "",
+      "stdout": "15\n"
+    },
+    {
+      "content_hash": "7b9129d4a852ddbf",
+      "exit_code": 0,
+      "name": "jq reduce and recursive descent comparison: jq recursive descent ..",
+      "stderr": "",
+      "stdout": "[1]\n"
+    },
+    {
+      "content_hash": "b4ea4defcd423238",
+      "exit_code": 0,
+      "name": "jq has and in operators comparison: jq has existing key",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "1a355c1ab54c0ad5",
+      "exit_code": 0,
+      "name": "jq has and in operators comparison: jq has missing key",
+      "stderr": "",
+      "stdout": "false\n"
+    },
+    {
+      "content_hash": "b38a0623dfcefe56",
+      "exit_code": 0,
+      "name": "jq has and in operators comparison: jq in operator for objects",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "6b2c19d2730cd7f3",
+      "exit_code": 0,
+      "name": "jq getpath and setpath comparison: jq getpath",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "dddc0e5b8e03abde",
+      "exit_code": 0,
+      "name": "jq getpath and setpath comparison: jq setpath",
+      "stderr": "",
+      "stdout": "{\"a\":1,\"b\":2}\n"
+    },
+    {
+      "content_hash": "6f50e659fbfb63fa",
+      "exit_code": 0,
+      "name": "jq getpath and setpath comparison: jq delpaths",
+      "stderr": "",
+      "stdout": "{\"b\":2}\n"
+    },
+    {
+      "content_hash": "7e8b353a2f8c6ac9",
+      "exit_code": 0,
+      "name": "jq to_entries and from_entries comparison: jq to_entries",
+      "stderr": "",
+      "stdout": "[{\"key\":\"a\",\"value\":1},{\"key\":\"b\",\"value\":2}]\n"
+    },
+    {
+      "content_hash": "104d13820627e7da",
+      "exit_code": 0,
+      "name": "jq to_entries and from_entries comparison: jq from_entries",
+      "stderr": "",
+      "stdout": "{\"a\":1}\n"
+    },
+    {
+      "content_hash": "57f9d190cea0d3ff",
+      "exit_code": 0,
+      "name": "jq to_entries and from_entries comparison: jq with_entries with update assignment",
+      "stderr": "",
+      "stdout": "{\"a\":11,\"b\":12}\n"
+    },
+    {
+      "content_hash": "93d0d73a25a555d4",
+      "exit_code": 0,
+      "name": "jq update assignment operators comparison: jq += add assignment",
+      "stderr": "",
+      "stdout": "{\"x\":8}\n"
+    },
+    {
+      "content_hash": "29e32c0ebab42b1e",
+      "exit_code": 0,
+      "name": "jq update assignment operators comparison: jq -= subtract assignment",
+      "stderr": "",
+      "stdout": "{\"x\":7}\n"
+    },
+    {
+      "content_hash": "a6a841da5bf67f08",
+      "exit_code": 0,
+      "name": "jq update assignment operators comparison: jq *= multiply assignment",
+      "stderr": "",
+      "stdout": "{\"x\":8}\n"
+    },
+    {
+      "content_hash": "8cb33cd04caec089",
+      "exit_code": 0,
+      "name": "jq update assignment operators comparison: jq /= divide assignment",
+      "stderr": "",
+      "stdout": "{\"x\":5}\n"
+    },
+    {
+      "content_hash": "55420fba2e25d1af",
+      "exit_code": 0,
+      "name": "jq update assignment operators comparison: jq //= alternative assignment",
+      "stderr": "",
+      "stdout": "{\"x\":5}\n"
+    },
+    {
+      "content_hash": "f74500e1dc511add",
+      "exit_code": 0,
+      "name": "jq update assignment operators comparison: jq //= alternative assignment with existing value",
+      "stderr": "",
+      "stdout": "{\"x\":3}\n"
+    },
+    {
+      "content_hash": "cfbd3ed7842abc7a",
+      "exit_code": 0,
+      "name": "jq update assignment operators comparison: jq |= pipe assignment",
+      "stderr": "",
+      "stdout": "{\"x\":6}\n"
+    },
+    {
+      "content_hash": "8c16fb492783b5d1",
+      "exit_code": 0,
+      "name": "jq update assignment operators comparison: jq nested update assignment",
+      "stderr": "",
+      "stdout": "{\"a\":{\"b\":15}}\n"
+    },
+    {
+      "content_hash": "0d3a7a0472bc4a33",
+      "exit_code": 0,
+      "name": "jq update assignment operators comparison: jq update assignment on array element",
+      "stderr": "",
+      "stdout": "[1,12,3]\n"
+    },
+    {
+      "content_hash": "9a23d2248d9a217b",
+      "exit_code": 0,
+      "name": "jq null handling comparison: jq null input",
+      "stderr": "",
+      "stdout": "null\n"
+    },
+    {
+      "content_hash": "07ea4633bbe35d8d",
+      "exit_code": 0,
+      "name": "jq null handling comparison: jq nulls in array",
+      "stderr": "",
+      "stdout": "[1,2,3]\n"
+    },
+    {
+      "content_hash": "193a6bd81e926226",
+      "exit_code": 0,
+      "name": "jq null handling comparison: jq empty filter",
+      "stderr": "",
+      "stdout": "[1,3]\n"
+    },
+    {
+      "content_hash": "96f57188e0230ab8",
+      "exit_code": 0,
+      "name": "jq any and all comparison: jq any true",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "b80ed29c9de22835",
+      "exit_code": 0,
+      "name": "jq any and all comparison: jq any false",
+      "stderr": "",
+      "stdout": "false\n"
+    },
+    {
+      "content_hash": "225e18cc3cb8511f",
+      "exit_code": 0,
+      "name": "jq any and all comparison: jq all true",
+      "stderr": "",
+      "stdout": "true\n"
+    },
+    {
+      "content_hash": "a36b8620961a9b30",
+      "exit_code": 0,
+      "name": "jq any and all comparison: jq all false",
+      "stderr": "",
+      "stdout": "false\n"
+    },
+    {
+      "content_hash": "8452589a64df7974",
+      "exit_code": 0,
+      "name": "jq edge cases comparison: jq empty array",
+      "stderr": "",
+      "stdout": "[]\n"
+    },
+    {
+      "content_hash": "0b7c16aaa6412075",
+      "exit_code": 0,
+      "name": "jq edge cases comparison: jq empty object",
+      "stderr": "",
+      "stdout": "{}\n"
+    },
+    {
+      "content_hash": "540ff4a6e9855e71",
+      "exit_code": 0,
+      "name": "jq edge cases comparison: jq special characters in string",
+      "stderr": "",
+      "stdout": "\"hello\\nworld\"\n"
+    },
+    {
+      "content_hash": "e401e7e515e626f8",
+      "exit_code": 0,
+      "name": "jq edge cases comparison: jq unicode",
+      "stderr": "",
+      "stdout": "\"🎉\"\n"
+    },
+    {
+      "content_hash": "9065a55a36e7c1a6",
+      "exit_code": 0,
+      "name": "jq edge cases comparison: jq large number",
+      "stderr": "",
+      "stdout": "12345678901234567890\n"
+    },
+    {
+      "content_hash": "df33860b294331e9",
+      "exit_code": 0,
+      "name": "jq edge cases comparison: jq nested arrays",
+      "stderr": "",
+      "stdout": "[1,2]\n[3,4]\n"
+    }
+  ],
+  "suite": "jq"
+}

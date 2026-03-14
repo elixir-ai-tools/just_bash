@@ -20,6 +20,9 @@ just_bash-*.tar
 *.swo
 *~
 
+.env
+eval_results/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -1,0 +1,95 @@
+{
+  "suite": "find",
+  "cases": [
+    {
+      "name": "find basic usage: find current directory",
+      "script": "mkdir -p /tmp/findtest/sub\ntouch /tmp/findtest/a.txt\ntouch /tmp/findtest/sub/b.txt\nfind /tmp/findtest -type f | sort\n",
+      "content_hash": "819788c0f3d201c6"
+    },
+    {
+      "name": "find basic usage: find by name pattern",
+      "script": "mkdir -p /tmp/findtest2\ntouch /tmp/findtest2/foo.txt\ntouch /tmp/findtest2/bar.txt\ntouch /tmp/findtest2/foo.log\nfind /tmp/findtest2 -name '*.txt' | sort\n",
+      "content_hash": "eee07bb14b0e2878"
+    },
+    {
+      "name": "find basic usage: find directories only",
+      "script": "mkdir -p /tmp/findtest3/sub1/sub2\ntouch /tmp/findtest3/file.txt\nfind /tmp/findtest3 -type d | sort\n",
+      "content_hash": "5b79d91b68e03330"
+    },
+    {
+      "name": "find basic usage: find files only",
+      "script": "mkdir -p /tmp/findtest4/sub\ntouch /tmp/findtest4/file1.txt\ntouch /tmp/findtest4/sub/file2.txt\nfind /tmp/findtest4 -type f | sort\n",
+      "content_hash": "b3d7a008633a994e"
+    },
+    {
+      "name": "find depth control: find with maxdepth 1",
+      "script": "mkdir -p /tmp/findtest5/a/b\ntouch /tmp/findtest5/top.txt\ntouch /tmp/findtest5/a/mid.txt\ntouch /tmp/findtest5/a/b/deep.txt\nfind /tmp/findtest5 -maxdepth 1 | sort\n",
+      "content_hash": "addd8efec112a117"
+    },
+    {
+      "name": "find depth control: find with maxdepth 2",
+      "script": "mkdir -p /tmp/findtest6/a/b\ntouch /tmp/findtest6/top.txt\ntouch /tmp/findtest6/a/mid.txt\ntouch /tmp/findtest6/a/b/deep.txt\nfind /tmp/findtest6 -maxdepth 2 | sort\n",
+      "content_hash": "6aea0d6561062a2b"
+    },
+    {
+      "name": "find depth control: find with mindepth 1",
+      "script": "mkdir -p /tmp/findtest7/sub\ntouch /tmp/findtest7/file.txt\nfind /tmp/findtest7 -mindepth 1 | sort\n",
+      "content_hash": "c9d5973b1a25b233"
+    },
+    {
+      "name": "find depth control: find with mindepth 2",
+      "script": "mkdir -p /tmp/findtest8/a/b\ntouch /tmp/findtest8/a/file.txt\ntouch /tmp/findtest8/a/b/deep.txt\nfind /tmp/findtest8 -mindepth 2 | sort\n",
+      "content_hash": "11d51c7f67ef89db"
+    },
+    {
+      "name": "find name matching: find with wildcard prefix",
+      "script": "mkdir -p /tmp/findtest9\ntouch /tmp/findtest9/test_file.txt\ntouch /tmp/findtest9/other_file.txt\ntouch /tmp/findtest9/readme.md\nfind /tmp/findtest9 -name 'test_*' | sort\n",
+      "content_hash": "a3a80a4dcfd2a3ee"
+    },
+    {
+      "name": "find name matching: find with wildcard suffix",
+      "script": "mkdir -p /tmp/findtest10\ntouch /tmp/findtest10/file.txt\ntouch /tmp/findtest10/data.txt\ntouch /tmp/findtest10/config.yml\nfind /tmp/findtest10 -name '*.txt' | sort\n",
+      "content_hash": "59c746915b1f738c"
+    },
+    {
+      "name": "find name matching: find case insensitive with iname",
+      "script": "mkdir -p /tmp/findtest11\ntouch /tmp/findtest11/README.md\ntouch /tmp/findtest11/readme.txt\ntouch /tmp/findtest11/Readme.doc\nfind /tmp/findtest11 -iname 'readme*' | sort\n",
+      "content_hash": "94d84d31116a09ab"
+    },
+    {
+      "name": "find name matching: find with question mark wildcard",
+      "script": "mkdir -p /tmp/findtest12\ntouch /tmp/findtest12/a1.txt\ntouch /tmp/findtest12/ab.txt\ntouch /tmp/findtest12/abc.txt\nfind /tmp/findtest12 -name 'a?.txt' | sort\n",
+      "content_hash": "1bf15b445c0e5223"
+    },
+    {
+      "name": "find edge cases: find empty directory",
+      "script": "mkdir -p /tmp/findtest13\nfind /tmp/findtest13\n",
+      "content_hash": "58d0cc784092037a"
+    },
+    {
+      "name": "find edge cases: find with print0 flag",
+      "script": "mkdir -p /tmp/findtest14\ntouch /tmp/findtest14/a.txt\ntouch /tmp/findtest14/b.txt\nfind /tmp/findtest14 -type f -print0 | wc -c\n",
+      "content_hash": "2d885dd83799f8c8"
+    },
+    {
+      "name": "find edge cases: find current directory implicit",
+      "script": "mkdir -p /tmp/findtest15\ncd /tmp/findtest15\ntouch file.txt\nfind . -type f\n",
+      "content_hash": "aad22245618bb571"
+    },
+    {
+      "name": "find edge cases: find multiple paths",
+      "script": "mkdir -p /tmp/findtest16a /tmp/findtest16b\ntouch /tmp/findtest16a/a.txt\ntouch /tmp/findtest16b/b.txt\nfind /tmp/findtest16a /tmp/findtest16b -type f | sort\n",
+      "content_hash": "e04b2f0d8b477e53"
+    },
+    {
+      "name": "find combined predicates: find type and name",
+      "script": "mkdir -p /tmp/findtest17/subdir.txt\ntouch /tmp/findtest17/file.txt\nfind /tmp/findtest17 -type f -name '*.txt' | sort\n",
+      "content_hash": "252fa9fc4c258e1d"
+    },
+    {
+      "name": "find combined predicates: find maxdepth and type",
+      "script": "mkdir -p /tmp/findtest18/a/b\ntouch /tmp/findtest18/top.txt\ntouch /tmp/findtest18/a/b/deep.txt\nfind /tmp/findtest18 -maxdepth 2 -type f | sort\n",
+      "content_hash": "9e10df922fb9cc77"
+    }
+  ]
+}

@@ -1,14 +1,21 @@
 [
-  # Control flow signals (__break__, __continue__, __return__) are dynamically added to results
-  {"lib/just_bash/interpreter/executor.ex", :guard_fail},
-  {"lib/just_bash/interpreter/executor.ex", :pattern_match},
-  {"lib/just_bash/commands/break.ex", :callback_type_mismatch},
-  {"lib/just_bash/commands/continue.ex", :callback_type_mismatch},
-  {"lib/just_bash/commands/return.ex", :callback_type_mismatch},
-  # Printf pattern match issue
-  {"lib/just_bash/commands/printf.ex", :pattern_match},
   # AWK parser/evaluator type specs use internal types
-  {"lib/just_bash/commands/awk/evaluator.ex", :invalid_contract},
   {"lib/just_bash/commands/awk/evaluator.ex", :unknown_type},
-  {"lib/just_bash/commands/awk/parser.ex", :unknown_type}
+  # file_outputs key is always present in initial state (line 52) but dialyzer
+  # can't infer it through all execute_statement clause paths
+  {"lib/just_bash/commands/awk/evaluator.ex", :map_update},
+  {"lib/just_bash/commands/awk/parser.ex", :unknown_type},
+  # jq AST node types: parser produces :module_directives and :def tuples that
+  # dialyzer can't infer from its analysis of the parser return type
+  {"lib/just_bash/commands/jq/evaluator.ex", :pattern_match},
+  # valid_path_expr? catch-all returns false, but dialyzer infers callers only
+  # pass values that match earlier (true-returning) clauses — defensive by design
+  {"lib/just_bash/commands/jq/evaluator/functions.ex", :pattern_match},
+  # format_redirection_error handles multiple POSIX error atoms defensively,
+  # but InMemoryFs.write_file currently only returns :eisdir
+  {"lib/just_bash/interpreter/executor/redirection.ex", :pattern_match},
+  {"lib/just_bash/interpreter/executor/redirection.ex", :pattern_match_cov},
+  # format_array_key catch-all handles any type defensively, but dialyzer infers
+  # callers only pass float/integer/binary values covered by earlier clauses
+  {"lib/just_bash/commands/awk/evaluator.ex", :pattern_match_cov}
 ]

@@ -1,0 +1,155 @@
+{
+  "suite": "utilities",
+  "cases": [
+    {
+      "name": "seq command: seq simple range",
+      "script": "seq 1 5",
+      "content_hash": "8177cd9c688c6ebb"
+    },
+    {
+      "name": "seq command: seq single number",
+      "script": "seq 3",
+      "content_hash": "115298865b7f8dfd"
+    },
+    {
+      "name": "seq command: seq with step",
+      "script": "seq 1 2 10",
+      "content_hash": "3bb385677de5543a"
+    },
+    {
+      "name": "seq command: seq descending",
+      "script": "seq 5 -1 1",
+      "content_hash": "1d27275f56141f71"
+    },
+    {
+      "name": "seq command: seq in for loop",
+      "script": "for i in $(seq 1 3); do echo $i; done",
+      "content_hash": "96c6160c148e16da"
+    },
+    {
+      "name": "seq command: seq single value",
+      "script": "seq 1 1",
+      "content_hash": "7813c7311da6eddc"
+    },
+    {
+      "name": "seq command: seq negative range",
+      "script": "seq -3 -1",
+      "content_hash": "2134f6d7f3205240"
+    },
+    {
+      "name": "basename command: basename simple",
+      "script": "basename /path/to/file.txt",
+      "content_hash": "3d7c875a93148ce6"
+    },
+    {
+      "name": "basename command: basename with suffix",
+      "script": "basename /path/to/file.txt .txt",
+      "content_hash": "0aa4284f001ef9d6"
+    },
+    {
+      "name": "basename command: basename no path",
+      "script": "basename file.txt",
+      "content_hash": "2722fab0fa67b548"
+    },
+    {
+      "name": "basename command: basename trailing slash",
+      "script": "basename /path/to/dir/",
+      "content_hash": "29f134175e58732d"
+    },
+    {
+      "name": "basename command: basename root",
+      "script": "basename /",
+      "content_hash": "ef4edea63f245b9e"
+    },
+    {
+      "name": "basename command: basename multiple slashes",
+      "script": "basename /path//to///file",
+      "content_hash": "6dc7c8bad39fea28"
+    },
+    {
+      "name": "basename command: basename suffix no match",
+      "script": "basename file.txt .log",
+      "content_hash": "c9d7fef07a2be7e1"
+    },
+    {
+      "name": "dirname command: dirname simple",
+      "script": "dirname /path/to/file.txt",
+      "content_hash": "640b845921d34be4"
+    },
+    {
+      "name": "dirname command: dirname no path",
+      "script": "dirname file.txt",
+      "content_hash": "23ec434d2d9ebccf"
+    },
+    {
+      "name": "dirname command: dirname trailing slash",
+      "script": "dirname /path/to/dir/",
+      "content_hash": "6161cfa4e7b57432"
+    },
+    {
+      "name": "dirname command: dirname root file",
+      "script": "dirname /file.txt",
+      "content_hash": "cdb8c3172e56e03f"
+    },
+    {
+      "name": "dirname command: dirname root",
+      "script": "dirname /",
+      "content_hash": "43f8e4082df042df"
+    },
+    {
+      "name": "dirname command: dirname relative path",
+      "script": "dirname path/to/file",
+      "content_hash": "aed69e9fb92d57b0"
+    },
+    {
+      "name": "dirname command: dirname single component",
+      "script": "dirname filename",
+      "content_hash": "8fbbd52d24154c2b"
+    },
+    {
+      "name": "tee command: tee to file",
+      "script": "mkdir -p /tmp/teetest; echo hello | tee /tmp/teetest/out.txt; cat /tmp/teetest/out.txt; rm -rf /tmp/teetest",
+      "content_hash": "ffb0d364562e18a5"
+    },
+    {
+      "name": "tee command: tee passes through",
+      "script": "echo hello | tee /dev/null",
+      "content_hash": "a8f2e0d1e71d3be2"
+    },
+    {
+      "name": "tee command: tee append mode",
+      "script": "mkdir -p /tmp/teetest; echo first > /tmp/teetest/out.txt; echo second | tee -a /tmp/teetest/out.txt > /dev/null; cat /tmp/teetest/out.txt; rm -rf /tmp/teetest",
+      "content_hash": "45fbfb183c5a4924"
+    },
+    {
+      "name": "xargs command: xargs simple",
+      "script": "echo 'a b c' | xargs echo",
+      "content_hash": "ca2444afc603fd04"
+    },
+    {
+      "name": "xargs command: xargs with echo -n limit",
+      "script": "echo 'a b c' | xargs -n 1 echo",
+      "content_hash": "8a1a48730557e098"
+    },
+    {
+      "name": "xargs command: xargs from multiple lines",
+      "script": "echo -e 'a\\nb\\nc' | xargs echo",
+      "content_hash": "5021ce67c9fd2764"
+    },
+    {
+      "name": "utilities in pipelines: seq piped to wc",
+      "script": "seq 1 10 | wc -l | tr -d ' '",
+      "content_hash": "bcbd7985128a1b9b"
+    },
+    {
+      "name": "utilities in pipelines: basename in command substitution",
+      "script": "file=/path/to/script.sh; name=$(basename $file .sh); echo $name",
+      "content_hash": "e07ec1e165debb30"
+    },
+    {
+      "name": "utilities in pipelines: dirname and basename together",
+      "script": "path=/usr/local/bin/bash; echo $(dirname $path)/$(basename $path)",
+      "content_hash": "9ef47f99884d2553"
+    }
+  ]
+}

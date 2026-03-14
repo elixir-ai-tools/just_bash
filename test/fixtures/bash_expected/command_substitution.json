@@ -1,0 +1,89 @@
+{
+  "results": [
+    {
+      "content_hash": "32bfb747f1b2c340",
+      "exit_code": 0,
+      "name": "command substitution comparison: simple command",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "3e78d1984cf84e25",
+      "exit_code": 0,
+      "name": "command substitution comparison: nested command substitution",
+      "stderr": "",
+      "stdout": "nested\n"
+    },
+    {
+      "content_hash": "4b04a74aa311bc59",
+      "exit_code": 0,
+      "name": "command substitution comparison: with arithmetic",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "bd764ba6a01243f7",
+      "exit_code": 0,
+      "name": "command substitution comparison: backtick style",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "d5a8f328adf5d410",
+      "exit_code": 0,
+      "name": "command substitution with pipes: pipe in command substitution",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "b508cba231ae2f4e",
+      "exit_code": 0,
+      "name": "command substitution with pipes: pipe in quoted command substitution",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "a9041c60fc75cdbf",
+      "exit_code": 0,
+      "name": "command substitution with pipes: command substitution with pipe as argument",
+      "stderr": "",
+      "stdout": "[test]\n"
+    },
+    {
+      "content_hash": "46e35ca66e44480b",
+      "exit_code": 0,
+      "name": "command substitution with pipes: command substitution with pipe directly in test -z",
+      "stderr": "",
+      "stdout": "notempty\n"
+    },
+    {
+      "content_hash": "e0088dde2bcb3d60",
+      "exit_code": 0,
+      "name": "command substitution with pipes: command substitution with multiple pipes",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "ac29b26614d9ae5c",
+      "exit_code": 0,
+      "name": "command substitution with pipes: command substitution preserves multiline output",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "54918093b6992480",
+      "exit_code": 0,
+      "name": "command substitution with nested quotes: quoted command substitution with inner double quotes",
+      "stderr": "",
+      "stdout": "test\n"
+    },
+    {
+      "content_hash": "cc7da0fc299de7f6",
+      "exit_code": 0,
+      "name": "command substitution with nested quotes: quoted command substitution with grep pattern",
+      "stderr": "",
+      "stdout": "hello\n"
+    }
+  ],
+  "suite": "command_substitution"
+}

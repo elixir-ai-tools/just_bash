@@ -390,8 +390,91 @@ defmodule JustBash.Commands.JqTest do
       assert result.exit_code == 0
       lines = String.split(String.trim(result.stdout), "\n")
       # jq always quotes strings in CSV output
+      # credo:disable-for-next-line Credo.Check.Readability.StringSigils
       assert "\"name\",\"age\"" in lines
-      assert "\"alice\",30" in lines
+      assert ~s("alice",30) in lines
+    end
+  end
+
+  describe "jq --arg and --argjson" do
+    test "--arg passes string variable" do
+      bash = bash_with_json(~S|{"name":"alice","age":30}|)
+      cmd = "jq --arg key \"name\" '.[$key]' /data.json"
+      {result, _} = JustBash.exec(bash, cmd)
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "\"alice\""
+    end
+
+    test "--argjson passes JSON value" do
+      bash = bash_with_json("[1,2,3,4,5]")
+      cmd = "jq --argjson n 3 'map(select(. > $n))' /data.json"
+      {result, _} = JustBash.exec(bash, cmd)
+      assert result.exit_code == 0
+      parsed = Jason.decode!(result.stdout)
+      assert parsed == [4, 5]
+    end
+
+    test "--arg with multiple variables" do
+      bash = bash_with_json(~S|{"users":[{"name":"alice"},{"name":"bob"}]}|)
+
+      # credo:disable-for-next-line Credo.Check.Readability.StringSigils
+      cmd =
+        "jq --arg field \"name\" --arg val \"bob\" '.users[] | select(.[$field] == $val)' /data.json"
+
+      {result, _} = JustBash.exec(bash, cmd)
+      assert result.exit_code == 0
+      parsed = Jason.decode!(result.stdout)
+      assert parsed == %{"name" => "bob"}
+    end
+  end
+
+  describe "jq -e (exit status)" do
+    test "returns exit code 0 for truthy value" do
+      bash = bash_with_json(~S({"a":1}))
+      {result, _} = JustBash.exec(bash, "jq -e '.a' /data.json")
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "1"
+    end
+
+    test "returns exit code 1 for false output" do
+      bash = bash_with_json(~S({"a":false}))
+      {result, _} = JustBash.exec(bash, "jq -e '.a' /data.json")
+      assert result.exit_code == 1
+      assert String.trim(result.stdout) == "false"
+    end
+
+    test "returns exit code 1 for null output" do
+      bash = bash_with_json(~S({"a":null}))
+      {result, _} = JustBash.exec(bash, "jq -e '.a' /data.json")
+      assert result.exit_code == 1
+      assert String.trim(result.stdout) == "null"
+    end
+
+    test "returns exit code 1 for missing key (null)" do
+      bash = bash_with_json(~S({"a":1}))
+      {result, _} = JustBash.exec(bash, "jq -e '.missing' /data.json")
+      assert result.exit_code == 1
+      assert String.trim(result.stdout) == "null"
+    end
+
+    test "returns exit code 0 for non-null string" do
+      bash = bash_with_json(~S({"a":"hello"}))
+      {result, _} = JustBash.exec(bash, "jq -e '.a' /data.json")
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "\"hello\""
+    end
+
+    test "returns exit code 0 for zero (not false)" do
+      bash = bash_with_json(~S({"a":0}))
+      {result, _} = JustBash.exec(bash, "jq -e '.a' /data.json")
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "0"
+    end
+
+    test "--exit-status is alias for -e" do
+      bash = bash_with_json(~S({"a":null}))
+      {result, _} = JustBash.exec(bash, "jq --exit-status '.a' /data.json")
+      assert result.exit_code == 1
     end
   end
 end

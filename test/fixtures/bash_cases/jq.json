@@ -1,0 +1,645 @@
+{
+  "suite": "jq",
+  "cases": [
+    {
+      "name": "jq basic access comparison: jq identity filter",
+      "script": "echo '{\"a\":1}' | jq -c '.'",
+      "content_hash": "44bbff86a8633701"
+    },
+    {
+      "name": "jq basic access comparison: jq field access",
+      "script": "echo '{\"name\":\"alice\"}' | jq '.name'",
+      "content_hash": "1ed00449cca8bc3f"
+    },
+    {
+      "name": "jq basic access comparison: jq nested field access",
+      "script": "echo '{\"user\":{\"name\":\"bob\"}}' | jq '.user.name'",
+      "content_hash": "152ba0bf740c63b6"
+    },
+    {
+      "name": "jq basic access comparison: jq array index",
+      "script": "echo '[10,20,30]' | jq '.[1]'",
+      "content_hash": "826bf901da6887c1"
+    },
+    {
+      "name": "jq basic access comparison: jq array slice",
+      "script": "echo '[1,2,3,4,5]' | jq -c '.[1:4]'",
+      "content_hash": "f8180e583b61e018"
+    },
+    {
+      "name": "jq basic access comparison: jq iterate array",
+      "script": "echo '[1,2,3]' | jq '.[]'",
+      "content_hash": "9056f8f06b1f2ccb"
+    },
+    {
+      "name": "jq basic access comparison: jq access missing field returns null",
+      "script": "echo '{\"a\":1}' | jq '.missing'",
+      "content_hash": "4ceb3e60893b3bfa"
+    },
+    {
+      "name": "jq basic access comparison: jq optional field access with ?",
+      "script": "echo 'null' | jq '.foo?'",
+      "content_hash": "c44c2c14cbeef9e2"
+    },
+    {
+      "name": "jq arithmetic comparison: jq addition",
+      "script": "echo '5' | jq '. + 3'",
+      "content_hash": "7456320fd825c67a"
+    },
+    {
+      "name": "jq arithmetic comparison: jq subtraction",
+      "script": "echo '10' | jq '. - 3'",
+      "content_hash": "c8185728f997c6a7"
+    },
+    {
+      "name": "jq arithmetic comparison: jq multiplication",
+      "script": "echo '5' | jq '. * 2'",
+      "content_hash": "96d72219c6d3986d"
+    },
+    {
+      "name": "jq arithmetic comparison: jq division",
+      "script": "echo '10' | jq '. / 2'",
+      "content_hash": "fa557f6c502e4129"
+    },
+    {
+      "name": "jq arithmetic comparison: jq modulo",
+      "script": "echo '17' | jq '. % 5'",
+      "content_hash": "8547158b3e149406"
+    },
+    {
+      "name": "jq arithmetic comparison: jq negative numbers",
+      "script": "echo '-5' | jq '. * 2'",
+      "content_hash": "a0a697d7a132dc92"
+    },
+    {
+      "name": "jq arithmetic comparison: jq float arithmetic",
+      "script": "echo '3.5' | jq '. + 1.5'",
+      "content_hash": "42105b8be46d344f"
+    },
+    {
+      "name": "jq comparison operators: jq greater than",
+      "script": "echo '5' | jq '. > 3'",
+      "content_hash": "46ddcfc563052db0"
+    },
+    {
+      "name": "jq comparison operators: jq less than",
+      "script": "echo '5' | jq '. < 10'",
+      "content_hash": "27389c6920122011"
+    },
+    {
+      "name": "jq comparison operators: jq greater than or equal",
+      "script": "echo '5' | jq '. >= 5'",
+      "content_hash": "38d3899bf6bea0a7"
+    },
+    {
+      "name": "jq comparison operators: jq less than or equal",
+      "script": "echo '5' | jq '. <= 5'",
+      "content_hash": "6df7cbfb3a0d9cb2"
+    },
+    {
+      "name": "jq comparison operators: jq equality",
+      "script": "echo '5' | jq '. == 5'",
+      "content_hash": "a4b66bf39777f023"
+    },
+    {
+      "name": "jq comparison operators: jq inequality",
+      "script": "echo '5' | jq '. != 3'",
+      "content_hash": "8d96850182328c92"
+    },
+    {
+      "name": "jq logical operators comparison: jq and operator",
+      "script": "echo 'true' | jq '. and false'",
+      "content_hash": "c5061563f0b58ebb"
+    },
+    {
+      "name": "jq logical operators comparison: jq or operator",
+      "script": "echo 'false' | jq '. or true'",
+      "content_hash": "c03fb2b031f764c2"
+    },
+    {
+      "name": "jq logical operators comparison: jq not operator",
+      "script": "echo 'true' | jq 'not'",
+      "content_hash": "a734557098b4bb01"
+    },
+    {
+      "name": "jq builtin functions comparison: jq length of string",
+      "script": "echo '\"hello\"' | jq 'length'",
+      "content_hash": "427e88239aaf816d"
+    },
+    {
+      "name": "jq builtin functions comparison: jq length of array",
+      "script": "echo '[1,2,3,4,5]' | jq 'length'",
+      "content_hash": "0b008b62304f521d"
+    },
+    {
+      "name": "jq builtin functions comparison: jq length of object",
+      "script": "echo '{\"a\":1,\"b\":2}' | jq 'length'",
+      "content_hash": "2b0904684ed30eae"
+    },
+    {
+      "name": "jq builtin functions comparison: jq keys",
+      "script": "echo '{\"b\":2,\"a\":1}' | jq -c 'keys'",
+      "content_hash": "f82ec8d714a95b26"
+    },
+    {
+      "name": "jq builtin functions comparison: jq type of string",
+      "script": "echo '\"hello\"' | jq 'type'",
+      "content_hash": "0c073198cca1eafb"
+    },
+    {
+      "name": "jq builtin functions comparison: jq type of number",
+      "script": "echo '42' | jq 'type'",
+      "content_hash": "d38c2d6986c602ad"
+    },
+    {
+      "name": "jq builtin functions comparison: jq type of array",
+      "script": "echo '[]' | jq 'type'",
+      "content_hash": "b0bf03d5f1d28507"
+    },
+    {
+      "name": "jq builtin functions comparison: jq type of object",
+      "script": "echo '{}' | jq 'type'",
+      "content_hash": "93d01ff83bda06a7"
+    },
+    {
+      "name": "jq builtin functions comparison: jq type of boolean",
+      "script": "echo 'true' | jq 'type'",
+      "content_hash": "ef679ace8e985c37"
+    },
+    {
+      "name": "jq builtin functions comparison: jq type of null",
+      "script": "echo 'null' | jq 'type'",
+      "content_hash": "04adce4c55c6595b"
+    },
+    {
+      "name": "jq array functions comparison: jq first",
+      "script": "echo '[1,2,3]' | jq 'first'",
+      "content_hash": "0f492ce51bfad2f5"
+    },
+    {
+      "name": "jq array functions comparison: jq last",
+      "script": "echo '[1,2,3]' | jq 'last'",
+      "content_hash": "4f647068a07803fd"
+    },
+    {
+      "name": "jq array functions comparison: jq reverse",
+      "script": "echo '[1,2,3]' | jq -c 'reverse'",
+      "content_hash": "c4d19ccfe0168d38"
+    },
+    {
+      "name": "jq array functions comparison: jq sort",
+      "script": "echo '[3,1,2]' | jq -c 'sort'",
+      "content_hash": "68fb4849b8f9d39e"
+    },
+    {
+      "name": "jq array functions comparison: jq unique",
+      "script": "echo '[1,2,1,3,2]' | jq -c 'unique'",
+      "content_hash": "a0f4584aa41daffd"
+    },
+    {
+      "name": "jq array functions comparison: jq flatten",
+      "script": "echo '[[1,2],[3,[4,5]]]' | jq -c 'flatten'",
+      "content_hash": "f458cc35177b09ee"
+    },
+    {
+      "name": "jq array functions comparison: jq min",
+      "script": "echo '[5,2,8,1]' | jq 'min'",
+      "content_hash": "be2cca0119596e05"
+    },
+    {
+      "name": "jq array functions comparison: jq max",
+      "script": "echo '[5,2,8,1]' | jq 'max'",
+      "content_hash": "ecb738a60c52d5a3"
+    },
+    {
+      "name": "jq array functions comparison: jq add numbers",
+      "script": "echo '[1,2,3,4]' | jq 'add'",
+      "content_hash": "3a5cebb9ac6404f3"
+    },
+    {
+      "name": "jq array functions comparison: jq add strings",
+      "script": "echo '[\"a\",\"b\",\"c\"]' | jq 'add'",
+      "content_hash": "a7152db3a6aa465b"
+    },
+    {
+      "name": "jq array functions comparison: jq nth element",
+      "script": "echo '[10,20,30,40]' | jq 'nth(2)'",
+      "content_hash": "4525f4ef3089d630"
+    },
+    {
+      "name": "jq array functions comparison: jq group_by",
+      "script": "echo '[{\"a\":1},{\"a\":2},{\"a\":1}]' | jq -c 'group_by(.a)'",
+      "content_hash": "82c905b9caa0b7c6"
+    },
+    {
+      "name": "jq map and select comparison: jq map with arithmetic",
+      "script": "echo '[1,2,3]' | jq -c 'map(. * 2)'",
+      "content_hash": "edad9b87bf25ca72"
+    },
+    {
+      "name": "jq map and select comparison: jq map with field access",
+      "script": "echo '[{\"x\":1},{\"x\":2}]' | jq -c 'map(.x)'",
+      "content_hash": "9b561751e1689405"
+    },
+    {
+      "name": "jq map and select comparison: jq select greater than",
+      "script": "echo '[1,2,3,4,5]' | jq -c '[.[] | select(. > 2)]'",
+      "content_hash": "5a4f13e076d03e0d"
+    },
+    {
+      "name": "jq map and select comparison: jq select with equality",
+      "script": "echo '[{\"a\":1},{\"a\":2}]' | jq -c '[.[] | select(.a == 1)]'",
+      "content_hash": "fcaf954fc4319d5c"
+    },
+    {
+      "name": "jq map and select comparison: jq map_values",
+      "script": "echo '{\"a\":1,\"b\":2}' | jq -c 'map_values(. + 10)'",
+      "content_hash": "a006b35cc5e8e29a"
+    },
+    {
+      "name": "jq map and select comparison: jq map_values with multiplication",
+      "script": "echo '{\"x\":2,\"y\":3}' | jq -c 'map_values(. * 2)'",
+      "content_hash": "df60dc81715309bb"
+    },
+    {
+      "name": "jq map and select comparison: jq map_values with string transformation",
+      "script": "echo '{\"a\":\"hello\",\"b\":\"world\"}' | jq -c 'map_values(ascii_upcase)'",
+      "content_hash": "0c2f8e9102920008"
+    },
+    {
+      "name": "jq string functions comparison: jq ascii_downcase",
+      "script": "echo '\"HELLO\"' | jq 'ascii_downcase'",
+      "content_hash": "88b70ef974b492e6"
+    },
+    {
+      "name": "jq string functions comparison: jq ascii_upcase",
+      "script": "echo '\"hello\"' | jq 'ascii_upcase'",
+      "content_hash": "db00a711497a2386"
+    },
+    {
+      "name": "jq string functions comparison: jq split",
+      "script": "echo '\"a,b,c\"' | jq -c 'split(\",\")'",
+      "content_hash": "ead5b5bda55d4d7e"
+    },
+    {
+      "name": "jq string functions comparison: jq join",
+      "script": "echo '[\"a\",\"b\",\"c\"]' | jq 'join(\"-\")'",
+      "content_hash": "76e9ad66f7343b27"
+    },
+    {
+      "name": "jq string functions comparison: jq startswith true",
+      "script": "echo '\"hello world\"' | jq 'startswith(\"hello\")'",
+      "content_hash": "d510a33ce6498822"
+    },
+    {
+      "name": "jq string functions comparison: jq startswith false",
+      "script": "echo '\"hello world\"' | jq 'startswith(\"world\")'",
+      "content_hash": "31b9e181ca29e503"
+    },
+    {
+      "name": "jq string functions comparison: jq endswith true",
+      "script": "echo '\"hello world\"' | jq 'endswith(\"world\")'",
+      "content_hash": "4f28b3752ac87b7d"
+    },
+    {
+      "name": "jq string functions comparison: jq endswith false",
+      "script": "echo '\"hello world\"' | jq 'endswith(\"hello\")'",
+      "content_hash": "43af6f048e669a62"
+    },
+    {
+      "name": "jq string functions comparison: jq contains string",
+      "script": "echo '\"hello world\"' | jq 'contains(\"lo wo\")'",
+      "content_hash": "df8083c31e179dd7"
+    },
+    {
+      "name": "jq string functions comparison: jq ltrimstr",
+      "script": "echo '\"hello world\"' | jq 'ltrimstr(\"hello \")'",
+      "content_hash": "53f4b0a3fe442800"
+    },
+    {
+      "name": "jq string functions comparison: jq rtrimstr",
+      "script": "echo '\"hello world\"' | jq 'rtrimstr(\" world\")'",
+      "content_hash": "9932894caaecf853"
+    },
+    {
+      "name": "jq string functions comparison: jq test regex match",
+      "script": "echo '\"hello123\"' | jq 'test(\"[0-9]+\")'",
+      "content_hash": "af72fb5b6f87c99f"
+    },
+    {
+      "name": "jq string functions comparison: jq test regex no match",
+      "script": "echo '\"hello\"' | jq 'test(\"[0-9]+\")'",
+      "content_hash": "5a8a0c5e4b2721d4"
+    },
+    {
+      "name": "jq string functions comparison: jq gsub replacement",
+      "script": "echo '\"hello world\"' | jq 'gsub(\"o\"; \"0\")'",
+      "content_hash": "027b8076db29a043"
+    },
+    {
+      "name": "jq string functions comparison: jq sub first replacement",
+      "script": "echo '\"hello world\"' | jq 'sub(\"o\"; \"0\")'",
+      "content_hash": "ce99c221d65e1706"
+    },
+    {
+      "name": "jq object construction comparison: jq object literal",
+      "script": "echo 'null' | jq -c '{a:1,b:2}'",
+      "content_hash": "9d83a4feabd44eb6"
+    },
+    {
+      "name": "jq object construction comparison: jq object from input values",
+      "script": "echo '{\"x\":1,\"y\":2}' | jq -c '{sum: (.x + .y)}'",
+      "content_hash": "f1e84420d4f38124"
+    },
+    {
+      "name": "jq object construction comparison: jq array construction",
+      "script": "echo '{\"a\":1,\"b\":2}' | jq -c '[.a, .b]'",
+      "content_hash": "69fe82f6fdab62b1"
+    },
+    {
+      "name": "jq object construction comparison: jq object with dynamic key",
+      "script": "echo '{\"key\":\"name\",\"value\":\"alice\"}' | jq -c '{(.key): .value}'",
+      "content_hash": "b9bf8147c04620d4"
+    },
+    {
+      "name": "jq conditionals comparison: jq if-then-else true branch",
+      "script": "echo '5' | jq 'if . > 3 then \"big\" else \"small\" end'",
+      "content_hash": "15cd14c222bb931c"
+    },
+    {
+      "name": "jq conditionals comparison: jq if-then-else false branch",
+      "script": "echo '2' | jq 'if . > 3 then \"big\" else \"small\" end'",
+      "content_hash": "394e18b7136c7f49"
+    },
+    {
+      "name": "jq conditionals comparison: jq alternative operator with null",
+      "script": "echo 'null' | jq '.x // \"default\"'",
+      "content_hash": "582105d1043a1fde"
+    },
+    {
+      "name": "jq conditionals comparison: jq alternative operator with value",
+      "script": "echo '{\"x\":5}' | jq '.x // \"default\"'",
+      "content_hash": "a997c68016a7f9b4"
+    },
+    {
+      "name": "jq conditionals comparison: jq empty check",
+      "script": "echo '[]' | jq 'if . == [] then \"empty\" else \"not empty\" end'",
+      "content_hash": "11d21d14f40a7504"
+    },
+    {
+      "name": "jq pipeline and multiple outputs comparison: jq multiple field access",
+      "script": "echo '{\"a\":1,\"b\":2}' | jq '.a, .b'",
+      "content_hash": "ca5ed8978a25e30d"
+    },
+    {
+      "name": "jq pipeline and multiple outputs comparison: jq pipeline with filter",
+      "script": "echo '[1,2,3,4,5]' | jq '.[] | select(. > 2)'",
+      "content_hash": "659f2aec99e26a90"
+    },
+    {
+      "name": "jq pipeline and multiple outputs comparison: jq range function",
+      "script": "echo 'null' | jq -c '[range(5)]'",
+      "content_hash": "c892400c31be2fb2"
+    },
+    {
+      "name": "jq pipeline and multiple outputs comparison: jq range with start and end",
+      "script": "echo 'null' | jq -c '[range(2;5)]'",
+      "content_hash": "c62f3553452faab5"
+    },
+    {
+      "name": "jq format strings comparison: jq @csv with numbers",
+      "script": "echo '[1,2,3]' | jq -r '@csv'",
+      "content_hash": "2e20485891a14000"
+    },
+    {
+      "name": "jq format strings comparison: jq @csv with strings",
+      "script": "echo '[\"a\",\"b\",\"c\"]' | jq -r '@csv'",
+      "content_hash": "aaa937d20a328b61"
+    },
+    {
+      "name": "jq format strings comparison: jq @tsv",
+      "script": "echo '[\"a\",\"b\",\"c\"]' | jq -r '@tsv'",
+      "content_hash": "106fb954e7a1c03f"
+    },
+    {
+      "name": "jq format strings comparison: jq @json",
+      "script": "echo '{\"a\":1}' | jq -r '@json'",
+      "content_hash": "933f0ce379f709b1"
+    },
+    {
+      "name": "jq format strings comparison: jq @base64 encode",
+      "script": "echo '\"hello\"' | jq -r '@base64'",
+      "content_hash": "2f99a86a4f846d0d"
+    },
+    {
+      "name": "jq format strings comparison: jq @base64d decode",
+      "script": "echo '\"aGVsbG8=\"' | jq -r '@base64d'",
+      "content_hash": "4998e7274b2d9845"
+    },
+    {
+      "name": "jq format strings comparison: jq @uri encode",
+      "script": "echo '\"hello world\"' | jq -r '@uri'",
+      "content_hash": "3dd802bd4003a26a"
+    },
+    {
+      "name": "jq format strings comparison: jq @html encode",
+      "script": "echo '\"<b>test</b>\"' | jq -r '@html'",
+      "content_hash": "fe1bdb7bbc717044"
+    },
+    {
+      "name": "jq string interpolation comparison: jq simple interpolation",
+      "script": "echo '{\"name\":\"alice\"}' | jq -r '\"Hello, \\(.name)!\"'",
+      "content_hash": "9bcdeefe4a8930fb"
+    },
+    {
+      "name": "jq string interpolation comparison: jq multiple interpolations",
+      "script": "echo '{\"name\":\"alice\",\"age\":30}' | jq -r '\"\\(.name) is \\(.age) years old\"'",
+      "content_hash": "bde37c053ee24178"
+    },
+    {
+      "name": "jq string interpolation comparison: jq interpolation with expression",
+      "script": "echo '{\"a\":2,\"b\":3}' | jq -r '\"Sum: \\(.a + .b)\"'",
+      "content_hash": "1ad5d2f3e26adda9"
+    },
+    {
+      "name": "jq output options comparison: jq raw output -r",
+      "script": "echo '\"hello\"' | jq -r '.'",
+      "content_hash": "6d26e9551d6ad179"
+    },
+    {
+      "name": "jq output options comparison: jq compact output -c",
+      "script": "echo '{\"a\":1,\"b\":2}' | jq -c '.'",
+      "content_hash": "c8e9b50878844b25"
+    },
+    {
+      "name": "jq output options comparison: jq sort keys -S",
+      "script": "echo '{\"b\":2,\"a\":1}' | jq -S -c '.'",
+      "content_hash": "209c45d41650247c"
+    },
+    {
+      "name": "jq reduce and recursive descent comparison: jq reduce sum",
+      "script": "echo '[1,2,3,4,5]' | jq 'reduce .[] as $x (0; . + $x)'",
+      "content_hash": "c6f953c5dcd68ccc"
+    },
+    {
+      "name": "jq reduce and recursive descent comparison: jq recursive descent ..",
+      "script": "echo '{\"a\":{\"b\":1}}' | jq -c '[.. | numbers]'",
+      "content_hash": "7b9129d4a852ddbf"
+    },
+    {
+      "name": "jq has and in operators comparison: jq has existing key",
+      "script": "echo '{\"a\":1}' | jq 'has(\"a\")'",
+      "content_hash": "b4ea4defcd423238"
+    },
+    {
+      "name": "jq has and in operators comparison: jq has missing key",
+      "script": "echo '{\"a\":1}' | jq 'has(\"b\")'",
+      "content_hash": "1a355c1ab54c0ad5"
+    },
+    {
+      "name": "jq has and in operators comparison: jq in operator for objects",
+      "script": "echo '{\"a\":1,\"b\":2}' | jq '\"a\" | in({\"a\":1})'",
+      "content_hash": "b38a0623dfcefe56"
+    },
+    {
+      "name": "jq getpath and setpath comparison: jq getpath",
+      "script": "echo '{\"a\":{\"b\":1}}' | jq 'getpath([\"a\",\"b\"])'",
+      "content_hash": "6b2c19d2730cd7f3"
+    },
+    {
+      "name": "jq getpath and setpath comparison: jq setpath",
+      "script": "echo '{\"a\":1}' | jq -c 'setpath([\"b\"]; 2)'",
+      "content_hash": "dddc0e5b8e03abde"
+    },
+    {
+      "name": "jq getpath and setpath comparison: jq delpaths",
+      "script": "echo '{\"a\":1,\"b\":2}' | jq -c 'delpaths([[\"a\"]])'",
+      "content_hash": "6f50e659fbfb63fa"
+    },
+    {
+      "name": "jq to_entries and from_entries comparison: jq to_entries",
+      "script": "echo '{\"a\":1,\"b\":2}' | jq -c 'to_entries'",
+      "content_hash": "7e8b353a2f8c6ac9"
+    },
+    {
+      "name": "jq to_entries and from_entries comparison: jq from_entries",
+      "script": "echo '[{\"key\":\"a\",\"value\":1}]' | jq -c 'from_entries'",
+      "content_hash": "104d13820627e7da"
+    },
+    {
+      "name": "jq to_entries and from_entries comparison: jq with_entries with update assignment",
+      "script": "echo '{\"a\":1,\"b\":2}' | jq -c 'with_entries(.value += 10)'",
+      "content_hash": "57f9d190cea0d3ff"
+    },
+    {
+      "name": "jq update assignment operators comparison: jq += add assignment",
+      "script": "echo '{\"x\":5}' | jq -c '.x += 3'",
+      "content_hash": "93d0d73a25a555d4"
+    },
+    {
+      "name": "jq update assignment operators comparison: jq -= subtract assignment",
+      "script": "echo '{\"x\":10}' | jq -c '.x -= 3'",
+      "content_hash": "29e32c0ebab42b1e"
+    },
+    {
+      "name": "jq update assignment operators comparison: jq *= multiply assignment",
+      "script": "echo '{\"x\":4}' | jq -c '.x *= 2'",
+      "content_hash": "a6a841da5bf67f08"
+    },
+    {
+      "name": "jq update assignment operators comparison: jq /= divide assignment",
+      "script": "echo '{\"x\":20}' | jq -c '.x /= 4'",
+      "content_hash": "8cb33cd04caec089"
+    },
+    {
+      "name": "jq update assignment operators comparison: jq //= alternative assignment",
+      "script": "echo '{\"x\":null}' | jq -c '.x //= 5'",
+      "content_hash": "55420fba2e25d1af"
+    },
+    {
+      "name": "jq update assignment operators comparison: jq //= alternative assignment with existing value",
+      "script": "echo '{\"x\":3}' | jq -c '.x //= 5'",
+      "content_hash": "f74500e1dc511add"
+    },
+    {
+      "name": "jq update assignment operators comparison: jq |= pipe assignment",
+      "script": "echo '{\"x\":5}' | jq -c '.x |= . + 1'",
+      "content_hash": "cfbd3ed7842abc7a"
+    },
+    {
+      "name": "jq update assignment operators comparison: jq nested update assignment",
+      "script": "echo '{\"a\":{\"b\":10}}' | jq -c '.a.b += 5'",
+      "content_hash": "8c16fb492783b5d1"
+    },
+    {
+      "name": "jq update assignment operators comparison: jq update assignment on array element",
+      "script": "echo '[1,2,3]' | jq -c '.[1] += 10'",
+      "content_hash": "0d3a7a0472bc4a33"
+    },
+    {
+      "name": "jq null handling comparison: jq null input",
+      "script": "echo 'null' | jq '.'",
+      "content_hash": "9a23d2248d9a217b"
+    },
+    {
+      "name": "jq null handling comparison: jq nulls in array",
+      "script": "echo '[1,null,2,null,3]' | jq -c '[.[] | select(. != null)]'",
+      "content_hash": "07ea4633bbe35d8d"
+    },
+    {
+      "name": "jq null handling comparison: jq empty filter",
+      "script": "echo '[1,2,3]' | jq -c '[.[] | if . == 2 then empty else . end]'",
+      "content_hash": "193a6bd81e926226"
+    },
+    {
+      "name": "jq any and all comparison: jq any true",
+      "script": "echo '[false,true,false]' | jq 'any'",
+      "content_hash": "96f57188e0230ab8"
+    },
+    {
+      "name": "jq any and all comparison: jq any false",
+      "script": "echo '[false,false,false]' | jq 'any'",
+      "content_hash": "b80ed29c9de22835"
+    },
+    {
+      "name": "jq any and all comparison: jq all true",
+      "script": "echo '[true,true,true]' | jq 'all'",
+      "content_hash": "225e18cc3cb8511f"
+    },
+    {
+      "name": "jq any and all comparison: jq all false",
+      "script": "echo '[true,false,true]' | jq 'all'",
+      "content_hash": "a36b8620961a9b30"
+    },
+    {
+      "name": "jq edge cases comparison: jq empty array",
+      "script": "echo '[]' | jq -c '.'",
+      "content_hash": "8452589a64df7974"
+    },
+    {
+      "name": "jq edge cases comparison: jq empty object",
+      "script": "echo '{}' | jq -c '.'",
+      "content_hash": "0b7c16aaa6412075"
+    },
+    {
+      "name": "jq edge cases comparison: jq special characters in string",
+      "script": "echo '{\"msg\":\"hello\\nworld\"}' | jq '.msg'",
+      "content_hash": "540ff4a6e9855e71"
+    },
+    {
+      "name": "jq edge cases comparison: jq unicode",
+      "script": "echo '{\"emoji\":\"🎉\"}' | jq '.emoji'",
+      "content_hash": "e401e7e515e626f8"
+    },
+    {
+      "name": "jq edge cases comparison: jq large number",
+      "script": "echo '12345678901234567890' | jq '.'",
+      "content_hash": "9065a55a36e7c1a6"
+    },
+    {
+      "name": "jq edge cases comparison: jq nested arrays",
+      "script": "echo '[[1,2],[3,4]]' | jq -c '.[]'",
+      "content_hash": "df33860b294331e9"
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "suite": "wc",
+  "cases": [
+    {
+      "name": "wc basic usage: count lines words bytes from stdin",
+      "script": "echo 'hello world' | wc",
+      "content_hash": "d34a7800e7f5b693"
+    },
+    {
+      "name": "wc basic usage: count single line",
+      "script": "echo 'hello' | wc",
+      "content_hash": "722ef365ed6f83e7"
+    },
+    {
+      "name": "wc basic usage: count multiple lines",
+      "script": "echo -e 'a\\nb\\nc' | wc",
+      "content_hash": "ba8be89f489df0c9"
+    },
+    {
+      "name": "wc individual flags: wc -l line count only",
+      "script": "echo -e 'a\\nb\\nc' | wc -l",
+      "content_hash": "6f957843eade2523"
+    },
+    {
+      "name": "wc individual flags: wc -w word count only",
+      "script": "echo 'one two three four' | wc -w",
+      "content_hash": "3ee3b2ad07071639"
+    },
+    {
+      "name": "wc individual flags: wc -c byte count only",
+      "script": "echo 'hello' | wc -c",
+      "content_hash": "ba53a586dc40f1a0"
+    },
+    {
+      "name": "wc individual flags: wc -l single line",
+      "script": "echo 'hello world' | wc -l",
+      "content_hash": "bb61861ac853c9ba"
+    },
+    {
+      "name": "wc individual flags: wc -w single word",
+      "script": "echo 'hello' | wc -w",
+      "content_hash": "9c6beec35f7c0fb4"
+    },
+    {
+      "name": "wc edge cases: empty input",
+      "script": "echo -n '' | wc",
+      "content_hash": "6e3eaaafff4f656e"
+    },
+    {
+      "name": "wc edge cases: empty input line count",
+      "script": "echo -n '' | wc -l",
+      "content_hash": "50e735f96f07535f"
+    },
+    {
+      "name": "wc edge cases: only whitespace",
+      "script": "echo '   ' | wc -w",
+      "content_hash": "8500fcb8b7976bc5"
+    },
+    {
+      "name": "wc edge cases: multiple spaces between words",
+      "script": "echo 'a    b    c' | wc -w",
+      "content_hash": "e6593076ae65534d"
+    },
+    {
+      "name": "wc edge cases: tabs as separators",
+      "script": "printf 'a\\tb\\tc' | wc -w",
+      "content_hash": "7cb0f8bab9efafa0"
+    },
+    {
+      "name": "wc edge cases: newline only",
+      "script": "echo '' | wc -l",
+      "content_hash": "38e45c1ffcab8d13"
+    },
+    {
+      "name": "wc edge cases: no trailing newline",
+      "script": "printf 'hello' | wc -l",
+      "content_hash": "0faf2c40ee3ba3ff"
+    },
+    {
+      "name": "wc with multiline input: count lines in multiline",
+      "script": "echo -e 'line1\\nline2\\nline3' | wc -l",
+      "content_hash": "034456d033f89a69"
+    },
+    {
+      "name": "wc with multiline input: count words across lines",
+      "script": "echo -e 'one two\\nthree four\\nfive' | wc -w",
+      "content_hash": "85dba9ad33bfeb96"
+    },
+    {
+      "name": "wc with multiline input: count bytes in multiline",
+      "script": "echo -e 'ab\\ncd' | wc -c",
+      "content_hash": "45600417b7447173"
+    },
+    {
+      "name": "wc pipeline combinations: wc in middle of pipeline",
+      "script": "echo -e 'a\\nb\\nc' | wc -l | tr -d ' '",
+      "content_hash": "e1f095d1837fc478"
+    },
+    {
+      "name": "wc pipeline combinations: grep then wc",
+      "script": "echo -e 'apple\\nbanana\\napricot' | grep 'a' | wc -l",
+      "content_hash": "1c1a580a9d09c023"
+    },
+    {
+      "name": "wc pipeline combinations: head then wc",
+      "script": "echo -e 'a\\nb\\nc\\nd\\ne' | head -3 | wc -l",
+      "content_hash": "c15590eaab8f6602"
+    }
+  ]
+}

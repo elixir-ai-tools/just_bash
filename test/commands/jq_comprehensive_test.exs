@@ -115,7 +115,7 @@ defmodule JustBash.Commands.JqComprehensiveTest do
 
     test "field access on array fails" do
       stderr = jq_err("[1,2,3]", ".foo")
-      assert stderr =~ "cannot index"
+      assert stderr =~ "Cannot index"
     end
 
     test "field with numeric value" do
@@ -935,9 +935,9 @@ defmodule JustBash.Commands.JqComprehensiveTest do
     end
 
     test "optional suppresses error on wrong type" do
-      # Without ?, this would error
+      # Without ?, this would error. With ?, it produces no output (empty).
       result = jq_ok("[1,2,3]", ".foo?")
-      assert result == "null"
+      assert result == ""
     end
 
     test "optional with index" do

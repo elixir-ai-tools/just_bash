@@ -1,0 +1,26 @@
+{
+  "results": [
+    {
+      "content_hash": "588d8c36feba9caf",
+      "exit_code": 0,
+      "name": "pipeline comparison: simple pipe",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "4788a1a25ca58381",
+      "exit_code": 0,
+      "name": "pipeline comparison: multiple pipes",
+      "stderr": "",
+      "stdout": "a\n"
+    },
+    {
+      "content_hash": "d03c83a62a46e74c",
+      "exit_code": 0,
+      "name": "pipeline comparison: with grep",
+      "stderr": "",
+      "stdout": "bar\n"
+    }
+  ],
+  "suite": "pipeline"
+}

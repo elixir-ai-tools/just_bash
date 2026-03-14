@@ -1,0 +1,159 @@
+{
+  "results": [
+    {
+      "content_hash": "3ac2e7eb388ec587",
+      "exit_code": 0,
+      "name": "cut comparison: cut field with delimiter",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "0f01571a17bcf85c",
+      "exit_code": 0,
+      "name": "cut comparison: cut multiple fields",
+      "stderr": "",
+      "stdout": "b,d\n"
+    },
+    {
+      "content_hash": "50092d719b869423",
+      "exit_code": 0,
+      "name": "cut comparison: cut field range",
+      "stderr": "",
+      "stdout": "b,c\n"
+    },
+    {
+      "content_hash": "5f2b88d9b133e0a8",
+      "exit_code": 0,
+      "name": "cut comparison: cut characters",
+      "stderr": "",
+      "stdout": "hel\n"
+    },
+    {
+      "content_hash": "39913882f3278f27",
+      "exit_code": 0,
+      "name": "cut comparison: cut from position to end",
+      "stderr": "",
+      "stdout": "llo\n"
+    },
+    {
+      "content_hash": "948fb0ad9383482a",
+      "exit_code": 0,
+      "name": "cut edge cases: single character",
+      "stderr": "",
+      "stdout": "h\n"
+    },
+    {
+      "content_hash": "89311552f2472f33",
+      "exit_code": 0,
+      "name": "cut edge cases: last character",
+      "stderr": "",
+      "stdout": "o\n"
+    },
+    {
+      "content_hash": "26344f1f976cfe35",
+      "exit_code": 0,
+      "name": "cut edge cases: character beyond length",
+      "stderr": "",
+      "stdout": "\n"
+    },
+    {
+      "content_hash": "149a48b060819a05",
+      "exit_code": 0,
+      "name": "cut edge cases: first field",
+      "stderr": "",
+      "stdout": "a\n"
+    },
+    {
+      "content_hash": "aba5694c2cc171bb",
+      "exit_code": 0,
+      "name": "cut edge cases: last field",
+      "stderr": "",
+      "stdout": "c\n"
+    },
+    {
+      "content_hash": "47f13fec5152cd89",
+      "exit_code": 0,
+      "name": "cut edge cases: field beyond count",
+      "stderr": "",
+      "stdout": "\n"
+    },
+    {
+      "content_hash": "9c553c2336f0620e",
+      "exit_code": 0,
+      "name": "cut edge cases: field range from start",
+      "stderr": "",
+      "stdout": "a,b\n"
+    },
+    {
+      "content_hash": "929d0480421639f3",
+      "exit_code": 0,
+      "name": "cut edge cases: field range to end",
+      "stderr": "",
+      "stdout": "b,c,d\n"
+    },
+    {
+      "content_hash": "3603ba18cf568497",
+      "exit_code": 0,
+      "name": "cut edge cases: field with tab delimiter default",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "a6b74b568e5edf88",
+      "exit_code": 0,
+      "name": "cut edge cases: field with custom single-char delimiter",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "5b5c0a2b3c8da265",
+      "exit_code": 0,
+      "name": "cut edge cases: field with space delimiter",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "caeefede64da5365",
+      "exit_code": 0,
+      "name": "cut edge cases: multiple character ranges",
+      "stderr": "",
+      "stdout": "helwor\n"
+    },
+    {
+      "content_hash": "adb1f7d716a37743",
+      "exit_code": 0,
+      "name": "cut edge cases: overlapping character ranges",
+      "stderr": "",
+      "stdout": "hell\n"
+    },
+    {
+      "content_hash": "21ca982306184d6a",
+      "exit_code": 0,
+      "name": "cut edge cases: out of order fields (sorted output)",
+      "stderr": "",
+      "stdout": "a,c\n"
+    },
+    {
+      "content_hash": "9ad6622c6d38c51d",
+      "exit_code": 0,
+      "name": "cut edge cases: empty input",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "72a0a73d38f9a99e",
+      "exit_code": 0,
+      "name": "cut edge cases: multiline input",
+      "stderr": "",
+      "stdout": "b\ne\n"
+    },
+    {
+      "content_hash": "7a4d5965688ae9ec",
+      "exit_code": 0,
+      "name": "cut edge cases: line without delimiter (no -s flag)",
+      "stderr": "",
+      "stdout": "no-comma\n"
+    }
+  ],
+  "suite": "cut"
+}

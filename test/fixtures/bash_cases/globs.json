@@ -1,0 +1,140 @@
+{
+  "suite": "globs",
+  "cases": [
+    {
+      "name": "star glob pattern: star matches all files",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/a.txt /tmp/gt/b.txt; cd /tmp/gt; echo *.txt; rm -rf /tmp/gt",
+      "content_hash": "d8429219968956ee"
+    },
+    {
+      "name": "star glob pattern: star with prefix",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/file1 /tmp/gt/file2 /tmp/gt/other; cd /tmp/gt; echo file*; rm -rf /tmp/gt",
+      "content_hash": "cc0f57cd5627ea8a"
+    },
+    {
+      "name": "star glob pattern: star with suffix",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/test.log /tmp/gt/app.log; cd /tmp/gt; echo *.log; rm -rf /tmp/gt",
+      "content_hash": "68111f1ce0a0e599"
+    },
+    {
+      "name": "star glob pattern: star no match returns literal",
+      "script": "mkdir -p /tmp/gt; cd /tmp/gt; echo *.xyz; rm -rf /tmp/gt",
+      "content_hash": "b7de082b2bafa18e"
+    },
+    {
+      "name": "star glob pattern: star in for loop",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/a /tmp/gt/b; cd /tmp/gt; for f in *; do echo \"$f\"; done; rm -rf /tmp/gt",
+      "content_hash": "f7e4a22bbd2ed849"
+    },
+    {
+      "name": "question mark pattern: question mark single char",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/a1 /tmp/gt/a2 /tmp/gt/a12; cd /tmp/gt; echo a?; rm -rf /tmp/gt",
+      "content_hash": "315e06e9d2be8713"
+    },
+    {
+      "name": "question mark pattern: question mark in middle",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/cat /tmp/gt/cot /tmp/gt/cut; cd /tmp/gt; echo c?t; rm -rf /tmp/gt",
+      "content_hash": "c80a4584df9f553b"
+    },
+    {
+      "name": "question mark pattern: multiple question marks",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/ab /tmp/gt/abc /tmp/gt/abcd; cd /tmp/gt; echo a??; rm -rf /tmp/gt",
+      "content_hash": "d384dac002d4f9fd"
+    },
+    {
+      "name": "glob quoting: quoted glob is literal",
+      "script": "echo \"*.txt\"",
+      "content_hash": "0fb4d562ab9fd862"
+    },
+    {
+      "name": "glob quoting: single quoted glob is literal",
+      "script": "echo '*.txt'",
+      "content_hash": "d31101ce964acd13"
+    },
+    {
+      "name": "glob quoting: escaped star is literal",
+      "script": "echo \\*.txt",
+      "content_hash": "757aa65f4b4f81fc"
+    },
+    {
+      "name": "glob with paths: absolute path glob",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/x.txt; echo /tmp/gt/*.txt; rm -rf /tmp/gt",
+      "content_hash": "683be6d745998d9d"
+    },
+    {
+      "name": "glob with paths: relative path glob",
+      "script": "mkdir -p /tmp/gt/sub; touch /tmp/gt/sub/a; cd /tmp/gt; echo sub/*; rm -rf /tmp/gt",
+      "content_hash": "a1c82b79147fc4b0"
+    },
+    {
+      "name": "glob expansion in commands: glob in ls",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/a.txt /tmp/gt/b.txt; ls /tmp/gt/*.txt | wc -l | tr -d ' '; rm -rf /tmp/gt",
+      "content_hash": "bcc8ec6a9433d9ad"
+    },
+    {
+      "name": "glob expansion in commands: glob in cat",
+      "script": "mkdir -p /tmp/gt; echo \"a\" > /tmp/gt/1.txt; echo \"b\" > /tmp/gt/2.txt; cat /tmp/gt/*.txt; rm -rf /tmp/gt",
+      "content_hash": "bcd7f0c7aacf1734"
+    },
+    {
+      "name": "glob expansion in commands: glob count with wc",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/a /tmp/gt/b /tmp/gt/c; cd /tmp/gt; echo * | wc -w | tr -d ' '; rm -rf /tmp/gt",
+      "content_hash": "850f5966e6619be3"
+    },
+    {
+      "name": "glob edge cases: empty directory",
+      "script": "mkdir -p /tmp/gt; cd /tmp/gt; echo *; rm -rf /tmp/gt",
+      "content_hash": "d149a7e137c8492c"
+    },
+    {
+      "name": "glob edge cases: dot files not matched by star",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/.hidden /tmp/gt/visible; cd /tmp/gt; echo *; rm -rf /tmp/gt",
+      "content_hash": "fc59d3296938aabc"
+    },
+    {
+      "name": "glob edge cases: multiple patterns",
+      "script": "mkdir -p /tmp/gt; touch /tmp/gt/a.txt /tmp/gt/b.log; cd /tmp/gt; echo *.txt *.log; rm -rf /tmp/gt",
+      "content_hash": "28dc720242b11509"
+    },
+    {
+      "name": "directory wildcards: star in directory segment",
+      "script": "mkdir -p /tmp/gt/foo /tmp/gt/bar; touch /tmp/gt/foo/x.txt /tmp/gt/bar/y.txt; echo /tmp/gt/*/x.txt; rm -rf /tmp/gt",
+      "content_hash": "737a1200dc375a9f"
+    },
+    {
+      "name": "directory wildcards: star in directory segment matches multiple",
+      "script": "mkdir -p /tmp/gt/a /tmp/gt/b; touch /tmp/gt/a/file.txt /tmp/gt/b/file.txt; echo /tmp/gt/*/file.txt; rm -rf /tmp/gt",
+      "content_hash": "257a7eee6b0e28ce"
+    },
+    {
+      "name": "directory wildcards: star in directory segment with file pattern",
+      "script": "mkdir -p /tmp/gt/sub1 /tmp/gt/sub2; touch /tmp/gt/sub1/a.log /tmp/gt/sub2/b.log; echo /tmp/gt/*/*.log; rm -rf /tmp/gt",
+      "content_hash": "be2c5a21558550ed"
+    },
+    {
+      "name": "directory wildcards: question mark in directory segment",
+      "script": "mkdir -p /tmp/gt/d1 /tmp/gt/d2 /tmp/gt/d10; touch /tmp/gt/d1/f /tmp/gt/d2/f /tmp/gt/d10/f; echo /tmp/gt/d?/f; rm -rf /tmp/gt",
+      "content_hash": "5fdc98066ab367d5"
+    },
+    {
+      "name": "directory wildcards: directory wildcard no match returns literal",
+      "script": "mkdir -p /tmp/gt; echo /tmp/gt/*/missing.txt; rm -rf /tmp/gt",
+      "content_hash": "592a20eb0836fdd1"
+    },
+    {
+      "name": "directory wildcards: multiple directory wildcards",
+      "script": "mkdir -p /tmp/gt/a/x /tmp/gt/b/y; touch /tmp/gt/a/x/f /tmp/gt/b/y/f; echo /tmp/gt/*/*/f; rm -rf /tmp/gt",
+      "content_hash": "1517f737043daf53"
+    },
+    {
+      "name": "directory wildcards: trailing slash preserved in directory glob",
+      "script": "mkdir -p /tmp/gt/a /tmp/gt/b; for d in /tmp/gt/*/; do echo \"$d\"; done; rm -rf /tmp/gt",
+      "content_hash": "eee07e893701fa2a"
+    },
+    {
+      "name": "directory wildcards: trailing slash used in path construction",
+      "script": "mkdir -p /tmp/gt/sub; touch /tmp/gt/sub/file.txt; for d in /tmp/gt/*/; do echo \"${d}file.txt\"; done; rm -rf /tmp/gt",
+      "content_hash": "4e8e7e86304b6cc7"
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "suite": "redirection",
+  "cases": [
+    {
+      "name": "stdout redirection: redirect stdout to file and read back",
+      "script": "F=/tmp/test_redir.txt; echo hello > $F; cat $F; rm $F",
+      "content_hash": "186ffc501451663c"
+    },
+    {
+      "name": "stdout redirection: append to file",
+      "script": "F=/tmp/test_append.txt; echo first > $F; echo second >> $F; cat $F; rm $F",
+      "content_hash": "56221b276d9b950d"
+    },
+    {
+      "name": "stdout redirection: multiple appends",
+      "script": "F=/tmp/test_multi.txt; echo line_a > $F; echo line_b >> $F; echo line_c >> $F; cat $F; rm $F",
+      "content_hash": "e9eead40ea743d17"
+    },
+    {
+      "name": "stderr redirection: redirect stderr to dev null",
+      "script": "cat /nonexistent_xyz_file 2>/dev/null; echo done",
+      "content_hash": "546d8d45b6251b37"
+    },
+    {
+      "name": "stderr redirection: stderr to stdout with 2>&1",
+      "script": "echo stdout; cat /nonexistent_xyz_file 2>&1 | grep -c xyz || true",
+      "content_hash": "bd802433a594bb30"
+    },
+    {
+      "name": "combined redirections: redirect both stdout and stderr with &>",
+      "script": "{ echo out; cat /nonexistent_xyz_file; } &>/dev/null; echo done",
+      "content_hash": "316096a54cabe868"
+    },
+    {
+      "name": "combined redirections: stderr to stdout then pipe",
+      "script": "{ echo line1; echo line2 >&2; } 2>&1 | wc -l | tr -d ' '",
+      "content_hash": "99b8b10840f076e3"
+    },
+    {
+      "name": "here-strings: basic here-string",
+      "script": "cat <<< 'hello'",
+      "content_hash": "61e71cb8a0252cf1"
+    },
+    {
+      "name": "here-strings: here-string with variable",
+      "script": "x=world; cat <<< \"hello $x\"",
+      "content_hash": "f0bb512fc5323584"
+    },
+    {
+      "name": "here-strings: here-string to command",
+      "script": "wc -c <<< 'test'",
+      "content_hash": "9a7d7a16b65a03c1"
+    },
+    {
+      "name": "here-strings: here-string with spaces",
+      "script": "cat <<< 'hello   world'",
+      "content_hash": "af8d146fb1d2f140"
+    },
+    {
+      "name": "heredoc: basic heredoc",
+      "script": "cat <<EOF\nhello\nworld\nEOF",
+      "content_hash": "e2d6b8632e1a4426"
+    },
+    {
+      "name": "heredoc: heredoc with variable expansion",
+      "script": "x=test; cat <<EOF\nvalue: $x\nEOF",
+      "content_hash": "907d60a13c913bd9"
+    },
+    {
+      "name": "heredoc: heredoc no expansion with single quotes",
+      "script": "x=test; cat <<'EOF'\nvalue: $x\nEOF",
+      "content_hash": "341289d3e44777ee"
+    },
+    {
+      "name": "heredoc: heredoc with tabs stripped",
+      "script": "cat <<-EOF\n\thello\n\tworld\nEOF",
+      "content_hash": "fe16f19c86a90dd6"
+    },
+    {
+      "name": "input redirection: redirect stdin from file",
+      "script": "F=/tmp/test_in.txt; echo 'line1' > $F; cat < $F; rm $F",
+      "content_hash": "0c6a0161f2f566c2"
+    },
+    {
+      "name": "input redirection: redirect stdin in pipeline",
+      "script": "F=/tmp/test_in2.txt; echo 'a b c' > $F; wc -w < $F; rm $F",
+      "content_hash": "121e1a3abab2b043"
+    },
+    {
+      "name": "file descriptor manipulation: duplicate file descriptor",
+      "script": "{ echo out; echo err >&2; } 2>&1 | sort",
+      "content_hash": "9284bd2b19804111"
+    }
+  ]
+}

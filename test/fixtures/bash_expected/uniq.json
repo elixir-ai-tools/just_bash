@@ -1,0 +1,117 @@
+{
+  "results": [
+    {
+      "content_hash": "ce230f223f2ce5be",
+      "exit_code": 0,
+      "name": "uniq comparison: basic uniq",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "f8030665b6adbc6d",
+      "exit_code": 0,
+      "name": "uniq comparison: uniq duplicates only",
+      "stderr": "",
+      "stdout": "a\nc\n"
+    },
+    {
+      "content_hash": "0cfad673f603d7b0",
+      "exit_code": 0,
+      "name": "uniq comparison: uniq unique only",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "9123e7c065b0395f",
+      "exit_code": 0,
+      "name": "uniq edge cases: empty input",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "587ce3fb23fc02f2",
+      "exit_code": 0,
+      "name": "uniq edge cases: single line",
+      "stderr": "",
+      "stdout": "hello\n"
+    },
+    {
+      "content_hash": "aa1fd657148735e2",
+      "exit_code": 0,
+      "name": "uniq edge cases: no duplicates",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "d39366295c911973",
+      "exit_code": 0,
+      "name": "uniq edge cases: all duplicates",
+      "stderr": "",
+      "stdout": "a\n"
+    },
+    {
+      "content_hash": "6df3d1e4869f3789",
+      "exit_code": 0,
+      "name": "uniq edge cases: alternating duplicates",
+      "stderr": "",
+      "stdout": "a\nb\na\nb\na\n"
+    },
+    {
+      "content_hash": "07bb360bc43b7a94",
+      "exit_code": 0,
+      "name": "uniq edge cases: duplicates only with no duplicates",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "93259be9fa43d1e6",
+      "exit_code": 0,
+      "name": "uniq edge cases: unique only with all duplicates",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "f69c5489a449c595",
+      "exit_code": 0,
+      "name": "uniq edge cases: uniq preserves order",
+      "stderr": "",
+      "stdout": "z\na\nm\n"
+    },
+    {
+      "content_hash": "33966d7fc1ffd29a",
+      "exit_code": 0,
+      "name": "uniq edge cases: uniq with mixed consecutive and non-consecutive",
+      "stderr": "",
+      "stdout": "a\nb\na\n"
+    },
+    {
+      "content_hash": "9054da918f4e2608",
+      "exit_code": 0,
+      "name": "uniq edge cases: uniq combined -du flags (shows nothing)",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "3242bce76b65fb61",
+      "exit_code": 0,
+      "name": "uniq edge cases: duplicates only multiple groups",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "a52c1de43bc0eca0",
+      "exit_code": 0,
+      "name": "uniq edge cases: unique only single occurrence",
+      "stderr": "",
+      "stdout": "a\nc\n"
+    },
+    {
+      "content_hash": "ccb477de347066c3",
+      "exit_code": 0,
+      "name": "uniq edge cases: uniq with whitespace differences",
+      "stderr": "",
+      "stdout": "a b\na  b\na b\n"
+    }
+  ],
+  "suite": "uniq"
+}

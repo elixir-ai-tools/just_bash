@@ -1,0 +1,306 @@
+{
+  "results": [
+    {
+      "content_hash": "df0f4683dee462bc",
+      "exit_code": 0,
+      "name": "exit code variable $?: exit code after true",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "c7e8e5ddce1c3f3f",
+      "exit_code": 0,
+      "name": "exit code variable $?: exit code after false",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "e3c969f1fe2d9d8e",
+      "exit_code": 0,
+      "name": "exit code variable $?: exit code after command",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "75a296a2f29c071a",
+      "exit_code": 0,
+      "name": "exit code variable $?: exit code after failed command",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "fa1f65ad276edb88",
+      "exit_code": 0,
+      "name": "exit code variable $?: exit code from subshell",
+      "stderr": "",
+      "stdout": "42\n"
+    },
+    {
+      "content_hash": "84f77a8815191dbd",
+      "exit_code": 0,
+      "name": "exit code variable $?: exit code preserved across commands",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "d31b9cd41629fc2a",
+      "exit_code": 0,
+      "name": "argument count $#: zero arguments",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "7644e19fe1723383",
+      "exit_code": 0,
+      "name": "argument count $#: one argument",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "86fe3c3525a600ea",
+      "exit_code": 0,
+      "name": "argument count $#: multiple arguments",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "e4b4dde22df247ca",
+      "exit_code": 0,
+      "name": "argument count $#: many arguments",
+      "stderr": "",
+      "stdout": "10\n"
+    },
+    {
+      "content_hash": "26e66459e6f4f259",
+      "exit_code": 0,
+      "name": "argument count $#: after shift",
+      "stderr": "",
+      "stdout": "2\n"
+    },
+    {
+      "content_hash": "7f284c4e82afc018",
+      "exit_code": 0,
+      "name": "argument count $#: after shift 2",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "d8fa31cbd3ffad3d",
+      "exit_code": 0,
+      "name": "positional parameters $1 $2 etc: first positional",
+      "stderr": "",
+      "stdout": "first\n"
+    },
+    {
+      "content_hash": "4d06bc535e3fe389",
+      "exit_code": 0,
+      "name": "positional parameters $1 $2 etc: second positional",
+      "stderr": "",
+      "stdout": "second\n"
+    },
+    {
+      "content_hash": "12f1026c6812ec14",
+      "exit_code": 0,
+      "name": "positional parameters $1 $2 etc: third positional",
+      "stderr": "",
+      "stdout": "third\n"
+    },
+    {
+      "content_hash": "474affe1716a053b",
+      "exit_code": 0,
+      "name": "positional parameters $1 $2 etc: undefined positional",
+      "stderr": "",
+      "stdout": "\n"
+    },
+    {
+      "content_hash": "385195c3addaddd6",
+      "exit_code": 0,
+      "name": "positional parameters $1 $2 etc: positional after shift",
+      "stderr": "",
+      "stdout": "b c d\n"
+    },
+    {
+      "content_hash": "7b1302ece8fc9747",
+      "exit_code": 0,
+      "name": "positional parameters $1 $2 etc: ninth positional",
+      "stderr": "",
+      "stdout": "9\n"
+    },
+    {
+      "content_hash": "e22ccd0d5e4a8eba",
+      "exit_code": 0,
+      "name": "positional parameters $1 $2 etc: all positional in string",
+      "stderr": "",
+      "stdout": "1=a 2=b 3=c\n"
+    },
+    {
+      "content_hash": "b73bc2e71fc73404",
+      "exit_code": 0,
+      "name": "all arguments $@ and $*: $@ unquoted",
+      "stderr": "",
+      "stdout": "a b c\n"
+    },
+    {
+      "content_hash": "0ebd68b4a885378d",
+      "exit_code": 0,
+      "name": "all arguments $@ and $*: $* unquoted",
+      "stderr": "",
+      "stdout": "a b c\n"
+    },
+    {
+      "content_hash": "c1716ca2e46f3fb9",
+      "exit_code": 0,
+      "name": "all arguments $@ and $*: $@ quoted",
+      "stderr": "",
+      "stdout": "a b c\n"
+    },
+    {
+      "content_hash": "0f426dfe2689c0c6",
+      "exit_code": 0,
+      "name": "all arguments $@ and $*: $* quoted",
+      "stderr": "",
+      "stdout": "a b c\n"
+    },
+    {
+      "content_hash": "41a425aaa11cfa81",
+      "exit_code": 0,
+      "name": "all arguments $@ and $*: $@ with spaces in args",
+      "stderr": "",
+      "stdout": "[a b]\n[c d]\n[e]\n"
+    },
+    {
+      "content_hash": "5959f9d9dec8cfa6",
+      "exit_code": 0,
+      "name": "all arguments $@ and $*: $* with spaces in args",
+      "stderr": "",
+      "stdout": "a b c d e\n"
+    },
+    {
+      "content_hash": "8565e107718ea3a3",
+      "exit_code": 0,
+      "name": "all arguments $@ and $*: empty $@",
+      "stderr": "",
+      "stdout": "[]\n"
+    },
+    {
+      "content_hash": "0ff7954907576ebf",
+      "exit_code": 0,
+      "name": "all arguments $@ and $*: empty $*",
+      "stderr": "",
+      "stdout": "[]\n"
+    },
+    {
+      "content_hash": "1a0052c6e6971e2c",
+      "exit_code": 0,
+      "name": "all arguments $@ and $*: $@ in for loop",
+      "stderr": "",
+      "stdout": "x\ny\nz\n"
+    },
+    {
+      "content_hash": "c282cea84db02e1b",
+      "exit_code": 0,
+      "name": "all arguments $@ and $*: $* as single string",
+      "stderr": "",
+      "stdout": "one two three\n"
+    },
+    {
+      "content_hash": "a0a3534ffce074dc",
+      "exit_code": 0,
+      "name": "special variables in functions: function $# differs from script $#",
+      "stderr": "",
+      "stdout": "func args: 3\nscript args: 2\n"
+    },
+    {
+      "content_hash": "179143fb90219cc6",
+      "exit_code": 0,
+      "name": "special variables in functions: function positional parameters",
+      "stderr": "",
+      "stdout": "one two three\n"
+    },
+    {
+      "content_hash": "75c0505851f29087",
+      "exit_code": 0,
+      "name": "special variables in functions: function $@ iteration",
+      "stderr": "",
+      "stdout": "arg: alpha\narg: beta\narg: gamma\n"
+    },
+    {
+      "content_hash": "967caf2066fd5e65",
+      "exit_code": 0,
+      "name": "negation with !: negate true",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "10136aa77ef0504e",
+      "exit_code": 0,
+      "name": "negation with !: negate false",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "e11f2e8654013748",
+      "exit_code": 0,
+      "name": "negation with !: negate command",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "0cd387ce2e3c96aa",
+      "exit_code": 0,
+      "name": "process-related special variables: RANDOM produces numbers",
+      "stderr": "",
+      "stdout": "ok\n"
+    },
+    {
+      "content_hash": "54b6949fe1dc4193",
+      "exit_code": 0,
+      "name": "PIPESTATUS array: PIPESTATUS after simple pipeline",
+      "stderr": "",
+      "stdout": "hello\n0 0\n"
+    },
+    {
+      "content_hash": "16c4d7fca519c0ba",
+      "exit_code": 0,
+      "name": "PIPESTATUS array: PIPESTATUS with failed first command",
+      "stderr": "",
+      "stdout": "1 0\n"
+    },
+    {
+      "content_hash": "02bb347697c49b02",
+      "exit_code": 0,
+      "name": "PIPESTATUS array: PIPESTATUS with failed last command",
+      "stderr": "",
+      "stdout": "0 1\n"
+    },
+    {
+      "content_hash": "8b233c41acdafeba",
+      "exit_code": 0,
+      "name": "PIPESTATUS array: PIPESTATUS all elements",
+      "stderr": "",
+      "stdout": "0 1 0\n"
+    },
+    {
+      "content_hash": "5a7d2a2ee636e665",
+      "exit_code": 0,
+      "name": "PIPESTATUS array: PIPESTATUS single command",
+      "stderr": "",
+      "stdout": "0\n"
+    },
+    {
+      "content_hash": "2b4a005cf8df0240",
+      "exit_code": 0,
+      "name": "PIPESTATUS array: PIPESTATUS reset after each pipeline",
+      "stderr": "",
+      "stdout": "1 0 0\n"
+    },
+    {
+      "content_hash": "ec0ff99488fea3b7",
+      "exit_code": 0,
+      "name": "PIPESTATUS array: PIPESTATUS length",
+      "stderr": "",
+      "stdout": "a\n3\n"
+    }
+  ],
+  "suite": "special_variables"
+}

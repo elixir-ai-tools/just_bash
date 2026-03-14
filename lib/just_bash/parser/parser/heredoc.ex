@@ -55,6 +55,13 @@ defmodule JustBash.Parser.Heredoc do
     {%{cmd | redirections: filled_redirs}, remaining}
   end
 
+  # Compound commands (while, until, for, if, case, subshell, group, etc.)
+  # also support redirections — fill heredoc content in those too
+  defp fill_heredocs_in_command(%{redirections: redirs} = cmd, contents) when is_list(redirs) do
+    {filled_redirs, remaining} = fill_heredocs_in_redirections(redirs, contents)
+    {%{cmd | redirections: filled_redirs}, remaining}
+  end
+
   defp fill_heredocs_in_command(cmd, contents) do
     {cmd, contents}
   end

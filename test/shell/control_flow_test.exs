@@ -166,6 +166,49 @@ defmodule JustBash.Shell.ControlFlowTest do
     end
   end
 
+  describe "while loop with file redirection" do
+    test "while read line < file reads lines from file" do
+      bash = JustBash.new(files: %{"/data.txt" => "line1\nline2\nline3\n"})
+
+      {result, _} =
+        JustBash.exec(bash, """
+        while read line; do
+          echo "GOT: $line"
+        done < /data.txt
+        """)
+
+      assert result.stdout == "GOT: line1\nGOT: line2\nGOT: line3\n"
+    end
+
+    test "while read with file redirection and output redirection" do
+      bash = JustBash.new(files: %{"/input.txt" => "a\nb\n"})
+
+      {_result, bash} =
+        JustBash.exec(bash, """
+        while read line; do
+          echo "$line"
+        done < /input.txt > /output.txt
+        """)
+
+      {result, _} = JustBash.exec(bash, "cat /output.txt")
+      assert result.stdout == "a\nb\n"
+    end
+
+    test "for loop with output redirection" do
+      bash = JustBash.new()
+
+      {_result, bash} =
+        JustBash.exec(bash, """
+        for x in a b c; do
+          echo $x
+        done > /output.txt
+        """)
+
+      {result, _} = JustBash.exec(bash, "cat /output.txt")
+      assert result.stdout == "a\nb\nc\n"
+    end
+  end
+
   describe "until loop" do
     test "until with true condition never runs" do
       bash = JustBash.new()
@@ -632,6 +675,116 @@ defmodule JustBash.Shell.ControlFlowTest do
         """)
 
       assert result.stdout == "declared\n"
+    end
+  end
+
+  describe "associative arrays (declare -A)" do
+    test "declare -A and assign values with string keys" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        declare -A colors
+        colors[red]="#ff0000"
+        colors[green]="#00ff00"
+        echo ${colors[red]}
+        echo ${colors[green]}
+        """)
+
+      assert result.stdout == "#ff0000\n#00ff00\n"
+    end
+
+    test "declare -A and access via variable subscript" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        declare -A fruits
+        fruits[apple]=red
+        fruits[banana]=yellow
+        key=apple
+        echo ${fruits[$key]}
+        """)
+
+      assert result.stdout == "red\n"
+    end
+
+    test "declare -A all values with ${arr[@]}" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        declare -A map
+        map[x]=1
+        map[y]=2
+        echo ${map[@]}
+        """)
+
+      # Values may come in any order
+      values = String.split(String.trim(result.stdout)) |> Enum.sort()
+      assert values == ["1", "2"]
+    end
+
+    test "declare -A all keys with ${!arr[@]}" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        declare -A map
+        map[x]=1
+        map[y]=2
+        echo ${!map[@]}
+        """)
+
+      keys = String.split(String.trim(result.stdout)) |> Enum.sort()
+      assert keys == ["x", "y"]
+    end
+
+    test "declare -A iterate keys with for loop" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        declare -A colors
+        colors[red]="#ff0000"
+        colors[blue]="#0000ff"
+        for k in ${!colors[@]}; do
+          echo "$k=${colors[$k]}"
+        done
+        """)
+
+      lines = String.trim(result.stdout) |> String.split("\n") |> Enum.sort()
+      assert lines == ["blue=#0000ff", "red=#ff0000"]
+    end
+
+    test "declare -A assign via variable subscript in for loop" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        declare -A arr
+        for key in a b c; do
+          arr[$key]="val_$key"
+        done
+        echo "${arr[a]} ${arr[b]} ${arr[c]}"
+        """)
+
+      assert result.stdout == "val_a val_b val_c\n"
+    end
+
+    test "declare -A assign via variable subscript with quotes" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        declare -A data
+        k="mykey"
+        data["$k"]="myvalue"
+        echo "${data["mykey"]}"
+        echo "${data[$k]}"
+        """)
+
+      assert result.stdout == "myvalue\nmyvalue\n"
     end
   end
 end
