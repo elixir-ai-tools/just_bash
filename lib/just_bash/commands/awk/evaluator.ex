@@ -430,6 +430,40 @@ defmodule JustBash.Commands.Awk.Evaluator do
     %{state | file_outputs: Map.put(state.file_outputs, filename, existing <> output)}
   end
 
+  defp execute_statement({:field_assign, index_expr, value_expr}, state) do
+    idx = evaluate_expression(index_expr, state) |> parse_number() |> round()
+    {raw_value, state} = evaluate_expression_with_state(value_expr, state)
+    value = to_string(raw_value)
+
+    # fields is [entire_line, field1, field2, ...]
+    # field N (1-based) is at index N in the list
+    current_fields = state.fields
+    nf = state.nf
+
+    if idx < 0 do
+      state
+    else
+      # Ensure the fields list is long enough (pad with empty strings)
+      new_nf = max(nf, idx)
+
+      padded_fields =
+        if length(current_fields) <= new_nf do
+          current_fields ++ List.duplicate("", new_nf + 1 - length(current_fields))
+        else
+          current_fields
+        end
+
+      # Replace field at index idx (1-based, so list index idx)
+      updated_fields = List.replace_at(padded_fields, idx, value)
+
+      # Reconstruct $0 from fields 1..new_nf joined by OFS
+      new_record = Enum.slice(updated_fields, 1, new_nf) |> Enum.join(state.ofs)
+      final_fields = List.replace_at(updated_fields, 0, new_record)
+
+      %{state | fields: final_fields, nf: new_nf}
+    end
+  end
+
   defp execute_statement({:assign, var, expr}, state) do
     {raw_value, state} = evaluate_expression_with_state(expr, state)
     value = to_string(raw_value)

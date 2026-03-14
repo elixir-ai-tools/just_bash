@@ -1412,4 +1412,34 @@ defmodule JustBash.Commands.AwkTest do
       assert content == "x\ny\n"
     end
   end
+
+  describe "field assignment" do
+    test "$1 assignment replaces first field and reconstructs $0" do
+      bash = JustBash.new(files: %{"/d.txt" => "hello world\n"})
+      {result, _} = JustBash.exec(bash, ~s|awk '{$1="goodbye"; print}' /d.txt|)
+      assert result.exit_code == 0
+      assert result.stdout == "goodbye world\n"
+    end
+
+    test "$1 assignment to empty string removes first field" do
+      bash = JustBash.new(files: %{"/d.txt" => "a b c\n"})
+      {result, _} = JustBash.exec(bash, ~s|awk '{$1=""; print}' /d.txt|)
+      assert result.exit_code == 0
+      assert result.stdout == " b c\n"
+    end
+
+    test "$2 assignment changes second field" do
+      bash = JustBash.new(files: %{"/d.txt" => "one two three\n"})
+      {result, _} = JustBash.exec(bash, ~s|awk '{$2="TWO"; print}' /d.txt|)
+      assert result.exit_code == 0
+      assert result.stdout == "one TWO three\n"
+    end
+
+    test "field assignment with OFS" do
+      bash = JustBash.new(files: %{"/d.txt" => "a b c\n"})
+      {result, _} = JustBash.exec(bash, ~s|awk 'BEGIN{OFS=","}{$2="X"; print}' /d.txt|)
+      assert result.exit_code == 0
+      assert result.stdout == "a,X,c\n"
+    end
+  end
 end
