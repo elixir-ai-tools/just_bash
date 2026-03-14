@@ -128,10 +128,20 @@ defmodule JustBash.Eval.Runner do
   defp execute_task(task, opts, attempt) do
     verbose = Keyword.get(opts, :verbose, false)
     start = System.monotonic_time(:millisecond)
-    bash = setup_filesystem(task.files)
+    commands = Map.get(task, :commands, %{})
+    bash = setup_filesystem(task.files, commands)
+    agent_opts = Keyword.merge(opts, bash: bash)
+
+    agent_opts =
+      if commands != %{} do
+        commands_help = build_commands_help(bash, commands)
+        Keyword.put(agent_opts, :commands_info, commands_help)
+      else
+        agent_opts
+      end
 
     try do
-      case Agent.run(task.description, Keyword.merge(opts, bash: bash)) do
+      case Agent.run(task.description, agent_opts) do
         {:ok, agent_result} ->
           time_ms = System.monotonic_time(:millisecond) - start
           validator_results = Validator.run_all(task.validators, agent_result)
@@ -303,8 +313,24 @@ defmodule JustBash.Eval.Runner do
     end
   end
 
-  defp setup_filesystem(files) do
-    bash = JustBash.new()
+  defp build_commands_help(bash, commands) do
+    commands
+    |> Map.keys()
+    |> Enum.sort()
+    |> Enum.map_join("\n", fn name ->
+      module = Map.get(bash.commands, name)
+      {result, _} = module.execute(bash, ["--help"], "")
+
+      if result.exit_code == 0 and result.stdout != "" do
+        result.stdout
+      else
+        "#{name}: custom command (run `#{name} --help` for usage)"
+      end
+    end)
+  end
+
+  defp setup_filesystem(files, commands) do
+    bash = JustBash.new(commands: commands)
 
     fs =
       Enum.reduce(files, bash.fs, fn {path, content}, fs ->

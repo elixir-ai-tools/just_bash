@@ -9,9 +9,11 @@ defmodule JustBash.Eval.Tasks do
   - DataPipelines — templating, dedup, joins, ETL, checksums
   - Reporting — Dockerfile parsing, crontab, markdown, access logs
   - ShellFeatures — functions, loops, comm, paste, tee, xargs
+  - CustomCommands — tasks using custom commands provided to JustBash
   """
 
   alias JustBash.Eval.Tasks.{
+    CustomCommands,
     DataPipelines,
     FileOperations,
     JsonProcessing,
@@ -26,7 +28,8 @@ defmodule JustBash.Eval.Tasks do
     FileOperations,
     DataPipelines,
     Reporting,
-    ShellFeatures
+    ShellFeatures,
+    CustomCommands
   ]
 
   @type task :: JustBash.Eval.Task.task()

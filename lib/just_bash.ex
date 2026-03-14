@@ -229,6 +229,8 @@ defmodule JustBash do
             "custom commands cannot override protected builtin #{inspect(name)}"
     end
 
+    Code.ensure_loaded(module)
+
     unless function_exported?(module, :execute, 3) and function_exported?(module, :names, 0) do
       raise ArgumentError,
             "custom command #{inspect(module)} must export execute/3 and names/0"

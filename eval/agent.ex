@@ -58,20 +58,33 @@ defmodule JustBash.Eval.Agent do
     max_turns = Keyword.get(opts, :max_turns, @max_turns)
     verbose = Keyword.get(opts, :verbose, false)
 
-    system =
-      Keyword.get(opts, :system, """
-      You are a bash expert working in a sandboxed environment with a virtual in-memory filesystem. \
-      Use the bash tool to execute commands and accomplish the given task.
+    commands_info = Keyword.get(opts, :commands_info)
 
-      Important:
-      - Shell state (variables, functions) does NOT persist between tool calls. Each tool call is \
-      a separate invocation. Put your entire script in a single tool call when you need functions, \
-      variables, or multi-step logic to work together.
-      - Be efficient. Read input files if needed, then do the work and write output. Don't waste \
-      calls on verification unless something went wrong.
-      - The environment already has files pre-loaded. Do NOT create sample data — read what exists.
-      - When done, respond with a one-line summary.\
-      """)
+    base_system = """
+    You are a bash expert working in a sandboxed environment with a virtual in-memory filesystem. \
+    Use the bash tool to execute commands and accomplish the given task.
+
+    Important:
+    - Shell state (variables, functions) does NOT persist between tool calls. Each tool call is \
+    a separate invocation. Put your entire script in a single tool call when you need functions, \
+    variables, or multi-step logic to work together.
+    - Be efficient. Read input files if needed, then do the work and write output. Don't waste \
+    calls on verification unless something went wrong.
+    - The environment already has files pre-loaded. Do NOT create sample data — read what exists.
+    - When done, respond with a one-line summary.\
+    """
+
+    system =
+      Keyword.get_lazy(opts, :system, fn ->
+        if commands_info do
+          base_system <>
+            "\n\nThis environment has custom commands available. " <>
+            "Use `<command> --help` to learn about them.\n\n" <>
+            commands_info
+        else
+          base_system
+        end
+      end)
 
     messages = [%{role: "user", content: task}]
     state = %{bash: bash, usage: %{input_tokens: 0, output_tokens: 0}}
