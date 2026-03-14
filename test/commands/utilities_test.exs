@@ -389,8 +389,8 @@ defmodule JustBash.Commands.UtilitiesTest do
 
     test "which finds multiple commands" do
       bash = JustBash.new()
-      {result, _} = JustBash.exec(bash, "which ls cat echo")
-      assert result.stdout == "/bin/ls\n/bin/cat\n/bin/echo\n"
+      {result, _} = JustBash.exec(bash, "which ls cat")
+      assert result.stdout == "/bin/ls\n/bin/cat\n"
       assert result.exit_code == 0
     end
 
@@ -440,6 +440,65 @@ defmodule JustBash.Commands.UtilitiesTest do
       bash = JustBash.new()
       {result, _} = JustBash.exec(bash, "which -as ls")
       assert result.stdout == ""
+      assert result.exit_code == 0
+    end
+
+    test "which reports builtins as shell built-in command" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "which echo")
+      assert result.stdout == "echo: shell built-in command\n"
+      assert result.exit_code == 0
+    end
+
+    test "which reports cd as builtin" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "which cd")
+      assert result.stdout == "cd: shell built-in command\n"
+      assert result.exit_code == 0
+    end
+
+    test "which reports external commands with path and builtins correctly" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "which ls echo grep")
+      assert result.stdout == "/bin/ls\necho: shell built-in command\n/bin/grep\n"
+      assert result.exit_code == 0
+    end
+  end
+
+  describe "type command" do
+    test "type identifies builtins" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "type echo")
+      assert result.stdout == "echo is a shell builtin\n"
+      assert result.exit_code == 0
+    end
+
+    test "type identifies external commands with path" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "type grep")
+      assert result.stdout == "grep is /bin/grep\n"
+      assert result.exit_code == 0
+    end
+
+    test "type identifies shell functions" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "myfunc() { echo hi; }\ntype myfunc")
+      assert result.stdout == "myfunc is a function\n"
+      assert result.exit_code == 0
+    end
+
+    test "type returns error for unknown commands" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "type nonexistent")
+      assert result.stderr =~ "not found"
+      assert result.exit_code == 1
+    end
+
+    test "type handles multiple arguments" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "type echo ls")
+      assert result.stdout =~ "echo is a shell builtin"
+      assert result.stdout =~ "ls is /bin/ls"
       assert result.exit_code == 0
     end
   end

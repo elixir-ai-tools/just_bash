@@ -756,5 +756,35 @@ defmodule JustBash.Shell.ControlFlowTest do
       lines = String.trim(result.stdout) |> String.split("\n") |> Enum.sort()
       assert lines == ["blue=#0000ff", "red=#ff0000"]
     end
+
+    test "declare -A assign via variable subscript in for loop" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        declare -A arr
+        for key in a b c; do
+          arr[$key]="val_$key"
+        done
+        echo "${arr[a]} ${arr[b]} ${arr[c]}"
+        """)
+
+      assert result.stdout == "val_a val_b val_c\n"
+    end
+
+    test "declare -A assign via variable subscript with quotes" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        declare -A data
+        k="mykey"
+        data["$k"]="myvalue"
+        echo "${data["mykey"]}"
+        echo "${data[$k]}"
+        """)
+
+      assert result.stdout == "myvalue\nmyvalue\n"
+    end
   end
 end

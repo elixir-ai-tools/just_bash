@@ -656,7 +656,10 @@ defmodule JustBash.Interpreter.Executor do
             end
 
           acc = apply_pending_assignments(acc, pending)
-          %{acc | env: Map.put(acc.env, name, expanded_value)}
+          # Expand variable references in associative array subscripts
+          # e.g. arr[$key] should store as arr[expanded_key]
+          resolved_name = expand_assignment_subscript(acc, name)
+          %{acc | env: Map.put(acc.env, resolved_name, expanded_value)}
 
         elements when is_list(elements) ->
           # Array assignment: arr=(a b c) or arr=($(echo "a b c"))
@@ -692,6 +695,46 @@ defmodule JustBash.Interpreter.Executor do
           %{acc | env: env}
       end
     end)
+  end
+
+  # Expand variable references in array subscripts during assignment.
+  # e.g. arr[$key] -> arr[expanded_value_of_key]
+  # e.g. arr["$key"] -> arr["expanded_value_of_key"]
+  defp expand_assignment_subscript(bash, name) do
+    case Regex.run(~r/^([a-zA-Z_][a-zA-Z0-9_]*)\[(.+)\]$/, name) do
+      [_, arr_name, subscript] ->
+        # Strip surrounding quotes from subscript if present
+        stripped =
+          case subscript do
+            <<"\"", inner::binary>> ->
+              String.trim_trailing(inner, "\"")
+
+            <<"'", inner::binary>> ->
+              String.trim_trailing(inner, "'")
+
+            other ->
+              other
+          end
+
+        # Expand $var and ${var} references in the subscript
+        expanded =
+          stripped
+          |> then(
+            &Regex.replace(~r/\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}/, &1, fn _, var_name ->
+              Map.get(bash.env, var_name, "")
+            end)
+          )
+          |> then(
+            &Regex.replace(~r/\$([a-zA-Z_][a-zA-Z0-9_]*)/, &1, fn _, var_name ->
+              Map.get(bash.env, var_name, "")
+            end)
+          )
+
+        "#{arr_name}[#{expanded}]"
+
+      _ ->
+        name
+    end
   end
 
   # Apply pending variable assignments from expansions like ${VAR:=default} or $((x++))

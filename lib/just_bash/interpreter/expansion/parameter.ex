@@ -141,9 +141,11 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
     Map.has_key?(bash.env, "__assoc__#{arr_name}")
   end
 
-  # Expand $var and ${var} references within array subscript strings
+  # Expand $var and ${var} references within array subscript strings,
+  # and strip surrounding quotes (bash ignores quotes in subscripts).
   defp expand_subscript_vars(bash, str) do
     str
+    |> strip_subscript_quotes()
     |> then(
       &Regex.replace(~r/\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}/, &1, fn _, name ->
         Map.get(bash.env, name, "")
@@ -154,6 +156,11 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
         Map.get(bash.env, name, "")
       end)
     )
+  end
+
+  # Strip surrounding double or single quotes from array subscript strings
+  defp strip_subscript_quotes(str) do
+    Regex.replace(~r/["']/, str, "")
   end
 
   # Special variables that are always considered "set" for nounset purposes

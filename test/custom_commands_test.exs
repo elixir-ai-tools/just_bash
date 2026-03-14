@@ -705,14 +705,14 @@ defmodule JustBash.CustomCommandsTest do
       assert result.stdout =~ "after inject"
     end
 
-    test "which -a lists both custom command and builtin path" do
+    test "which -a lists both custom command and builtin info" do
       bash = JustBash.new(commands: %{"echo" => CustomEcho})
       {result, _} = JustBash.exec(bash, "which -a echo")
       assert result.exit_code == 0
       lines = String.split(result.stdout, "\n", trim: true)
-      # Custom command appears first, then the builtin path
+      # Custom command appears first, then the builtin description
       assert "echo" in lines
-      assert Enum.any?(lines, &String.contains?(&1, "/echo"))
+      assert Enum.any?(lines, &String.contains?(&1, "shell built-in command"))
       assert length(lines) >= 2
     end
   end

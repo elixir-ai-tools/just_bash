@@ -1406,7 +1406,13 @@ defmodule JustBash.Commands.Jq.Parser do
     parse_postfix(parse_primary(input))
   end
 
+  # Known jq format names — ensure these atoms exist for safe_to_atom
+  @known_formats ~w(csv tsv json text base64 base64d uri urid sh html)a
+
   defp parse_format_string(input) do
+    # Reference @known_formats to ensure atoms are compiled
+    _ = @known_formats
+
     case parse_identifier(input) do
       {"", _} ->
         throw({:parse_error, "expected format name after @"})

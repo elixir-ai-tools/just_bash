@@ -80,34 +80,43 @@ defmodule JustBash.Commands.Which do
     # Collect all locations where the command can be found, in priority order:
     # 1. Shell functions
     # 2. Custom commands
-    # 3. Builtins / PATH executables
+    # 3. Builtins (reported as "name: shell built-in command")
+    # 4. PATH executables
     function_hits =
       if Map.has_key?(bash.functions, name), do: [name], else: []
 
     custom_hits =
       if Map.has_key?(bash.commands, name), do: [name], else: []
 
+    builtin_hits =
+      if Registry.builtin?(name), do: ["#{name}: shell built-in command"], else: []
+
     path_hits =
-      Enum.flat_map(path_dirs, fn dir ->
-        if dir == "" do
-          []
-        else
-          full_path = Path.join(dir, name)
+      if Registry.builtin?(name) do
+        # Builtins don't have a real file on disk in JustBash
+        []
+      else
+        Enum.flat_map(path_dirs, fn dir ->
+          if dir == "" do
+            []
+          else
+            full_path = Path.join(dir, name)
 
-          cond do
-            Registry.exists?(name) ->
-              [full_path]
+            cond do
+              Registry.exists?(name) ->
+                [full_path]
 
-            file_exists?(bash.fs, full_path) ->
-              [full_path]
+              file_exists?(bash.fs, full_path) ->
+                [full_path]
 
-            true ->
-              []
+              true ->
+                []
+            end
           end
-        end
-      end)
+        end)
+      end
 
-    all_hits = function_hits ++ custom_hits ++ Enum.uniq(path_hits)
+    all_hits = function_hits ++ custom_hits ++ builtin_hits ++ Enum.uniq(path_hits)
 
     if show_all do
       all_hits

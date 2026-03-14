@@ -61,4 +61,77 @@ defmodule JustBash.Shell.RedirectionsTest do
       assert result.stdout == "hello"
     end
   end
+
+  describe "heredoc with compound commands" do
+    test "while loop with heredoc reads all lines" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        while read -r line; do
+          echo "GOT: $line"
+        done <<EOF
+        hello
+        world
+        EOF
+        """)
+
+      assert result.stdout =~ "GOT: hello"
+      assert result.stdout =~ "GOT: world"
+    end
+
+    test "while loop with heredoc preserves variable changes" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        count=0
+        while read -r line; do
+          count=$((count + 1))
+        done <<LINES
+        alpha
+        beta
+        gamma
+        LINES
+        echo "count=$count"
+        """)
+
+      assert result.stdout == "count=3\n"
+    end
+
+    test "for loop with heredoc output redirection" do
+      bash = JustBash.new()
+
+      {result, bash} =
+        JustBash.exec(bash, """
+        for i in 1 2 3; do
+          echo "line $i"
+        done > /tmp/out.txt
+        """)
+
+      assert result.stdout == ""
+      {result, _} = JustBash.exec(bash, "cat /tmp/out.txt")
+      assert result.stdout =~ "line 1"
+      assert result.stdout =~ "line 3"
+    end
+
+    test "while read loop with heredoc populates associative array" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, """
+        declare -A config
+        while IFS="=" read -r key value; do
+          config["$key"]="$value"
+        done <<EOF
+        host=localhost
+        port=5432
+        EOF
+        echo "host=${config["host"]}"
+        echo "port=${config["port"]}"
+        """)
+
+      assert result.stdout == "host=localhost\nport=5432\n"
+    end
+  end
 end
