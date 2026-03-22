@@ -21,6 +21,10 @@ defmodule JustBash.Interpreter.State do
     associative arrays (`declare -A`). Used during `${arr[key]}` expansion to
     decide whether to treat the subscript as a string key or integer index.
 
+  - `call_depth` — current shell function call depth. Incremented on each
+    function entry, decremented on return. Checked against `bash.max_call_depth`
+    to prevent unbounded recursion from consuming all available memory.
+
   ## Nesting
 
   When a function is called, the interpreter saves the current `State` and
@@ -32,12 +36,14 @@ defmodule JustBash.Interpreter.State do
   @type t :: %__MODULE__{
           stdin: String.t() | nil,
           locals: MapSet.t(String.t()),
-          assoc_arrays: MapSet.t(String.t())
+          assoc_arrays: MapSet.t(String.t()),
+          call_depth: non_neg_integer()
         }
 
   defstruct stdin: nil,
             locals: MapSet.new(),
-            assoc_arrays: MapSet.new()
+            assoc_arrays: MapSet.new(),
+            call_depth: 0
 
   @doc "Returns a fresh interpreter state."
   @spec new() :: t()

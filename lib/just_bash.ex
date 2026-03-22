@@ -92,6 +92,7 @@ defmodule JustBash do
             http_client: nil,
             databases: %{},
             max_iterations: 10_000,
+            max_call_depth: 1_000,
             jq_module_paths: [],
             interpreter: nil
 
@@ -126,6 +127,7 @@ defmodule JustBash do
           shell_opts: shell_opts(),
           databases: map(),
           max_iterations: pos_integer(),
+          max_call_depth: pos_integer(),
           jq_module_paths: [String.t()],
           interpreter: State.t()
         }
@@ -156,6 +158,9 @@ defmodule JustBash do
   - `:http_client` - Module implementing the HTTP client behaviour (default: uses Req)
   - `:max_iterations` - Maximum iterations for `while`/`until` loops before they are
     forcibly stopped. Prevents runaway loops from untrusted scripts (default: 10_000)
+  - `:max_call_depth` - Maximum shell function call depth before recursion is
+    forcibly stopped. Prevents unbounded recursion from consuming all available
+    memory (default: 1_000)
   - `:jq_module_paths` - List of virtual filesystem paths to search for `jq` modules
     when using `import`/`include` directives (default: [])
 
@@ -180,6 +185,7 @@ defmodule JustBash do
     network = Keyword.get(opts, :network, %{})
     http_client = Keyword.get(opts, :http_client)
     max_iterations = Keyword.get(opts, :max_iterations, 10_000)
+    max_call_depth = Keyword.get(opts, :max_call_depth, 1_000)
     jq_module_paths = Keyword.get(opts, :jq_module_paths, [])
 
     default_env = %{
@@ -204,6 +210,7 @@ defmodule JustBash do
       network: Map.merge(%{enabled: false, allow_list: [], allow_insecure: false}, network),
       http_client: http_client,
       max_iterations: max_iterations,
+      max_call_depth: max_call_depth,
       jq_module_paths: jq_module_paths,
       interpreter: State.new()
     }
