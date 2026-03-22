@@ -161,4 +161,35 @@ defmodule JustBash.Shell.MaxCallDepthTest do
       assert result.stdout =~ "after"
     end
   end
+
+  describe "sequential calls do not accumulate depth" do
+    test "many sequential top-level calls succeed within a small limit" do
+      bash = JustBash.new(max_call_depth: 5)
+
+      {result, _} =
+        JustBash.exec(bash, """
+        f() { echo "ok"; }
+        f; f; f; f; f; f; f; f; f; f
+        """)
+
+      assert result.exit_code == 0
+      assert result.stdout == String.duplicate("ok\n", 10)
+    end
+
+    test "sequential calls after a depth error do not inherit inflated depth" do
+      bash = JustBash.new(max_call_depth: 5)
+
+      {result, _} =
+        JustBash.exec(bash, """
+        boom() { boom; }
+        ok() { echo "ok"; }
+        boom
+        ok; ok; ok; ok; ok; ok; ok; ok; ok; ok
+        """)
+
+      assert result.stderr =~ "maximum call depth exceeded"
+      assert result.exit_code == 0
+      assert result.stdout == String.duplicate("ok\n", 10)
+    end
+  end
 end

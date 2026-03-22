@@ -602,7 +602,8 @@ defmodule JustBash.Interpreter.Executor do
       restored_interpreter = %{
         func_final_bash.interpreter
         | locals: caller_interpreter.locals,
-          assoc_arrays: caller_interpreter.assoc_arrays
+          assoc_arrays: caller_interpreter.assoc_arrays,
+          call_depth: caller_interpreter.call_depth
       }
 
       final_bash = %{func_final_bash | env: restored_env, interpreter: restored_interpreter}

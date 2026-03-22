@@ -22,8 +22,9 @@ defmodule JustBash.Interpreter.State do
     decide whether to treat the subscript as a string key or integer index.
 
   - `call_depth` — current shell function call depth. Incremented on each
-    function entry, decremented on return. Checked against `bash.max_call_depth`
-    to prevent unbounded recursion from consuming all available memory.
+    function entry, restored to the caller's depth on return. Checked against
+    `bash.max_call_depth` to prevent unbounded recursion from consuming all
+    available memory.
 
   ## Nesting
 
