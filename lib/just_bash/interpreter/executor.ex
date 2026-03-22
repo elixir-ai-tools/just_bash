@@ -556,47 +556,59 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   defp execute_function(bash, body, args) do
-    # Save caller's positional parameters so we can restore them after the function
-    caller_positionals = save_positional_params(bash.env)
+    depth = bash.interpreter.call_depth + 1
 
-    # Save interpreter state — function gets a fresh locals tracker and inherits
-    # the caller's assoc_arrays (outer-scope arrays remain visible inside functions)
-    caller_interpreter = bash.interpreter
-    func_interpreter = %{caller_interpreter | locals: MapSet.new()}
+    if depth > bash.max_call_depth do
+      {%{stdout: "", stderr: "bash: maximum call depth exceeded\n", exit_code: 1}, bash}
+    else
+      # Save caller's positional parameters so we can restore them after the function
+      caller_positionals = save_positional_params(bash.env)
 
-    positional_env =
-      args
-      |> Enum.with_index(1)
-      |> Enum.into(%{}, fn {arg, idx} -> {to_string(idx), arg} end)
-      |> Map.put("#", to_string(length(args)))
-      |> Map.put("@", Enum.join(args, " "))
-      |> Map.put("*", Enum.join(args, " "))
+      # Save interpreter state — function gets a fresh locals tracker and inherits
+      # the caller's assoc_arrays (outer-scope arrays remain visible inside functions)
+      caller_interpreter = bash.interpreter
+      func_interpreter = %{caller_interpreter | locals: MapSet.new(), call_depth: depth}
 
-    func_bash = %{bash | env: Map.merge(bash.env, positional_env), interpreter: func_interpreter}
-    {result, func_final_bash} = execute_body(func_bash, [body])
+      positional_env =
+        args
+        |> Enum.with_index(1)
+        |> Enum.into(%{}, fn {arg, idx} -> {to_string(idx), arg} end)
+        |> Map.put("#", to_string(length(args)))
+        |> Map.put("@", Enum.join(args, " "))
+        |> Map.put("*", Enum.join(args, " "))
 
-    # Propagate all side effects (env, fs, functions, etc.) but:
-    # 1. Restore the caller's positional parameters ($1..$N, $#, $@, $*)
-    # 2. Revert local variables to their caller values (or remove if new)
-    # 3. Restore caller's interpreter state (locals tracker, drop function-local assoc markers)
-    local_names = func_final_bash.interpreter.locals
+      func_bash = %{
+        bash
+        | env: Map.merge(bash.env, positional_env),
+          interpreter: func_interpreter
+      }
 
-    restored_env =
-      func_final_bash.env
-      |> strip_positional_params()
-      |> Map.merge(caller_positionals)
-      |> revert_locals(local_names, bash.env)
+      {result, func_final_bash} = execute_body(func_bash, [body])
 
-    # Restore caller's assoc_arrays, discarding any declared inside the function
-    # (fixes the __assoc__* leak where function-local declare -A markers persisted)
-    restored_interpreter = %{
-      func_final_bash.interpreter
-      | locals: caller_interpreter.locals,
-        assoc_arrays: caller_interpreter.assoc_arrays
-    }
+      # Propagate all side effects (env, fs, functions, etc.) but:
+      # 1. Restore the caller's positional parameters ($1..$N, $#, $@, $*)
+      # 2. Revert local variables to their caller values (or remove if new)
+      # 3. Restore caller's interpreter state (locals tracker, drop function-local assoc markers)
+      local_names = func_final_bash.interpreter.locals
 
-    final_bash = %{func_final_bash | env: restored_env, interpreter: restored_interpreter}
-    {%{stdout: result.stdout, stderr: result.stderr, exit_code: result.exit_code}, final_bash}
+      restored_env =
+        func_final_bash.env
+        |> strip_positional_params()
+        |> Map.merge(caller_positionals)
+        |> revert_locals(local_names, bash.env)
+
+      # Restore caller's assoc_arrays, discarding any declared inside the function
+      # (fixes the __assoc__* leak where function-local declare -A markers persisted)
+      restored_interpreter = %{
+        func_final_bash.interpreter
+        | locals: caller_interpreter.locals,
+          assoc_arrays: caller_interpreter.assoc_arrays,
+          call_depth: caller_interpreter.call_depth
+      }
+
+      final_bash = %{func_final_bash | env: restored_env, interpreter: restored_interpreter}
+      {%{stdout: result.stdout, stderr: result.stderr, exit_code: result.exit_code}, final_bash}
+    end
   end
 
   # Save the current positional parameters ($1..$N, $#, $@, $*) from env
