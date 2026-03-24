@@ -82,9 +82,9 @@ defmodule JustBash.FlagParser do
   end
 
   defp parse_flag(flag_str, remaining, spec, flags) do
-    # Check for aliases first
     aliases = Map.get(spec, :aliases, %{})
-    flag_atom = Map.get(aliases, flag_str, String.to_atom(flag_str))
+    lookup = flag_lookup(spec)
+    flag_atom = Map.get(aliases, flag_str) || Map.get(lookup, flag_str)
 
     cond do
       flag_atom in spec.boolean ->
@@ -111,13 +111,12 @@ defmodule JustBash.FlagParser do
         end
 
       String.length(flag_str) > 1 ->
-        # Try to parse as combined value flag (e.g., -k2, -n10)
-        case try_attached_value_flag(flag_str, spec, flags) do
+        case try_attached_value_flag(flag_str, spec, flags, lookup) do
           {:ok, new_flags} ->
             {:ok, new_flags, remaining}
 
           :error ->
-            case parse_combined_flags(flag_str, spec, flags) do
+            case parse_combined_flags(flag_str, spec, flags, lookup) do
               {:ok, new_flags} -> {:ok, new_flags, remaining}
               :error -> try_numeric_flag(flag_str, remaining, spec, flags)
             end
@@ -128,13 +127,12 @@ defmodule JustBash.FlagParser do
     end
   end
 
-  # Handle flags like -k2, -n10 where value is attached
-  defp try_attached_value_flag(flag_str, spec, flags) do
+  defp try_attached_value_flag(flag_str, spec, flags, lookup) do
     <<first_char::binary-size(1), rest::binary>> = flag_str
-    flag_atom = String.to_atom(first_char)
+    flag_atom = Map.get(lookup, first_char)
     multi_value = Map.get(spec, :multi_value, [])
 
-    if (flag_atom in spec.value or flag_atom in multi_value) and rest != "" do
+    if flag_atom != nil and (flag_atom in spec.value or flag_atom in multi_value) and rest != "" do
       parsed_value = parse_value(rest)
       {:ok, put_flag(flags, flag_atom, parsed_value, spec)}
     else
@@ -142,19 +140,19 @@ defmodule JustBash.FlagParser do
     end
   end
 
-  defp parse_combined_flags(flag_str, spec, flags) do
-    chars = String.graphemes(flag_str)
+  defp parse_combined_flags(flag_str, spec, flags, lookup) do
+    atoms = Enum.map(String.graphemes(flag_str), &Map.get(lookup, &1))
 
-    if Enum.all?(chars, &(String.to_atom(&1) in spec.boolean)) do
-      new_flags =
-        Enum.reduce(chars, flags, fn char, acc ->
-          Map.put(acc, String.to_atom(char), true)
-        end)
-
-      {:ok, new_flags}
+    if Enum.all?(atoms, &(&1 in spec.boolean)) do
+      {:ok, Enum.reduce(atoms, flags, fn atom, acc -> Map.put(acc, atom, true) end)}
     else
       :error
     end
+  end
+
+  defp flag_lookup(spec) do
+    (spec.boolean ++ spec.value ++ Map.get(spec, :multi_value, []))
+    |> Map.new(fn atom -> {Atom.to_string(atom), atom} end)
   end
 
   defp try_numeric_flag(flag_str, remaining, spec, flags) do

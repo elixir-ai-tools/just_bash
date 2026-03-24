@@ -359,7 +359,7 @@ defmodule JustBash.Parser.Compound do
       unary_cond_op?(parser, helpers) ->
         {op_token, parser} = helpers.advance(parser)
         {word, parser} = parse_cond_word(parser, helpers)
-        operator = String.to_atom(op_token.value)
+        operator = String.to_existing_atom(op_token.value)
         {%AST.CondUnary{operator: operator, operand: word}, parser}
 
       true ->
@@ -371,7 +371,7 @@ defmodule JustBash.Parser.Compound do
 
           binary_cond_op?(parser, helpers) ->
             {op_token, parser} = helpers.advance(parser)
-            operator = String.to_atom(op_token.value)
+            operator = String.to_existing_atom(op_token.value)
 
             {right_word, parser} =
               if operator == :=~ do

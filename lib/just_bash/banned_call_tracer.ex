@@ -92,7 +92,9 @@ defmodule JustBash.BannedCallTracer do
     {Process, :get, 0},
     {Process, :get, 1},
     {Process, :get, 2},
-    {Process, :delete, 1}
+    {Process, :delete, 1},
+    # Atom table exhaustion — atoms are never garbage collected
+    {String, :to_atom, 1}
   ]
 
   @type violation :: %{

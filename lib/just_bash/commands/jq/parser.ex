@@ -1406,13 +1406,18 @@ defmodule JustBash.Commands.Jq.Parser do
     parse_postfix(parse_primary(input))
   end
 
-  # Map from format name strings to atoms.  Using an explicit map guarantees the
-  # atoms exist in the runtime atom table — String.to_existing_atom/1 is unreliable
-  # because compile-time module attributes don't always populate the runtime table.
-  @format_atoms Map.new(
-                  ~w(csv tsv json text base64 base64d uri urid sh html),
-                  &{&1, String.to_atom(&1)}
-                )
+  @format_atoms %{
+    "csv" => :csv,
+    "tsv" => :tsv,
+    "json" => :json,
+    "text" => :text,
+    "base64" => :base64,
+    "base64d" => :base64d,
+    "uri" => :uri,
+    "urid" => :urid,
+    "sh" => :sh,
+    "html" => :html
+  }
 
   defp parse_format_string(input) do
     case parse_identifier(input) do

@@ -779,7 +779,7 @@ defmodule JustBash.Parser.Lexer do
 
   defp classify_word(value, raw_value, false) do
     cond do
-      value in @reserved -> String.to_atom(value)
+      value in @reserved -> String.to_existing_atom(value)
       assignment?(raw_value) -> :assignment_word
       all_digits?(value) -> :number
       name?(value) -> :name
