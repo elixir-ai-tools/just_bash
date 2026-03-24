@@ -8,6 +8,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   """
 
   alias JustBash.Commands.Jq.Evaluator
+  alias JustBash.Limits
 
   # jq depth limit for tojson: structures at depth > 10000 get skipped
   @tojson_depth_limit 10_001
@@ -92,6 +93,8 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   end
 
   defp do_eval_func(:map, [expr], data, opts, eval) when is_list(data) do
+    check_work_items!(opts, length(data))
+
     Enum.flat_map(data, fn item ->
       case eval.eval(expr, item, opts) do
         {:multi, items} -> items
@@ -218,6 +221,8 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   end
 
   defp do_eval_func(:sort_by, [expr], data, opts, eval) when is_list(data) do
+    check_work_items!(opts, length(data))
+
     Enum.sort_by(
       data,
       fn item ->
@@ -243,6 +248,8 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   end
 
   defp do_eval_func(:group_by, [expr], data, opts, eval) when is_list(data) do
+    check_work_items!(opts, length(data))
+
     data
     |> Enum.sort_by(fn item -> eval.eval(expr, item, opts) end, &jq_less_or_equal?/2)
     |> Enum.chunk_by(fn item -> eval.eval(expr, item, opts) end)
@@ -1374,7 +1381,9 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   defp do_eval_func(:test, [regex_expr], data, opts, eval) when is_binary(data) do
     pattern = eval.eval(regex_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    Limits.check_regex_input!(opts[:bash], data)
+
+    case compile_jq_regex(pattern, [], opts) do
       {:ok, regex} -> Regex.match?(regex, data)
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1385,7 +1394,9 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     flags = eval.eval(flags_expr, data, opts)
     regex_opts = parse_regex_flags(flags)
 
-    case Regex.compile(pattern, regex_opts) do
+    Limits.check_regex_input!(opts[:bash], data)
+
+    case compile_jq_regex(pattern, regex_opts, opts) do
       {:ok, regex} -> Regex.match?(regex, data)
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1394,7 +1405,9 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   defp do_eval_func(:match, [regex_expr], data, opts, eval) when is_binary(data) do
     pattern = eval.eval(regex_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    Limits.check_regex_input!(opts[:bash], data)
+
+    case compile_jq_regex(pattern, [], opts) do
       {:ok, regex} ->
         case Regex.run(regex, data, return: :index) do
           nil ->
@@ -1420,7 +1433,9 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   defp do_eval_func(:capture, [regex_expr], data, opts, eval) when is_binary(data) do
     pattern = eval.eval(regex_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    Limits.check_regex_input!(opts[:bash], data)
+
+    case compile_jq_regex(pattern, [], opts) do
       {:ok, regex} ->
         case Regex.named_captures(regex, data) do
           nil -> nil
@@ -1436,7 +1451,9 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     pattern = eval.eval(regex_expr, data, opts)
     replacement = eval.eval(repl_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    Limits.check_regex_input!(opts[:bash], data)
+
+    case compile_jq_regex(pattern, [], opts) do
       {:ok, regex} -> Regex.replace(regex, data, fn _, _ -> replacement end)
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1449,7 +1466,9 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     flags = eval.eval(flags_expr, data, opts)
     regex_opts = parse_regex_flags(flags)
 
-    case Regex.compile(pattern, regex_opts) do
+    Limits.check_regex_input!(opts[:bash], data)
+
+    case compile_jq_regex(pattern, regex_opts, opts) do
       {:ok, regex} -> Regex.replace(regex, data, fn _, _ -> replacement end)
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1459,7 +1478,9 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     pattern = eval.eval(regex_expr, data, opts)
     replacement = eval.eval(repl_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    Limits.check_regex_input!(opts[:bash], data)
+
+    case compile_jq_regex(pattern, [], opts) do
       {:ok, regex} -> Regex.replace(regex, data, fn _, _ -> replacement end, global: false)
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1468,7 +1489,9 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   defp do_eval_func(:scan, [regex_expr], data, opts, eval) when is_binary(data) do
     pattern = eval.eval(regex_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    Limits.check_regex_input!(opts[:bash], data)
+
+    case compile_jq_regex(pattern, [], opts) do
       {:ok, regex} ->
         Regex.scan(regex, data)
         |> Enum.map(fn
@@ -1484,7 +1507,9 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   defp do_eval_func(:splits, [regex_expr], data, opts, eval) when is_binary(data) do
     pattern = eval.eval(regex_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    Limits.check_regex_input!(opts[:bash], data)
+
+    case compile_jq_regex(pattern, [], opts) do
       {:ok, regex} -> {:multi, Regex.split(regex, data)}
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1495,7 +1520,9 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     flags = eval.eval(flags_expr, data, opts)
     regex_opts = parse_regex_flags(flags)
 
-    case Regex.compile(pattern, regex_opts) do
+    Limits.check_regex_input!(opts[:bash], data)
+
+    case compile_jq_regex(pattern, regex_opts, opts) do
       {:ok, regex} -> {:multi, Regex.split(regex, data)}
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -2762,7 +2789,8 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
 
   defp sanitize_nan(other), do: other
 
-  defp builtins_list do
+  @doc false
+  def builtins_list do
     [
       "abs/0",
       "add/0",
@@ -2899,6 +2927,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
       "tonumber/0",
       "tostring/0",
       "transpose/0",
+      "trimstr/1",
       "trim/0",
       "ltrim/0",
       "rtrim/0",
@@ -2925,5 +2954,16 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
       "have_decnum/0",
       "toboolean/0"
     ]
+  end
+
+  defp compile_jq_regex(pattern, regex_opts, opts) do
+    Limits.check_regex_pattern!(opts[:bash], pattern)
+    Regex.compile(pattern, regex_opts)
+  end
+
+  defp check_work_items!(opts, count) do
+    if count > Map.get(opts, :max_work_items, 10_000) do
+      throw({:eval_error, "jq work item limit exceeded"})
+    end
   end
 end

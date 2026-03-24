@@ -1,4 +1,6 @@
 defmodule JustBash.Interpreter.State do
+  alias JustBash.Security.Budget
+
   @moduledoc """
   Internal interpreter state carried alongside the user-visible `JustBash` struct.
 
@@ -23,8 +25,15 @@ defmodule JustBash.Interpreter.State do
 
   - `call_depth` — current shell function call depth. Incremented on each
     function entry, restored to the caller's depth on return. Checked against
-    `bash.max_call_depth` to prevent unbounded recursion from consuming all
-    available memory.
+    the active security policy to prevent unbounded recursion from consuming
+    all available memory.
+
+  - `exec_depth` — current nested script execution depth. Incremented for each
+    call to `Executor.execute_script/2`, including `eval`, `source`, command
+    substitution, traps, and other re-entrant interpreter entry points.
+
+  - `budget` — per-run accounting for output bytes, executed command steps, and
+    sticky typed security violations.
 
   ## Nesting
 
@@ -38,13 +47,17 @@ defmodule JustBash.Interpreter.State do
           stdin: String.t() | nil,
           locals: MapSet.t(String.t()),
           assoc_arrays: MapSet.t(String.t()),
-          call_depth: non_neg_integer()
+          call_depth: non_neg_integer(),
+          exec_depth: non_neg_integer(),
+          budget: Budget.t()
         }
 
   defstruct stdin: nil,
             locals: MapSet.new(),
             assoc_arrays: MapSet.new(),
-            call_depth: 0
+            call_depth: 0,
+            exec_depth: 0,
+            budget: Budget.new()
 
   @doc "Returns a fresh interpreter state."
   @spec new() :: t()

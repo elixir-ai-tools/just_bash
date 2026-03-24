@@ -32,6 +32,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Centralized security policy system (`JustBash.Security.Policy`) with 25 configurable resource limits
+- Three built-in presets: `:default`, `:strict`, `:relaxed` — configurable via `JustBash.new(security: ...)`
+- Structured violation metadata (`JustBash.Security.Violation`) returned in `result.violation`
+- Per-run execution budgets tracking output bytes, step count, and sticky violations
+- Resource limits enforced across parsing, expansion, execution, output, filesystem, environment, regex, glob, network, and jq operations
+- Internal interpreter state isolation — `__STDIN__`, `__locals__`, `__assoc__` moved out of `bash.env` to prevent script observation or corruption
+- `BannedCallTracer` static analysis preventing real-filesystem escapes from command modules
+- Network security: HTTPS-only by default, manual redirect validation, allow-list inversion (`empty = deny all`)
+- Atom exhaustion fix in `FlagParser` — unknown flags no longer create atoms
+- `SECURITY.md` documenting the threat model, guarantees, and non-goals
+
+### Changed
+
+- **BREAKING**: `max_iterations` and `max_call_depth` are no longer accepted as top-level options in `JustBash.new/1`. Use `security: [max_iterations: N, max_call_depth: N]` instead. Passing the old options raises `ArgumentError` with migration guidance.
+- `Policy.new/1` now validates unknown keys and non-positive-integer values
+- `Policy.get/2` raises `ArgumentError` (not `KeyError`) on unknown keys
+- Curl `-k`/`--insecure` flag removed from argument parser
+
 ## [0.1.0] - 2026-01-11
 
 ### Added

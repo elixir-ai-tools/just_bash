@@ -74,6 +74,15 @@ defmodule JustBash.Shell.ControlFlowTest do
       {result2, _} = JustBash.exec(bash, "for i in $LIST; do echo $i; done")
       assert result2.stdout == "1\n2\n3\n"
     end
+
+    test "for loop enforces max_iterations limit" do
+      bash = JustBash.new(security: [max_iterations: 3])
+
+      {result, _} = JustBash.exec(bash, "for x in a b c d e; do echo $x; done")
+
+      assert result.stdout == "a\nb\nc\n"
+      assert result.stderr =~ "iteration limit exceeded"
+    end
   end
 
   describe "while loop" do

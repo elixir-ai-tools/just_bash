@@ -6,6 +6,8 @@ defmodule JustBash.Commands.Sed.Parser do
   executed by the Executor.
   """
 
+  alias JustBash.Limits
+
   @type address :: nil | :last | {:line, pos_integer()} | {:regex, Regex.t()}
   @type substitute_flags :: [:global | :caseless | :print | {:nth, pos_integer()}]
   @type command ::
@@ -29,13 +31,15 @@ defmodule JustBash.Commands.Sed.Parser do
 
   Returns `{:ok, commands}` on success or `{:error, message}` on failure.
   """
-  @spec parse([String.t()], boolean()) :: {:ok, [sed_command()]} | {:error, String.t()}
-  def parse([], _extended), do: {:error, "no script specified"}
+  @spec parse([String.t()], boolean(), JustBash.t() | nil) ::
+          {:ok, [sed_command()]} | {:error, String.t()}
+  def parse(scripts, extended, bash \\ nil)
+  def parse([], _extended, _bash), do: {:error, "no script specified"}
 
-  def parse(scripts, extended) do
+  def parse(scripts, extended, bash) do
     commands =
       Enum.flat_map(scripts, fn script ->
-        parse_script(script, extended)
+        parse_script(script, extended, bash)
       end)
 
     if Enum.any?(commands, &match?({:error, _}, &1)) do
@@ -46,28 +50,28 @@ defmodule JustBash.Commands.Sed.Parser do
     end
   end
 
-  defp parse_script(script, extended) do
+  defp parse_script(script, extended, bash) do
     script
     |> String.split(";")
     |> Enum.map(&String.trim/1)
     |> Enum.filter(&(&1 != ""))
-    |> Enum.map(&parse_command(&1, extended))
+    |> Enum.map(&parse_command(&1, extended, bash))
   end
 
-  defp parse_command(cmd, extended) do
-    case parse_address_and_command(cmd, extended) do
+  defp parse_command(cmd, extended, bash) do
+    case parse_address_and_command(cmd, extended, bash) do
       {:ok, result} -> result
       {:error, msg} -> {:error, msg}
     end
   end
 
-  defp parse_address_and_command(cmd, extended) do
-    {addr1, addr2, rest} = parse_addresses(cmd, extended)
+  defp parse_address_and_command(cmd, extended, bash) do
+    {addr1, addr2, rest} = parse_addresses(cmd, extended, bash)
 
     # Check for negation modifier (!)
     {negated, rest} = parse_negation(rest)
 
-    case parse_single_command(rest, extended) do
+    case parse_single_command(rest, extended, bash) do
       {:ok, command} ->
         {:ok, %{address1: addr1, address2: addr2, negated: negated, command: command}}
 
@@ -79,49 +83,54 @@ defmodule JustBash.Commands.Sed.Parser do
   defp parse_negation("!" <> rest), do: {true, String.trim_leading(rest)}
   defp parse_negation(rest), do: {false, rest}
 
-  defp parse_addresses(cmd, extended) do
+  defp parse_addresses(cmd, extended, bash) do
     case cmd do
       "$" <> rest ->
-        parse_address_with_optional_range(:last, String.trim_leading(rest), extended)
+        parse_address_with_optional_range(:last, String.trim_leading(rest), extended, bash)
 
       "/" <> _rest ->
-        parse_regex_first_address(cmd, extended)
+        parse_regex_first_address(cmd, extended, bash)
 
       _ ->
-        parse_line_number_address(cmd, extended)
+        parse_line_number_address(cmd, extended, bash)
     end
   end
 
-  defp parse_address_with_optional_range(addr1, rest, extended) do
+  defp parse_address_with_optional_range(addr1, rest, extended, bash) do
     if String.starts_with?(rest, ",") do
-      {addr2, rest2} = parse_second_address(String.slice(rest, 1..-1//1), extended)
+      {addr2, rest2} = parse_second_address(String.slice(rest, 1..-1//1), extended, bash)
       {addr1, addr2, rest2}
     else
       {addr1, nil, rest}
     end
   end
 
-  defp parse_regex_first_address(cmd, extended) do
-    case parse_regex_address(cmd, extended) do
+  defp parse_regex_first_address(cmd, extended, bash) do
+    case parse_regex_address(cmd, extended, bash) do
       {:ok, regex, rest} ->
-        parse_address_with_optional_range({:regex, regex}, String.trim_leading(rest), extended)
+        parse_address_with_optional_range(
+          {:regex, regex},
+          String.trim_leading(rest),
+          extended,
+          bash
+        )
 
       {:error, _} ->
         {nil, nil, cmd}
     end
   end
 
-  defp parse_line_number_address(cmd, extended) do
+  defp parse_line_number_address(cmd, extended, bash) do
     case Integer.parse(cmd) do
       {n, rest} ->
-        parse_address_with_optional_range({:line, n}, String.trim_leading(rest), extended)
+        parse_address_with_optional_range({:line, n}, String.trim_leading(rest), extended, bash)
 
       :error ->
         {nil, nil, cmd}
     end
   end
 
-  defp parse_second_address(rest, extended) do
+  defp parse_second_address(rest, extended, bash) do
     rest = String.trim_leading(rest)
 
     case rest do
@@ -129,7 +138,7 @@ defmodule JustBash.Commands.Sed.Parser do
         {:last, String.trim_leading(rest2)}
 
       "/" <> _rest ->
-        case parse_regex_address(rest, extended) do
+        case parse_regex_address(rest, extended, bash) do
           {:ok, regex, rest2} -> {{:regex, regex}, rest2}
           {:error, _} -> {nil, rest}
         end
@@ -142,10 +151,10 @@ defmodule JustBash.Commands.Sed.Parser do
     end
   end
 
-  defp parse_regex_address(str, extended) do
+  defp parse_regex_address(str, extended, bash) do
     case Regex.run(~r{^/([^/]*)/(.*)$}s, str) do
       [_, pattern, rest] ->
-        case compile_regex(pattern, [], extended) do
+        case compile_regex(pattern, [], extended, bash) do
           {:ok, regex} -> {:ok, regex, rest}
           {:error, _} = err -> err
         end
@@ -155,81 +164,81 @@ defmodule JustBash.Commands.Sed.Parser do
     end
   end
 
-  defp parse_single_command("", _extended), do: {:ok, :noop}
-  defp parse_single_command("d", _extended), do: {:ok, :delete}
-  defp parse_single_command("p", _extended), do: {:ok, :print}
+  defp parse_single_command("", _extended, _bash), do: {:ok, :noop}
+  defp parse_single_command("d", _extended, _bash), do: {:ok, :delete}
+  defp parse_single_command("p", _extended, _bash), do: {:ok, :print}
 
-  defp parse_single_command("s" <> rest, extended) do
-    parse_substitute_command(rest, extended)
+  defp parse_single_command("s" <> rest, extended, bash) do
+    parse_substitute_command(rest, extended, bash)
   end
 
   # a\ - append text after current line
-  defp parse_single_command("a\\" <> rest, _extended) do
+  defp parse_single_command("a\\" <> rest, _extended, _bash) do
     text = String.trim_leading(rest)
     {:ok, {:append, unescape_text(text)}}
   end
 
-  defp parse_single_command("a " <> rest, _extended) do
+  defp parse_single_command("a " <> rest, _extended, _bash) do
     {:ok, {:append, unescape_text(rest)}}
   end
 
   # i\ - insert text before current line
-  defp parse_single_command("i\\" <> rest, _extended) do
+  defp parse_single_command("i\\" <> rest, _extended, _bash) do
     text = String.trim_leading(rest)
     {:ok, {:insert, unescape_text(text)}}
   end
 
-  defp parse_single_command("i " <> rest, _extended) do
+  defp parse_single_command("i " <> rest, _extended, _bash) do
     {:ok, {:insert, unescape_text(rest)}}
   end
 
   # c\ - change (replace) current line with text
-  defp parse_single_command("c\\" <> rest, _extended) do
+  defp parse_single_command("c\\" <> rest, _extended, _bash) do
     text = String.trim_leading(rest)
     {:ok, {:change, unescape_text(text)}}
   end
 
-  defp parse_single_command("c " <> rest, _extended) do
+  defp parse_single_command("c " <> rest, _extended, _bash) do
     {:ok, {:change, unescape_text(rest)}}
   end
 
   # y/source/dest/ - transliterate characters
-  defp parse_single_command("y" <> rest, _extended) do
+  defp parse_single_command("y" <> rest, _extended, _bash) do
     parse_translate_command(rest)
   end
 
-  defp parse_single_command(other, _extended) do
+  defp parse_single_command(other, _extended, _bash) do
     {:error, "unknown command: #{String.first(other)}"}
   end
 
-  defp parse_substitute_command(rest, extended) do
+  defp parse_substitute_command(rest, extended, bash) do
     if String.length(rest) < 1 do
       {:error, "unterminated `s' command"}
     else
       delimiter = String.first(rest)
       rest = String.slice(rest, 1..-1//1)
-      parse_substitute_parts(rest, delimiter, extended)
+      parse_substitute_parts(rest, delimiter, extended, bash)
     end
   end
 
-  defp parse_substitute_parts(rest, delimiter, extended) do
+  defp parse_substitute_parts(rest, delimiter, extended, bash) do
     case split_by_delimiter(rest, delimiter) do
       {:ok, pattern, replacement, flags_str} ->
-        build_substitute_command(pattern, replacement, flags_str, extended)
+        build_substitute_command(pattern, replacement, flags_str, extended, bash)
 
       {:error, msg} ->
         {:error, msg}
     end
   end
 
-  defp build_substitute_command(pattern, replacement, flags_str, extended) do
+  defp build_substitute_command(pattern, replacement, flags_str, extended, bash) do
     flags = parse_substitute_flags(flags_str)
 
     # Empty pattern means "reuse last regex"
     if pattern == "" do
       {:ok, {:substitute, :last_regex, replacement, flags}}
     else
-      case compile_regex(pattern, flags, extended) do
+      case compile_regex(pattern, flags, extended, bash) do
         {:ok, regex} ->
           {:ok, {:substitute, regex, replacement, flags}}
 
@@ -310,9 +319,9 @@ defmodule JustBash.Commands.Sed.Parser do
   Compile a regex pattern with the given flags.
   Converts BRE (Basic Regular Expression) to ERE for Elixir's PCRE engine.
   """
-  @spec compile_regex(String.t(), substitute_flags(), boolean()) ::
+  @spec compile_regex(String.t(), substitute_flags(), boolean(), JustBash.t() | nil) ::
           {:ok, Regex.t()} | {:error, String.t()}
-  def compile_regex(pattern, flags, extended) do
+  def compile_regex(pattern, flags, extended, bash \\ nil) do
     # Convert BRE to ERE if not in extended mode
     # In BRE: \( \) \{ \} are special, ( ) { } are literal
     # In ERE (and PCRE): ( ) { } are special, \( \) \{ \} are literal
@@ -330,6 +339,8 @@ defmodule JustBash.Commands.Sed.Parser do
         ],
         & &1
       )
+
+    Limits.check_regex_pattern!(bash, converted_pattern)
 
     case Regex.compile(converted_pattern, regex_opts) do
       {:ok, regex} -> {:ok, regex}

@@ -6,6 +6,7 @@ defmodule JustBash.Commands.Sed.Executor do
   """
 
   alias JustBash.Commands.Sed.Parser
+  alias JustBash.Limits
 
   @type line_state :: %{
           pattern_space: String.t(),
@@ -23,8 +24,10 @@ defmodule JustBash.Commands.Sed.Executor do
 
   Returns the transformed output string.
   """
-  @spec execute(String.t(), [Parser.sed_command()], boolean()) :: String.t()
-  def execute(content, commands, silent) do
+  @spec execute(String.t(), [Parser.sed_command()], boolean(), JustBash.t() | nil) :: String.t()
+  def execute(content, commands, silent, bash \\ nil) do
+    Limits.check_regex_input!(bash, content)
+
     lines = String.split(content, "\n", trim: false)
 
     lines =

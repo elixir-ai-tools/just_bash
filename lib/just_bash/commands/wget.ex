@@ -15,6 +15,7 @@ defmodule JustBash.Commands.Wget do
 
   alias JustBash.Commands.Command
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limits
   alias JustBash.Network
 
   @impl true
@@ -107,33 +108,44 @@ defmodule JustBash.Commands.Wget do
   end
 
   defp handle_response(bash, response, %{output: "-"}) do
-    body = response.body || ""
-    {Command.ok(body), bash}
+    case Limits.enforce_http_body(bash, "wget", response.body) do
+      {:ok, body} -> {Command.ok(body), bash}
+      {:error, result, new_bash} -> {result, new_bash}
+    end
   end
 
   defp handle_response(bash, response, %{output: nil, url: url} = opts) do
-    # Default: derive filename from URL or use index.html
-    uri = URI.parse(url)
-    filename = Path.basename(uri.path || "index.html")
-    filename = if filename == "", do: "index.html", else: filename
-    write_to_file(bash, response, filename, opts)
+    case Limits.enforce_http_body(bash, "wget", response.body) do
+      {:ok, body} ->
+        response = %{response | body: body}
+        uri = URI.parse(url)
+        filename = Path.basename(uri.path || "index.html")
+        filename = if filename == "", do: "index.html", else: filename
+        write_to_file(bash, response, filename, opts)
+
+      {:error, result, new_bash} ->
+        {result, new_bash}
+    end
   end
 
   defp handle_response(bash, response, opts) do
-    write_to_file(bash, response, opts.output, opts)
+    case Limits.enforce_http_body(bash, "wget", response.body) do
+      {:ok, body} -> write_to_file(bash, %{response | body: body}, opts.output, opts)
+      {:error, result, new_bash} -> {result, new_bash}
+    end
   end
 
   defp write_to_file(bash, response, filename, opts) do
-    body = response.body || ""
+    body = response.body
     resolved = InMemoryFs.resolve_path(bash.cwd, filename)
 
-    case InMemoryFs.write_file(bash.fs, resolved, body) do
-      {:ok, new_fs} ->
+    case Limits.write_file(bash, resolved, body) do
+      {:ok, new_bash} ->
         progress = if opts.quiet, do: "", else: "Saving to: '#{filename}'\n"
-        {Command.ok(progress), %{bash | fs: new_fs}}
+        {Command.ok(progress), new_bash}
 
-      {:error, reason} ->
-        {Command.error("wget: #{filename}: #{reason}\n"), bash}
+      {:error, reason, new_bash} ->
+        {Command.error(Limits.command_write_error("wget", filename, reason)), new_bash}
     end
   end
 

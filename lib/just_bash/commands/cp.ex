@@ -4,6 +4,7 @@ defmodule JustBash.Commands.Cp do
 
   alias JustBash.Commands.Command
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limits
 
   @impl true
   def names, do: ["cp"]
@@ -17,8 +18,13 @@ defmodule JustBash.Commands.Cp do
 
         case InMemoryFs.read_file(bash.fs, src_resolved) do
           {:ok, content} ->
-            {:ok, new_fs} = InMemoryFs.write_file(bash.fs, dest_resolved, content)
-            {Command.ok(), %{bash | fs: new_fs}}
+            case Limits.write_file(bash, dest_resolved, content) do
+              {:ok, new_bash} ->
+                {Command.ok(), new_bash}
+
+              {:error, reason, new_bash} ->
+                {Command.error(Limits.command_write_error("cp", dest, reason)), new_bash}
+            end
 
           {:error, _} ->
             {Command.error("cp: cannot stat '#{src}': No such file or directory\n"), bash}

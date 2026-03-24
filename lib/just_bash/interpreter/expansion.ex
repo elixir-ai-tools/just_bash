@@ -14,6 +14,8 @@ defmodule JustBash.Interpreter.Expansion do
   alias JustBash.Interpreter.Expansion.Brace
   alias JustBash.Interpreter.Expansion.Glob
   alias JustBash.Interpreter.Expansion.Parameter
+  alias JustBash.Limits
+  alias JustBash.Security.Policy
 
   defmodule UnsetVariableError do
     @moduledoc "Raised when accessing an unset variable with set -u"
@@ -68,7 +70,10 @@ defmodule JustBash.Interpreter.Expansion do
 
   defp apply_assignments_to_bash(bash, assignments) do
     Enum.reduce(assignments, bash, fn {name, value}, acc ->
-      %{acc | env: Map.put(acc.env, name, value)}
+      case Limits.put_env(acc, name, value) do
+        {:ok, new_bash} -> new_bash
+        {:error, _result, new_bash} -> new_bash
+      end
     end)
   end
 
@@ -224,7 +229,7 @@ defmodule JustBash.Interpreter.Expansion do
     # Find matching close paren
     case find_cmd_sub_end(rest, 0, "") do
       {cmd, remaining} ->
-        output = execute_command_substitution(bash, parse_cmd_sub(cmd))
+        output = execute_command_substitution(bash, parse_cmd_sub(bash, cmd))
         do_expand_dollar_cmd_subs(remaining, bash, acc <> output)
 
       :error ->
@@ -262,7 +267,7 @@ defmodule JustBash.Interpreter.Expansion do
   defp do_expand_backtick_cmd_subs("`" <> rest, bash, acc) do
     case find_backtick_end(rest, "") do
       {cmd, remaining} ->
-        output = execute_command_substitution(bash, parse_cmd_sub(cmd))
+        output = execute_command_substitution(bash, parse_cmd_sub(bash, cmd))
         do_expand_backtick_cmd_subs(remaining, bash, acc <> output)
 
       :error ->
@@ -281,8 +286,13 @@ defmodule JustBash.Interpreter.Expansion do
     find_backtick_end(rest, acc <> c)
   end
 
-  defp parse_cmd_sub(cmd_str) do
-    case JustBash.Parser.parse(cmd_str) do
+  defp parse_cmd_sub(bash, cmd_str) do
+    parser_opts = [
+      max_input_bytes: Policy.get(bash, :max_input_bytes),
+      max_tokens: Policy.get(bash, :max_tokens)
+    ]
+
+    case JustBash.Parser.parse(cmd_str, parser_opts) do
       {:ok, script} -> script
       {:error, _} -> %AST.Script{statements: []}
     end
@@ -300,7 +310,13 @@ defmodule JustBash.Interpreter.Expansion do
   end
 
   defp execute_command_substitution(bash, %AST.Script{} = script) do
-    {result, _bash} = Executor.execute_script(bash, script)
+    {result, new_bash} = Executor.execute_script(bash, script)
+
+    if Limits.limit_error?(new_bash) do
+      violation = Limits.current_violation(new_bash)
+      raise Limits.ExceededError, message: violation.message, violation: violation
+    end
+
     String.trim_trailing(result.stdout, "\n")
   end
 

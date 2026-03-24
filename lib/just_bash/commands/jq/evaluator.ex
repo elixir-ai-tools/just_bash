@@ -25,6 +25,7 @@ defmodule JustBash.Commands.Jq.Evaluator do
     results = eval(ast, data, opts)
     results = wrap_results(results)
     results = Enum.reject(results, &(&1 == :empty))
+    check_result_limit!(results, opts)
     {:ok, results}
   rescue
     e -> {:error, Exception.message(e)}
@@ -640,7 +641,7 @@ defmodule JustBash.Commands.Jq.Evaluator do
     {:multi, results}
   end
 
-  defp do_eval({:recursive_descent}, data, _opts), do: {:multi, recursive_descent(data)}
+  defp do_eval({:recursive_descent}, data, opts), do: {:multi, recursive_descent(data, opts, 0)}
 
   # Arithmetic operators — handle multi-value results from subexpressions
   defp do_eval({:arith, op, left, right}, data, opts) do
@@ -1704,16 +1705,37 @@ defmodule JustBash.Commands.Jq.Evaluator do
   defp clamp_to_int64(n), do: n
 
   # Recursive descent helper
-  defp recursive_descent(data) when is_map(data) do
+  defp recursive_descent(data, opts, depth) when is_map(data) do
+    check_depth!(opts, depth)
     values = Map.values(data)
-    [data | Enum.flat_map(values, &recursive_descent/1)]
+    [data | Enum.flat_map(values, &recursive_descent(&1, opts, depth + 1))]
   end
 
-  defp recursive_descent(data) when is_list(data) do
-    [data | Enum.flat_map(data, &recursive_descent/1)]
+  defp recursive_descent(data, opts, depth) when is_list(data) do
+    check_depth!(opts, depth)
+    [data | Enum.flat_map(data, &recursive_descent(&1, opts, depth + 1))]
   end
 
-  defp recursive_descent(data), do: [data]
+  defp recursive_descent(data, opts, depth) do
+    check_depth!(opts, depth)
+    [data]
+  end
+
+  defp check_result_limit!(results, opts) do
+    max_results = Map.get(opts, :max_results, 10_000)
+
+    if length(results) > max_results do
+      throw({:eval_error, "jq result limit exceeded"})
+    end
+  end
+
+  defp check_depth!(opts, depth) do
+    max_depth = Map.get(opts, :max_depth, 64)
+
+    if depth > max_depth do
+      throw({:eval_error, "jq recursion depth limit exceeded"})
+    end
+  end
 
   # Error-handling helpers with implicit catch
   defp eval_optional(expr, data, opts) do

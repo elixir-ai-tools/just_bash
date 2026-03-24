@@ -5,6 +5,7 @@ defmodule JustBash.Commands.Grep do
   alias JustBash.Commands.Command
   alias JustBash.FlagParser
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limits
 
   @flag_spec %{
     boolean: [
@@ -69,7 +70,7 @@ defmodule JustBash.Commands.Grep do
   end
 
   defp execute_with_files(bash, pattern, files, flags) do
-    regex = compile_pattern(pattern, flags)
+    regex = compile_pattern(bash, pattern, flags)
 
     # Expand files recursively if -r flag is set
     expanded_files = expand_files(bash, files, flags.r)
@@ -89,43 +90,55 @@ defmodule JustBash.Commands.Grep do
   defp expand_files(_bash, files, false), do: files
 
   defp expand_files(bash, files, true) do
-    Enum.flat_map(files, fn file ->
-      resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    {expanded, _walk_count} =
+      Enum.reduce(files, {[], 0}, fn file, {acc, walk_count} ->
+        resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
-      case InMemoryFs.stat(bash.fs, resolved) do
-        {:ok, %{is_directory: true}} ->
-          find_files_recursive(bash.fs, resolved, file)
+        case InMemoryFs.stat(bash.fs, resolved) do
+          {:ok, %{is_directory: true}} ->
+            {found, new_walk_count} =
+              find_files_recursive(bash, bash.fs, resolved, file, walk_count)
 
-        {:ok, _} ->
-          [file]
+            {acc ++ found, new_walk_count}
 
-        {:error, _} ->
-          [file]
-      end
-    end)
+          {:ok, _} ->
+            {acc ++ [file], walk_count}
+
+          {:error, _} ->
+            {acc ++ [file], walk_count}
+        end
+      end)
+
+    expanded
   end
 
-  defp find_files_recursive(fs, full_path, display_path) do
+  defp find_files_recursive(bash, fs, full_path, display_path, walk_count) do
     case InMemoryFs.readdir(fs, full_path) do
       {:ok, entries} ->
-        Enum.flat_map(entries, fn entry ->
+        new_walk_count = walk_count + length(entries)
+        Limits.check_file_walk!(bash, new_walk_count)
+
+        Enum.reduce(entries, {[], new_walk_count}, fn entry, {acc, acc_walk_count} ->
           child_full = join_path(full_path, entry)
           child_display = join_path(display_path, entry)
 
           case InMemoryFs.stat(fs, child_full) do
             {:ok, %{is_directory: true}} ->
-              find_files_recursive(fs, child_full, child_display)
+              {found, next_walk_count} =
+                find_files_recursive(bash, fs, child_full, child_display, acc_walk_count)
+
+              {acc ++ found, next_walk_count}
 
             {:ok, _} ->
-              [child_display]
+              {acc ++ [child_display], acc_walk_count}
 
             {:error, _} ->
-              []
+              {acc, acc_walk_count}
           end
         end)
 
       {:error, _} ->
-        []
+        {[], walk_count}
     end
   end
 
@@ -138,7 +151,7 @@ defmodule JustBash.Commands.Grep do
     case InMemoryFs.read_file(bash.fs, resolved) do
       {:ok, content} ->
         prefix = if show_filename, do: "#{file}:", else: ""
-        lines = process_content(content, regex, flags, prefix)
+        lines = process_content(bash, content, regex, flags, prefix)
         matched = lines != []
         result = format_file_result(file, prefix, lines, matched, flags)
         {if(result, do: [result | acc], else: acc), had_match or matched}
@@ -171,8 +184,8 @@ defmodule JustBash.Commands.Grep do
   end
 
   defp execute_with_stdin(bash, pattern, stdin, flags) do
-    regex = compile_pattern(pattern, flags)
-    lines = process_content(stdin, regex, flags, "")
+    regex = compile_pattern(bash, pattern, flags)
+    lines = process_content(bash, stdin, regex, flags, "")
     matched = lines != []
 
     build_stdin_result(bash, lines, matched, flags)
@@ -195,7 +208,7 @@ defmodule JustBash.Commands.Grep do
     end
   end
 
-  defp compile_pattern(pattern, flags) do
+  defp compile_pattern(bash, pattern, flags) do
     opts = if flags.i, do: [:caseless], else: []
 
     regex_pattern =
@@ -212,6 +225,8 @@ defmodule JustBash.Commands.Grep do
         true ->
           pattern
       end
+
+    Limits.check_regex_pattern!(bash, regex_pattern)
 
     case Regex.compile(regex_pattern, opts) do
       {:ok, regex} -> regex
@@ -255,7 +270,9 @@ defmodule JustBash.Commands.Grep do
     prefix <> line_prefix <> content
   end
 
-  defp process_content(content, regex, flags, prefix) do
+  defp process_content(bash, content, regex, flags, prefix) do
+    Limits.check_regex_input!(bash, content)
+
     lines = String.split(content, "\n", trim: false)
 
     # Remove trailing empty string if input ended with newline

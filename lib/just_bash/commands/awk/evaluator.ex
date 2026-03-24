@@ -8,6 +8,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   alias JustBash.Commands.Awk.{Formatter, Parser}
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limits
 
   @type state :: %{
           nr: non_neg_integer(),
@@ -80,6 +81,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   defp process_files(file_data, rules, state) do
     Enum.reduce_while(file_data, state, fn {filename, content}, acc_state ->
+      Limits.check_regex_input!(acc_state.bash, content)
       lines = split_content(content)
       acc_state = %{acc_state | fnr: 0, filename: filename}
 
@@ -183,6 +185,8 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp pattern_matches?(nil, state), do: {true, state}
 
   defp pattern_matches?({:regex, pattern}, state) do
+    Limits.check_regex_pattern!(state.bash, pattern)
+
     result =
       case Regex.compile(pattern) do
         {:ok, regex} -> Regex.match?(regex, Enum.at(state.fields, 0, ""))

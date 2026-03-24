@@ -16,6 +16,7 @@ defmodule JustBash.Commands.Mktemp do
 
   alias JustBash.Commands.Command
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limits
 
   @impl true
   def names, do: ["mktemp"]
@@ -70,12 +71,12 @@ defmodule JustBash.Commands.Mktemp do
           {Command.error("mktemp: failed to create directory: #{reason}\n"), bash}
       end
     else
-      case InMemoryFs.write_file(bash.fs, resolved, "") do
-        {:ok, new_fs} ->
-          {Command.ok(path <> "\n"), %{bash | fs: new_fs}}
+      case Limits.write_file(bash, resolved, "") do
+        {:ok, new_bash} ->
+          {Command.ok(path <> "\n"), new_bash}
 
-        {:error, reason} ->
-          {Command.error("mktemp: failed to create file: #{reason}\n"), bash}
+        {:error, reason, new_bash} ->
+          {Command.error(Limits.command_write_error("mktemp", path, reason)), new_bash}
       end
     end
   end

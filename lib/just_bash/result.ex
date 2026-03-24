@@ -14,6 +14,8 @@ defmodule JustBash.Result do
   - `{:return, code}` - Return from function with exit code
   """
 
+  alias JustBash.Security.Violation
+
   @type signal ::
           {:break, pos_integer()}
           | {:continue, pos_integer()}
@@ -24,11 +26,12 @@ defmodule JustBash.Result do
           stdout: String.t(),
           stderr: String.t(),
           exit_code: non_neg_integer(),
-          signal: signal()
+          signal: signal(),
+          violation: Violation.t() | nil
         }
 
   @enforce_keys [:stdout, :stderr, :exit_code]
-  defstruct stdout: "", stderr: "", exit_code: 0, signal: nil
+  defstruct stdout: "", stderr: "", exit_code: 0, signal: nil, violation: nil
 
   @doc """
   Creates a new result with the given attributes.
@@ -47,7 +50,8 @@ defmodule JustBash.Result do
       stdout: Keyword.get(attrs, :stdout, ""),
       stderr: Keyword.get(attrs, :stderr, ""),
       exit_code: Keyword.get(attrs, :exit_code, 0),
-      signal: Keyword.get(attrs, :signal)
+      signal: Keyword.get(attrs, :signal),
+      violation: Keyword.get(attrs, :violation)
     }
   end
 
@@ -56,7 +60,7 @@ defmodule JustBash.Result do
   """
   @spec ok(String.t()) :: t()
   def ok(stdout \\ "") do
-    %__MODULE__{stdout: stdout, stderr: "", exit_code: 0, signal: nil}
+    %__MODULE__{stdout: stdout, stderr: "", exit_code: 0, signal: nil, violation: nil}
   end
 
   @doc """
@@ -64,7 +68,7 @@ defmodule JustBash.Result do
   """
   @spec error(String.t(), non_neg_integer()) :: t()
   def error(stderr, exit_code \\ 1) do
-    %__MODULE__{stdout: "", stderr: stderr, exit_code: exit_code, signal: nil}
+    %__MODULE__{stdout: "", stderr: stderr, exit_code: exit_code, signal: nil, violation: nil}
   end
 
   @doc """
@@ -72,7 +76,7 @@ defmodule JustBash.Result do
   """
   @spec break(pos_integer()) :: t()
   def break(level \\ 1) when level > 0 do
-    %__MODULE__{stdout: "", stderr: "", exit_code: 0, signal: {:break, level}}
+    %__MODULE__{stdout: "", stderr: "", exit_code: 0, signal: {:break, level}, violation: nil}
   end
 
   @doc """
@@ -80,7 +84,7 @@ defmodule JustBash.Result do
   """
   @spec continue(pos_integer()) :: t()
   def continue(level \\ 1) when level > 0 do
-    %__MODULE__{stdout: "", stderr: "", exit_code: 0, signal: {:continue, level}}
+    %__MODULE__{stdout: "", stderr: "", exit_code: 0, signal: {:continue, level}, violation: nil}
   end
 
   @doc """
@@ -88,7 +92,13 @@ defmodule JustBash.Result do
   """
   @spec return(non_neg_integer()) :: t()
   def return(exit_code \\ 0) do
-    %__MODULE__{stdout: "", stderr: "", exit_code: exit_code, signal: {:return, exit_code}}
+    %__MODULE__{
+      stdout: "",
+      stderr: "",
+      exit_code: exit_code,
+      signal: {:return, exit_code},
+      violation: nil
+    }
   end
 
   @doc """
@@ -151,7 +161,8 @@ defmodule JustBash.Result do
       stdout: target.stdout <> source.stdout,
       stderr: target.stderr <> source.stderr,
       exit_code: source.exit_code,
-      signal: source.signal || target.signal
+      signal: source.signal || target.signal,
+      violation: source.violation || target.violation
     }
   end
 
@@ -161,6 +172,7 @@ defmodule JustBash.Result do
   @spec to_map(t()) :: map()
   def to_map(%__MODULE__{} = result) do
     base = %{stdout: result.stdout, stderr: result.stderr, exit_code: result.exit_code}
+    base = if result.violation, do: Map.put(base, :violation, result.violation), else: base
 
     case result.signal do
       {:break, n} -> Map.put(base, :__break__, n)
@@ -187,7 +199,8 @@ defmodule JustBash.Result do
       stdout: Map.get(map, :stdout, ""),
       stderr: Map.get(map, :stderr, ""),
       exit_code: Map.get(map, :exit_code, 0),
-      signal: signal
+      signal: signal,
+      violation: Map.get(map, :violation)
     }
   end
 end

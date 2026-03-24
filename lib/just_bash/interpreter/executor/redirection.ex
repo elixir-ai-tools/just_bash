@@ -15,6 +15,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   alias JustBash.AST
   alias JustBash.Fs.InMemoryFs
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Limits
 
   @type result :: %{stdout: String.t(), stderr: String.t(), exit_code: non_neg_integer()}
   @type redir_type ::
@@ -162,60 +163,48 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   end
 
   defp write_to_file(bash, path, content, result, stream) do
-    case InMemoryFs.write_file(bash.fs, path, content) do
-      {:ok, new_fs} ->
+    case Limits.write_file(bash, path, content) do
+      {:ok, new_bash} ->
         updated_result = clear_stream(result, stream)
-        {updated_result, %{bash | fs: new_fs}}
+        {updated_result, new_bash}
 
-      {:error, reason} ->
+      {:error, reason, new_bash} ->
         error_msg = format_redirection_error(path, reason)
-        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, bash}
+        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, new_bash}
     end
   end
 
   defp append_to_file(bash, path, content, result, stream) do
-    current_content =
-      case InMemoryFs.read_file(bash.fs, path) do
-        {:ok, existing} -> existing
-        {:error, _} -> ""
-      end
-
-    case InMemoryFs.write_file(bash.fs, path, current_content <> content) do
-      {:ok, new_fs} ->
+    case Limits.append_file(bash, path, content) do
+      {:ok, new_bash} ->
         updated_result = clear_stream(result, stream)
-        {updated_result, %{bash | fs: new_fs}}
+        {updated_result, new_bash}
 
-      {:error, reason} ->
+      {:error, reason, new_bash} ->
         error_msg = format_redirection_error(path, reason)
-        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, bash}
+        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, new_bash}
     end
   end
 
   defp write_combined_to_file(bash, path, content, result) do
-    case InMemoryFs.write_file(bash.fs, path, content) do
-      {:ok, new_fs} ->
-        {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
+    case Limits.write_file(bash, path, content) do
+      {:ok, new_bash} ->
+        {%{result | stdout: "", stderr: ""}, new_bash}
 
-      {:error, reason} ->
+      {:error, reason, new_bash} ->
         error_msg = format_redirection_error(path, reason)
-        {%{result | stderr: error_msg, exit_code: 1}, bash}
+        {%{result | stderr: error_msg, exit_code: 1}, new_bash}
     end
   end
 
   defp append_combined_to_file(bash, path, content, result) do
-    current_content =
-      case InMemoryFs.read_file(bash.fs, path) do
-        {:ok, existing} -> existing
-        {:error, _} -> ""
-      end
+    case Limits.append_file(bash, path, content) do
+      {:ok, new_bash} ->
+        {%{result | stdout: "", stderr: ""}, new_bash}
 
-    case InMemoryFs.write_file(bash.fs, path, current_content <> content) do
-      {:ok, new_fs} ->
-        {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
-
-      {:error, reason} ->
+      {:error, reason, new_bash} ->
         error_msg = format_redirection_error(path, reason)
-        {%{result | stderr: error_msg, exit_code: 1}, bash}
+        {%{result | stderr: error_msg, exit_code: 1}, new_bash}
     end
   end
 
@@ -223,16 +212,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   defp clear_stream(result, :stderr), do: %{result | stderr: ""}
 
   defp format_redirection_error(path, reason) do
-    msg =
-      case reason do
-        :eisdir -> "Is a directory"
-        :enoent -> "No such file or directory"
-        :enotdir -> "Not a directory"
-        :eacces -> "Permission denied"
-        other -> "#{other}"
-      end
-
-    "bash: #{path}: #{msg}\n"
+    Limits.write_error_message(path, reason)
   end
 
   # --- Stdin Content Extraction ---

@@ -19,6 +19,7 @@ defmodule JustBash.Commands.Curl do
   alias JustBash.Commands.ArgParser
   alias JustBash.Commands.Command
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limits
   alias JustBash.Network
 
   @default_timeout 30_000
@@ -193,8 +194,14 @@ defmodule JustBash.Commands.Curl do
   end
 
   defp handle_response(bash, response, opts) do
-    output = build_output(response, opts)
-    write_output(bash, output, opts)
+    case Limits.enforce_http_body(bash, "curl", response.body) do
+      {:ok, body} ->
+        output = build_output(%{response | body: body}, opts)
+        write_output(bash, output, opts)
+
+      {:error, result, new_bash} ->
+        {result, new_bash}
+    end
   end
 
   defp write_output(bash, output, %{output_file: nil}) do
@@ -204,13 +211,13 @@ defmodule JustBash.Commands.Curl do
   defp write_output(bash, output, opts) do
     resolved = InMemoryFs.resolve_path(bash.cwd, opts.output_file)
 
-    case InMemoryFs.write_file(bash.fs, resolved, output) do
-      {:ok, new_fs} ->
+    case Limits.write_file(bash, resolved, output) do
+      {:ok, new_bash} ->
         progress = if opts.silent, do: "", else: "  % Total    % Received\n"
-        {Command.ok(progress), %{bash | fs: new_fs}}
+        {Command.ok(progress), new_bash}
 
-      {:error, reason} ->
-        {Command.error("curl: #{opts.output_file}: #{reason}\n"), bash}
+      {:error, reason, new_bash} ->
+        {Command.error(Limits.command_write_error("curl", opts.output_file, reason)), new_bash}
     end
   end
 
@@ -230,14 +237,7 @@ defmodule JustBash.Commands.Curl do
       if opts.head_only do
         output
       else
-        body =
-          case response.body do
-            nil -> ""
-            b when is_binary(b) -> b
-            other -> inspect(other)
-          end
-
-        output <> body
+        output <> response.body
       end
 
     output

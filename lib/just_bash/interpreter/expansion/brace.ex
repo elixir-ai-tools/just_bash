@@ -9,6 +9,7 @@ defmodule JustBash.Interpreter.Expansion.Brace do
 
   alias JustBash.AST
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Limits
 
   @typedoc "Pending variable assignments from expansions"
   @type pending_assignments :: Expansion.pending_assignments()
@@ -38,11 +39,13 @@ defmodule JustBash.Interpreter.Expansion.Brace do
 
       {prefix_parts, brace_exp, suffix_parts} ->
         expanded_items = expand_brace_items(bash, brace_exp.items)
+        Limits.check_expanded_words!(bash, length(expanded_items))
 
         {words, all_assigns} =
           Enum.reduce(expanded_items, {[], []}, fn item, {words_acc, assigns_acc} ->
             new_parts = prefix_parts ++ [%AST.Literal{value: item}] ++ suffix_parts
             {new_words, new_assigns} = expand_with_brace(bash, new_parts)
+            Limits.check_expanded_words!(bash, length(words_acc) + length(new_words))
             {words_acc ++ new_words, assigns_acc ++ new_assigns}
           end)
 
@@ -61,21 +64,28 @@ defmodule JustBash.Interpreter.Expansion.Brace do
         words
 
       {:range, start_val, end_val, step} ->
-        expand_range(start_val, end_val, step)
+        expand_range(bash, start_val, end_val, step)
     end)
   end
 
   @doc """
   Expand a range (numeric or character).
   """
-  @spec expand_range(integer() | String.t(), integer() | String.t(), integer() | nil) :: [
+  @spec expand_range(
+          JustBash.t(),
+          integer() | String.t(),
+          integer() | String.t(),
+          integer() | nil
+        ) :: [
           String.t()
         ]
-  def expand_range(start_val, end_val, step)
+  def expand_range(bash, start_val, end_val, step)
       when is_integer(start_val) and is_integer(end_val) do
     step = step || if start_val <= end_val, do: 1, else: -1
 
     if (step > 0 and start_val <= end_val) or (step < 0 and start_val >= end_val) do
+      Limits.check_expanded_words!(bash, div(abs(end_val - start_val), abs(step)) + 1)
+
       Range.new(start_val, end_val, step)
       |> Enum.map(&Integer.to_string/1)
     else
@@ -83,13 +93,15 @@ defmodule JustBash.Interpreter.Expansion.Brace do
     end
   end
 
-  def expand_range(start_val, end_val, step)
+  def expand_range(bash, start_val, end_val, step)
       when is_binary(start_val) and is_binary(end_val) do
     start_char = :binary.first(start_val)
     end_char = :binary.first(end_val)
     step = step || if start_char <= end_char, do: 1, else: -1
 
     if (step > 0 and start_char <= end_char) or (step < 0 and start_char >= end_char) do
+      Limits.check_expanded_words!(bash, div(abs(end_char - start_char), abs(step)) + 1)
+
       Range.new(start_char, end_char, step)
       |> Enum.map(&<<&1>>)
     else

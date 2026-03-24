@@ -4,6 +4,7 @@ defmodule JustBash.Commands.Find do
 
   alias JustBash.Commands.Command
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limits
 
   @impl true
   def names, do: ["find"]
@@ -17,8 +18,8 @@ defmodule JustBash.Commands.Find do
       {:ok, opts} ->
         paths = if opts.paths == [], do: ["."], else: opts.paths
 
-        {results, stderr, exit_code} =
-          Enum.reduce(paths, {[], "", 0}, fn path, acc ->
+        {results, stderr, exit_code, _walk_count} =
+          Enum.reduce(paths, {[], "", 0, 0}, fn path, acc ->
             find_in_path(bash, path, opts, acc)
           end)
 
@@ -31,15 +32,15 @@ defmodule JustBash.Commands.Find do
     end
   end
 
-  defp find_in_path(bash, path, opts, {acc_results, acc_stderr, acc_code}) do
+  defp find_in_path(bash, path, opts, {acc_results, acc_stderr, acc_code, walk_count}) do
     resolved = InMemoryFs.resolve_path(bash.cwd, path)
 
-    case find_recursive(bash.fs, resolved, path, opts, 0) do
-      {:ok, found} ->
-        {acc_results ++ found, acc_stderr, acc_code}
+    case find_recursive(bash, bash.fs, resolved, path, opts, 0, walk_count) do
+      {:ok, found, new_walk_count} ->
+        {acc_results ++ found, acc_stderr, acc_code, new_walk_count}
 
       {:error, msg} ->
-        {acc_results, acc_stderr <> msg, 1}
+        {acc_results, acc_stderr <> msg, 1, walk_count}
     end
   end
 
@@ -134,22 +135,25 @@ defmodule JustBash.Commands.Find do
     parse_exec_args(rest, [arg | acc])
   end
 
-  defp find_recursive(fs, full_path, display_path, opts, depth) do
+  defp find_recursive(bash, fs, full_path, display_path, opts, depth, walk_count) do
     if exceeds_maxdepth?(opts, depth) do
-      {:ok, []}
+      {:ok, [], walk_count}
     else
-      find_at_path(fs, full_path, display_path, opts, depth)
+      find_at_path(bash, fs, full_path, display_path, opts, depth, walk_count)
     end
   end
 
   defp exceeds_maxdepth?(opts, depth), do: opts.maxdepth != nil and depth > opts.maxdepth
 
-  defp find_at_path(fs, full_path, display_path, opts, depth) do
+  defp find_at_path(bash, fs, full_path, display_path, opts, depth, walk_count) do
     case InMemoryFs.stat(fs, full_path) do
       {:ok, stat} ->
         current = collect_current_match(display_path, stat, opts, depth)
-        children = find_children(fs, full_path, display_path, stat, opts, depth)
-        {:ok, current ++ children}
+
+        {children, new_walk_count} =
+          find_children(bash, fs, full_path, display_path, stat, opts, depth, walk_count)
+
+        {:ok, current ++ children, new_walk_count}
 
       {:error, _} ->
         {:error, "find: #{display_path}: No such file or directory\n"}
@@ -163,33 +167,48 @@ defmodule JustBash.Commands.Find do
     if matches, do: [display_path], else: []
   end
 
-  defp find_children(fs, full_path, display_path, stat, opts, depth) do
+  defp find_children(bash, fs, full_path, display_path, stat, opts, depth, walk_count) do
     if stat.is_directory do
-      find_directory_children(fs, full_path, display_path, opts, depth)
+      find_directory_children(bash, fs, full_path, display_path, opts, depth, walk_count)
     else
-      []
+      {[], walk_count}
     end
   end
 
-  defp find_directory_children(fs, full_path, display_path, opts, depth) do
+  defp find_directory_children(bash, fs, full_path, display_path, opts, depth, walk_count) do
     case InMemoryFs.readdir(fs, full_path) do
       {:ok, entries} ->
-        Enum.flat_map(entries, fn entry ->
-          find_child_entry(fs, full_path, display_path, entry, opts, depth)
+        new_walk_count = walk_count + length(entries)
+        Limits.check_file_walk!(bash, new_walk_count)
+
+        Enum.reduce(entries, {[], new_walk_count}, fn entry, {acc, acc_walk_count} ->
+          {found, next_walk_count} =
+            find_child_entry(
+              bash,
+              fs,
+              full_path,
+              display_path,
+              entry,
+              opts,
+              depth,
+              acc_walk_count
+            )
+
+          {acc ++ found, next_walk_count}
         end)
 
       {:error, _} ->
-        []
+        {[], walk_count}
     end
   end
 
-  defp find_child_entry(fs, full_path, display_path, entry, opts, depth) do
+  defp find_child_entry(bash, fs, full_path, display_path, entry, opts, depth, walk_count) do
     child_full = join_path(full_path, entry)
     child_display = join_display_path(display_path, entry)
 
-    case find_recursive(fs, child_full, child_display, opts, depth + 1) do
-      {:ok, found} -> found
-      {:error, _} -> []
+    case find_recursive(bash, fs, child_full, child_display, opts, depth + 1, walk_count) do
+      {:ok, found, new_walk_count} -> {found, new_walk_count}
+      {:error, _} -> {[], walk_count}
     end
   end
 

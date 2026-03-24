@@ -108,6 +108,11 @@ defmodule JustBashTest do
       {:error, error} = JustBash.parse("if then")
       assert error.message =~ "Expected"
     end
+
+    test "returns error for lexer failures instead of raising" do
+      assert {:error, error} = JustBash.parse("echo '")
+      assert error.message =~ "Lexer error"
+    end
   end
 
   describe "exec/2" do
@@ -164,6 +169,50 @@ defmodule JustBashTest do
       {result, _bash} = JustBash.exec_file(bash, "/nonexistent.sh")
       assert result.exit_code == 1
       assert result.stderr =~ "nonexistent.sh"
+    end
+  end
+
+  describe "security policy" do
+    test "builds a centralized security policy from new/1 options" do
+      bash = JustBash.new(security: [max_steps: 7, max_input_bytes: 99])
+
+      assert bash.security.max_steps == 7
+      assert bash.security.max_input_bytes == 99
+    end
+
+    test "accepts a strict security preset" do
+      bash = JustBash.new(security: :strict)
+
+      assert bash.security.max_steps < JustBash.new().security.max_steps
+      assert bash.security.max_output_bytes < JustBash.new().security.max_output_bytes
+    end
+
+    test "accepts a public security policy struct" do
+      policy = JustBash.Security.strict_policy()
+      bash = JustBash.new(security: policy)
+
+      assert bash.security == policy
+    end
+
+    test "accepts security keyword overrides" do
+      bash = JustBash.new(security: [profile: :strict, max_steps: 77, max_input_bytes: 123])
+
+      assert bash.security.max_steps == 77
+      assert bash.security.max_input_bytes == 123
+    end
+
+    test "uses security as the canonical limit configuration" do
+      bash = JustBash.new(security: [max_steps: 9])
+
+      assert bash.security.max_steps == 9
+    end
+
+    test "rejects top-level security limit options" do
+      assert_raise ArgumentError,
+                   ~r/top-level security limit options are no longer supported/,
+                   fn ->
+                     JustBash.new(max_steps: 9)
+                   end
     end
   end
 end

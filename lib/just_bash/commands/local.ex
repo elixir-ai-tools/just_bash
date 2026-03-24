@@ -9,6 +9,7 @@ defmodule JustBash.Commands.Local do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Limits
 
   @impl true
   def names, do: ["local", "declare", "typeset"]
@@ -16,8 +17,11 @@ defmodule JustBash.Commands.Local do
   @impl true
   def execute(bash, args, _stdin) do
     {flags, rest} = extract_flags(args)
-    bash = process_declarations(bash, rest, flags)
-    {Command.ok(""), bash}
+
+    case process_declarations(bash, rest, flags) do
+      {:ok, new_bash} -> {Command.ok(""), new_bash}
+      {:error, result, new_bash} -> {result, new_bash}
+    end
   end
 
   defp extract_flags(args) do
@@ -27,31 +31,43 @@ defmodule JustBash.Commands.Local do
   defp process_declarations(bash, args, flags) do
     is_assoc = "-A" in flags
 
-    Enum.reduce(args, bash, fn arg, acc ->
-      process_arg(arg, acc, is_assoc)
+    Enum.reduce_while(args, {:ok, bash}, fn arg, {:ok, acc} ->
+      case process_arg(arg, acc, is_assoc) do
+        {:ok, new_bash} -> {:cont, {:ok, new_bash}}
+        {:error, result, new_bash} -> {:halt, {:error, result, new_bash}}
+      end
     end)
   end
 
   defp process_arg(arg, bash, is_assoc) do
     case String.split(arg, "=", parts: 2) do
       [name, value] when name != "" ->
-        bash
-        |> put_env(name, value)
-        |> track_local(name)
-        |> maybe_mark_assoc(name, is_assoc)
+        with {:ok, bash} <- put_env(bash, name, value) do
+          {:ok,
+           bash
+           |> track_local(name)
+           |> maybe_mark_assoc(name, is_assoc)}
+        end
 
       [name] when name != "" ->
-        bash
-        |> put_env(name, "")
-        |> track_local(name)
-        |> maybe_mark_assoc(name, is_assoc)
+        with {:ok, bash} <- put_env(bash, name, "") do
+          {:ok,
+           bash
+           |> track_local(name)
+           |> maybe_mark_assoc(name, is_assoc)}
+        end
 
       _ ->
-        bash
+        {:ok, bash}
     end
   end
 
-  defp put_env(bash, name, value), do: %{bash | env: Map.put(bash.env, name, value)}
+  defp put_env(bash, name, value) do
+    case Limits.put_env(bash, name, value) do
+      {:ok, new_bash} -> {:ok, new_bash}
+      {:error, result, new_bash} -> {:error, result, new_bash}
+    end
+  end
 
   defp maybe_mark_assoc(bash, name, true) do
     new_assoc = MapSet.put(bash.interpreter.assoc_arrays, name)

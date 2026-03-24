@@ -5,6 +5,8 @@ defmodule JustBash.Commands.Jq.Parser do
   Converts jq filter strings into an AST for evaluation.
   """
 
+  alias JustBash.Commands.Jq.Evaluator.Functions
+
   @type ast ::
           :identity
           | :empty
@@ -1608,8 +1610,19 @@ defmodule JustBash.Commands.Jq.Parser do
   # User-defined function names may not, so we keep them as strings to avoid
   # atom table exhaustion from adversarial input.
   defp safe_to_atom(name) when is_binary(name) do
-    String.to_existing_atom(name)
-  rescue
-    ArgumentError -> name
+    if builtin_function_name?(name) do
+      String.to_atom(name)
+    else
+      name
+    end
+  end
+
+  defp builtin_function_name?(name) do
+    name_with_arity = name <> "/0"
+
+    Functions.builtins_list()
+    |> Enum.any?(fn builtin ->
+      builtin == name_with_arity or String.starts_with?(builtin, name <> "/")
+    end)
   end
 end

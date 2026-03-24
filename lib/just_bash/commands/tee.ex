@@ -4,6 +4,7 @@ defmodule JustBash.Commands.Tee do
 
   alias JustBash.Commands.Command
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limits
 
   @impl true
   def names, do: ["tee"]
@@ -15,10 +16,7 @@ defmodule JustBash.Commands.Tee do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        {new_fs, stderr, exit_code} =
-          write_files(bash.fs, bash.cwd, opts.files, stdin, opts.append)
-
-        new_bash = %{bash | fs: new_fs}
+        {new_bash, stderr, exit_code} = write_files(bash, opts.files, stdin, opts.append)
 
         result = %{
           stdout: stdin,
@@ -52,44 +50,47 @@ defmodule JustBash.Commands.Tee do
     parse_args(rest, %{opts | files: opts.files ++ [file]})
   end
 
-  defp write_files(fs, cwd, files, content, append) do
-    Enum.reduce(files, {fs, "", 0}, fn file, {acc_fs, acc_stderr, acc_code} ->
+  defp write_files(bash, files, content, append) do
+    Enum.reduce_while(files, {bash, "", 0}, fn file, {acc_bash, acc_stderr, acc_code} ->
       # /dev/null is a black hole - just ignore writes to it
       if file == "/dev/null" do
-        {acc_fs, acc_stderr, acc_code}
+        {:cont, {acc_bash, acc_stderr, acc_code}}
       else
-        resolved = InMemoryFs.resolve_path(cwd, file)
-        write_single_file(acc_fs, resolved, file, content, append, acc_stderr, acc_code)
+        resolved = InMemoryFs.resolve_path(acc_bash.cwd, file)
+        write_single_file(acc_bash, resolved, file, content, append, acc_stderr, acc_code)
       end
     end)
   end
 
-  defp write_single_file(fs, resolved, file, content, append, acc_stderr, acc_code) do
+  defp write_single_file(bash, resolved, file, content, append, acc_stderr, acc_code) do
     parent = Path.dirname(resolved)
 
-    case InMemoryFs.stat(fs, parent) do
+    case InMemoryFs.stat(bash.fs, parent) do
       {:ok, %{is_directory: true}} ->
-        do_write_file(fs, resolved, file, content, append, acc_stderr, acc_code)
+        do_write_file(bash, resolved, file, content, append, acc_stderr, acc_code)
 
       _ ->
-        {fs, acc_stderr <> "tee: #{file}: No such file or directory\n", 1}
+        {:halt, {bash, acc_stderr <> "tee: #{file}: No such file or directory\n", 1}}
     end
   end
 
-  defp do_write_file(fs, resolved, file, content, append, acc_stderr, acc_code) do
-    result = write_or_append(fs, resolved, content, append)
+  defp do_write_file(bash, resolved, file, content, append, acc_stderr, acc_code) do
+    result = write_or_append(bash, resolved, content, append)
 
     case result do
-      {:ok, new_fs} -> {new_fs, acc_stderr, acc_code}
-      {:error, _} -> {fs, acc_stderr <> "tee: #{file}: Is a directory\n", 1}
+      {:ok, new_bash} ->
+        {:cont, {new_bash, acc_stderr, acc_code}}
+
+      {:error, reason, new_bash} ->
+        {:halt, {new_bash, acc_stderr <> Limits.command_write_error("tee", file, reason), 1}}
     end
   end
 
-  defp write_or_append(fs, resolved, content, true) do
-    InMemoryFs.append_file(fs, resolved, content)
+  defp write_or_append(bash, resolved, content, true) do
+    Limits.append_file(bash, resolved, content)
   end
 
-  defp write_or_append(fs, resolved, content, false) do
-    InMemoryFs.write_file(fs, resolved, content)
+  defp write_or_append(bash, resolved, content, false) do
+    Limits.write_file(bash, resolved, content)
   end
 end

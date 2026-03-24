@@ -351,10 +351,11 @@ defmodule JustBash.Parser.Compound do
   defp parse_cond_primary(parser, helpers) do
     cond do
       helpers.check?(parser, [:lparen]) ->
+        parser = helpers.enter_nested(parser)
         {_token, parser} = helpers.advance(parser)
         {expr, parser} = parse_conditional_expr(parser, helpers)
         {_token, parser} = helpers.expect(parser, :rparen, "Expected ')' in conditional")
-        {%AST.CondGroup{expression: expr}, parser}
+        {%AST.CondGroup{expression: expr}, helpers.leave_nested(parser)}
 
       unary_cond_op?(parser, helpers) ->
         {op_token, parser} = helpers.advance(parser)

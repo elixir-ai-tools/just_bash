@@ -15,6 +15,7 @@ defmodule JustBash.Interpreter.Executor.Conditional do
   alias JustBash.AST
   alias JustBash.Fs.InMemoryFs
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Limits
 
   @type unary_op_type ::
           :file_exists
@@ -237,12 +238,18 @@ defmodule JustBash.Interpreter.Executor.Conditional do
         Map.put(acc, "BASH_REMATCH[#{idx}]", value)
       end)
 
-    %{bash | env: env}
+    case Limits.replace_env(bash, env) do
+      {:ok, new_bash} -> new_bash
+      {:error, _result, new_bash} -> new_bash
+    end
   end
 
   # Clear all BASH_REMATCH entries from env
   defp clear_bash_rematch(bash) do
-    %{bash | env: clear_bash_rematch_env(bash.env)}
+    case Limits.replace_env(bash, clear_bash_rematch_env(bash.env)) do
+      {:ok, new_bash} -> new_bash
+      {:error, _result, new_bash} -> new_bash
+    end
   end
 
   defp clear_bash_rematch_env(env) do

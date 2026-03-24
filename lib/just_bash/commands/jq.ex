@@ -25,6 +25,7 @@ defmodule JustBash.Commands.Jq do
   alias JustBash.Commands.Command
   alias JustBash.Commands.Jq.{Evaluator, Parser}
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Security.Policy
 
   @impl true
   def names, do: ["jq"]
@@ -46,8 +47,14 @@ defmodule JustBash.Commands.Jq do
   defp execute_jq(bash, opts, stdin) do
     opts =
       opts
+      |> Map.put(:bash, bash)
       |> Map.put(:fs, bash.fs)
       |> Map.put(:module_paths, bash.jq_module_paths)
+      |> Map.put(:max_results, Policy.get(bash, :max_jq_results))
+      |> Map.put(:max_depth, Policy.get(bash, :max_jq_depth))
+      |> Map.put(:max_input_bytes, Policy.get(bash, :max_jq_input_bytes))
+      |> Map.put(:max_input_depth, Policy.get(bash, :max_jq_input_depth))
+      |> Map.put(:max_work_items, Policy.get(bash, :max_jq_work_items))
 
     case get_input(bash, opts, stdin) do
       {:error, msg} ->
@@ -135,17 +142,23 @@ defmodule JustBash.Commands.Jq do
   end
 
   defp parse_non_empty_input(input, opts) do
-    if opts.slurp do
-      parse_slurp_input(input)
-    else
-      case Jason.decode(input) do
-        {:ok, data} -> {:ok, data}
-        {:error, _} -> {:error, "jq: parse error: Invalid JSON\n"}
-      end
+    case validate_json_input(input, opts) do
+      :ok ->
+        if opts.slurp do
+          parse_slurp_input(input, opts)
+        else
+          case Jason.decode(input) do
+            {:ok, data} -> {:ok, data}
+            {:error, _} -> {:error, "jq: parse error: Invalid JSON\n"}
+          end
+        end
+
+      {:error, _} = error ->
+        error
     end
   end
 
-  defp parse_slurp_input(input) do
+  defp parse_slurp_input(input, opts) do
     lines =
       input
       |> String.split("\n")
@@ -154,9 +167,15 @@ defmodule JustBash.Commands.Jq do
 
     results =
       Enum.reduce_while(lines, {:ok, []}, fn line, {:ok, acc} ->
-        case Jason.decode(line) do
-          {:ok, data} -> {:cont, {:ok, acc ++ [data]}}
-          {:error, _} -> {:halt, {:error, "jq: parse error: Invalid JSON\n"}}
+        case validate_json_input(line, opts) do
+          :ok ->
+            case Jason.decode(line) do
+              {:ok, data} -> {:cont, {:ok, acc ++ [data]}}
+              {:error, _} -> {:halt, {:error, "jq: parse error: Invalid JSON\n"}}
+            end
+
+          {:error, _} = error ->
+            {:halt, error}
         end
       end)
 
@@ -164,6 +183,53 @@ defmodule JustBash.Commands.Jq do
       {:ok, list} -> {:ok, list}
       error -> error
     end
+  end
+
+  defp validate_json_input(input, opts) do
+    cond do
+      byte_size(input) > opts.max_input_bytes ->
+        {:error, "jq: jq input size limit exceeded\n"}
+
+      json_nesting_depth(input) > opts.max_input_depth ->
+        {:error, "jq: jq input nesting limit exceeded\n"}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp json_nesting_depth(input) do
+    input
+    |> String.to_charlist()
+    |> Enum.reduce({0, 0, false, false}, fn char, {depth, max_depth, in_string, escaped} ->
+      cond do
+        in_string and escaped ->
+          {depth, max_depth, true, false}
+
+        in_string and char == ?\\ ->
+          {depth, max_depth, true, true}
+
+        in_string and char == ?" ->
+          {depth, max_depth, false, false}
+
+        in_string ->
+          {depth, max_depth, true, false}
+
+        char == ?" ->
+          {depth, max_depth, true, false}
+
+        char in [?{, ?[] ->
+          new_depth = depth + 1
+          {new_depth, max(max_depth, new_depth), false, false}
+
+        char in [?}, ?]] ->
+          {max(depth - 1, 0), max_depth, false, false}
+
+        true ->
+          {depth, max_depth, false, false}
+      end
+    end)
+    |> elem(1)
   end
 
   defp format_output(results, opts) do

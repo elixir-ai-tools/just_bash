@@ -16,7 +16,9 @@ defmodule JustBash.Interpreter.Executor do
   alias JustBash.Interpreter.Executor.Loop
   alias JustBash.Interpreter.Executor.Redirection
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Limits
   alias JustBash.Result
+  alias JustBash.Security.Policy
 
   @type result :: %{
           :stdout => String.t(),
@@ -31,6 +33,31 @@ defmodule JustBash.Interpreter.Executor do
   """
   @spec execute_script(JustBash.t(), AST.Script.t()) :: {result(), JustBash.t()}
   def execute_script(bash, %AST.Script{statements: statements}) do
+    if Limits.limit_error?(bash) do
+      {%{stdout: "", stderr: Limits.current_violation_message(bash), exit_code: 1}, bash}
+    else
+      exec_depth = bash.interpreter.exec_depth + 1
+
+      if exec_depth > Policy.get(bash, :max_exec_depth) do
+        message = "bash: maximum execution depth exceeded\n"
+        limit_bash = Limits.put_limit_error(bash, message)
+        {Limits.limit_result(message), limit_bash}
+      else
+        framed_bash = %{bash | interpreter: %{bash.interpreter | exec_depth: exec_depth}}
+
+        {result, final_bash} = do_execute_script(framed_bash, statements)
+
+        restored_interpreter = %{
+          final_bash.interpreter
+          | exec_depth: bash.interpreter.exec_depth
+        }
+
+        {%{result | env: final_bash.env}, %{final_bash | interpreter: restored_interpreter}}
+      end
+    end
+  end
+
+  defp do_execute_script(bash, statements) do
     {final_bash, stdout_io, stderr_io, exit_code, _halted} =
       Enum.reduce_while(statements, {bash, [], [], 0, false}, fn stmt, {b, out, err, _code, _} ->
         {result, new_bash} = execute_statement(b, stmt)
@@ -39,13 +66,17 @@ defmodule JustBash.Interpreter.Executor do
         # Use iodata - O(1) prepend, single flatten at end
         acc = {new_bash, [out, result.stdout], [err, result.stderr], result.exit_code, false}
 
-        # Check errexit: exit if enabled and command failed
-        # Note: errexit doesn't apply to statements with && or || operators
-        if new_bash.shell_opts.errexit and result.exit_code != 0 and
-             not has_short_circuit_operators?(stmt) do
+        if Limits.limit_error?(new_bash) do
           {:halt, put_elem(acc, 4, true)}
         else
-          {:cont, acc}
+          # Check errexit: exit if enabled and command failed
+          # Note: errexit doesn't apply to statements with && or || operators
+          if new_bash.shell_opts.errexit and result.exit_code != 0 and
+               not has_short_circuit_operators?(stmt) do
+            {:halt, put_elem(acc, 4, true)}
+          else
+            {:cont, acc}
+          end
         end
       end)
 
@@ -53,7 +84,8 @@ defmodule JustBash.Interpreter.Executor do
       stdout: IO.iodata_to_binary(stdout_io),
       stderr: IO.iodata_to_binary(stderr_io),
       exit_code: exit_code,
-      env: final_bash.env
+      env: final_bash.env,
+      violation: Limits.current_violation(final_bash)
     }
 
     {result, final_bash}
@@ -123,16 +155,29 @@ defmodule JustBash.Interpreter.Executor do
         # Check for control signals using Result struct for type safety
         new_control = extract_control_signal(result)
 
-        execute_pipelines(
-          new_bash,
-          rest,
-          next_operators,
-          result.exit_code,
-          [stdout_io, result.stdout],
-          [stderr_io, result.stderr],
-          next_op,
-          new_control
-        )
+        if Limits.limit_error?(new_bash) do
+          execute_pipelines(
+            new_bash,
+            [],
+            next_operators,
+            result.exit_code,
+            [stdout_io, result.stdout],
+            [stderr_io, result.stderr],
+            next_op,
+            new_control
+          )
+        else
+          execute_pipelines(
+            new_bash,
+            rest,
+            next_operators,
+            result.exit_code,
+            [stdout_io, result.stdout],
+            [stderr_io, result.stderr],
+            next_op,
+            new_control
+          )
+        end
       else
         execute_pipelines(
           bash,
@@ -168,12 +213,19 @@ defmodule JustBash.Interpreter.Executor do
   def execute_pipeline(bash, %AST.Pipeline{commands: commands, negated: negated}) do
     # Track all exit codes for pipefail (prepend for O(1), reverse at end)
     {final_result, final_bash, exit_codes_reversed} =
-      Enum.reduce(commands, {%{stdout: "", stderr: "", exit_code: 0}, bash, []}, fn cmd,
-                                                                                    {prev_result,
-                                                                                     current_bash,
-                                                                                     codes} ->
+      Enum.reduce_while(commands, {%{stdout: "", stderr: "", exit_code: 0}, bash, []}, fn cmd,
+                                                                                          {prev_result,
+                                                                                           current_bash,
+                                                                                           codes} ->
         {result, new_bash} = execute_command(current_bash, cmd, prev_result.stdout)
-        {result, new_bash, [result.exit_code | codes]}
+        {result, new_bash} = Limits.enforce_output(new_bash, result)
+        acc = {result, new_bash, [result.exit_code | codes]}
+
+        if Limits.limit_error?(new_bash) do
+          {:halt, acc}
+        else
+          {:cont, acc}
+        end
       end)
 
     exit_codes = Enum.reverse(exit_codes_reversed)
@@ -216,7 +268,10 @@ defmodule JustBash.Interpreter.Executor do
         Map.put(env, "PIPESTATUS[#{idx}]", to_string(code))
       end)
 
-    %{bash | env: new_env}
+    case Limits.replace_env(bash, new_env) do
+      {:ok, new_bash} -> new_bash
+      {:error, _result, new_bash} -> new_bash
+    end
   end
 
   @doc """
@@ -229,7 +284,12 @@ defmodule JustBash.Interpreter.Executor do
     # credo:disable-for-next-line Credo.Check.Readability.PreferImplicitTry
     try do
       new_bash = execute_assignments(bash, assignments)
-      {%{stdout: "", stderr: "", exit_code: 0}, new_bash}
+
+      if Limits.limit_error?(new_bash) do
+        {Limits.limit_result(Limits.current_violation(new_bash)), new_bash}
+      else
+        {%{stdout: "", stderr: "", exit_code: 0}, new_bash}
+      end
     rescue
       e in ArithmeticError ->
         {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
@@ -316,9 +376,14 @@ defmodule JustBash.Interpreter.Executor do
   def execute_command(bash, %AST.ArithmeticCommand{expression: expr}, _stdin) do
     case JustBash.Arithmetic.evaluate(expr.expression, bash.env) do
       {:ok, value, new_env} ->
-        new_bash = %{bash | env: new_env}
-        exit_code = if value == 0, do: 1, else: 0
-        {%{stdout: "", stderr: "", exit_code: exit_code}, new_bash}
+        case Limits.replace_env(bash, new_env) do
+          {:ok, new_bash} ->
+            exit_code = if value == 0, do: 1, else: 0
+            {%{stdout: "", stderr: "", exit_code: exit_code}, new_bash}
+
+          {:error, result, new_bash} ->
+            {result, new_bash}
+        end
 
       {:error, :division_by_zero, _env} ->
         error_msg = "bash: division by 0 (error token is \"0\")\n"
@@ -339,50 +404,74 @@ defmodule JustBash.Interpreter.Executor do
 
   defp do_execute_simple_command(bash, name, args, assignments, redirs, stdin) do
     temp_bash = execute_assignments(bash, assignments)
-    {cmd_name, cmd_assigns} = Expansion.expand_word_parts(temp_bash, name.parts)
 
-    # Apply any assignments from ${VAR:=default} expansions
-    temp_bash = apply_pending_assignments(temp_bash, cmd_assigns)
+    if Limits.limit_error?(temp_bash) do
+      {Limits.limit_result(Limits.current_violation(temp_bash)), temp_bash}
+    else
+      try do
+        {cmd_name, cmd_assigns} = Expansion.expand_word_parts(temp_bash, name.parts)
 
-    # Expand args sequentially, applying any assignments between each
-    # This ensures side effects like $((x++)) are visible to subsequent args
-    # Use prepend for O(1) and reverse at end for correct order
-    {expanded_args_reversed, temp_bash} =
-      Enum.reduce(args, {[], temp_bash}, fn arg, {acc, current_bash} ->
-        {expanded, arg_assigns} = Expansion.expand_word_with_glob(current_bash, arg.parts)
-        current_bash = apply_pending_assignments(current_bash, arg_assigns)
-        # Prepend expanded (which is a list) reversed, so final reverse gives correct order
-        {Enum.reverse(expanded) ++ acc, current_bash}
-      end)
+        # Apply any assignments from ${VAR:=default} expansions
+        temp_bash = apply_pending_assignments(temp_bash, cmd_assigns)
 
-    expanded_args = Enum.reverse(expanded_args_reversed)
+        if Limits.limit_error?(temp_bash) do
+          {Limits.limit_result(Limits.current_violation(temp_bash)), temp_bash}
+        else
+          # Expand args sequentially, applying any assignments between each
+          # This ensures side effects like $((x++)) are visible to subsequent args
+          # Use prepend for O(1) and reverse at end for correct order
+          {expanded_args_reversed, temp_bash} =
+            Enum.reduce(args, {[], temp_bash}, fn arg, {acc, current_bash} ->
+              {expanded, arg_assigns} = Expansion.expand_word_with_glob(current_bash, arg.parts)
+              current_bash = apply_pending_assignments(current_bash, arg_assigns)
+              # Prepend expanded (which is a list) reversed, so final reverse gives correct order
+              {Enum.reverse(expanded) ++ acc, current_bash}
+            end)
 
-    # Extract heredoc content as stdin if present
-    {heredoc_stdin, non_heredoc_redirs} = Redirection.extract_heredoc_stdin(temp_bash, redirs)
-    effective_stdin = heredoc_stdin || stdin
+          expanded_args = Enum.reverse(expanded_args_reversed)
 
-    {result, exec_bash} =
-      case Map.get(temp_bash.functions, cmd_name) do
-        nil ->
-          case Map.get(temp_bash.commands, cmd_name) do
-            nil ->
-              execute_builtin(temp_bash, cmd_name, expanded_args, effective_stdin)
+          # Extract heredoc content as stdin if present
+          {heredoc_stdin, non_heredoc_redirs} =
+            Redirection.extract_heredoc_stdin(temp_bash, redirs)
 
-            module ->
-              execute_custom_command(temp_bash, cmd_name, module, expanded_args, effective_stdin)
-          end
+          effective_stdin = heredoc_stdin || stdin
 
-        func_body ->
-          execute_function(temp_bash, func_body, expanded_args)
+          {result, exec_bash} =
+            case Map.get(temp_bash.functions, cmd_name) do
+              nil ->
+                case Map.get(temp_bash.commands, cmd_name) do
+                  nil ->
+                    execute_builtin(temp_bash, cmd_name, expanded_args, effective_stdin)
+
+                  module ->
+                    execute_custom_command(
+                      temp_bash,
+                      cmd_name,
+                      module,
+                      expanded_args,
+                      effective_stdin
+                    )
+                end
+
+              func_body ->
+                execute_function(temp_bash, func_body, expanded_args)
+            end
+
+          Redirection.apply_redirections(result, exec_bash, non_heredoc_redirs)
+        end
+      rescue
+        e in Expansion.UnsetVariableError ->
+          {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
+
+        e in ArithmeticError ->
+          {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
+
+        e in Limits.ExceededError ->
+          violation = e.violation || Limits.violation(:limit_exceeded, Exception.message(e))
+          limit_bash = Limits.put_violation(temp_bash, violation)
+          {Limits.limit_result(violation), limit_bash}
       end
-
-    Redirection.apply_redirections(result, exec_bash, non_heredoc_redirs)
-  rescue
-    e in Expansion.UnsetVariableError ->
-      {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
-
-    e in ArithmeticError ->
-      {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
+    end
   end
 
   # --- If/Case Execution ---
@@ -511,19 +600,23 @@ defmodule JustBash.Interpreter.Executor do
         new_out = out <> result.stdout
         new_err = err <> result.stderr
 
-        # Check for control flow signals using Result struct
-        case extract_control_signal(result) do
-          {:break, n} ->
-            {:halt, {new_bash, new_out, new_err, 0, {:break, n}}}
+        if Limits.limit_error?(new_bash) do
+          {:halt, {new_bash, new_out, new_err, result.exit_code, nil}}
+        else
+          # Check for control flow signals using Result struct
+          case extract_control_signal(result) do
+            {:break, n} ->
+              {:halt, {new_bash, new_out, new_err, 0, {:break, n}}}
 
-          {:continue, n} ->
-            {:halt, {new_bash, new_out, new_err, 0, {:continue, n}}}
+            {:continue, n} ->
+              {:halt, {new_bash, new_out, new_err, 0, {:continue, n}}}
 
-          {:return, n} ->
-            {:halt, {new_bash, new_out, new_err, n, {:return, n}}}
+            {:return, n} ->
+              {:halt, {new_bash, new_out, new_err, n, {:return, n}}}
 
-          nil ->
-            {:cont, {new_bash, new_out, new_err, result.exit_code, nil}}
+            nil ->
+              {:cont, {new_bash, new_out, new_err, result.exit_code, nil}}
+          end
         end
       end)
 
@@ -558,7 +651,7 @@ defmodule JustBash.Interpreter.Executor do
   defp execute_function(bash, body, args) do
     depth = bash.interpreter.call_depth + 1
 
-    if depth > bash.max_call_depth do
+    if depth > Policy.get(bash, :max_call_depth) do
       {%{stdout: "", stderr: "bash: maximum call depth exceeded\n", exit_code: 1}, bash}
     else
       # Save caller's positional parameters so we can restore them after the function
@@ -577,37 +670,41 @@ defmodule JustBash.Interpreter.Executor do
         |> Map.put("@", Enum.join(args, " "))
         |> Map.put("*", Enum.join(args, " "))
 
-      func_bash = %{
-        bash
-        | env: Map.merge(bash.env, positional_env),
-          interpreter: func_interpreter
-      }
+      case Limits.replace_env(bash, Map.merge(bash.env, positional_env)) do
+        {:error, result, new_bash} ->
+          {result, new_bash}
 
-      {result, func_final_bash} = execute_body(func_bash, [body])
+        {:ok, env_bash} ->
+          func_bash = %{env_bash | interpreter: func_interpreter}
 
-      # Propagate all side effects (env, fs, functions, etc.) but:
-      # 1. Restore the caller's positional parameters ($1..$N, $#, $@, $*)
-      # 2. Revert local variables to their caller values (or remove if new)
-      # 3. Restore caller's interpreter state (locals tracker, drop function-local assoc markers)
-      local_names = func_final_bash.interpreter.locals
+          {result, func_final_bash} = execute_body(func_bash, [body])
 
-      restored_env =
-        func_final_bash.env
-        |> strip_positional_params()
-        |> Map.merge(caller_positionals)
-        |> revert_locals(local_names, bash.env)
+          # Propagate all side effects (env, fs, functions, etc.) but:
+          # 1. Restore the caller's positional parameters ($1..$N, $#, $@, $*)
+          # 2. Revert local variables to their caller values (or remove if new)
+          # 3. Restore caller's interpreter state (locals tracker, drop function-local assoc markers)
+          local_names = func_final_bash.interpreter.locals
 
-      # Restore caller's assoc_arrays, discarding any declared inside the function
-      # (fixes the __assoc__* leak where function-local declare -A markers persisted)
-      restored_interpreter = %{
-        func_final_bash.interpreter
-        | locals: caller_interpreter.locals,
-          assoc_arrays: caller_interpreter.assoc_arrays,
-          call_depth: caller_interpreter.call_depth
-      }
+          restored_env =
+            func_final_bash.env
+            |> strip_positional_params()
+            |> Map.merge(caller_positionals)
+            |> revert_locals(local_names, bash.env)
 
-      final_bash = %{func_final_bash | env: restored_env, interpreter: restored_interpreter}
-      {%{stdout: result.stdout, stderr: result.stderr, exit_code: result.exit_code}, final_bash}
+          # Restore caller's assoc_arrays, discarding any declared inside the function
+          # (fixes the __assoc__* leak where function-local declare -A markers persisted)
+          restored_interpreter = %{
+            func_final_bash.interpreter
+            | locals: caller_interpreter.locals,
+              assoc_arrays: caller_interpreter.assoc_arrays,
+              call_depth: caller_interpreter.call_depth
+          }
+
+          final_bash = %{func_final_bash | env: restored_env, interpreter: restored_interpreter}
+
+          {%{stdout: result.stdout, stderr: result.stderr, exit_code: result.exit_code},
+           final_bash}
+      end
     end
   end
 
@@ -669,7 +766,11 @@ defmodule JustBash.Interpreter.Executor do
           # Expand variable references in associative array subscripts
           # e.g. arr[$key] should store as arr[expanded_key]
           resolved_name = expand_assignment_subscript(acc, name)
-          %{acc | env: Map.put(acc.env, resolved_name, expanded_value)}
+
+          case Limits.put_env(acc, resolved_name, expanded_value) do
+            {:ok, new_bash} -> new_bash
+            {:error, _result, new_bash} -> new_bash
+          end
 
         elements when is_list(elements) ->
           # Array assignment: arr=(a b c) or arr=($(echo "a b c"))
@@ -702,7 +803,10 @@ defmodule JustBash.Interpreter.Executor do
           first_element = Map.get(env, "#{name}[0]", "")
           env = Map.put(env, name, first_element)
 
-          %{acc | env: env}
+          case Limits.replace_env(acc, env) do
+            {:ok, new_bash} -> new_bash
+            {:error, _result, new_bash} -> new_bash
+          end
       end
     end)
   end
@@ -752,23 +856,43 @@ defmodule JustBash.Interpreter.Executor do
 
   defp apply_pending_assignments(bash, assignments) do
     Enum.reduce(assignments, bash, fn {name, value}, acc ->
-      %{acc | env: Map.put(acc.env, name, value)}
+      case Limits.put_env(acc, name, value) do
+        {:ok, new_bash} -> new_bash
+        {:error, _result, new_bash} -> new_bash
+      end
     end)
   end
 
   defp execute_builtin(bash, cmd, args, stdin) do
-    case Registry.get(cmd) do
-      nil ->
-        {%{stdout: "", stderr: "bash: #{cmd}: command not found\n", exit_code: 127}, bash}
+    case maybe_bump_step(bash, cmd) do
+      {:error, result, new_bash} ->
+        {result, new_bash}
 
-      module ->
-        module.execute(bash, args, stdin)
+      {:ok, step_bash} ->
+        case Registry.get(cmd) do
+          nil ->
+            {%{stdout: "", stderr: "bash: #{cmd}: command not found\n", exit_code: 127},
+             step_bash}
+
+          module ->
+            module.execute(step_bash, args, stdin)
+        end
     end
   end
 
   @control_signal_keys [:__break__, :__continue__, :__return__]
 
   defp execute_custom_command(bash, cmd_name, module, args, stdin) do
+    case Limits.bump_step(bash) do
+      {:error, result, new_bash} ->
+        {result, new_bash}
+
+      {:ok, step_bash} ->
+        do_execute_custom_command(step_bash, cmd_name, module, args, stdin)
+    end
+  end
+
+  defp do_execute_custom_command(bash, cmd_name, module, args, stdin) do
     # credo:disable-for-next-line Credo.Check.Readability.PreferImplicitTry
     try do
       case module.execute(bash, args, stdin) do
@@ -796,4 +920,7 @@ defmodule JustBash.Interpreter.Executor do
   defp custom_command_error(bash, cmd_name, message) do
     {%{stdout: "", stderr: "bash: #{cmd_name}: #{message}\n", exit_code: 1}, bash}
   end
+
+  defp maybe_bump_step(bash, cmd) when cmd in ["eval", "source", ".", "trap"], do: {:ok, bash}
+  defp maybe_bump_step(bash, _cmd), do: Limits.bump_step(bash)
 end

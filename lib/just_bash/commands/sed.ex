@@ -15,6 +15,7 @@ defmodule JustBash.Commands.Sed do
   alias JustBash.Commands.Command
   alias JustBash.Commands.Sed.{Executor, Parser}
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limits
 
   @impl true
   def names, do: ["sed"]
@@ -39,7 +40,7 @@ defmodule JustBash.Commands.Sed do
   end
 
   defp execute_scripts(bash, opts, stdin) do
-    case Parser.parse(opts.scripts, opts.extended_regex) do
+    case Parser.parse(opts.scripts, opts.extended_regex, bash) do
       {:error, msg} ->
         {Command.error("sed: #{msg}\n"), bash}
 
@@ -50,7 +51,7 @@ defmodule JustBash.Commands.Sed do
 
   defp execute_commands(bash, commands, opts, stdin) do
     if opts.files == [] do
-      output = Executor.execute(stdin, commands, opts.silent)
+      output = Executor.execute(stdin, commands, opts.silent, bash)
       {Command.ok(output), bash}
     else
       execute_on_files(bash, commands, opts)
@@ -212,14 +213,14 @@ defmodule JustBash.Commands.Sed do
   end
 
   defp write_processed_content(bash, resolved, file, content, commands, opts) do
-    output = Executor.execute(content, commands, opts.silent)
+    output = Executor.execute(content, commands, opts.silent, bash)
 
-    case InMemoryFs.write_file(bash.fs, resolved, output) do
-      {:ok, new_fs} ->
-        {:cont, {:ok, %{bash | fs: new_fs}}}
+    case Limits.write_file(bash, resolved, output) do
+      {:ok, new_bash} ->
+        {:cont, {:ok, new_bash}}
 
-      {:error, _} ->
-        {:halt, {:error, "sed: #{file}: cannot write\n"}}
+      {:error, reason, _new_bash} ->
+        {:halt, {:error, Limits.command_write_error("sed", file, reason)}}
     end
   end
 end

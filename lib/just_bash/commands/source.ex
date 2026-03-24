@@ -11,6 +11,7 @@ defmodule JustBash.Commands.Source do
   alias JustBash.Fs.InMemoryFs
   alias JustBash.Interpreter.Executor
   alias JustBash.Parser
+  alias JustBash.Security.Policy
 
   @impl true
   def names, do: ["source", "."]
@@ -47,7 +48,12 @@ defmodule JustBash.Commands.Source do
   end
 
   defp execute_script_content(bash, content) do
-    case Parser.parse(content) do
+    parser_opts = [
+      max_input_bytes: Policy.get(bash, :max_input_bytes),
+      max_tokens: Policy.get(bash, :max_tokens)
+    ]
+
+    case Parser.parse(content, parser_opts) do
       {:ok, ast} ->
         Executor.execute_script(bash, ast)
 

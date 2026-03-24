@@ -3,11 +3,13 @@ defmodule JustBash.Commands.Read do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Limits
 
   @impl true
   def names, do: ["read"]
 
   @impl true
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def execute(bash, args, stdin) do
     {_flags, var_names} = parse_flags(args)
 
@@ -29,7 +31,11 @@ defmodule JustBash.Commands.Read do
     # Note: "" (empty string) means no input. "\n" means one empty line.
     if effective_stdin == "" do
       new_env = assign_empty(bash.env, var_names)
-      {Command.error("", 1), %{bash | env: new_env}}
+
+      case Limits.replace_env(bash, new_env) do
+        {:ok, new_bash} -> {Command.error("", 1), new_bash}
+        {:error, result, new_bash} -> {result, new_bash}
+      end
     else
       # Split into lines and consume the first one
       lines = String.split(effective_stdin, "\n", parts: 2)
@@ -40,13 +46,21 @@ defmodule JustBash.Commands.Read do
         [only_line] ->
           new_env = split_and_assign(bash.env, only_line, var_names)
           new_interp = %{bash.interpreter | stdin: nil}
-          {Command.error("", 1), %{bash | env: new_env, interpreter: new_interp}}
+
+          case Limits.replace_env(bash, new_env) do
+            {:ok, new_bash} -> {Command.error("", 1), %{new_bash | interpreter: new_interp}}
+            {:error, result, new_bash} -> {result, %{new_bash | interpreter: new_interp}}
+          end
 
         # Line followed by more content (or empty string after final newline)
         [first_line, rest] ->
           new_env = split_and_assign(bash.env, first_line, var_names)
           new_interp = %{bash.interpreter | stdin: if(rest == "", do: nil, else: rest)}
-          {Command.ok(), %{bash | env: new_env, interpreter: new_interp}}
+
+          case Limits.replace_env(bash, new_env) do
+            {:ok, new_bash} -> {Command.ok(), %{new_bash | interpreter: new_interp}}
+            {:error, result, new_bash} -> {result, %{new_bash | interpreter: new_interp}}
+          end
       end
     end
   end

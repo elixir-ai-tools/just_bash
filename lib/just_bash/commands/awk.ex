@@ -15,6 +15,7 @@ defmodule JustBash.Commands.Awk do
   alias JustBash.Commands.Awk.{Evaluator, Parser}
   alias JustBash.Commands.Command
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limits
 
   @impl true
   def names, do: ["awk"]
@@ -65,9 +66,9 @@ defmodule JustBash.Commands.Awk do
         # Write any file outputs from print/printf redirections
         bash =
           Enum.reduce(file_outputs, bash, fn {filename, content}, acc_bash ->
-            case InMemoryFs.write_file(acc_bash.fs, filename, content) do
-              {:ok, fs} -> %{acc_bash | fs: fs}
-              {:error, _} -> acc_bash
+            case Limits.write_file(acc_bash, filename, content) do
+              {:ok, new_bash} -> new_bash
+              {:error, _reason, new_bash} -> new_bash
             end
           end)
 

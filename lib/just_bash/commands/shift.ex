@@ -10,6 +10,7 @@ defmodule JustBash.Commands.Shift do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Limits
 
   @impl true
   def names, do: ["shift"]
@@ -38,7 +39,10 @@ defmodule JustBash.Commands.Shift do
         |> Map.put("#", to_string(new_count))
         |> update_at_and_star(n, new_count)
 
-      {Command.ok(""), %{bash | env: new_env}}
+      case Limits.replace_env(bash, new_env) do
+        {:ok, new_bash} -> {Command.ok(""), new_bash}
+        {:error, result, new_bash} -> {result, new_bash}
+      end
     end
   end
 

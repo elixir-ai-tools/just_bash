@@ -10,9 +10,13 @@ Supports optional network access via `curl` and `wget` with HTTPS-only enforceme
 
 ## Security Model
 
-JustBash treats shell code as untrusted and sandboxes it in memory. Custom commands passed via
-`:commands` are trusted host-side extensions supplied by the library caller, and JustBash does not
-sandbox them or provide safety guarantees for them.
+JustBash treats shell code as untrusted by default.
+
+It executes that code in-process against an in-memory virtual filesystem under explicit resource
+limits. Those limits are enabled by default and are intended to stop parsing, expansion, jq, output,
+filesystem, and traversal abuse from growing without bound. Custom commands passed via `:commands`
+are trusted host-side extensions supplied by the library caller, and JustBash does not sandbox them
+or provide safety guarantees for them.
 
 - The shell only has access to the provided virtual filesystem
 - No access to the real filesystem by default
@@ -20,11 +24,14 @@ sandbox them or provide safety guarantees for them.
 - Network access can be enabled with host allowlists — HTTPS-only by default
 - Custom commands are outside the sandbox and can bypass the virtual filesystem and network policy
 
+See `SECURITY.md` for the detailed security model, default guarantees, policy presets, and
+structured violation handling.
+
 ## Installation
 
 ```elixir
 def deps do
-  [{:just_bash, "~> 0.1.0"}]
+  [{:just_bash, "~> 0.2.0"}]
 end
 ```
 
@@ -48,6 +55,22 @@ bash = JustBash.new(
   env: %{"MY_VAR" => "value"},              # Environment variables
   cwd: "/app"                                # Starting directory
 )
+```
+
+### Security Policy
+
+```elixir
+# Safe defaults for untrusted code
+bash = JustBash.new()
+
+# Tighter limits
+bash = JustBash.new(security: :strict)
+
+# Looser limits
+bash = JustBash.new(security: :relaxed)
+
+# Custom tuning
+bash = JustBash.new(security: [profile: :strict, max_steps: 10_000])
 ```
 
 ### Network Access
@@ -198,6 +221,7 @@ result.stdout      # String
 result.stderr      # String
 result.exit_code   # Integer
 result.env         # Updated environment
+result.violation   # Structured security failure metadata or nil
 
 # Execute script from virtual filesystem
 {result, bash} = JustBash.exec_file(bash, "/path/to/script.sh")
@@ -208,6 +232,25 @@ result.env         # Updated environment
 # Format script
 {:ok, formatted} = JustBash.format("if true;then echo yes;fi")
 ```
+
+## Upgrading
+
+### From 0.1.x / 0.2.x
+
+Top-level `max_iterations` and `max_call_depth` options have been removed in favor of the
+centralized `security:` option. Passing the old options will raise an `ArgumentError` with
+migration guidance.
+
+```elixir
+# Before
+bash = JustBash.new(max_iterations: 5_000, max_call_depth: 100)
+
+# After
+bash = JustBash.new(security: [max_iterations: 5_000, max_call_depth: 100])
+```
+
+All 25 resource limits are now configured through `security:`. See `SECURITY.md` for the
+full list and preset details.
 
 ## Development
 

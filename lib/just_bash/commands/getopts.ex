@@ -18,6 +18,7 @@ defmodule JustBash.Commands.Getopts do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Limits
 
   @impl true
   def names, do: ["getopts"]
@@ -49,8 +50,7 @@ defmodule JustBash.Commands.Getopts do
 
     if index >= length(args) do
       # No more arguments
-      env = Map.put(bash.env, name, "?")
-      {%{stdout: "", stderr: "", exit_code: 1}, %{bash | env: env}}
+      with_env_update(bash, Map.put(bash.env, name, "?"), %{stdout: "", stderr: "", exit_code: 1})
     else
       arg = Enum.at(args, index)
       parse_argument(bash, optstring, name, arg, args, optind)
@@ -61,8 +61,11 @@ defmodule JustBash.Commands.Getopts do
     cond do
       # Not an option (doesn't start with -)
       not String.starts_with?(arg, "-") ->
-        env = Map.put(bash.env, name, "?")
-        {%{stdout: "", stderr: "", exit_code: 1}, %{bash | env: env}}
+        with_env_update(
+          bash,
+          Map.put(bash.env, name, "?"),
+          %{stdout: "", stderr: "", exit_code: 1}
+        )
 
       # End of options marker
       arg == "--" ->
@@ -71,7 +74,7 @@ defmodule JustBash.Commands.Getopts do
           |> Map.put(name, "?")
           |> Map.put("OPTIND", to_string(optind + 1))
 
-        {%{stdout: "", stderr: "", exit_code: 1}, %{bash | env: env}}
+        with_env_update(bash, env, %{stdout: "", stderr: "", exit_code: 1})
 
       # Option
       true ->
@@ -85,8 +88,11 @@ defmodule JustBash.Commands.Getopts do
 
     if opt_char == nil do
       # Just "-" by itself
-      env = Map.put(bash.env, name, "?")
-      {%{stdout: "", stderr: "", exit_code: 1}, %{bash | env: env}}
+      with_env_update(
+        bash,
+        Map.put(bash.env, name, "?"),
+        %{stdout: "", stderr: "", exit_code: 1}
+      )
     else
       handle_option(bash, optstring, name, opt_char, arg, args, optind)
     end
@@ -112,7 +118,7 @@ defmodule JustBash.Commands.Getopts do
             "getopts: illegal option -- #{opt_char}\n"
           end
 
-        {%{stdout: "", stderr: stderr, exit_code: 0}, %{bash | env: env}}
+        with_env_update(bash, env, %{stdout: "", stderr: stderr, exit_code: 0})
 
       needs_argument?(optstring, opt_index) ->
         # Option requires argument
@@ -138,7 +144,7 @@ defmodule JustBash.Commands.Getopts do
             |> Map.put("OPTIND", to_string(optind + 1))
           end
 
-        {Command.ok(""), %{bash | env: env}}
+        with_env_update(bash, env, Command.ok(""))
     end
   end
 
@@ -154,7 +160,7 @@ defmodule JustBash.Commands.Getopts do
           |> Map.put("OPTARG", remaining)
           |> Map.put("OPTIND", to_string(optind + 1))
 
-        {Command.ok(""), %{bash | env: env}}
+        with_env_update(bash, env, Command.ok(""))
 
       optind < length(args) ->
         # Argument is next positional param
@@ -166,7 +172,7 @@ defmodule JustBash.Commands.Getopts do
           |> Map.put("OPTARG", opt_arg)
           |> Map.put("OPTIND", to_string(optind + 2))
 
-        {Command.ok(""), %{bash | env: env}}
+        with_env_update(bash, env, Command.ok(""))
 
       true ->
         # Missing required argument
@@ -183,7 +189,14 @@ defmodule JustBash.Commands.Getopts do
             "getopts: option requires an argument -- #{opt_char}\n"
           end
 
-        {%{stdout: "", stderr: stderr, exit_code: 0}, %{bash | env: env}}
+        with_env_update(bash, env, %{stdout: "", stderr: stderr, exit_code: 0})
+    end
+  end
+
+  defp with_env_update(bash, env, result) do
+    case Limits.replace_env(bash, env) do
+      {:ok, new_bash} -> {result, new_bash}
+      {:error, limit_result, new_bash} -> {limit_result, new_bash}
     end
   end
 

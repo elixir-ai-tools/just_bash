@@ -11,6 +11,7 @@ defmodule JustBash.Commands.Eval do
 
   alias JustBash.Interpreter.Executor
   alias JustBash.Parser
+  alias JustBash.Security.Policy
 
   @impl true
   def names, do: ["eval"]
@@ -23,8 +24,13 @@ defmodule JustBash.Commands.Eval do
   def execute(bash, args, _stdin) do
     script = Enum.join(args, " ")
 
+    parser_opts = [
+      max_input_bytes: Policy.get(bash, :max_input_bytes),
+      max_tokens: Policy.get(bash, :max_tokens)
+    ]
+
     try do
-      case Parser.parse(script) do
+      case Parser.parse(script, parser_opts) do
         {:ok, ast} ->
           Executor.execute_script(bash, ast)
 

@@ -9,6 +9,7 @@ defmodule JustBash.Interpreter.Expansion.Glob do
   """
 
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limits
 
   @doc """
   Check if a string contains glob metacharacters.
@@ -35,7 +36,8 @@ defmodule JustBash.Interpreter.Expansion.Glob do
     base_dir = if is_absolute, do: "/", else: bash.cwd
     prefix = if is_absolute, do: "/", else: ""
 
-    matches = expand_segments(bash.fs, base_dir, prefix, segments, has_trailing_slash)
+    {matches, _match_count, _walk_count} =
+      expand_segments(bash, bash.fs, base_dir, prefix, segments, has_trailing_slash, 0, 0)
 
     if matches == [], do: [pattern], else: Enum.sort(matches)
   end
@@ -55,21 +57,52 @@ defmodule JustBash.Interpreter.Expansion.Glob do
 
   # Recursively expand segments, handling wildcards at any level
   # has_trailing_slash indicates if original pattern ended with /
-  defp expand_segments(_fs, _current_path, prefix, [], has_trailing_slash) do
+  defp expand_segments(
+         bash,
+         _fs,
+         _current_path,
+         prefix,
+         [],
+         has_trailing_slash,
+         match_count,
+         walk_count
+       ) do
     # No more segments - return current path if it's not just the prefix
     if prefix == "" or prefix == "/" do
-      []
+      {[], match_count, walk_count}
     else
       result = String.trim_trailing(prefix, "/")
+      new_match_count = match_count + 1
+      Limits.check_glob_matches!(bash, new_match_count)
       # Append trailing slash if original pattern had one
-      if has_trailing_slash, do: [result <> "/"], else: [result]
+      final = if has_trailing_slash, do: [result <> "/"], else: [result]
+      {final, new_match_count, walk_count}
     end
   end
 
-  defp expand_segments(fs, current_path, prefix, [segment | rest], has_trailing_slash) do
+  defp expand_segments(
+         bash,
+         fs,
+         current_path,
+         prefix,
+         [segment | rest],
+         has_trailing_slash,
+         match_count,
+         walk_count
+       ) do
     if has_glob_chars?(segment) do
       # This segment has wildcards - expand it
-      expand_wildcard_segment(fs, current_path, prefix, segment, rest, has_trailing_slash)
+      expand_wildcard_segment(
+        bash,
+        fs,
+        current_path,
+        prefix,
+        segment,
+        rest,
+        has_trailing_slash,
+        match_count,
+        walk_count
+      )
     else
       # No wildcards - just append and continue
       next_path = join_path(current_path, segment)
@@ -77,60 +110,142 @@ defmodule JustBash.Interpreter.Expansion.Glob do
 
       case InMemoryFs.stat(fs, next_path) do
         {:ok, _} ->
-          expand_segments(fs, next_path, next_prefix, rest, has_trailing_slash)
+          expand_segments(
+            bash,
+            fs,
+            next_path,
+            next_prefix,
+            rest,
+            has_trailing_slash,
+            match_count,
+            walk_count
+          )
 
         {:error, _} ->
           # Path doesn't exist
-          []
+          {[], match_count, walk_count}
       end
     end
   end
 
-  defp expand_wildcard_segment(fs, current_path, prefix, segment, rest, has_trailing_slash) do
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defp expand_wildcard_segment(
+         bash,
+         fs,
+         current_path,
+         prefix,
+         segment,
+         rest,
+         has_trailing_slash,
+         match_count,
+         walk_count
+       ) do
     regex_pattern = glob_pattern_to_regex(segment)
 
     with {:ok, regex} <- Regex.compile("^" <> regex_pattern <> "$"),
          {:ok, entries} <- InMemoryFs.readdir(fs, current_path) do
-      matching = Enum.filter(entries, &matches_pattern?(&1, regex, segment))
+      new_walk_count = walk_count + length(entries)
+      Limits.check_file_walk!(bash, new_walk_count)
 
-      Enum.flat_map(matching, fn entry ->
-        expand_matched_entry(fs, current_path, prefix, entry, rest, has_trailing_slash)
+      entries
+      |> Enum.reduce({[], match_count, new_walk_count}, fn entry, {acc, acc_matches, acc_walk} ->
+        if matches_pattern?(entry, regex, segment) do
+          {entry_matches, next_match_count, next_walk_count} =
+            expand_matched_entry(
+              bash,
+              fs,
+              current_path,
+              prefix,
+              entry,
+              rest,
+              has_trailing_slash,
+              acc_matches,
+              acc_walk
+            )
+
+          {[entry_matches | acc], next_match_count, next_walk_count}
+        else
+          {acc, acc_matches, acc_walk}
+        end
+      end)
+      |> then(fn {acc, final_match_count, final_walk_count} ->
+        {acc |> Enum.reverse() |> List.flatten(), final_match_count, final_walk_count}
       end)
     else
-      _ -> []
+      _ -> {[], match_count, walk_count}
     end
   end
 
-  defp expand_matched_entry(fs, current_path, prefix, entry, rest, has_trailing_slash) do
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defp expand_matched_entry(
+         bash,
+         fs,
+         current_path,
+         prefix,
+         entry,
+         rest,
+         has_trailing_slash,
+         match_count,
+         walk_count
+       ) do
     next_path = join_path(current_path, entry)
     next_prefix = join_prefix(prefix, entry)
 
     if rest == [] do
-      finalize_match(fs, next_path, next_prefix, has_trailing_slash)
+      finalize_match(
+        bash,
+        fs,
+        next_path,
+        next_prefix,
+        has_trailing_slash,
+        match_count,
+        walk_count
+      )
     else
-      continue_expansion(fs, next_path, next_prefix, rest, has_trailing_slash)
+      continue_expansion(
+        bash,
+        fs,
+        next_path,
+        next_prefix,
+        rest,
+        has_trailing_slash,
+        match_count,
+        walk_count
+      )
     end
   end
 
-  defp finalize_match(fs, path, prefix, has_trailing_slash) do
+  defp finalize_match(bash, fs, path, prefix, has_trailing_slash, match_count, walk_count) do
     case InMemoryFs.stat(fs, path) do
       {:ok, stat} ->
+        new_match_count = match_count + 1
+        Limits.check_glob_matches!(bash, new_match_count)
+
         if has_trailing_slash and stat.is_directory,
-          do: [prefix <> "/"],
-          else: [prefix]
+          do: {[prefix <> "/"], new_match_count, walk_count},
+          else: {[prefix], new_match_count, walk_count}
 
       {:error, _} ->
-        []
+        {[], match_count, walk_count}
     end
   end
 
-  defp continue_expansion(fs, path, prefix, rest, has_trailing_slash) do
+  defp continue_expansion(
+         bash,
+         fs,
+         path,
+         prefix,
+         rest,
+         has_trailing_slash,
+         match_count,
+         walk_count
+       ) do
     case InMemoryFs.stat(fs, path) do
       {:ok, %{is_directory: true}} ->
-        expand_segments(fs, path, prefix, rest, has_trailing_slash)
+        expand_segments(bash, fs, path, prefix, rest, has_trailing_slash, match_count, walk_count)
 
       _ ->
-        []
+        {[], match_count, walk_count}
     end
   end
 

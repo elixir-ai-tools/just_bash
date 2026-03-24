@@ -57,8 +57,11 @@ defmodule JustBash do
   alias JustBash.Fs.InMemoryFs
   alias JustBash.Interpreter.Executor
   alias JustBash.Interpreter.State
+  alias JustBash.Limits
   alias JustBash.Parser
   alias JustBash.Parser.Lexer
+  alias JustBash.Security.Budget
+  alias JustBash.Security.Policy
 
   @protected_builtin_names [
     ".",
@@ -80,6 +83,7 @@ defmodule JustBash do
     "unset"
   ]
 
+  # credo:disable-for-next-line
   defstruct fs: nil,
             env: %{},
             cwd: "/home/user",
@@ -91,16 +95,16 @@ defmodule JustBash do
             shell_opts: %{errexit: false, nounset: false, pipefail: false},
             http_client: nil,
             databases: %{},
-            max_iterations: 10_000,
-            max_call_depth: 1_000,
+            security: nil,
             jq_module_paths: [],
             interpreter: nil
 
   @type exec_result :: %{
-          stdout: String.t(),
-          stderr: String.t(),
-          exit_code: non_neg_integer(),
-          env: map()
+          required(:stdout) => String.t(),
+          required(:stderr) => String.t(),
+          required(:exit_code) => non_neg_integer(),
+          required(:env) => map(),
+          optional(:violation) => JustBash.Security.Violation.t() | nil
         }
 
   @type network_config :: %{
@@ -126,8 +130,7 @@ defmodule JustBash do
           network: network_config(),
           shell_opts: shell_opts(),
           databases: map(),
-          max_iterations: pos_integer(),
-          max_call_depth: pos_integer(),
+          security: Policy.t(),
           jq_module_paths: [String.t()],
           interpreter: State.t()
         }
@@ -156,11 +159,11 @@ defmodule JustBash do
     - `:allow_insecure` - Whether plain HTTP is permitted. When false (default), only `https://`
       URLs are allowed. Scripts cannot override this — it is a caller-level control.
   - `:http_client` - Module implementing the HTTP client behaviour (default: uses Req)
-  - `:max_iterations` - Maximum iterations for `while`/`until` loops before they are
-    forcibly stopped. Prevents runaway loops from untrusted scripts (default: 10_000)
-  - `:max_call_depth` - Maximum shell function call depth before recursion is
-    forcibly stopped. Prevents unbounded recursion from consuming all available
-    memory (default: 1_000)
+  - `:security` - Canonical security policy configuration. Accepts a preset atom
+    (`:default`, `:strict`, `:relaxed`), a keyword list such as
+    `[profile: :strict, max_steps: 10_000]`, or a `JustBash.Security.Policy`
+    struct. New integrations should prefer `:security` or the helpers in
+    `JustBash.Security`.
   - `:jq_module_paths` - List of virtual filesystem paths to search for `jq` modules
     when using `import`/`include` directives (default: [])
 
@@ -178,14 +181,15 @@ defmodule JustBash do
   """
   @spec new(keyword()) :: t()
   def new(opts \\ []) do
+    validate_security_opts!(opts)
+
     files = Keyword.get(opts, :files, %{})
     env = Keyword.get(opts, :env, %{})
     cwd = Keyword.get(opts, :cwd, "/home/user")
     commands = opts |> Keyword.get(:commands, %{}) |> normalize_commands!()
     network = Keyword.get(opts, :network, %{})
     http_client = Keyword.get(opts, :http_client)
-    max_iterations = Keyword.get(opts, :max_iterations, 10_000)
-    max_call_depth = Keyword.get(opts, :max_call_depth, 1_000)
+    security = Policy.new(Keyword.get(opts, :security))
     jq_module_paths = Keyword.get(opts, :jq_module_paths, [])
 
     default_env = %{
@@ -199,8 +203,8 @@ defmodule JustBash do
       "$" => Integer.to_string(:erlang.unique_integer([:positive]) |> rem(100_000))
     }
 
-    %__MODULE__{
-      fs: init_filesystem(files),
+    struct(__MODULE__, %{
+      fs: init_filesystem(files, security.max_file_bytes, security.max_total_fs_bytes),
       env: Map.merge(default_env, env),
       cwd: cwd,
       functions: %{},
@@ -209,11 +213,22 @@ defmodule JustBash do
       last_exit_code: 0,
       network: Map.merge(%{enabled: false, allow_list: [], allow_insecure: false}, network),
       http_client: http_client,
-      max_iterations: max_iterations,
-      max_call_depth: max_call_depth,
+      security: security,
       jq_module_paths: jq_module_paths,
       interpreter: State.new()
-    }
+    })
+  end
+
+  defp validate_security_opts!(opts) do
+    invalid_limit_keys = opts |> Keyword.keys() |> Enum.filter(&(&1 in Policy.option_keys()))
+
+    if invalid_limit_keys != [] do
+      keys = Enum.map_join(invalid_limit_keys, ", ", &inspect/1)
+
+      raise ArgumentError,
+            "top-level security limit options are no longer supported: #{keys}. " <>
+              "Pass them under :security instead, for example security: [max_steps: 10_000]"
+    end
   end
 
   defp normalize_commands!(commands) when is_map(commands) do
@@ -285,7 +300,9 @@ defmodule JustBash do
           "invalid custom command registration #{inspect(name)} => #{inspect(module)}; expected a string name and module"
   end
 
-  defp init_filesystem(files) do
+  defp init_filesystem(files, max_file_bytes, max_total_fs_bytes) do
+    validate_filesystem_limits!(files, max_file_bytes, max_total_fs_bytes)
+
     default_dirs = [
       "/home",
       "/home/user",
@@ -312,6 +329,21 @@ defmodule JustBash do
     end)
   end
 
+  defp validate_filesystem_limits!(files, max_file_bytes, max_total_fs_bytes) do
+    total_bytes =
+      Enum.reduce(files, 0, fn {path, content}, acc ->
+        if byte_size(content) > max_file_bytes do
+          raise ArgumentError, "initial file #{inspect(path)} exceeds max_file_bytes"
+        end
+
+        acc + byte_size(content)
+      end)
+
+    if total_bytes > max_total_fs_bytes do
+      raise ArgumentError, "initial files exceed max_total_fs_bytes"
+    end
+  end
+
   @doc """
   Execute a bash command in the environment.
 
@@ -331,7 +363,9 @@ defmodule JustBash do
   """
   @spec exec(t(), String.t()) :: {exec_result(), t()}
   def exec(bash, command) when is_binary(command) do
-    case Parser.parse(command) do
+    bash = prepare_for_exec(bash)
+
+    case Parser.parse(command, parser_opts(bash)) do
       {:ok, ast} ->
         {result, final_bash} = Executor.execute_script(bash, ast)
         # Execute EXIT trap if set
@@ -342,7 +376,8 @@ defmodule JustBash do
            stdout: "",
            stderr: "bash: syntax error: #{error.message}\n",
            exit_code: 2,
-           env: bash.env
+           env: bash.env,
+           violation: nil
          }, bash}
     end
   end
@@ -356,16 +391,22 @@ defmodule JustBash do
 
       trap_cmd ->
         # Execute the trap command
-        case Parser.parse(trap_cmd) do
+        case Parser.parse(trap_cmd, parser_opts(bash)) do
           {:ok, ast} ->
             {trap_result, trap_bash} = Executor.execute_script(bash, ast)
 
-            # Combine output, keep original exit code
-            combined_result = %{
+            exit_code =
+              if Limits.limit_error?(trap_bash), do: trap_result.exit_code, else: result.exit_code
+
+            combined_result =
               result
-              | stdout: result.stdout <> trap_result.stdout,
-                stderr: result.stderr <> trap_result.stderr
-            }
+              |> Map.put(:stdout, result.stdout <> trap_result.stdout)
+              |> Map.put(:stderr, result.stderr <> trap_result.stderr)
+              |> Map.put(:exit_code, exit_code)
+              |> Map.put(
+                :violation,
+                Map.get(trap_result, :violation) || Map.get(result, :violation)
+              )
 
             {combined_result, trap_bash}
 
@@ -385,7 +426,9 @@ defmodule JustBash do
   """
   @spec exec!(t(), String.t()) :: {exec_result(), t()}
   def exec!(bash, command) do
-    case Parser.parse(command) do
+    bash = prepare_for_exec(bash)
+
+    case Parser.parse(command, parser_opts(bash)) do
       {:ok, ast} ->
         Executor.execute_script(bash, ast)
 
@@ -406,6 +449,21 @@ defmodule JustBash do
   """
   @spec parse(String.t()) :: {:ok, JustBash.AST.Script.t()} | {:error, Parser.ParseError.t()}
   def parse(input), do: Parser.parse(input)
+
+  defp prepare_for_exec(%JustBash{interpreter: %{exec_depth: 0} = interpreter} = bash) do
+    %{bash | interpreter: %{interpreter | budget: Budget.new()}}
+  end
+
+  defp prepare_for_exec(bash), do: bash
+
+  defp parser_opts(bash) do
+    [
+      max_input_bytes: Policy.get(bash, :max_input_bytes),
+      max_tokens: Policy.get(bash, :max_tokens),
+      max_ast_nodes: Policy.get(bash, :max_ast_nodes),
+      max_nesting_depth: Policy.get(bash, :max_nesting_depth)
+    ]
+  end
 
   @doc """
   Tokenize a bash script and return the tokens.
@@ -489,7 +547,7 @@ defmodule JustBash do
 
       {:error, _reason} ->
         error_msg = "#{path}: No such file or directory\n"
-        {%{stdout: "", stderr: error_msg, exit_code: 1, env: bash.env}, bash}
+        {%{stdout: "", stderr: error_msg, exit_code: 1, env: bash.env, violation: nil}, bash}
     end
   end
 end

@@ -28,6 +28,10 @@ defmodule JustBash.Parser do
   alias JustBash.Parser.WordParts
 
   @max_parse_iterations 100_000
+  @default_max_input_bytes 64_000
+  @default_max_tokens 10_000
+  @default_max_ast_nodes 20_000
+  @default_max_nesting_depth 64
 
   defmodule ParseError do
     @moduledoc "Parse error with position information"
@@ -49,13 +53,17 @@ defmodule JustBash.Parser do
   defstruct tokens: [],
             pos: 0,
             pending_heredocs: [],
-            parse_iterations: 0
+            parse_iterations: 0,
+            nesting_depth: 0,
+            max_nesting_depth: @default_max_nesting_depth
 
   @type t :: %__MODULE__{
           tokens: [Token.t()],
           pos: non_neg_integer(),
           pending_heredocs: list(),
-          parse_iterations: non_neg_integer()
+          parse_iterations: non_neg_integer(),
+          nesting_depth: non_neg_integer(),
+          max_nesting_depth: pos_integer()
         }
 
   # Public API
@@ -63,25 +71,63 @@ defmodule JustBash.Parser do
   @doc """
   Parse a bash script string into an AST.
   """
-  @spec parse(String.t()) :: {:ok, AST.Script.t()} | {:error, ParseError.t()}
-  def parse(input) when is_binary(input) do
-    tokens = Lexer.tokenize(input)
-    parser = %__MODULE__{tokens: tokens, pos: 0}
+  @spec parse(String.t(), keyword()) :: {:ok, AST.Script.t()} | {:error, ParseError.t()}
+  def parse(input, opts \\ []) when is_binary(input) do
+    max_input_bytes = Keyword.get(opts, :max_input_bytes, @default_max_input_bytes)
+    max_tokens = Keyword.get(opts, :max_tokens, @default_max_tokens)
+    max_ast_nodes = Keyword.get(opts, :max_ast_nodes, @default_max_ast_nodes)
+    max_nesting_depth = Keyword.get(opts, :max_nesting_depth, @default_max_nesting_depth)
 
-    try do
-      {ast, _parser} = parse_script(parser)
-      {:ok, ast}
-    rescue
-      e in ParseError -> {:error, e}
+    if byte_size(input) > max_input_bytes do
+      {:error, %ParseError{message: "input size limit exceeded", line: 1, column: 1, token: nil}}
+    else
+      try do
+        tokens = Lexer.tokenize(input)
+
+        if length(tokens) > max_tokens do
+          {:error, %ParseError{message: "token limit exceeded", line: 1, column: 1, token: nil}}
+        else
+          parser = %__MODULE__{tokens: tokens, pos: 0, max_nesting_depth: max_nesting_depth}
+          {ast, _parser} = parse_script(parser)
+
+          if ast_node_count(ast) > max_ast_nodes do
+            {:error,
+             %ParseError{message: "AST node limit exceeded", line: 1, column: 1, token: nil}}
+          else
+            {:ok, ast}
+          end
+        end
+      rescue
+        e in ParseError -> {:error, e}
+        e in RuntimeError -> handle_runtime_parse_error(e, __STACKTRACE__)
+      end
     end
   end
+
+  defp handle_runtime_parse_error(%RuntimeError{message: "Lexer error at " <> rest}, _stacktrace) do
+    case Regex.run(~r/^(\d+):(\d+):\s+(.*)$/, rest) do
+      [_, line, column, message] ->
+        {:error,
+         %ParseError{
+           message: "Lexer error: #{message}",
+           line: String.to_integer(line),
+           column: String.to_integer(column),
+           token: nil
+         }}
+
+      _ ->
+        {:error, %ParseError{message: "Lexer error", line: 1, column: 1, token: nil}}
+    end
+  end
+
+  defp handle_runtime_parse_error(e, stacktrace), do: reraise(e, stacktrace)
 
   @doc """
   Parse a bash script string into an AST, raising on error.
   """
-  @spec parse!(String.t()) :: AST.Script.t()
-  def parse!(input) when is_binary(input) do
-    case parse(input) do
+  @spec parse!(String.t(), keyword()) :: AST.Script.t()
+  def parse!(input, opts \\ []) when is_binary(input) do
+    case parse(input, opts) do
       {:ok, ast} -> ast
       {:error, error} -> raise error
     end
@@ -92,6 +138,22 @@ defmodule JustBash.Parser do
   @doc false
   def current(parser) do
     Enum.at(parser.tokens, parser.pos) || List.last(parser.tokens)
+  end
+
+  @doc false
+  def enter_nested(parser) do
+    new_depth = parser.nesting_depth + 1
+
+    if new_depth > parser.max_nesting_depth do
+      error(parser, "nesting depth limit exceeded")
+    end
+
+    %{parser | nesting_depth: new_depth}
+  end
+
+  @doc false
+  def leave_nested(parser) do
+    %{parser | nesting_depth: max(parser.nesting_depth - 1, 0)}
   end
 
   @doc false
@@ -263,7 +325,7 @@ defmodule JustBash.Parser do
   end
 
   defp parse_script_loop(parser, statements, iterations) do
-    if iterations > 10_000 do
+    if iterations > @max_parse_iterations do
       error(parser, "Parser stuck: too many iterations")
     end
 
@@ -423,21 +485,38 @@ defmodule JustBash.Parser do
     dispatch_command(command_type(parser), parser)
   end
 
-  defp dispatch_command(:if, parser), do: Compound.parse_if(parser, __MODULE__)
-  defp dispatch_command(:for, parser), do: Compound.parse_for(parser, __MODULE__)
-  defp dispatch_command(:while, parser), do: Compound.parse_while(parser, __MODULE__)
-  defp dispatch_command(:until, parser), do: Compound.parse_until(parser, __MODULE__)
-  defp dispatch_command(:case, parser), do: Compound.parse_case(parser, __MODULE__)
-  defp dispatch_command(:subshell, parser), do: Compound.parse_subshell(parser, __MODULE__)
-  defp dispatch_command(:group, parser), do: Compound.parse_group(parser, __MODULE__)
+  defp dispatch_command(type, parser)
+       when type in [
+              :if,
+              :for,
+              :while,
+              :until,
+              :case,
+              :subshell,
+              :group,
+              :arithmetic,
+              :conditional,
+              :function
+            ] do
+    parser = enter_nested(parser)
 
-  defp dispatch_command(:arithmetic, parser),
-    do: Compound.parse_arithmetic_command(parser, __MODULE__)
+    {node, parser} =
+      case type do
+        :if -> Compound.parse_if(parser, __MODULE__)
+        :for -> Compound.parse_for(parser, __MODULE__)
+        :while -> Compound.parse_while(parser, __MODULE__)
+        :until -> Compound.parse_until(parser, __MODULE__)
+        :case -> Compound.parse_case(parser, __MODULE__)
+        :subshell -> Compound.parse_subshell(parser, __MODULE__)
+        :group -> Compound.parse_group(parser, __MODULE__)
+        :arithmetic -> Compound.parse_arithmetic_command(parser, __MODULE__)
+        :conditional -> Compound.parse_conditional_command(parser, __MODULE__)
+        :function -> Compound.parse_function_def(parser, __MODULE__)
+      end
 
-  defp dispatch_command(:conditional, parser),
-    do: Compound.parse_conditional_command(parser, __MODULE__)
+    {node, leave_nested(parser)}
+  end
 
-  defp dispatch_command(:function, parser), do: Compound.parse_function_def(parser, __MODULE__)
   defp dispatch_command(:simple, parser), do: parse_simple_command(parser)
 
   defp command_type(parser) do
@@ -673,4 +752,26 @@ defmodule JustBash.Parser do
 
     %{parser | parse_iterations: parser.parse_iterations + 1}
   end
+
+  defp ast_node_count(ast), do: count_ast_nodes(ast)
+
+  defp count_ast_nodes(value) when is_list(value) do
+    Enum.reduce(value, 0, fn item, acc -> acc + count_ast_nodes(item) end)
+  end
+
+  defp count_ast_nodes(%_{} = struct) do
+    1 +
+      (struct
+       |> Map.from_struct()
+       |> Map.values()
+       |> Enum.reduce(0, fn value, acc -> acc + count_ast_nodes(value) end))
+  end
+
+  defp count_ast_nodes(value) when is_tuple(value) do
+    value
+    |> Tuple.to_list()
+    |> Enum.reduce(0, fn item, acc -> acc + count_ast_nodes(item) end)
+  end
+
+  defp count_ast_nodes(_), do: 0
 end

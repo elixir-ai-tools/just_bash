@@ -24,7 +24,7 @@ defmodule JustBash.Shell.MaxCallDepthTest do
     end
 
     test "direct self-recursion is stopped at a custom depth limit" do
-      bash = JustBash.new(max_call_depth: 5)
+      bash = JustBash.new(security: [max_call_depth: 5])
 
       {result, _} =
         JustBash.exec(bash, """
@@ -42,7 +42,7 @@ defmodule JustBash.Shell.MaxCallDepthTest do
 
   describe "pipe recursion (fork bomb pattern)" do
     test "pipe recursion is stopped" do
-      bash = JustBash.new(max_call_depth: 10)
+      bash = JustBash.new(security: [max_call_depth: 10])
 
       {result, _} =
         JustBash.exec(bash, """
@@ -55,7 +55,7 @@ defmodule JustBash.Shell.MaxCallDepthTest do
     end
 
     test "classic fork bomb syntax is stopped" do
-      bash = JustBash.new(max_call_depth: 10)
+      bash = JustBash.new(security: [max_call_depth: 10])
 
       # :(){ :|:& };: — the & is ignored (background not implemented),
       # but the pipe recursion must still be caught
@@ -68,7 +68,7 @@ defmodule JustBash.Shell.MaxCallDepthTest do
 
   describe "mutual recursion" do
     test "mutually recursive functions are stopped" do
-      bash = JustBash.new(max_call_depth: 10)
+      bash = JustBash.new(security: [max_call_depth: 10])
 
       {result, _} =
         JustBash.exec(bash, """
@@ -84,7 +84,7 @@ defmodule JustBash.Shell.MaxCallDepthTest do
 
   describe "legitimate deep calls" do
     test "recursion within the limit succeeds" do
-      bash = JustBash.new(max_call_depth: 20)
+      bash = JustBash.new(security: [max_call_depth: 20])
 
       {result, _} =
         JustBash.exec(bash, """
@@ -106,7 +106,7 @@ defmodule JustBash.Shell.MaxCallDepthTest do
     test "recursion exactly at the limit succeeds" do
       # max_call_depth: 5 means up to 5 nested function calls.
       # depth(4) -> depth(3) -> depth(2) -> depth(1) -> depth(0) = 5 calls
-      bash = JustBash.new(max_call_depth: 5)
+      bash = JustBash.new(security: [max_call_depth: 5])
 
       {result, _} =
         JustBash.exec(bash, """
@@ -127,7 +127,7 @@ defmodule JustBash.Shell.MaxCallDepthTest do
 
     test "recursion one past the limit fails" do
       # max_call_depth: 5, depth(5) needs 6 calls -> exceeds limit
-      bash = JustBash.new(max_call_depth: 5)
+      bash = JustBash.new(security: [max_call_depth: 5])
 
       {result, _} =
         JustBash.exec(bash, """
@@ -148,7 +148,7 @@ defmodule JustBash.Shell.MaxCallDepthTest do
 
   describe "execution continues after depth error" do
     test "commands after a depth-exceeded function still run" do
-      bash = JustBash.new(max_call_depth: 5)
+      bash = JustBash.new(security: [max_call_depth: 5])
 
       {result, _} =
         JustBash.exec(bash, """
@@ -164,7 +164,7 @@ defmodule JustBash.Shell.MaxCallDepthTest do
 
   describe "sequential calls do not accumulate depth" do
     test "many sequential top-level calls succeed within a small limit" do
-      bash = JustBash.new(max_call_depth: 5)
+      bash = JustBash.new(security: [max_call_depth: 5])
 
       {result, _} =
         JustBash.exec(bash, """
@@ -177,7 +177,7 @@ defmodule JustBash.Shell.MaxCallDepthTest do
     end
 
     test "sequential calls after a depth error do not inherit inflated depth" do
-      bash = JustBash.new(max_call_depth: 5)
+      bash = JustBash.new(security: [max_call_depth: 5])
 
       {result, _} =
         JustBash.exec(bash, """

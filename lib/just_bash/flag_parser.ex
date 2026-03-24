@@ -84,7 +84,7 @@ defmodule JustBash.FlagParser do
   defp parse_flag(flag_str, remaining, spec, flags) do
     # Check for aliases first
     aliases = Map.get(spec, :aliases, %{})
-    flag_atom = Map.get(aliases, flag_str, String.to_atom(flag_str))
+    flag_atom = resolve_flag_atom(flag_str, spec, aliases)
 
     cond do
       flag_atom in spec.boolean ->
@@ -131,10 +131,10 @@ defmodule JustBash.FlagParser do
   # Handle flags like -k2, -n10 where value is attached
   defp try_attached_value_flag(flag_str, spec, flags) do
     <<first_char::binary-size(1), rest::binary>> = flag_str
-    flag_atom = String.to_atom(first_char)
+    flag_atom = resolve_flag_atom(first_char, spec, %{})
     multi_value = Map.get(spec, :multi_value, [])
 
-    if (flag_atom in spec.value or flag_atom in multi_value) and rest != "" do
+    if flag_atom != nil and (flag_atom in spec.value or flag_atom in multi_value) and rest != "" do
       parsed_value = parse_value(rest)
       {:ok, put_flag(flags, flag_atom, parsed_value, spec)}
     else
@@ -145,15 +145,28 @@ defmodule JustBash.FlagParser do
   defp parse_combined_flags(flag_str, spec, flags) do
     chars = String.graphemes(flag_str)
 
-    if Enum.all?(chars, &(String.to_atom(&1) in spec.boolean)) do
+    resolved_chars = Enum.map(chars, &resolve_flag_atom(&1, spec, %{}))
+
+    if Enum.all?(resolved_chars, &(&1 in spec.boolean)) do
       new_flags =
-        Enum.reduce(chars, flags, fn char, acc ->
-          Map.put(acc, String.to_atom(char), true)
+        Enum.reduce(resolved_chars, flags, fn char, acc ->
+          Map.put(acc, char, true)
         end)
 
       {:ok, new_flags}
     else
       :error
+    end
+  end
+
+  defp resolve_flag_atom(flag_str, spec, aliases) do
+    case Map.get(aliases, flag_str) do
+      nil ->
+        known_flags = spec.boolean ++ spec.value ++ Map.get(spec, :multi_value, [])
+        Enum.find(known_flags, &(Atom.to_string(&1) == flag_str))
+
+      alias_flag ->
+        alias_flag
     end
   end
 

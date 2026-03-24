@@ -36,7 +36,7 @@ defmodule JustBash.Commands.Command do
   """
   @spec ok(String.t()) :: result()
   def ok(stdout \\ "") do
-    %{stdout: stdout, stderr: "", exit_code: 0}
+    %{stdout: stdout, stderr: "", exit_code: 0, violation: nil}
   end
 
   @doc """
@@ -44,7 +44,7 @@ defmodule JustBash.Commands.Command do
   """
   @spec error(String.t(), non_neg_integer()) :: result()
   def error(stderr, exit_code \\ 1) do
-    %{stdout: "", stderr: stderr, exit_code: exit_code}
+    %{stdout: "", stderr: stderr, exit_code: exit_code, violation: nil}
   end
 
   @doc """
@@ -52,6 +52,6 @@ defmodule JustBash.Commands.Command do
   """
   @spec result(String.t(), String.t(), non_neg_integer()) :: result()
   def result(stdout, stderr, exit_code) do
-    %{stdout: stdout, stderr: stderr, exit_code: exit_code}
+    %{stdout: stdout, stderr: stderr, exit_code: exit_code, violation: nil}
   end
 end

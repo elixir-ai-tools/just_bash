@@ -1,6 +1,7 @@
 defmodule JustBash.ResultTest do
   use ExUnit.Case, async: true
   alias JustBash.Result
+  alias JustBash.Security.Violation
 
   describe "new/1" do
     test "creates default result" do
@@ -9,6 +10,7 @@ defmodule JustBash.ResultTest do
       assert result.stderr == ""
       assert result.exit_code == 0
       assert result.signal == nil
+      assert result.violation == nil
     end
 
     test "creates result with custom attributes" do
@@ -17,6 +19,7 @@ defmodule JustBash.ResultTest do
       assert result.stderr == ""
       assert result.exit_code == 1
       assert result.signal == {:break, 2}
+      assert result.violation == nil
     end
   end
 
@@ -27,6 +30,7 @@ defmodule JustBash.ResultTest do
       assert result.stderr == ""
       assert result.exit_code == 0
       assert result.signal == nil
+      assert result.violation == nil
     end
   end
 
@@ -37,6 +41,7 @@ defmodule JustBash.ResultTest do
       assert result.stderr == "error message\n"
       assert result.exit_code == 127
       assert result.signal == nil
+      assert result.violation == nil
     end
 
     test "defaults to exit code 1" do
@@ -160,6 +165,22 @@ defmodule JustBash.ResultTest do
       original = Result.new(stdout: "hello", stderr: "error", exit_code: 42)
       map = Result.to_map(original)
       assert map == %{stdout: "hello", stderr: "error", exit_code: 42}
+      restored = Result.from_map(map)
+      assert restored == original
+    end
+
+    test "round-trips typed violation metadata" do
+      violation = %Violation{
+        kind: :output_limit_exceeded,
+        message: "boom\n",
+        metadata: %{limit: 1}
+      }
+
+      original = Result.new(stderr: violation.message, exit_code: 1, violation: violation)
+
+      map = Result.to_map(original)
+      assert map.violation == violation
+
       restored = Result.from_map(map)
       assert restored == original
     end

@@ -61,6 +61,19 @@ defmodule JustBash.FlagParserTest do
       assert {%{a: true}, ["-unknown"]} = FlagParser.parse(["-a", "-unknown"], spec)
     end
 
+    test "does not create atoms for unknown flags" do
+      spec = %{boolean: [:a], value: [], defaults: %{a: false}}
+      warmup_flag = "-redteam_unknown_#{System.unique_integer([:positive])}"
+      test_flag = "-redteam_unknown_#{System.unique_integer([:positive])}"
+
+      assert {%{a: false}, [^warmup_flag]} = FlagParser.parse([warmup_flag], spec)
+
+      atom_count_before = :erlang.system_info(:atom_count)
+      assert {%{a: false}, [^test_flag]} = FlagParser.parse([test_flag], spec)
+      atom_count_after = :erlang.system_info(:atom_count)
+      assert atom_count_after == atom_count_before
+    end
+
     test "handles mixed boolean and value flags" do
       spec = %{
         boolean: [:a, :l, :r],
