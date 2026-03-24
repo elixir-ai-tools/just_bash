@@ -59,19 +59,29 @@ bash = JustBash.new(
 
 ### Security Policy
 
+Scripts run under resource limits that prevent runaway execution. The defaults
+are safe for untrusted code — most users never need to configure this.
+
 ```elixir
-# Safe defaults for untrusted code
-bash = JustBash.new()
-
-# Tighter limits
-bash = JustBash.new(security: :strict)
-
-# Looser limits
-bash = JustBash.new(security: :relaxed)
-
-# Custom tuning
-bash = JustBash.new(security: [profile: :strict, max_steps: 10_000])
+bash = JustBash.new()                                        # safe defaults
+bash = JustBash.new(security: :strict)                       # tighter limits
+bash = JustBash.new(security: :relaxed)                      # heavier workloads
+bash = JustBash.new(security: [max_steps: 50_000])           # tune one knob
+bash = JustBash.new(security: [profile: :strict, max_steps: 50_000])
 ```
+
+The options you're most likely to tune:
+
+| Option | Default | What it limits |
+|--------|---------|----------------|
+| `:max_steps` | 100,000 | Total command steps per `exec` call |
+| `:max_iterations` | 10,000 | Iterations per loop |
+| `:max_output_bytes` | 1,000,000 | Combined stdout + stderr |
+| `:max_total_fs_bytes` | 8,000,000 | Total virtual filesystem size |
+| `:max_call_depth` | 1,000 | Shell function recursion depth |
+
+All other limits (parsing, expansion, regex, glob, jq) are tuned automatically
+by the preset. See `SECURITY.md` for the full model.
 
 ### Network Access
 

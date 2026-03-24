@@ -2,62 +2,90 @@ defmodule JustBash.Security.Policy do
   @moduledoc """
   Central security policy for untrusted-code execution.
 
-  This struct holds all 25 resource-limit settings that govern parsing,
-  expansion, execution, output, filesystem, environment, regex, glob,
-  network, and jq operations. Three built-in presets scale proportionally:
+  JustBash treats all shell input as untrusted and enforces resource limits
+  to prevent runaway code. The policy controls how much work a script is
+  allowed to do before execution is halted.
 
-  - `:default` — safe baseline for untrusted code
-  - `:strict`  — ~20 % of default (tighter sandbox)
-  - `:relaxed` — ~10× default (heavy workloads)
+  Most users only need a preset:
 
-  ## Creating a policy
+      JustBash.new()                    # safe defaults
+      JustBash.new(security: :strict)   # tighter limits
+      JustBash.new(security: :relaxed)  # heavier workloads
 
-      # Preset
-      Policy.new(:strict)
+  For fine-tuning, override specific limits on any preset base:
 
-      # Custom overrides on a preset base
-      Policy.new(profile: :strict, max_steps: 50_000)
+      JustBash.new(security: [max_steps: 50_000])
+      JustBash.new(security: [profile: :strict, max_output_bytes: 5_000_000])
 
-      # Override on the default base
-      Policy.new(max_output_bytes: 2_000_000)
+  ## User-facing options
 
-  Use `option_keys/0` to discover valid keys, `defaults/0` to inspect
-  default values, and `preset/1` to inspect any preset's values.
+  These are the limits you are most likely to tune:
+
+  - `:max_steps`          — total command steps per `exec` call (default: 100,000)
+  - `:max_iterations`     — iterations per loop (default: 10,000)
+  - `:max_output_bytes`   — combined stdout + stderr bytes (default: 1,000,000)
+  - `:max_total_fs_bytes` — total virtual filesystem size (default: 8,000,000)
+  - `:max_call_depth`     — shell function recursion depth (default: 1,000)
+
+  All other limits (parsing, expansion, regex, glob, jq, etc.) are tuned
+  automatically by the preset and rarely need manual adjustment.
   """
 
+  # -- User-facing keys: the ones we document and encourage tuning ----------
+  @public_keys [
+    :max_steps,
+    :max_iterations,
+    :max_output_bytes,
+    :max_total_fs_bytes,
+    :max_call_depth
+  ]
+
+  # -- All defaults (public + internal) -------------------------------------
   @defaults %{
+    # User-facing
     max_iterations: 10_000,
     max_call_depth: 1_000,
+    max_steps: 100_000,
+    max_output_bytes: 1_000_000,
+    max_total_fs_bytes: 8_000_000,
+    # Internal: execution
     max_exec_depth: 128,
+    # Internal: parsing
     max_input_bytes: 64_000,
     max_tokens: 10_000,
     max_ast_nodes: 20_000,
     max_nesting_depth: 64,
+    # Internal: expansion
     max_expanded_words: 10_000,
-    max_http_body_bytes: 1_000_000,
-    max_regex_pattern_bytes: 4_000,
-    max_regex_input_bytes: 64_000,
     max_glob_matches: 5_000,
     max_file_walk_entries: 10_000,
+    # Internal: regex
+    max_regex_pattern_bytes: 4_000,
+    max_regex_input_bytes: 64_000,
+    # Internal: environment
     max_env_bytes: 128_000,
     max_array_entries: 10_000,
     max_array_bytes: 1_000_000,
-    max_steps: 100_000,
+    # Internal: filesystem
+    max_file_bytes: 1_000_000,
+    # Internal: network
+    max_http_body_bytes: 1_000_000,
+    # Internal: jq
     max_jq_results: 10_000,
     max_jq_depth: 64,
     max_jq_input_bytes: 1_000_000,
     max_jq_input_depth: 128,
-    max_jq_work_items: 10_000,
-    max_output_bytes: 1_000_000,
-    max_file_bytes: 1_000_000,
-    max_total_fs_bytes: 8_000_000
+    max_jq_work_items: 10_000
   }
 
-  @option_keys Map.keys(@defaults)
+  @all_keys Map.keys(@defaults)
 
   @strict %{
     max_iterations: 2_000,
     max_call_depth: 256,
+    max_steps: 20_000,
+    max_output_bytes: 250_000,
+    max_total_fs_bytes: 2_000_000,
     max_exec_depth: 32,
     max_input_bytes: 16_000,
     max_tokens: 2_000,
@@ -72,20 +100,20 @@ defmodule JustBash.Security.Policy do
     max_env_bytes: 32_000,
     max_array_entries: 2_000,
     max_array_bytes: 250_000,
-    max_steps: 20_000,
     max_jq_results: 2_000,
     max_jq_depth: 24,
     max_jq_input_bytes: 250_000,
     max_jq_input_depth: 48,
     max_jq_work_items: 2_000,
-    max_output_bytes: 250_000,
-    max_file_bytes: 250_000,
-    max_total_fs_bytes: 2_000_000
+    max_file_bytes: 250_000
   }
 
   @relaxed %{
     max_iterations: 100_000,
     max_call_depth: 5_000,
+    max_steps: 1_000_000,
+    max_output_bytes: 10_000_000,
+    max_total_fs_bytes: 100_000_000,
     max_exec_depth: 512,
     max_input_bytes: 256_000,
     max_tokens: 50_000,
@@ -100,18 +128,15 @@ defmodule JustBash.Security.Policy do
     max_env_bytes: 1_000_000,
     max_array_entries: 100_000,
     max_array_bytes: 10_000_000,
-    max_steps: 1_000_000,
     max_jq_results: 100_000,
     max_jq_depth: 256,
     max_jq_input_bytes: 10_000_000,
     max_jq_input_depth: 512,
     max_jq_work_items: 100_000,
-    max_output_bytes: 10_000_000,
-    max_file_bytes: 10_000_000,
-    max_total_fs_bytes: 100_000_000
+    max_file_bytes: 10_000_000
   }
 
-  @enforce_keys Map.keys(@defaults)
+  @enforce_keys @all_keys
   defstruct Map.to_list(@defaults)
 
   @type t :: %__MODULE__{
@@ -166,9 +191,13 @@ defmodule JustBash.Security.Policy do
   @spec defaults() :: map()
   def defaults, do: @defaults
 
-  @doc "Returns the list of valid policy option keys."
+  @doc "Returns the user-facing option keys (the ones you'd typically tune)."
   @spec option_keys() :: [atom()]
-  def option_keys, do: @option_keys
+  def option_keys, do: @public_keys
+
+  @doc "Returns all option keys, including internal ones."
+  @spec all_keys() :: [atom()]
+  def all_keys, do: @all_keys
 
   @doc "Returns the preset values for `:default`, `:strict`, or `:relaxed` as a plain map."
   @spec preset(:default | :strict | :relaxed) :: map()
@@ -198,12 +227,12 @@ defmodule JustBash.Security.Policy do
   end
 
   defp validate_overrides!(overrides) do
-    unknown = Map.keys(overrides) -- @option_keys
+    unknown = Map.keys(overrides) -- @all_keys
 
     if unknown != [] do
       raise ArgumentError,
             "unknown security options: #{inspect(unknown)}. " <>
-              "Valid options: #{inspect(@option_keys)}"
+              "Common options: #{inspect(@public_keys)}"
     end
 
     invalid =

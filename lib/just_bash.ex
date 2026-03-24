@@ -94,7 +94,6 @@ defmodule JustBash do
             network: %{enabled: false, allow_list: [], allow_insecure: false},
             shell_opts: %{errexit: false, nounset: false, pipefail: false},
             http_client: nil,
-            databases: %{},
             security: nil,
             jq_module_paths: [],
             interpreter: nil
@@ -129,7 +128,6 @@ defmodule JustBash do
           last_exit_code: non_neg_integer(),
           network: network_config(),
           shell_opts: shell_opts(),
-          databases: map(),
           security: Policy.t(),
           jq_module_paths: [String.t()],
           interpreter: State.t()
@@ -220,7 +218,7 @@ defmodule JustBash do
   end
 
   defp validate_security_opts!(opts) do
-    invalid_limit_keys = opts |> Keyword.keys() |> Enum.filter(&(&1 in Policy.option_keys()))
+    invalid_limit_keys = opts |> Keyword.keys() |> Enum.filter(&(&1 in Policy.all_keys()))
 
     if invalid_limit_keys != [] do
       keys = Enum.map_join(invalid_limit_keys, ", ", &inspect/1)

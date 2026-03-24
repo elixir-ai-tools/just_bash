@@ -1,17 +1,11 @@
 defmodule JustBash.Security do
   @moduledoc """
-  Public helpers for configuring JustBash security policy.
+  Convenience helpers for configuring JustBash security policy.
 
-  This is the preferred host-facing API for selecting execution profiles and
-  constructing custom policies. The default policy is intended to be safe for
-  untrusted code and enables resource limits by default. For example:
-
-      bash = JustBash.new()
+      bash = JustBash.new()                                       # safe defaults
+      bash = JustBash.new(security: :strict)                      # tighter limits
+      bash = JustBash.new(security: [max_steps: 50_000])          # tune one knob
       bash = JustBash.new(security: JustBash.Security.strict_policy())
-      bash = JustBash.new(security: [profile: :strict, max_steps: 10_000])
-
-  Top-level `max_*` options are no longer accepted — pass them under the
-  `:security` key instead (see the Upgrading section in the README).
   """
 
   alias JustBash.Security.Policy
@@ -20,23 +14,17 @@ defmodule JustBash.Security do
 
   @doc "Returns the default security policy."
   @spec default_policy() :: Policy.t()
-  def default_policy, do: policy(:default)
+  def default_policy, do: Policy.new(:default)
 
-  @doc "Returns the stricter untrusted-code execution policy."
+  @doc "Returns the strict security policy."
   @spec strict_policy() :: Policy.t()
-  def strict_policy, do: policy(:strict)
+  def strict_policy, do: Policy.new(:strict)
 
-  @doc "Returns the relaxed execution policy."
+  @doc "Returns the relaxed security policy."
   @spec relaxed_policy() :: Policy.t()
-  def relaxed_policy, do: policy(:relaxed)
+  def relaxed_policy, do: Policy.new(:relaxed)
 
   @doc "Builds a policy from a preset atom or keyword overrides."
   @spec policy(profile() | keyword()) :: Policy.t()
-  def policy(profile) when profile in [:default, :strict, :relaxed] do
-    profile
-    |> Policy.preset()
-    |> then(&struct(Policy, &1))
-  end
-
-  def policy(opts) when is_list(opts), do: Policy.new(opts)
+  def policy(spec), do: Policy.new(spec)
 end

@@ -298,14 +298,15 @@ defmodule JustBash.Limits do
 
   defp check_env_limits(bash, env) do
     env_bytes =
-      Enum.reduce(env, 0, fn {key, value}, acc ->
-        acc + byte_size(to_string(key)) + byte_size(to_string(value))
+      Enum.reduce(env, 0, fn {key, value}, acc when is_binary(key) and is_binary(value) ->
+        acc + byte_size(key) + byte_size(value)
       end)
 
     {array_entries, array_bytes} =
-      Enum.reduce(env, {0, 0}, fn {key, value}, {entry_acc, byte_acc} ->
+      Enum.reduce(env, {0, 0}, fn {key, value}, {entry_acc, byte_acc}
+                                  when is_binary(key) and is_binary(value) ->
         if array_entry_key?(key) do
-          {entry_acc + 1, byte_acc + byte_size(to_string(key)) + byte_size(to_string(value))}
+          {entry_acc + 1, byte_acc + byte_size(key) + byte_size(value)}
         else
           {entry_acc, byte_acc}
         end

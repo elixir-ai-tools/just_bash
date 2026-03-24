@@ -34,32 +34,41 @@ defmodule JustBash.SecurityTest do
   end
 
   describe "Policy helpers" do
-    test "defaults/0 returns a map with all option keys" do
+    test "defaults/0 returns a map with all keys" do
       defaults = Policy.defaults()
       assert is_map(defaults)
 
-      for key <- Policy.option_keys() do
+      for key <- Policy.all_keys() do
         assert Map.has_key?(defaults, key), "missing key: #{key}"
       end
     end
 
-    test "option_keys/0 returns a list of atoms" do
+    test "option_keys/0 returns only user-facing keys" do
       keys = Policy.option_keys()
       assert is_list(keys)
-      assert length(keys) == 25
-      assert Enum.all?(keys, &is_atom/1)
+      assert length(keys) == 5
+      assert :max_steps in keys
+      assert :max_iterations in keys
+      assert :max_output_bytes in keys
+      assert :max_total_fs_bytes in keys
+      assert :max_call_depth in keys
+    end
+
+    test "all_keys/0 includes both public and internal keys" do
+      assert length(Policy.all_keys()) == 25
+      assert Enum.all?(Policy.option_keys(), &(&1 in Policy.all_keys()))
     end
 
     test "preset/1 returns maps for all profiles" do
       for profile <- [:default, :strict, :relaxed] do
         preset = Policy.preset(profile)
         assert is_map(preset)
-        assert Map.keys(preset) |> Enum.sort() == Policy.option_keys() |> Enum.sort()
+        assert Map.keys(preset) |> Enum.sort() == Policy.all_keys() |> Enum.sort()
       end
     end
 
-    test "strict < default < relaxed for all keys" do
-      for key <- Policy.option_keys() do
+    test "strict <= default <= relaxed for all keys" do
+      for key <- Policy.all_keys() do
         strict = Policy.preset(:strict)[key]
         default = Policy.preset(:default)[key]
         relaxed = Policy.preset(:relaxed)[key]
@@ -84,6 +93,12 @@ defmodule JustBash.SecurityTest do
       assert_raise ArgumentError, ~r/unknown security options/, fn ->
         Policy.new(max_steps: 100, bogus: 42)
       end
+    end
+
+    test "accepts internal keys without error" do
+      policy = Policy.new(max_regex_pattern_bytes: 8_000, max_jq_depth: 128)
+      assert policy.max_regex_pattern_bytes == 8_000
+      assert policy.max_jq_depth == 128
     end
 
     test "rejects zero values" do
