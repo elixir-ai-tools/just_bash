@@ -15,6 +15,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   alias JustBash.AST
   alias JustBash.Fs.InMemoryFs
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Limit
 
   @type result :: %{stdout: String.t(), stderr: String.t(), exit_code: non_neg_integer()}
   @type redir_type ::
@@ -162,6 +163,8 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   end
 
   defp write_to_file(bash, path, content, result, stream) do
+    Limit.check_file_size!(bash, content)
+
     case InMemoryFs.write_file(bash.fs, path, content) do
       {:ok, new_fs} ->
         updated_result = clear_stream(result, stream)
@@ -180,7 +183,10 @@ defmodule JustBash.Interpreter.Executor.Redirection do
         {:error, _} -> ""
       end
 
-    case InMemoryFs.write_file(bash.fs, path, current_content <> content) do
+    new_content = current_content <> content
+    Limit.check_file_size!(bash, new_content)
+
+    case InMemoryFs.write_file(bash.fs, path, new_content) do
       {:ok, new_fs} ->
         updated_result = clear_stream(result, stream)
         {updated_result, %{bash | fs: new_fs}}
@@ -192,6 +198,8 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   end
 
   defp write_combined_to_file(bash, path, content, result) do
+    Limit.check_file_size!(bash, content)
+
     case InMemoryFs.write_file(bash.fs, path, content) do
       {:ok, new_fs} ->
         {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
@@ -209,7 +217,10 @@ defmodule JustBash.Interpreter.Executor.Redirection do
         {:error, _} -> ""
       end
 
-    case InMemoryFs.write_file(bash.fs, path, current_content <> content) do
+    new_content = current_content <> content
+    Limit.check_file_size!(bash, new_content)
+
+    case InMemoryFs.write_file(bash.fs, path, new_content) do
       {:ok, new_fs} ->
         {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
 

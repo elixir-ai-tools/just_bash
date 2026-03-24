@@ -27,6 +27,10 @@ defmodule JustBash.BannedCallTracer do
   ### Node escape (`Node`)
   Connecting to or spawning processes on remote Erlang nodes.
 
+  ### Mutable shared state (`Process.put/get/delete`, `:ets`)
+  Process dictionary and ETS leak mutable state across calls, breaking
+  referential transparency and making code unpredictable in concurrent use.
+
   ## What this catches
 
   - Direct calls: `File.read(path)`, `System.cmd("rm", [...])`
@@ -60,7 +64,9 @@ defmodule JustBash.BannedCallTracer do
     # OS process spawning
     Port,
     # Remote node operations
-    Node
+    Node,
+    # ETS — mutable shared state that leaks across calls
+    :ets
   ]
 
   # Specific functions banned within modules that have some safe functions.
@@ -80,7 +86,13 @@ defmodule JustBash.BannedCallTracer do
     # Erlang-level port / OS escape
     {:os, :cmd, 1},
     {:os, :cmd, 2},
-    {:erlang, :open_port, 2}
+    {:erlang, :open_port, 2},
+    # Process dictionary — leaks mutable global state across calls
+    {Process, :put, 2},
+    {Process, :get, 0},
+    {Process, :get, 1},
+    {Process, :get, 2},
+    {Process, :delete, 1}
   ]
 
   @type violation :: %{

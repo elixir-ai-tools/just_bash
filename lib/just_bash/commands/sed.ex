@@ -39,7 +39,7 @@ defmodule JustBash.Commands.Sed do
   end
 
   defp execute_scripts(bash, opts, stdin) do
-    case Parser.parse(opts.scripts, opts.extended_regex) do
+    case Parser.parse(opts.scripts, opts.extended_regex, bash.limits) do
       {:error, msg} ->
         {Command.error("sed: #{msg}\n"), bash}
 

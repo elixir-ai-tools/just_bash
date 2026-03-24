@@ -18,6 +18,7 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
   alias JustBash.Arithmetic
   alias JustBash.AST
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Limit
 
   @typedoc "Pending variable assignments from expansions like ${VAR:=default}"
   @type pending_assignments :: Expansion.pending_assignments()
@@ -273,6 +274,7 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
     str = value || ""
     {pattern, assigns} = Expansion.expand_word_parts(bash, pattern_word.parts)
     regex_pattern = glob_to_regex(pattern)
+    Limit.check_regex_size!(bash.limits, regex_pattern)
 
     result =
       case side do
@@ -303,6 +305,8 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
         :end -> glob_to_regex(pattern) <> "$"
         nil -> glob_to_regex(pattern)
       end
+
+    Limit.check_regex_size!(bash.limits, regex_pattern)
 
     result =
       case Regex.compile(regex_pattern) do

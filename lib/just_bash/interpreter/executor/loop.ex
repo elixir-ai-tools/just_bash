@@ -10,6 +10,7 @@ defmodule JustBash.Interpreter.Executor.Loop do
   """
 
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Limit
   alias JustBash.Result
 
   @default_max_iterations 10_000
@@ -20,21 +21,16 @@ defmodule JustBash.Interpreter.Executor.Loop do
           exit_code: non_neg_integer()
         }
 
-  # Context struct for while/until loops to reduce function arity
   defmodule WhileContext do
     @moduledoc false
     defstruct [:condition, :body, :is_until, :execute_fn]
   end
 
-  # Accumulator struct for loop state
   defmodule LoopAcc do
     @moduledoc false
     defstruct stdout_io: [], stderr_io: [], exit_code: 0, iterations: 0
   end
 
-  @doc """
-  Execute a for loop over expanded words.
-  """
   @spec execute_for(JustBash.t(), String.t(), [any()], [any()], function()) ::
           {result(), JustBash.t()}
   def execute_for(bash, variable, words, body, execute_body_fn) do
@@ -49,18 +45,10 @@ defmodule JustBash.Interpreter.Executor.Loop do
     end)
   end
 
-  @doc """
-  Execute a while loop.
-  """
   @spec execute_while(JustBash.t(), [any()], [any()], String.t(), function()) ::
           {result(), JustBash.t()}
   def execute_while(bash, condition, body, stdin, execute_body_fn) do
-    bash_with_stdin =
-      if stdin != "" do
-        %{bash | interpreter: %{bash.interpreter | stdin: stdin}}
-      else
-        bash
-      end
+    bash = maybe_set_stdin(bash, stdin)
 
     ctx = %WhileContext{
       condition: condition,
@@ -70,25 +58,15 @@ defmodule JustBash.Interpreter.Executor.Loop do
     }
 
     JustBash.Telemetry.while_loop_span(false, fn ->
-      {result, new_bash, iteration_count} =
-        do_execute_while_loop(bash_with_stdin, ctx, %LoopAcc{})
-
-      {{result, new_bash}, %{iteration_count: iteration_count, exit_code: result.exit_code}}
+      {result, new_bash} = execute_while_loop(bash, ctx, %LoopAcc{})
+      {{result, new_bash}, %{exit_code: result.exit_code}}
     end)
   end
 
-  @doc """
-  Execute an until loop (while with inverted condition).
-  """
   @spec execute_until(JustBash.t(), [any()], [any()], String.t(), function()) ::
           {result(), JustBash.t()}
   def execute_until(bash, condition, body, stdin, execute_body_fn) do
-    bash_with_stdin =
-      if stdin != "" do
-        %{bash | interpreter: %{bash.interpreter | stdin: stdin}}
-      else
-        bash
-      end
+    bash = maybe_set_stdin(bash, stdin)
 
     ctx = %WhileContext{
       condition: condition,
@@ -98,21 +76,18 @@ defmodule JustBash.Interpreter.Executor.Loop do
     }
 
     JustBash.Telemetry.while_loop_span(true, fn ->
-      {result, new_bash, iteration_count} =
-        do_execute_while_loop(bash_with_stdin, ctx, %LoopAcc{})
-
-      {{result, new_bash}, %{iteration_count: iteration_count, exit_code: result.exit_code}}
+      {result, new_bash} = execute_while_loop(bash, ctx, %LoopAcc{})
+      {{result, new_bash}, %{exit_code: result.exit_code}}
     end)
   end
 
-  # --- For Loop Implementation ---
+  defp maybe_set_stdin(bash, ""), do: bash
+  defp maybe_set_stdin(bash, stdin), do: %{bash | interpreter: %{bash.interpreter | stdin: stdin}}
+
+  # --- For Loop ---
 
   defp execute_for_loop(bash, _variable, [], _body, stdout_io, stderr_io, exit_code, _exec_fn) do
-    {%{
-       stdout: IO.iodata_to_binary(stdout_io),
-       stderr: IO.iodata_to_binary(stderr_io),
-       exit_code: exit_code
-     }, bash}
+    {finalize(stdout_io, stderr_io, exit_code), bash}
   end
 
   defp execute_for_loop(
@@ -125,101 +100,75 @@ defmodule JustBash.Interpreter.Executor.Loop do
          _exit_code,
          execute_body_fn
        ) do
+    bash = Limit.step!(bash)
     new_bash = %{bash | env: Map.put(bash.env, variable, value)}
     {result, body_bash} = execute_body_fn.(new_bash, body)
+
     new_stdout_io = [stdout_io, result.stdout]
     new_stderr_io = [stderr_io, result.stderr]
 
-    # Use Result struct for type-safe signal handling
-    case Result.from_map(result).signal do
-      # Break level 1: exit loop with accumulated output
-      {:break, 1} ->
-        {%{
-           stdout: IO.iodata_to_binary(new_stdout_io),
-           stderr: IO.iodata_to_binary(new_stderr_io),
-           exit_code: 0
-         }, body_bash}
+    if body_bash.interpreter.halted do
+      {finalize(new_stdout_io, new_stderr_io, 1), body_bash}
+    else
+      case Result.from_map(result).signal do
+        {:break, 1} ->
+          {finalize(new_stdout_io, new_stderr_io, 0), body_bash}
 
-      # Break with level > 1: propagate to outer loop with decremented level
-      {:break, n} when n > 1 ->
-        {Result.to_map(%Result{
-           stdout: IO.iodata_to_binary(new_stdout_io),
-           stderr: IO.iodata_to_binary(new_stderr_io),
-           exit_code: 0,
-           signal: {:break, n - 1}
-         }), body_bash}
+        {:break, n} when n > 1 ->
+          {signal_result(new_stdout_io, new_stderr_io, 0, {:break, n - 1}), body_bash}
 
-      # Continue level 1: skip to next iteration
-      {:continue, 1} ->
-        execute_for_loop(
-          body_bash,
-          variable,
-          rest,
-          body,
-          new_stdout_io,
-          new_stderr_io,
-          0,
-          execute_body_fn
-        )
+        {:continue, 1} ->
+          execute_for_loop(
+            body_bash,
+            variable,
+            rest,
+            body,
+            new_stdout_io,
+            new_stderr_io,
+            0,
+            execute_body_fn
+          )
 
-      # Continue with level > 1: propagate to outer loop with decremented level
-      {:continue, n} when n > 1 ->
-        {Result.to_map(%Result{
-           stdout: IO.iodata_to_binary(new_stdout_io),
-           stderr: IO.iodata_to_binary(new_stderr_io),
-           exit_code: 0,
-           signal: {:continue, n - 1}
-         }), body_bash}
+        {:continue, n} when n > 1 ->
+          {signal_result(new_stdout_io, new_stderr_io, 0, {:continue, n - 1}), body_bash}
 
-      # No signal: continue to next iteration
-      nil ->
-        execute_for_loop(
-          body_bash,
-          variable,
-          rest,
-          body,
-          new_stdout_io,
-          new_stderr_io,
-          result.exit_code,
-          execute_body_fn
-        )
+        {:return, _} = sig ->
+          {signal_result(new_stdout_io, new_stderr_io, result.exit_code, sig), body_bash}
 
-      # Return signal: propagate as-is
-      {:return, _} = signal ->
-        {Result.to_map(%Result{
-           stdout: IO.iodata_to_binary(new_stdout_io),
-           stderr: IO.iodata_to_binary(new_stderr_io),
-           exit_code: result.exit_code,
-           signal: signal
-         }), body_bash}
+        nil ->
+          execute_for_loop(
+            body_bash,
+            variable,
+            rest,
+            body,
+            new_stdout_io,
+            new_stderr_io,
+            result.exit_code,
+            execute_body_fn
+          )
+      end
     end
   end
 
-  # --- While/Until Loop Implementation ---
+  # --- While/Until Loop ---
 
-  defp do_execute_while_loop(bash, ctx, acc) do
+  defp execute_while_loop(bash, ctx, acc) do
     max = Map.get(bash, :max_iterations, @default_max_iterations)
 
     if acc.iterations >= max do
-      {%{
-         stdout: IO.iodata_to_binary(acc.stdout_io),
-         stderr: IO.iodata_to_binary([acc.stderr_io, "loop: iteration limit exceeded\n"]),
-         exit_code: acc.exit_code
-       }, bash, acc.iterations}
+      {finalize(
+         acc.stdout_io,
+         [acc.stderr_io, "loop: iteration limit exceeded\n"],
+         acc.exit_code
+       ), bash}
     else
-      do_execute_while_iteration(bash, ctx, acc)
+      execute_while_iteration(bash, ctx, acc)
     end
   end
 
-  defp do_execute_while_iteration(bash, ctx, acc) do
+  defp execute_while_iteration(bash, ctx, acc) do
+    bash = Limit.step!(bash)
     {cond_result, cond_bash} = ctx.execute_fn.(bash, ctx.condition)
-
-    should_continue =
-      if ctx.is_until do
-        cond_result.exit_code != 0
-      else
-        cond_result.exit_code == 0
-      end
 
     new_acc = %{
       acc
@@ -227,75 +176,89 @@ defmodule JustBash.Interpreter.Executor.Loop do
         stderr_io: [acc.stderr_io, cond_result.stderr]
     }
 
+    if cond_bash.interpreter.halted do
+      {finalize(new_acc.stdout_io, new_acc.stderr_io, 1), cond_bash}
+    else
+      execute_while_body(cond_bash, ctx, new_acc, cond_result)
+    end
+  end
+
+  defp execute_while_body(cond_bash, ctx, acc, cond_result) do
+    should_continue =
+      if ctx.is_until, do: cond_result.exit_code != 0, else: cond_result.exit_code == 0
+
     if should_continue do
       {body_result, body_bash} = ctx.execute_fn.(cond_bash, ctx.body)
 
       body_acc = %{
-        new_acc
-        | stdout_io: [new_acc.stdout_io, body_result.stdout],
-          stderr_io: [new_acc.stderr_io, body_result.stderr]
+        acc
+        | stdout_io: [acc.stdout_io, body_result.stdout],
+          stderr_io: [acc.stderr_io, body_result.stderr]
       }
 
-      completed_iterations = acc.iterations + 1
-
-      # Use Result struct for type-safe signal handling
-      case Result.from_map(body_result).signal do
-        # Break level 1: exit loop
-        {:break, 1} ->
-          {%{
-             stdout: IO.iodata_to_binary(body_acc.stdout_io),
-             stderr: IO.iodata_to_binary(body_acc.stderr_io),
-             exit_code: 0
-           }, body_bash, completed_iterations}
-
-        # Break with level > 1: propagate with decremented level
-        {:break, n} when n > 1 ->
-          {Result.to_map(%Result{
-             stdout: IO.iodata_to_binary(body_acc.stdout_io),
-             stderr: IO.iodata_to_binary(body_acc.stderr_io),
-             exit_code: 0,
-             signal: {:break, n - 1}
-           }), body_bash, completed_iterations}
-
-        # Continue level 1: re-check condition
-        {:continue, 1} ->
-          next_acc = %{body_acc | exit_code: 0, iterations: completed_iterations}
-          do_execute_while_loop(body_bash, ctx, next_acc)
-
-        # Continue with level > 1: propagate with decremented level
-        {:continue, n} when n > 1 ->
-          {Result.to_map(%Result{
-             stdout: IO.iodata_to_binary(body_acc.stdout_io),
-             stderr: IO.iodata_to_binary(body_acc.stderr_io),
-             exit_code: 0,
-             signal: {:continue, n - 1}
-           }), body_bash, completed_iterations}
-
-        # Return signal: propagate as-is
-        {:return, _} = signal ->
-          {Result.to_map(%Result{
-             stdout: IO.iodata_to_binary(body_acc.stdout_io),
-             stderr: IO.iodata_to_binary(body_acc.stderr_io),
-             exit_code: body_result.exit_code,
-             signal: signal
-           }), body_bash, completed_iterations}
-
-        # No signal: continue loop
-        nil ->
-          next_acc = %{
-            body_acc
-            | exit_code: body_result.exit_code,
-              iterations: completed_iterations
-          }
-
-          do_execute_while_loop(body_bash, ctx, next_acc)
+      if body_bash.interpreter.halted do
+        {finalize(body_acc.stdout_io, body_acc.stderr_io, 1), body_bash}
+      else
+        handle_while_signal(
+          Result.from_map(body_result).signal,
+          body_bash,
+          ctx,
+          acc,
+          body_acc,
+          body_result
+        )
       end
     else
-      {%{
-         stdout: IO.iodata_to_binary(new_acc.stdout_io),
-         stderr: IO.iodata_to_binary(new_acc.stderr_io),
-         exit_code: acc.exit_code
-       }, cond_bash, acc.iterations}
+      {finalize(acc.stdout_io, acc.stderr_io, acc.exit_code), cond_bash}
     end
+  end
+
+  defp handle_while_signal({:break, 1}, bash, _, _, acc, _) do
+    {finalize(acc.stdout_io, acc.stderr_io, 0), bash}
+  end
+
+  defp handle_while_signal({:break, n}, bash, _, _, acc, _) when n > 1 do
+    {signal_result(acc.stdout_io, acc.stderr_io, 0, {:break, n - 1}), bash}
+  end
+
+  defp handle_while_signal({:continue, 1}, bash, ctx, outer_acc, body_acc, _) do
+    execute_while_loop(bash, ctx, %{body_acc | exit_code: 0, iterations: outer_acc.iterations + 1})
+  end
+
+  defp handle_while_signal({:continue, n}, bash, _, _, acc, _) when n > 1 do
+    {signal_result(acc.stdout_io, acc.stderr_io, 0, {:continue, n - 1}), bash}
+  end
+
+  defp handle_while_signal({:return, _} = sig, bash, _, _, acc, body_result) do
+    {signal_result(acc.stdout_io, acc.stderr_io, body_result.exit_code, sig), bash}
+  end
+
+  defp handle_while_signal(nil, bash, ctx, outer_acc, body_acc, body_result) do
+    next_acc = %{
+      body_acc
+      | exit_code: body_result.exit_code,
+        iterations: outer_acc.iterations + 1
+    }
+
+    execute_while_loop(bash, ctx, next_acc)
+  end
+
+  # --- Helpers ---
+
+  defp finalize(stdout_io, stderr_io, exit_code) do
+    %{
+      stdout: IO.iodata_to_binary(stdout_io),
+      stderr: IO.iodata_to_binary(stderr_io),
+      exit_code: exit_code
+    }
+  end
+
+  defp signal_result(stdout_io, stderr_io, exit_code, signal) do
+    Result.to_map(%Result{
+      stdout: IO.iodata_to_binary(stdout_io),
+      stderr: IO.iodata_to_binary(stderr_io),
+      exit_code: exit_code,
+      signal: signal
+    })
   end
 end

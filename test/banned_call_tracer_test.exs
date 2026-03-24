@@ -122,7 +122,9 @@ defmodule JustBash.BannedCallTracerTest do
         # Benchmark runner — writes results.jsonl to host filesystem
         "Elixir.JustBash.Eval.Runner",
         # Spec test parser — reads fixture files from host filesystem during mix test
-        "Elixir.JustBash.SpecTest.Parser"
+        "Elixir.JustBash.SpecTest.Parser",
+        # Test-only mock that uses Process dictionary for test state
+        "Elixir.JustBash.MockHttpClient"
       ]
 
       violations =

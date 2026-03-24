@@ -488,7 +488,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     flags = eval.eval(flags_expr, data, opts)
     regex_opts = parse_regex_flags(flags)
 
-    case Regex.compile(pattern, regex_opts) do
+    case checked_compile(pattern, opts, regex_opts) do
       {:ok, regex} -> Regex.split(regex, data)
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1409,7 +1409,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   defp do_eval_func(:test, [regex_expr], data, opts, eval) when is_binary(data) do
     pattern = eval.eval(regex_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, opts) do
       {:ok, regex} -> Regex.match?(regex, data)
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1420,7 +1420,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     flags = eval.eval(flags_expr, data, opts)
     regex_opts = parse_regex_flags(flags)
 
-    case Regex.compile(pattern, regex_opts) do
+    case checked_compile(pattern, opts, regex_opts) do
       {:ok, regex} -> Regex.match?(regex, data)
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1429,7 +1429,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   defp do_eval_func(:match, [regex_expr], data, opts, eval) when is_binary(data) do
     pattern = eval.eval(regex_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, opts) do
       {:ok, regex} ->
         case Regex.run(regex, data, return: :index) do
           nil ->
@@ -1455,7 +1455,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   defp do_eval_func(:capture, [regex_expr], data, opts, eval) when is_binary(data) do
     pattern = eval.eval(regex_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, opts) do
       {:ok, regex} ->
         case Regex.named_captures(regex, data) do
           nil -> nil
@@ -1471,7 +1471,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     pattern = eval.eval(regex_expr, data, opts)
     replacement = eval.eval(repl_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, opts) do
       {:ok, regex} -> Regex.replace(regex, data, fn _, _ -> replacement end)
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1484,7 +1484,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     flags = eval.eval(flags_expr, data, opts)
     regex_opts = parse_regex_flags(flags)
 
-    case Regex.compile(pattern, regex_opts) do
+    case checked_compile(pattern, opts, regex_opts) do
       {:ok, regex} -> Regex.replace(regex, data, fn _, _ -> replacement end)
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1494,7 +1494,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     pattern = eval.eval(regex_expr, data, opts)
     replacement = eval.eval(repl_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, opts) do
       {:ok, regex} -> Regex.replace(regex, data, fn _, _ -> replacement end, global: false)
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1503,7 +1503,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   defp do_eval_func(:scan, [regex_expr], data, opts, eval) when is_binary(data) do
     pattern = eval.eval(regex_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, opts) do
       {:ok, regex} ->
         Regex.scan(regex, data)
         |> Enum.map(fn
@@ -1519,7 +1519,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   defp do_eval_func(:splits, [regex_expr], data, opts, eval) when is_binary(data) do
     pattern = eval.eval(regex_expr, data, opts)
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, opts) do
       {:ok, regex} -> {:multi, Regex.split(regex, data)}
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1530,7 +1530,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
     flags = eval.eval(flags_expr, data, opts)
     regex_opts = parse_regex_flags(flags)
 
-    case Regex.compile(pattern, regex_opts) do
+    case checked_compile(pattern, opts, regex_opts) do
       {:ok, regex} -> {:multi, Regex.split(regex, data)}
       {:error, _} -> throw({:eval_error, "invalid regex: #{pattern}"})
     end
@@ -1646,6 +1646,10 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   end
 
   # Helper functions
+
+  defp checked_compile(pattern, opts, regex_opts \\ []) do
+    JustBash.Limit.compile_regex(opts[:limits], pattern, regex_opts)
+  end
 
   # Valid Unicode codepoint that is not a surrogate
   defp implode_codepoint(n, _replacement)
