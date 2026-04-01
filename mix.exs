@@ -42,6 +42,7 @@ defmodule JustBash.MixProject do
 
   defp deps do
     [
+      {:telemetry, "~> 0.4 or ~> 1.0"},
       {:nimble_parsec, "~> 1.4"},
       {:nimble_options, "~> 1.1"},
       {:req, "~> 0.5"},

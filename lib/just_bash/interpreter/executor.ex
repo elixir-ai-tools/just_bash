@@ -364,13 +364,29 @@ defmodule JustBash.Interpreter.Executor do
     {result, exec_bash} =
       case Map.get(temp_bash.functions, cmd_name) do
         nil ->
-          case Map.get(temp_bash.commands, cmd_name) do
-            nil ->
-              execute_builtin(temp_bash, cmd_name, expanded_args, effective_stdin)
+          JustBash.Telemetry.command_span(cmd_name, expanded_args, fn ->
+            {result, new_bash} =
+              case Map.get(temp_bash.commands, cmd_name) do
+                nil ->
+                  execute_builtin(temp_bash, cmd_name, expanded_args, effective_stdin)
 
-            module ->
-              execute_custom_command(temp_bash, cmd_name, module, expanded_args, effective_stdin)
-          end
+                module ->
+                  execute_custom_command(
+                    temp_bash,
+                    cmd_name,
+                    module,
+                    expanded_args,
+                    effective_stdin
+                  )
+              end
+
+            {{result, new_bash},
+             %{
+               exit_code: result.exit_code,
+               bytes_in: byte_size(effective_stdin),
+               bytes_out: byte_size(result.stdout) + byte_size(result.stderr)
+             }}
+          end)
 
         func_body ->
           execute_function(temp_bash, func_body, expanded_args)
