@@ -1604,12 +1604,14 @@ defmodule JustBash.Commands.Jq.Parser do
   end
 
   # Convert function name strings to atoms safely.
-  # Built-in jq function names already exist as atoms (defined in Functions module).
-  # User-defined function names may not, so we keep them as strings to avoid
-  # atom table exhaustion from adversarial input.
+  # Built-in jq function names are looked up in an explicit atom map to avoid
+  # relying on String.to_existing_atom/1 (which is unreliable because atoms
+  # from defp pattern matches may not be in the runtime atom table yet).
+  # User-defined function names are kept as strings to avoid atom table
+  # exhaustion from adversarial input.
+  @func_atoms JustBash.Commands.Jq.Evaluator.Functions.builtin_atoms()
+
   defp safe_to_atom(name) when is_binary(name) do
-    String.to_existing_atom(name)
-  rescue
-    ArgumentError -> name
+    Map.get(@func_atoms, name, name)
   end
 end

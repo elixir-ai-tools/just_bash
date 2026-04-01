@@ -12,6 +12,41 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
   # jq depth limit for tojson: structures at depth > 10000 get skipped
   @tojson_depth_limit 10_001
 
+  # Pre-computed map of builtin function name strings to atoms.
+  # Used by the parser to safely convert known function names without
+  # relying on String.to_existing_atom/1 (which is unreliable because
+  # atoms from defp pattern matches may not be in the table yet).
+  @builtin_atoms Map.new(
+                   ~w(
+                     abs add all any arrays ascii ascii_downcase ascii_upcase
+                     booleans bsearch builtins capture ceil contains debug del
+                     delpaths empty endswith env error exp exp2 exp10 explode
+                     exponent fabs first flatten floor from_entries fromjson
+                     getpath group_by gsub has have_decnum implode in index
+                     indices infinite input inputs inside isempty isfinite
+                     isinfinite isnan isnormal iterables join keys keys_unsorted
+                     last leaf_paths length limit log log2 log10 ltrimstr map
+                     map_values match max max_by min min_by mktime modulemeta
+                     nan not now nth nulls numbers objects path paths pick pow
+                     range recurse recurse_default repeat reverse rindex round
+                     rtrimstr scalars scan select setpath significand sin cos
+                     tan asin acos atan atan2 skip sort sort_by split splits
+                     sqrt startswith strftime strflocaltime strptime strings sub
+                     test to_entries toboolean todate tojson tonumber tostring
+                     transpose trim ltrim rtrim trimstr type type_error unique
+                     unique_by until utf8bytelength values walk while
+                     with_entries IN INDEX JOIN date dateadd datesub fromdate
+                     gmtime
+                   ),
+                   &{&1, String.to_atom(&1)}
+                 )
+
+  @doc """
+  Returns a map of builtin function name strings to their atom equivalents.
+  """
+  @spec builtin_atoms() :: %{String.t() => atom()}
+  def builtin_atoms, do: @builtin_atoms
+
   @doc """
   Evaluate a function call.
 
