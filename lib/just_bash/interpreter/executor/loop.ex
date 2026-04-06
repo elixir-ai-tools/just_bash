@@ -39,7 +39,14 @@ defmodule JustBash.Interpreter.Executor.Loop do
           {result(), JustBash.t()}
   def execute_for(bash, variable, words, body, execute_body_fn) do
     expanded_words = Expansion.expand_for_loop_words(bash, words)
-    execute_for_loop(bash, variable, expanded_words, body, [], [], 0, execute_body_fn)
+    item_count = length(expanded_words)
+
+    JustBash.Telemetry.for_loop_span(variable, item_count, fn ->
+      {result, new_bash} =
+        execute_for_loop(bash, variable, expanded_words, body, [], [], 0, execute_body_fn)
+
+      {{result, new_bash}, %{iteration_count: item_count, exit_code: result.exit_code}}
+    end)
   end
 
   @doc """
@@ -62,7 +69,12 @@ defmodule JustBash.Interpreter.Executor.Loop do
       execute_fn: execute_body_fn
     }
 
-    execute_while_loop(bash_with_stdin, ctx, %LoopAcc{})
+    JustBash.Telemetry.while_loop_span(false, fn ->
+      {result, new_bash, iteration_count} =
+        do_execute_while_loop(bash_with_stdin, ctx, %LoopAcc{})
+
+      {{result, new_bash}, %{iteration_count: iteration_count, exit_code: result.exit_code}}
+    end)
   end
 
   @doc """
@@ -85,7 +97,12 @@ defmodule JustBash.Interpreter.Executor.Loop do
       execute_fn: execute_body_fn
     }
 
-    execute_while_loop(bash_with_stdin, ctx, %LoopAcc{})
+    JustBash.Telemetry.while_loop_span(true, fn ->
+      {result, new_bash, iteration_count} =
+        do_execute_while_loop(bash_with_stdin, ctx, %LoopAcc{})
+
+      {{result, new_bash}, %{iteration_count: iteration_count, exit_code: result.exit_code}}
+    end)
   end
 
   # --- For Loop Implementation ---
@@ -180,7 +197,7 @@ defmodule JustBash.Interpreter.Executor.Loop do
 
   # --- While/Until Loop Implementation ---
 
-  defp execute_while_loop(bash, ctx, acc) do
+  defp do_execute_while_loop(bash, ctx, acc) do
     max = Map.get(bash, :max_iterations, @default_max_iterations)
 
     if acc.iterations >= max do
@@ -188,13 +205,13 @@ defmodule JustBash.Interpreter.Executor.Loop do
          stdout: IO.iodata_to_binary(acc.stdout_io),
          stderr: IO.iodata_to_binary([acc.stderr_io, "loop: iteration limit exceeded\n"]),
          exit_code: acc.exit_code
-       }, bash}
+       }, bash, acc.iterations}
     else
-      execute_while_iteration(bash, ctx, acc)
+      do_execute_while_iteration(bash, ctx, acc)
     end
   end
 
-  defp execute_while_iteration(bash, ctx, acc) do
+  defp do_execute_while_iteration(bash, ctx, acc) do
     {cond_result, cond_bash} = ctx.execute_fn.(bash, ctx.condition)
 
     should_continue =
@@ -219,6 +236,8 @@ defmodule JustBash.Interpreter.Executor.Loop do
           stderr_io: [new_acc.stderr_io, body_result.stderr]
       }
 
+      completed_iterations = acc.iterations + 1
+
       # Use Result struct for type-safe signal handling
       case Result.from_map(body_result).signal do
         # Break level 1: exit loop
@@ -227,7 +246,7 @@ defmodule JustBash.Interpreter.Executor.Loop do
              stdout: IO.iodata_to_binary(body_acc.stdout_io),
              stderr: IO.iodata_to_binary(body_acc.stderr_io),
              exit_code: 0
-           }, body_bash}
+           }, body_bash, completed_iterations}
 
         # Break with level > 1: propagate with decremented level
         {:break, n} when n > 1 ->
@@ -236,12 +255,12 @@ defmodule JustBash.Interpreter.Executor.Loop do
              stderr: IO.iodata_to_binary(body_acc.stderr_io),
              exit_code: 0,
              signal: {:break, n - 1}
-           }), body_bash}
+           }), body_bash, completed_iterations}
 
         # Continue level 1: re-check condition
         {:continue, 1} ->
-          next_acc = %{body_acc | exit_code: 0, iterations: acc.iterations + 1}
-          execute_while_loop(body_bash, ctx, next_acc)
+          next_acc = %{body_acc | exit_code: 0, iterations: completed_iterations}
+          do_execute_while_loop(body_bash, ctx, next_acc)
 
         # Continue with level > 1: propagate with decremented level
         {:continue, n} when n > 1 ->
@@ -250,7 +269,7 @@ defmodule JustBash.Interpreter.Executor.Loop do
              stderr: IO.iodata_to_binary(body_acc.stderr_io),
              exit_code: 0,
              signal: {:continue, n - 1}
-           }), body_bash}
+           }), body_bash, completed_iterations}
 
         # Return signal: propagate as-is
         {:return, _} = signal ->
@@ -259,24 +278,24 @@ defmodule JustBash.Interpreter.Executor.Loop do
              stderr: IO.iodata_to_binary(body_acc.stderr_io),
              exit_code: body_result.exit_code,
              signal: signal
-           }), body_bash}
+           }), body_bash, completed_iterations}
 
         # No signal: continue loop
         nil ->
           next_acc = %{
             body_acc
             | exit_code: body_result.exit_code,
-              iterations: acc.iterations + 1
+              iterations: completed_iterations
           }
 
-          execute_while_loop(body_bash, ctx, next_acc)
+          do_execute_while_loop(body_bash, ctx, next_acc)
       end
     else
       {%{
          stdout: IO.iodata_to_binary(new_acc.stdout_io),
          stderr: IO.iodata_to_binary(new_acc.stderr_io),
          exit_code: acc.exit_code
-       }, cond_bash}
+       }, cond_bash, acc.iterations}
     end
   end
 end

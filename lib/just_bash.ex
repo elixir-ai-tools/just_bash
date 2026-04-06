@@ -332,20 +332,36 @@ defmodule JustBash do
   """
   @spec exec(t(), String.t()) :: {exec_result(), t()}
   def exec(bash, command) when is_binary(command) do
-    case Parser.parse(command) do
-      {:ok, ast} ->
-        {result, final_bash} = Executor.execute_script(bash, ast)
-        # Execute EXIT trap if set
-        execute_exit_trap(result, final_bash)
+    JustBash.Telemetry.session_span(self(), fn ->
+      case Parser.parse(command) do
+        {:ok, ast} ->
+          {result, final_bash} = Executor.execute_script(bash, ast)
+          # Execute EXIT trap if set
+          {result, final_bash} = execute_exit_trap(result, final_bash)
 
-      {:error, error} ->
-        {%{
-           stdout: "",
-           stderr: "bash: syntax error: #{error.message}\n",
-           exit_code: 2,
-           env: bash.env
-         }, bash}
-    end
+          {{result, final_bash},
+           %{
+             status: :ok,
+             exit_code: result.exit_code,
+             bytes_in: byte_size(command),
+             bytes_out: byte_size(result.stdout) + byte_size(result.stderr)
+           }}
+
+        {:error, error} ->
+          stderr = "bash: syntax error: #{error.message}\n"
+
+          result =
+            {%{stdout: "", stderr: stderr, exit_code: 2, env: bash.env}, bash}
+
+          {result,
+           %{
+             status: :error,
+             exit_code: 2,
+             bytes_in: byte_size(command),
+             bytes_out: byte_size(stderr)
+           }}
+      end
+    end)
   end
 
   defp execute_exit_trap(result, bash) do
@@ -386,13 +402,23 @@ defmodule JustBash do
   """
   @spec exec!(t(), String.t()) :: {exec_result(), t()}
   def exec!(bash, command) do
-    case Parser.parse(command) do
-      {:ok, ast} ->
-        Executor.execute_script(bash, ast)
+    JustBash.Telemetry.session_span(self(), fn ->
+      case Parser.parse(command) do
+        {:ok, ast} ->
+          {result, final_bash} = Executor.execute_script(bash, ast)
 
-      {:error, error} ->
-        raise "Parse error: #{error.message}"
-    end
+          {{result, final_bash},
+           %{
+             status: :ok,
+             exit_code: result.exit_code,
+             bytes_in: byte_size(command),
+             bytes_out: byte_size(result.stdout) + byte_size(result.stderr)
+           }}
+
+        {:error, error} ->
+          raise "Parse error: #{error.message}"
+      end
+    end)
   end
 
   @doc """
