@@ -105,6 +105,26 @@
       "name": "wc pipeline combinations: head then wc",
       "script": "echo -e 'a\\nb\\nc\\nd\\ne' | head -3 | wc -l",
       "content_hash": "c15590eaab8f6602"
+    },
+    {
+      "name": "wc combined flags: -lw lines and words",
+      "script": "echo -e 'one two\\nthree four five' | wc -lw",
+      "content_hash": "364ea40429bd538e"
+    },
+    {
+      "name": "wc combined flags: -lc lines and bytes",
+      "script": "echo 'hello' | wc -lc",
+      "content_hash": "44438c7f2ced5b1b"
+    },
+    {
+      "name": "wc combined flags: -lwc all three",
+      "script": "echo -e 'one two\\nthree' | wc -lwc",
+      "content_hash": "7981339a5ac59b1e"
+    },
+    {
+      "name": "wc combined flags: -wc words and bytes",
+      "script": "echo 'hello world' | wc -wc",
+      "content_hash": "e53de18540523d34"
     }
   ]
 }

@@ -95,6 +95,43 @@ defmodule JustBash.Commands.FileInfoTest do
       assert result.exit_code == 1
       assert result.stderr =~ "Usage"
     end
+
+    test "file - reads from stdin" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, ~s(echo '{"key": "value"}' | file -))
+      assert result.exit_code == 0
+      refute result.stderr =~ "invalid option"
+      assert result.stdout =~ "/dev/stdin"
+    end
+
+    test "file - with shell script on stdin" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, ~s(echo '#!/bin/bash' | file -))
+      assert result.exit_code == 0
+      assert result.stdout =~ "shell script"
+    end
+
+    test "file - with empty stdin" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo -n '' | file -")
+      assert result.exit_code == 0
+      assert result.stdout =~ "empty"
+    end
+
+    test "file -b - brief mode with stdin" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo hello | file -b -")
+      assert result.exit_code == 0
+      refute result.stdout =~ "/dev/stdin"
+    end
+
+    test "file - alongside regular files" do
+      bash = JustBash.new(files: %{"/test.txt" => "hello"})
+      {result, _} = JustBash.exec(bash, "echo world | file /test.txt -")
+      assert result.exit_code == 0
+      assert result.stdout =~ "/test.txt"
+      assert result.stdout =~ "/dev/stdin"
+    end
   end
 
   describe "find command" do
@@ -279,6 +316,64 @@ defmodule JustBash.Commands.FileInfoTest do
       {result, _} = JustBash.exec(bash, "du")
       assert result.stdout =~ "."
       assert result.exit_code == 0
+    end
+
+    test "du -sh works with combined short flags" do
+      bash = JustBash.new(files: %{"/data/file.txt" => "content"})
+      {result, _} = JustBash.exec(bash, "du -sh /data")
+      assert result.exit_code == 0
+      refute result.stderr =~ "invalid option"
+    end
+
+    test "du -sch combines summarize, grand total, and human-readable" do
+      bash =
+        JustBash.new(
+          files: %{
+            "/data/a.txt" => String.duplicate("x", 1024),
+            "/data/b.txt" => String.duplicate("y", 2048)
+          }
+        )
+
+      {result, _} = JustBash.exec(bash, "du -sch /data")
+      assert result.exit_code == 0
+      assert result.stdout =~ "total"
+    end
+
+    test "du -ah combines all files and human-readable" do
+      bash =
+        JustBash.new(
+          files: %{
+            "/data/a.txt" => "hello",
+            "/data/b.txt" => "world"
+          }
+        )
+
+      {result, _} = JustBash.exec(bash, "du -ah /data")
+      assert result.exit_code == 0
+      assert result.stdout =~ "a.txt"
+      assert result.stdout =~ "b.txt"
+    end
+
+    test "du with invalid combined flag errors" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "du -sz /data")
+      assert result.exit_code == 1
+      assert result.stderr =~ "invalid option"
+    end
+
+    test "du -s shows single summary line per target" do
+      bash =
+        JustBash.new(
+          files: %{
+            "/data/sub/a.txt" => "aaa",
+            "/data/sub/b.txt" => "bbb"
+          }
+        )
+
+      {result, _} = JustBash.exec(bash, "du -sh /data")
+      assert result.exit_code == 0
+      lines = String.split(result.stdout, "\n", trim: true)
+      assert length(lines) == 1
     end
   end
 

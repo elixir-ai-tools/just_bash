@@ -5,6 +5,8 @@ defmodule JustBash.Commands.Wc do
   alias JustBash.Commands.Command
   alias JustBash.Fs.InMemoryFs
 
+  @short_flags %{?l => :l, ?w => :w, ?c => :c}
+
   @impl true
   def names, do: ["wc"]
 
@@ -105,11 +107,18 @@ defmodule JustBash.Commands.Wc do
   defp format_counts(counts, %{l: false, w: false, c: true}, has_file?),
     do: format_single_count(counts.bytes, has_file?)
 
-  defp format_counts(counts, _flags, _has_file?) do
-    # Match GNU wc formatting on Linux:
-    # counts are printed as right-aligned 7-char fields, separated by a space.
-    # Example: "      1       1       6"
-    pad_field(counts.lines) <> " " <> pad_field(counts.words) <> " " <> pad_field(counts.bytes)
+  defp format_counts(counts, %{l: l, w: w, c: c}, _has_file?) do
+    # If no flags set, show all. If multiple flags set, show those columns.
+    show_all = not l and not w and not c
+
+    parts =
+      []
+      |> then(fn acc -> if show_all or l, do: [pad_field(counts.lines) | acc], else: acc end)
+      |> then(fn acc -> if show_all or w, do: [pad_field(counts.words) | acc], else: acc end)
+      |> then(fn acc -> if show_all or c, do: [pad_field(counts.bytes) | acc], else: acc end)
+      |> Enum.reverse()
+
+    Enum.join(parts, " ")
   end
 
   defp format_single_count(n, false), do: Integer.to_string(n)
@@ -119,17 +128,34 @@ defmodule JustBash.Commands.Wc do
 
   defp parse_flags(args), do: parse_flags(args, %{l: false, w: false, c: false}, [])
 
-  defp parse_flags(["-l" | rest], flags, files),
-    do: parse_flags(rest, %{flags | l: true}, files)
+  defp parse_flags([], flags, files), do: {flags, Enum.reverse(files)}
 
-  defp parse_flags(["-w" | rest], flags, files),
-    do: parse_flags(rest, %{flags | w: true}, files)
+  defp parse_flags(["--" | rest], flags, files) do
+    {flags, Enum.reverse(files) ++ rest}
+  end
 
-  defp parse_flags(["-c" | rest], flags, files),
-    do: parse_flags(rest, %{flags | c: true}, files)
+  defp parse_flags(["-" <> flag_str | rest], flags, files) when flag_str != "" do
+    case expand_short_flags(flag_str) do
+      {:ok, keys} ->
+        new_flags = Enum.reduce(keys, flags, fn key, acc -> %{acc | key => true} end)
+        parse_flags(rest, new_flags, files)
 
-  defp parse_flags([arg | rest], flags, files),
-    do: parse_flags(rest, flags, files ++ [arg])
+      :error ->
+        parse_flags(rest, flags, ["-" <> flag_str | files])
+    end
+  end
 
-  defp parse_flags([], flags, files), do: {flags, files}
+  defp parse_flags([arg | rest], flags, files) do
+    parse_flags(rest, flags, [arg | files])
+  end
+
+  defp expand_short_flags(flag_str) do
+    chars = String.to_charlist(flag_str)
+
+    if Enum.all?(chars, &Map.has_key?(@short_flags, &1)) do
+      {:ok, Enum.map(chars, &Map.fetch!(@short_flags, &1))}
+    else
+      :error
+    end
+  end
 end

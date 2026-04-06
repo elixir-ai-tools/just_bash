@@ -23,9 +23,31 @@ defmodule JustBash.Commands.Printf do
 
   @spec format_string(String.t(), [String.t()]) :: String.t()
   defp format_string(format, args) do
-    format
-    |> unescape()
-    |> apply_formats(args)
+    unescaped = unescape(format)
+
+    if has_format_specifiers?(unescaped) and args != [] do
+      recycle_format(unescaped, args, [])
+    else
+      apply_formats(unescaped, args)
+    end
+  end
+
+  defp has_format_specifiers?(format) do
+    Regex.match?(~r/%[^%]/, format)
+  end
+
+  defp recycle_format(_format, [], acc) do
+    acc |> Enum.reverse() |> IO.iodata_to_binary()
+  end
+
+  defp recycle_format(format, args, acc) do
+    {result, remaining} = apply_formats_with_remaining(format, args)
+    recycle_format(format, remaining, [result | acc])
+  end
+
+  defp apply_formats_with_remaining(format, args) do
+    Regex.split(@format_regex, format, include_captures: true)
+    |> process_parts(args, [])
   end
 
   @spec unescape(String.t()) :: String.t()
@@ -40,14 +62,11 @@ defmodule JustBash.Commands.Printf do
 
   @spec apply_formats(String.t(), [String.t()]) :: String.t()
   defp apply_formats(format, args) do
-    {result, _remaining_args} =
-      Regex.split(@format_regex, format, include_captures: true)
-      |> process_parts(args, [])
-
+    {result, _remaining_args} = apply_formats_with_remaining(format, args)
     result
   end
 
-  defp process_parts([], _args, acc), do: {IO.iodata_to_binary(Enum.reverse(acc)), []}
+  defp process_parts([], args, acc), do: {IO.iodata_to_binary(Enum.reverse(acc)), args}
 
   defp process_parts([part | rest], args, acc) do
     case Regex.run(@format_regex, part) do

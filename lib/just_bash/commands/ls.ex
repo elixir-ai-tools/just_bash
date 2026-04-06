@@ -7,9 +7,10 @@ defmodule JustBash.Commands.Ls do
   alias JustBash.Fs.InMemoryFs
 
   @flag_spec %{
-    boolean: [:a, :l],
+    boolean: [:a, :l, :h, :r, :R, :S, :t, :one],
     value: [],
-    defaults: %{a: false, l: false}
+    defaults: %{a: false, l: false, h: false, r: false, R: false, S: false, t: false, one: false},
+    aliases: %{"1" => :one}
   }
 
   @impl true
@@ -46,18 +47,18 @@ defmodule JustBash.Commands.Ls do
 
   defp format_entries(fs, resolved, entries, flags) do
     filtered = filter_entries(entries, flags.a)
-    formatted = format_filtered(fs, resolved, filtered, flags.l)
+    formatted = format_filtered(fs, resolved, filtered, flags)
     if formatted != "", do: formatted <> "\n", else: ""
   end
 
   defp filter_entries(entries, true), do: [".", ".." | entries]
   defp filter_entries(entries, false), do: Enum.reject(entries, &String.starts_with?(&1, "."))
 
-  defp format_filtered(fs, resolved, filtered, true) do
-    Enum.map_join(filtered, "\n", &format_entry(fs, resolved, &1))
+  defp format_filtered(fs, resolved, filtered, %{l: true} = flags) do
+    Enum.map_join(filtered, "\n", &format_entry(fs, resolved, &1, flags.h))
   end
 
-  defp format_filtered(_fs, _resolved, filtered, false), do: Enum.join(filtered, "\n")
+  defp format_filtered(_fs, _resolved, filtered, _flags), do: Enum.join(filtered, "\n")
 
   defp handle_not_dir(fs, resolved, path, {out_acc, err_acc, code_acc}) do
     case InMemoryFs.stat(fs, resolved) do
@@ -66,14 +67,17 @@ defmodule JustBash.Commands.Ls do
     end
   end
 
-  defp format_entry(fs, dir, name) do
+  defp format_entry(fs, dir, name, human_readable) do
     path = InMemoryFs.resolve_path(dir, name)
 
     case InMemoryFs.stat(fs, path) do
       {:ok, stat} ->
         type = if stat.is_directory, do: "d", else: "-"
         mode = format_mode(stat.mode)
-        size = stat.size
+
+        size =
+          if human_readable, do: format_human_size(stat.size), else: Integer.to_string(stat.size)
+
         "#{type}#{mode} #{size} #{name}"
 
       {:error, _} ->
@@ -86,5 +90,14 @@ defmodule JustBash.Commands.Ls do
     w = if Bitwise.band(mode, 0o200) != 0, do: "w", else: "-"
     x = if Bitwise.band(mode, 0o100) != 0, do: "x", else: "-"
     "#{r}#{w}#{x}------"
+  end
+
+  defp format_human_size(bytes) do
+    cond do
+      bytes < 1024 -> Integer.to_string(bytes)
+      bytes < 1024 * 1024 -> "#{Float.round(bytes / 1024, 1)}K"
+      bytes < 1024 * 1024 * 1024 -> "#{Float.round(bytes / (1024 * 1024), 1)}M"
+      true -> "#{Float.round(bytes / (1024 * 1024 * 1024), 1)}G"
+    end
   end
 end

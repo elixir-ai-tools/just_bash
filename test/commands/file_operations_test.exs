@@ -53,6 +53,46 @@ defmodule JustBash.Commands.FileOperationsTest do
       {result, _} = JustBash.exec(bash, "ls /file.txt")
       assert result.stdout == "/file.txt\n"
     end
+
+    test "ls -lh shows human-readable file sizes" do
+      bash = JustBash.new(files: %{"/data/big.txt" => String.duplicate("x", 2048)})
+      {result, _} = JustBash.exec(bash, "ls -lh /data")
+      assert result.exit_code == 0
+      assert result.stderr == ""
+      assert result.stdout =~ "big.txt"
+      assert result.stdout =~ "K"
+    end
+
+    test "ls -lah combines all three flags" do
+      bash =
+        JustBash.new(
+          files: %{
+            "/data/.hidden" => String.duplicate("x", 2048),
+            "/data/visible" => "small"
+          }
+        )
+
+      {result, _} = JustBash.exec(bash, "ls -lah /data")
+      assert result.exit_code == 0
+      assert result.stdout =~ ".hidden"
+      assert result.stdout =~ "visible"
+      assert result.stdout =~ "rw"
+    end
+
+    test "ls -h without -l is accepted" do
+      bash = JustBash.new(files: %{"/data/file.txt" => "content"})
+      {result, _} = JustBash.exec(bash, "ls -h /data")
+      assert result.exit_code == 0
+      assert result.stdout =~ "file.txt"
+    end
+
+    test "ls -lh shows small files without suffix" do
+      bash = JustBash.new(files: %{"/data/tiny.txt" => "hi"})
+      {result, _} = JustBash.exec(bash, "ls -lh /data")
+      assert result.exit_code == 0
+      assert result.stdout =~ "2"
+      assert result.stdout =~ "tiny.txt"
+    end
   end
 
   describe "cp command" do
