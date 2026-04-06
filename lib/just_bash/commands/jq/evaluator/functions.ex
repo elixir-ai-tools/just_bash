@@ -38,7 +38,7 @@ defmodule JustBash.Commands.Jq.Evaluator.Functions do
                      with_entries IN INDEX JOIN date dateadd datesub fromdate
                      gmtime
                    ),
-                   &{&1, String.to_atom(&1)}
+                   fn name -> {name, :"#{name}"} end
                  )
 
   @doc """
