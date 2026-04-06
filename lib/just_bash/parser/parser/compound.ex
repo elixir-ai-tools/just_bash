@@ -13,6 +13,10 @@ defmodule JustBash.Parser.Compound do
 
   alias JustBash.AST
 
+  @unary_ops ~w(-a -e -f -d -r -w -x -s -z -n -L -h -b -c -p -S -t -g -u -k -O -G -N -v)
+  @binary_ops ~w(= == != =~ < > -eq -ne -lt -le -gt -ge -nt -ot -ef)
+  @cond_op_atoms Map.new(@unary_ops ++ @binary_ops, fn name -> {name, :"#{name}"} end)
+
   @doc """
   Parse an if/elif/else/fi construct.
   """
@@ -359,7 +363,7 @@ defmodule JustBash.Parser.Compound do
       unary_cond_op?(parser, helpers) ->
         {op_token, parser} = helpers.advance(parser)
         {word, parser} = parse_cond_word(parser, helpers)
-        operator = String.to_atom(op_token.value)
+        operator = Map.fetch!(@cond_op_atoms, op_token.value)
         {%AST.CondUnary{operator: operator, operand: word}, parser}
 
       true ->
@@ -371,7 +375,7 @@ defmodule JustBash.Parser.Compound do
 
           binary_cond_op?(parser, helpers) ->
             {op_token, parser} = helpers.advance(parser)
-            operator = String.to_atom(op_token.value)
+            operator = Map.fetch!(@cond_op_atoms, op_token.value)
 
             {right_word, parser} =
               if operator == :=~ do
@@ -390,9 +394,6 @@ defmodule JustBash.Parser.Compound do
         end
     end
   end
-
-  @unary_ops ~w(-a -e -f -d -r -w -x -s -z -n -L -h -b -c -p -S -t -g -u -k -O -G -N -v)
-  @binary_ops ~w(= == != =~ < > -eq -ne -lt -le -gt -ge -nt -ot -ef)
 
   defp unary_cond_op?(parser, helpers) do
     helpers.current(parser).value in @unary_ops

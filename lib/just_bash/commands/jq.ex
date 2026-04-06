@@ -48,6 +48,7 @@ defmodule JustBash.Commands.Jq do
       opts
       |> Map.put(:fs, bash.fs)
       |> Map.put(:module_paths, bash.jq_module_paths)
+      |> Map.put(:limits, bash.limits)
 
     case get_input(bash, opts, stdin) do
       {:error, msg} ->

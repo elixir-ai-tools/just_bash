@@ -8,11 +8,12 @@ defmodule JustBash.Commands.Awk.Parser do
   alias JustBash.Commands.Awk.AST
   alias JustBash.Commands.Awk.Lexer
 
-  defstruct [:tokens, :pos]
+  defstruct [:tokens, :pos, in_print_context: false]
 
   @type t :: %__MODULE__{
           tokens: [Lexer.token()],
-          pos: non_neg_integer()
+          pos: non_neg_integer(),
+          in_print_context: boolean()
         }
 
   @doc """
@@ -501,11 +502,10 @@ defmodule JustBash.Commands.Awk.Parser do
   defp parse_print_arg(state) do
     # In print context, > and >> are redirection, not comparison
     # So we parse a limited expression that stops at those
-    prev = Process.get(:in_print_context)
-    Process.put(:in_print_context, true)
-    result = parse_ternary(state)
-    Process.put(:in_print_context, prev)
-    result
+    prev = state.in_print_context
+    result = parse_ternary(%{state | in_print_context: true})
+    {expr, state} = result
+    {expr, %{state | in_print_context: prev}}
   end
 
   defp parse_output_redirect(state) do
@@ -655,7 +655,7 @@ defmodule JustBash.Commands.Awk.Parser do
         {right, state} = parse_concat(state)
         parse_comparison_rest(state, AST.binary(:le, left, right))
 
-      token_is?(state, :gt) and !Process.get(:in_print_context) ->
+      token_is?(state, :gt) and not state.in_print_context ->
         state = advance(state)
         {right, state} = parse_concat(state)
         parse_comparison_rest(state, AST.binary(:gt, left, right))
@@ -873,10 +873,9 @@ defmodule JustBash.Commands.Awk.Parser do
       :lparen ->
         state = advance(state)
         # Inside parentheses, > is always comparison, not redirect
-        prev_print = Process.get(:in_print_context)
-        Process.put(:in_print_context, false)
-        {expr, state} = parse_expression(state)
-        Process.put(:in_print_context, prev_print)
+        prev_print = state.in_print_context
+        {expr, state} = parse_expression(%{state | in_print_context: false})
+        state = %{state | in_print_context: prev_print}
         {_, state} = expect(state, :rparen)
         {expr, state}
 

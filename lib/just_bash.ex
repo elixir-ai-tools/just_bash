@@ -57,6 +57,7 @@ defmodule JustBash do
   alias JustBash.Fs.InMemoryFs
   alias JustBash.Interpreter.Executor
   alias JustBash.Interpreter.State
+  alias JustBash.Limit
   alias JustBash.Parser
   alias JustBash.Parser.Lexer
 
@@ -93,6 +94,7 @@ defmodule JustBash do
             databases: %{},
             max_iterations: 10_000,
             max_call_depth: 1_000,
+            limits: nil,
             jq_module_paths: [],
             interpreter: nil
 
@@ -128,6 +130,7 @@ defmodule JustBash do
           databases: map(),
           max_iterations: pos_integer(),
           max_call_depth: pos_integer(),
+          limits: Limit.t() | nil,
           jq_module_paths: [String.t()],
           interpreter: State.t()
         }
@@ -161,6 +164,9 @@ defmodule JustBash do
   - `:max_call_depth` - Maximum shell function call depth before recursion is
     forcibly stopped. Prevents unbounded recursion from consuming all available
     memory (default: 1_000)
+  - `:limits` - Resource limits for production safety. Accepts a preset atom
+    (`:default`, `:strict`, `:relaxed`), a keyword list of overrides, or `false`
+    to disable. Default: `:default`. See `JustBash.Limit` for available keys.
   - `:jq_module_paths` - List of virtual filesystem paths to search for `jq` modules
     when using `import`/`include` directives (default: [])
 
@@ -186,6 +192,7 @@ defmodule JustBash do
     http_client = Keyword.get(opts, :http_client)
     max_iterations = Keyword.get(opts, :max_iterations, 10_000)
     max_call_depth = Keyword.get(opts, :max_call_depth, 1_000)
+    limits = opts |> Keyword.get(:limits, :default) |> Limit.new()
     jq_module_paths = Keyword.get(opts, :jq_module_paths, [])
 
     default_env = %{
@@ -212,6 +219,7 @@ defmodule JustBash do
       http_client: http_client,
       max_iterations: max_iterations,
       max_call_depth: max_call_depth,
+      limits: limits,
       jq_module_paths: jq_module_paths,
       interpreter: State.new()
     }
@@ -332,6 +340,14 @@ defmodule JustBash do
   """
   @spec exec(t(), String.t()) :: {exec_result(), t()}
   def exec(bash, command) when is_binary(command) do
+    # Reset counters only for top-level exec (not nested eval/source)
+    bash =
+      if bash.interpreter.exec_depth == 0 do
+        %{bash | interpreter: State.reset_counters(bash.interpreter)}
+      else
+        bash
+      end
+
     JustBash.Telemetry.session_span(self(), fn ->
       case Parser.parse(command) do
         {:ok, ast} ->
@@ -390,6 +406,39 @@ defmodule JustBash do
             {result, bash}
         end
     end
+  end
+
+  @typedoc "Execution statistics from the most recent `exec/2` call."
+  @type stats :: %{
+          steps: non_neg_integer(),
+          output_bytes: non_neg_integer(),
+          max_exec_depth: non_neg_integer()
+        }
+
+  @doc """
+  Returns execution statistics from the most recent `exec/2` call.
+
+  Useful for observing computational cost without enforcing limits —
+  for example, as a reward signal in reinforcement learning to prefer
+  simpler programs.
+
+  Counters reset at the start of each top-level `exec/2` call, so
+  stats always reflect the most recent execution.
+
+  ## Examples
+
+      bash = JustBash.new()
+      {_result, bash} = JustBash.exec(bash, "for i in 1 2 3; do echo $i; done")
+      JustBash.stats(bash)
+      #=> %{steps: 12, output_bytes: 6, max_exec_depth: 1}
+  """
+  @spec stats(t()) :: stats()
+  def stats(%__MODULE__{interpreter: interp}) do
+    %{
+      steps: interp.step_count,
+      output_bytes: interp.output_bytes,
+      max_exec_depth: interp.max_exec_depth
+    }
   end
 
   @doc """

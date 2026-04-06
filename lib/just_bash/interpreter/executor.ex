@@ -16,6 +16,7 @@ defmodule JustBash.Interpreter.Executor do
   alias JustBash.Interpreter.Executor.Loop
   alias JustBash.Interpreter.Executor.Redirection
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Limit
   alias JustBash.Result
 
   @type result :: %{
@@ -31,23 +32,29 @@ defmodule JustBash.Interpreter.Executor do
   """
   @spec execute_script(JustBash.t(), AST.Script.t()) :: {result(), JustBash.t()}
   def execute_script(bash, %AST.Script{statements: statements}) do
+    original_depth = bash.interpreter.exec_depth
+    bash = Limit.track_exec_depth!(bash)
+
     {final_bash, stdout_io, stderr_io, exit_code, _halted} =
       Enum.reduce_while(statements, {bash, [], [], 0, false}, fn stmt, {b, out, err, _code, _} ->
-        {result, new_bash} = execute_statement(b, stmt)
-        new_env = Map.put(new_bash.env, "?", to_string(result.exit_code))
-        new_bash = %{new_bash | last_exit_code: result.exit_code, env: new_env}
-        # Use iodata - O(1) prepend, single flatten at end
-        acc = {new_bash, [out, result.stdout], [err, result.stderr], result.exit_code, false}
-
-        # Check errexit: exit if enabled and command failed
-        # Note: errexit doesn't apply to statements with && or || operators
-        if new_bash.shell_opts.errexit and result.exit_code != 0 and
-             not has_short_circuit_operators?(stmt) do
-          {:halt, put_elem(acc, 4, true)}
+        if b.interpreter.halted do
+          {:halt, {b, out, err, 1, true}}
         else
-          {:cont, acc}
+          {result, new_bash} = execute_statement(b, stmt)
+          new_env = Map.put(new_bash.env, "?", to_string(result.exit_code))
+          new_bash = %{new_bash | last_exit_code: result.exit_code, env: new_env}
+          acc = {new_bash, [out, result.stdout], [err, result.stderr], result.exit_code, false}
+
+          if new_bash.shell_opts.errexit and result.exit_code != 0 and
+               not has_short_circuit_operators?(stmt) do
+            {:halt, put_elem(acc, 4, true)}
+          else
+            {:cont, acc}
+          end
         end
       end)
+
+    final_bash = put_in(final_bash.interpreter.exec_depth, original_depth)
 
     result = %{
       stdout: IO.iodata_to_binary(stdout_io),
@@ -59,7 +66,6 @@ defmodule JustBash.Interpreter.Executor do
     {result, final_bash}
   end
 
-  # Check if statement uses && or || operators (errexit doesn't apply to these)
   defp has_short_circuit_operators?(%AST.Statement{operators: operators}) do
     Enum.any?(operators, &(&1 in [:and, :or]))
   end
@@ -69,15 +75,37 @@ defmodule JustBash.Interpreter.Executor do
   """
   @spec execute_statement(JustBash.t(), AST.Statement.t() | AST.Group.t()) ::
           {result(), JustBash.t()}
-  def execute_statement(bash, %AST.Statement{pipelines: pipelines, operators: operators}) do
+  def execute_statement(bash, stmt) do
+    if bash.interpreter.halted do
+      {%{stdout: "", stderr: "", exit_code: 1}, bash}
+    else
+      tracked_before = bash.interpreter.output_bytes
+      {result, new_bash} = do_execute_statement(bash, stmt)
+
+      # Delta-based: only count output not already tracked by nested statements
+      output_size = byte_size(result.stdout) + byte_size(result.stderr)
+      already_tracked = new_bash.interpreter.output_bytes - tracked_before
+      untracked = max(output_size - already_tracked, 0)
+      new_bash = Limit.track_output!(new_bash, untracked)
+
+      {result, new_bash}
+    end
+  rescue
+    # Catches raises from step!/track_output!/etc. deep in the call tree.
+    # Uses pre-execution `bash` — state from the interrupted statement is discarded.
+    e in Limit.ExceededError ->
+      {%{stdout: "", stderr: "bash: #{e.message}\n", exit_code: 1},
+       put_in(bash.interpreter.halted, true)}
+  end
+
+  defp do_execute_statement(bash, %AST.Statement{pipelines: pipelines, operators: operators}) do
     execute_pipelines(bash, pipelines, operators, 0, [], [], nil)
   end
 
-  def execute_statement(bash, %AST.Group{body: body}) do
+  defp do_execute_statement(bash, %AST.Group{body: body}) do
     execute_body_with_bash(bash, body)
   end
 
-  # Use iodata for stdout/stderr accumulation
   defp execute_pipelines(bash, pipelines, operators, prev_exit, stdout_io, stderr_io, prev_op) do
     execute_pipelines(bash, pipelines, operators, prev_exit, stdout_io, stderr_io, prev_op, nil)
   end
@@ -520,32 +548,38 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   defp execute_body(bash, statements) do
-    {final_bash, stdout, stderr, exit_code, control} =
-      Enum.reduce_while(statements, {bash, "", "", 0, nil}, fn stmt,
+    {final_bash, stdout_io, stderr_io, exit_code, control} =
+      Enum.reduce_while(statements, {bash, [], [], 0, nil}, fn stmt,
                                                                {b, out, err, _code, _ctrl} ->
-        {result, new_bash} = execute_statement(b, stmt)
-        new_out = out <> result.stdout
-        new_err = err <> result.stderr
+        if b.interpreter.halted do
+          {:halt, {b, out, err, 1, nil}}
+        else
+          {result, new_bash} = execute_statement(b, stmt)
 
-        # Check for control flow signals using Result struct
-        case extract_control_signal(result) do
-          {:break, n} ->
-            {:halt, {new_bash, new_out, new_err, 0, {:break, n}}}
+          case extract_control_signal(result) do
+            {:break, n} ->
+              {:halt, {new_bash, [out, result.stdout], [err, result.stderr], 0, {:break, n}}}
 
-          {:continue, n} ->
-            {:halt, {new_bash, new_out, new_err, 0, {:continue, n}}}
+            {:continue, n} ->
+              {:halt, {new_bash, [out, result.stdout], [err, result.stderr], 0, {:continue, n}}}
 
-          {:return, n} ->
-            {:halt, {new_bash, new_out, new_err, n, {:return, n}}}
+            {:return, n} ->
+              {:halt, {new_bash, [out, result.stdout], [err, result.stderr], n, {:return, n}}}
 
-          nil ->
-            {:cont, {new_bash, new_out, new_err, result.exit_code, nil}}
+            nil ->
+              {:cont,
+               {new_bash, [out, result.stdout], [err, result.stderr], result.exit_code, nil}}
+          end
         end
       end)
 
-    result = %{stdout: stdout, stderr: stderr, exit_code: exit_code, env: final_bash.env}
+    result = %{
+      stdout: IO.iodata_to_binary(stdout_io),
+      stderr: IO.iodata_to_binary(stderr_io),
+      exit_code: exit_code,
+      env: final_bash.env
+    }
 
-    # Propagate control flow signals using add_control_signal helper
     result = add_control_signal(result, control)
 
     {result, final_bash}
@@ -778,6 +812,7 @@ defmodule JustBash.Interpreter.Executor do
         {%{stdout: "", stderr: "bash: #{cmd}: command not found\n", exit_code: 127}, bash}
 
       module ->
+        bash = Limit.step!(bash)
         module.execute(bash, args, stdin)
     end
   end
@@ -785,6 +820,8 @@ defmodule JustBash.Interpreter.Executor do
   @control_signal_keys [:__break__, :__continue__, :__return__]
 
   defp execute_custom_command(bash, cmd_name, module, args, stdin) do
+    bash = Limit.step!(bash)
+
     # credo:disable-for-next-line Credo.Check.Readability.PreferImplicitTry
     try do
       case module.execute(bash, args, stdin) do

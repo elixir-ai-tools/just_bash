@@ -15,6 +15,7 @@ defmodule JustBash.Interpreter.Executor.Conditional do
   alias JustBash.AST
   alias JustBash.Fs.InMemoryFs
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Limit
 
   @type unary_op_type ::
           :file_exists
@@ -211,7 +212,7 @@ defmodule JustBash.Interpreter.Executor.Conditional do
 
   # Evaluate =~ regex match and populate BASH_REMATCH
   defp evaluate_regex_match(bash, str, pattern) do
-    case Regex.compile(pattern) do
+    case Limit.compile_regex(bash.limits, pattern) do
       {:ok, regex} ->
         case Regex.run(regex, str) do
           nil ->

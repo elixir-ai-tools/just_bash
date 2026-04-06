@@ -5,6 +5,7 @@ defmodule JustBash.Commands.Grep do
   alias JustBash.Commands.Command
   alias JustBash.FlagParser
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limit
 
   @flag_spec %{
     boolean: [
@@ -69,7 +70,7 @@ defmodule JustBash.Commands.Grep do
   end
 
   defp execute_with_files(bash, pattern, files, flags) do
-    regex = compile_pattern(pattern, flags)
+    regex = compile_pattern(bash, pattern, flags)
 
     # Expand files recursively if -r flag is set
     expanded_files = expand_files(bash, files, flags.r)
@@ -171,7 +172,7 @@ defmodule JustBash.Commands.Grep do
   end
 
   defp execute_with_stdin(bash, pattern, stdin, flags) do
-    regex = compile_pattern(pattern, flags)
+    regex = compile_pattern(bash, pattern, flags)
     lines = process_content(stdin, regex, flags, "")
     matched = lines != []
 
@@ -195,7 +196,8 @@ defmodule JustBash.Commands.Grep do
     end
   end
 
-  defp compile_pattern(pattern, flags) do
+  defp compile_pattern(bash, pattern, flags) do
+    Limit.check_regex_size!(bash.limits, pattern)
     opts = if flags.i, do: [:caseless], else: []
 
     regex_pattern =

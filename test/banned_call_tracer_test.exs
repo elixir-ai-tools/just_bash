@@ -107,6 +107,31 @@ defmodule JustBash.BannedCallTracerTest do
                end)
     end
 
+    test "no String.to_atom in lib/just_bash source" do
+      violations =
+        Path.wildcard("lib/just_bash/**/*.ex")
+        |> Enum.flat_map(fn path ->
+          path
+          |> File.read!()
+          |> String.split("\n")
+          |> Enum.with_index(1)
+          |> Enum.reject(fn {line, _} -> String.match?(line, ~r/^\s*#|\@(doc|moduledoc)/) end)
+          |> Enum.flat_map(fn {line, lineno} ->
+            if String.match?(line, ~r/String\.to_atom\b/) do
+              [{path, lineno, line}]
+            else
+              []
+            end
+          end)
+        end)
+
+      assert violations == [],
+             "String.to_atom found (use String.to_existing_atom or an explicit map):\n" <>
+               Enum.map_join(violations, "\n", fn {path, line, content} ->
+                 "  #{path}:#{line}: #{String.trim(content)}"
+               end)
+    end
+
     test "no banned calls in lib/ (excluding intentional real-IO modules)" do
       # Modules allowed to use real filesystem / environment access,
       # with the reason each is exempt from the sandbox rule:
@@ -122,7 +147,9 @@ defmodule JustBash.BannedCallTracerTest do
         # Benchmark runner — writes results.jsonl to host filesystem
         "Elixir.JustBash.Eval.Runner",
         # Spec test parser — reads fixture files from host filesystem during mix test
-        "Elixir.JustBash.SpecTest.Parser"
+        "Elixir.JustBash.SpecTest.Parser",
+        # Test-only mock that uses Process dictionary for test state
+        "Elixir.JustBash.MockHttpClient"
       ]
 
       violations =

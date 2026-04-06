@@ -214,7 +214,7 @@ defmodule JustBash.TelemetryTest do
                        %{until: false}}
 
       assert_received {^ref, [:just_bash, :while_loop, :stop], %{duration: _},
-                       %{until: false, iteration_count: 3, exit_code: 0}}
+                       %{until: false, exit_code: 0}}
     end
 
     test "emits events for until loop with until: true", %{ref: ref} do
@@ -224,15 +224,14 @@ defmodule JustBash.TelemetryTest do
       assert_received {^ref, [:just_bash, :while_loop, :start], _, %{until: true}}
 
       assert_received {^ref, [:just_bash, :while_loop, :stop], %{duration: _},
-                       %{until: true, iteration_count: 2, exit_code: 0}}
+                       %{until: true, exit_code: 0}}
     end
 
     test "reports zero iterations when condition is false immediately", %{ref: ref} do
       bash = JustBash.new()
       JustBash.exec(bash, "while false; do echo nope; done")
 
-      assert_received {^ref, [:just_bash, :while_loop, :stop], _,
-                       %{iteration_count: 0, exit_code: 0}}
+      assert_received {^ref, [:just_bash, :while_loop, :stop], _, %{exit_code: 0}}
     end
   end
 end

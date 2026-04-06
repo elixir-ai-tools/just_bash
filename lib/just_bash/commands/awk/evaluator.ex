@@ -8,6 +8,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   alias JustBash.Commands.Awk.{Formatter, Parser}
   alias JustBash.Fs.InMemoryFs
+  alias JustBash.Limit
 
   @type state :: %{
           nr: non_neg_integer(),
@@ -184,7 +185,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   defp pattern_matches?({:regex, pattern}, state) do
     result =
-      case Regex.compile(pattern) do
+      case checked_compile(pattern, state) do
         {:ok, regex} -> Regex.match?(regex, Enum.at(state.fields, 0, ""))
         {:error, _} -> false
       end
@@ -273,7 +274,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
     field = String.to_integer(field_str)
     field_value = get_field(state, field)
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, state) do
       {:ok, regex} -> Regex.match?(regex, field_value)
       {:error, _} -> false
     end
@@ -635,7 +636,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp execute_statement({:gsub, pattern, replacement, {:field, 0}}, state) do
     line = Enum.at(state.fields, 0, "")
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, state) do
       {:ok, regex} ->
         new_line = Regex.replace(regex, line, replacement)
         new_fields = [new_line | tl(state.fields)]
@@ -649,7 +650,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp execute_statement({:gsub, pattern, replacement, {:field, n}}, state) do
     field_val = Enum.at(state.fields, n, "")
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, state) do
       {:ok, regex} ->
         new_val = Regex.replace(regex, field_val, replacement)
         new_fields = List.replace_at(state.fields, n, new_val)
@@ -663,7 +664,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp execute_statement({:gsub, pattern, replacement, {:variable, var}}, state) do
     current = Map.get(state.variables, var, "")
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, state) do
       {:ok, regex} ->
         new_val = Regex.replace(regex, current, replacement)
         %{state | variables: Map.put(state.variables, var, new_val)}
@@ -677,7 +678,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp execute_statement({:sub, pattern, replacement, {:field, 0}}, state) do
     line = Enum.at(state.fields, 0, "")
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, state) do
       {:ok, regex} ->
         new_line = Regex.replace(regex, line, replacement, global: false)
         new_fields = [new_line | tl(state.fields)]
@@ -691,7 +692,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp execute_statement({:sub, pattern, replacement, {:field, n}}, state) do
     field_val = Enum.at(state.fields, n, "")
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, state) do
       {:ok, regex} ->
         new_val = Regex.replace(regex, field_val, replacement, global: false)
         new_fields = List.replace_at(state.fields, n, new_val)
@@ -705,7 +706,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp execute_statement({:sub, pattern, replacement, {:variable, var}}, state) do
     current = Map.get(state.variables, var, "")
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, state) do
       {:ok, regex} ->
         new_val = Regex.replace(regex, current, replacement, global: false)
         %{state | variables: Map.put(state.variables, var, new_val)}
@@ -766,7 +767,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   # match(string, regex [, array]) implementation
   defp execute_match(args, state) do
     {string, pattern, array_name} = extract_match_args(args, state)
-    regex = compile_awk_regex(pattern)
+    regex = compile_awk_regex(pattern, state)
 
     case Regex.run(regex, string, return: :index) do
       nil ->
@@ -885,8 +886,13 @@ defmodule JustBash.Commands.Awk.Evaluator do
     {str, array_name, state.fs}
   end
 
-  defp compile_awk_regex(pattern) do
-    case Regex.compile(pattern) do
+  defp checked_compile(pattern, state) do
+    limits = if state.bash, do: state.bash.limits
+    Limit.compile_regex(limits, pattern)
+  end
+
+  defp compile_awk_regex(pattern, state) do
+    case checked_compile(pattern, state) do
       {:ok, regex} -> regex
       {:error, _} -> ~r/(?!)/
     end
@@ -1148,7 +1154,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   def evaluate_expression({:regex, pattern}, state) do
     line = get_field(state, 0)
 
-    case Regex.compile(pattern) do
+    case checked_compile(pattern, state) do
       {:ok, re} -> if Regex.match?(re, line), do: 1, else: 0
       _ -> 0
     end
@@ -1202,7 +1208,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
     value = evaluate_expression(expr, state) |> to_string()
     pattern_str = unwrap_pattern(pattern)
 
-    case Regex.compile(pattern_str) do
+    case checked_compile(pattern_str, state) do
       {:ok, regex} -> if Regex.match?(regex, value), do: 1, else: 0
       {:error, _} -> 0
     end
@@ -1212,7 +1218,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
     value = evaluate_expression(expr, state) |> to_string()
     pattern_str = unwrap_pattern(pattern)
 
-    case Regex.compile(pattern_str) do
+    case checked_compile(pattern_str, state) do
       {:ok, regex} -> if Regex.match?(regex, value), do: 0, else: 1
       {:error, _} -> 1
     end
@@ -1470,7 +1476,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
     value = evaluate_expression(expr, state) |> to_string()
     pattern_str = unwrap_pattern(pattern)
 
-    case Regex.compile(pattern_str) do
+    case checked_compile(pattern_str, state) do
       {:ok, regex} -> Regex.match?(regex, value)
       {:error, _} -> false
     end
@@ -1614,8 +1620,8 @@ defmodule JustBash.Commands.Awk.Evaluator do
     0
   end
 
-  defp evaluate_function("match", [string, pattern], _state) do
-    regex = compile_awk_regex(to_string(pattern))
+  defp evaluate_function("match", [string, pattern], state) do
+    regex = compile_awk_regex(to_string(pattern), state)
 
     case Regex.run(regex, to_string(string), return: :index) do
       nil -> 0
