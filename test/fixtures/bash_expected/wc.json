@@ -146,6 +146,34 @@
       "name": "wc pipeline combinations: head then wc",
       "stderr": "",
       "stdout": "3\n"
+    },
+    {
+      "content_hash": "364ea40429bd538e",
+      "exit_code": 0,
+      "name": "wc combined flags: -lw lines and words",
+      "stderr": "",
+      "stdout": "      2       5\n"
+    },
+    {
+      "content_hash": "44438c7f2ced5b1b",
+      "exit_code": 0,
+      "name": "wc combined flags: -lc lines and bytes",
+      "stderr": "",
+      "stdout": "      1       6\n"
+    },
+    {
+      "content_hash": "7981339a5ac59b1e",
+      "exit_code": 0,
+      "name": "wc combined flags: -lwc all three",
+      "stderr": "",
+      "stdout": "      2       3      14\n"
+    },
+    {
+      "content_hash": "e53de18540523d34",
+      "exit_code": 0,
+      "name": "wc combined flags: -wc words and bytes",
+      "stderr": "",
+      "stdout": "      2      12\n"
     }
   ],
   "suite": "wc"

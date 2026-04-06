@@ -9,7 +9,7 @@ defmodule JustBash.Commands.File do
   def names, do: ["file"]
 
   @impl true
-  def execute(bash, args, _stdin) do
+  def execute(bash, args, stdin) do
     case parse_args(args) do
       {:error, msg} ->
         {Command.error(msg), bash}
@@ -18,26 +18,46 @@ defmodule JustBash.Commands.File do
         if opts.files == [] do
           {Command.error("Usage: file [-bLi] FILE...\n"), bash}
         else
-          {output, exit_code} = process_files(bash, opts)
+          {output, exit_code} = process_files(bash, opts, stdin)
           {%{stdout: output, stderr: "", exit_code: exit_code}, bash}
         end
     end
   end
 
-  defp process_files(bash, opts) do
+  defp process_files(bash, opts, stdin) do
     Enum.reduce(opts.files, {"", 0}, fn file, {acc_out, acc_code} ->
-      resolved = InMemoryFs.resolve_path(bash.cwd, file)
-
-      case detect_type(bash.fs, resolved, file) do
-        {:ok, type_info} ->
-          line = format_success_line(opts, file, type_info)
+      case file do
+        "-" ->
+          type_info = detect_stdin_type(stdin)
+          line = format_success_line(opts, "/dev/stdin", type_info)
           {acc_out <> line, acc_code}
 
-        {:error, _} ->
-          line = format_error_line(opts, file)
-          {acc_out <> line, 1}
+        _ ->
+          process_fs_file(bash, opts, file, acc_out, acc_code)
       end
     end)
+  end
+
+  defp process_fs_file(bash, opts, file, acc_out, acc_code) do
+    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+
+    case detect_type(bash.fs, resolved, file) do
+      {:ok, type_info} ->
+        line = format_success_line(opts, file, type_info)
+        {acc_out <> line, acc_code}
+
+      {:error, _} ->
+        line = format_error_line(opts, file)
+        {acc_out <> line, 1}
+    end
+  end
+
+  defp detect_stdin_type("") do
+    %{description: "empty", mime: "inode/x-empty"}
+  end
+
+  defp detect_stdin_type(content) do
+    detect_content_type(content, "-")
   end
 
   defp format_success_line(opts, file, type_info) do
@@ -88,6 +108,10 @@ defmodule JustBash.Commands.File do
 
   defp parse_args(["-ib" | rest], opts) do
     parse_args(rest, %{opts | brief: true, mime: true})
+  end
+
+  defp parse_args(["-" | rest], opts) do
+    parse_args(rest, %{opts | files: opts.files ++ ["-"]})
   end
 
   defp parse_args(["-" <> _ = arg | _rest], _opts) do

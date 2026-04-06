@@ -8,8 +8,8 @@ defmodule JustBash.Commands.Head do
 
   @flag_spec %{
     boolean: [],
-    value: [:n],
-    defaults: %{n: 10}
+    value: [:n, :c],
+    defaults: %{n: 10, c: nil}
   }
 
   @impl true
@@ -18,16 +18,22 @@ defmodule JustBash.Commands.Head do
   @impl true
   def execute(bash, args, stdin) do
     {flags, files} = FlagParser.parse(args, @flag_spec)
-    n = flags.n
+
+    mode =
+      if flags.c do
+        {:bytes, flags.c}
+      else
+        {:lines, flags.n}
+      end
 
     case files do
-      [] -> head_stdin(bash, stdin, n)
-      [file] -> head_file(bash, file, n)
-      multiple -> head_multiple(bash, multiple, n)
+      [] -> head_stdin(bash, stdin, mode)
+      [file] -> head_file(bash, file, mode)
+      multiple -> head_multiple(bash, multiple, mode)
     end
   end
 
-  defp head_multiple(bash, files, n) do
+  defp head_multiple(bash, files, mode) do
     {outputs, errors, exit_code} =
       Enum.reduce(files, {[], [], 0}, fn file, {out_acc, err_acc, code} ->
         resolved = InMemoryFs.resolve_path(bash.cwd, file)
@@ -35,7 +41,7 @@ defmodule JustBash.Commands.Head do
         case InMemoryFs.read_file(bash.fs, resolved) do
           {:ok, content} ->
             header = "==> #{file} <==\n"
-            body = format_head_output(content, n)
+            body = take_content(content, mode)
             {[header <> body | out_acc], err_acc, code}
 
           {:error, _} ->
@@ -50,12 +56,12 @@ defmodule JustBash.Commands.Head do
     {%{stdout: stdout, stderr: stderr, exit_code: exit_code}, bash}
   end
 
-  defp head_file(bash, file, n) do
+  defp head_file(bash, file, mode) do
     resolved = InMemoryFs.resolve_path(bash.cwd, file)
 
     case InMemoryFs.read_file(bash.fs, resolved) do
       {:ok, content} ->
-        output = format_head_output(content, n)
+        output = take_content(content, mode)
         {Command.ok(output), bash}
 
       {:error, _} ->
@@ -64,16 +70,17 @@ defmodule JustBash.Commands.Head do
     end
   end
 
-  defp head_stdin(bash, stdin, n) do
-    lines = String.split(stdin, "\n")
-    output = lines |> Enum.take(n) |> Enum.join("\n")
-
-    output =
-      if output != "" and not String.ends_with?(output, "\n"),
-        do: output <> "\n",
-        else: output
-
+  defp head_stdin(bash, stdin, mode) do
+    output = take_content(stdin, mode)
     {Command.ok(output), bash}
+  end
+
+  defp take_content(content, {:bytes, n}) do
+    binary_part(content, 0, min(n, byte_size(content)))
+  end
+
+  defp take_content(content, {:lines, n}) do
+    format_head_output(content, n)
   end
 
   defp format_head_output(content, n) do

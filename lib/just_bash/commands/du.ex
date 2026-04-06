@@ -5,6 +5,13 @@ defmodule JustBash.Commands.Du do
   alias JustBash.Commands.Command
   alias JustBash.Fs.InMemoryFs
 
+  @short_flags %{
+    ?a => :all_files,
+    ?h => :human_readable,
+    ?s => :summarize,
+    ?c => :grand_total
+  }
+
   @impl true
   def names, do: ["du"]
 
@@ -59,22 +66,6 @@ defmodule JustBash.Commands.Du do
 
   defp parse_args([], opts), do: {:ok, opts}
 
-  defp parse_args(["-a" | rest], opts) do
-    parse_args(rest, %{opts | all_files: true})
-  end
-
-  defp parse_args(["-h" | rest], opts) do
-    parse_args(rest, %{opts | human_readable: true})
-  end
-
-  defp parse_args(["-s" | rest], opts) do
-    parse_args(rest, %{opts | summarize: true})
-  end
-
-  defp parse_args(["-c" | rest], opts) do
-    parse_args(rest, %{opts | grand_total: true})
-  end
-
   defp parse_args(["--max-depth=" <> depth | rest], opts) do
     case Integer.parse(depth) do
       {d, ""} when d >= 0 -> parse_args(rest, %{opts | max_depth: d})
@@ -82,12 +73,30 @@ defmodule JustBash.Commands.Du do
     end
   end
 
-  defp parse_args(["-" <> _ = arg | _rest], _opts) do
-    {:error, "du: invalid option '#{arg}'\n"}
+  defp parse_args(["-" <> flag_str | rest], opts) when flag_str != "" do
+    case expand_short_flags(flag_str) do
+      {:ok, keys} ->
+        new_opts = Enum.reduce(keys, opts, fn key, acc -> %{acc | key => true} end)
+        parse_args(rest, new_opts)
+
+      {:error, char} ->
+        {:error, "du: invalid option -- '#{<<char::utf8>>}'\n"}
+    end
   end
 
   defp parse_args([file | rest], opts) do
     parse_args(rest, %{opts | files: opts.files ++ [file]})
+  end
+
+  defp expand_short_flags(flag_str) do
+    flag_str
+    |> String.to_charlist()
+    |> Enum.reduce_while({:ok, []}, fn char, {:ok, acc} ->
+      case Map.get(@short_flags, char) do
+        nil -> {:halt, {:error, char}}
+        key -> {:cont, {:ok, [key | acc]}}
+      end
+    end)
   end
 
   defp calculate_size(fs, path, display_path, opts, depth) do

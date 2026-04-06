@@ -116,6 +116,10 @@ defmodule JustBash.Commands.Xargs do
     end
   end
 
+  defp parse_args(["-I" <> replace_str | rest], opts) when replace_str != "" do
+    parse_args(rest, %{opts | replace_str: replace_str})
+  end
+
   defp parse_args(["-" <> flags | rest], opts) when byte_size(flags) > 0 do
     chars = String.graphemes(flags)
     parse_combined_flags(chars, rest, opts)

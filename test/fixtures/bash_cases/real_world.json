@@ -1,0 +1,151 @@
+{
+  "suite": "real_world",
+  "cases": [
+    {
+      "name": "one-liner: head -c to extract prefix",
+      "script": "echo 'abcdefghijklmnop' | head -c 8",
+      "content_hash": "eaacb08dc037c211"
+    },
+    {
+      "name": "one-liner: wc -l on pipeline",
+      "script": "echo -e 'a\\nb\\nc\\nd\\ne' | grep -v c | wc -l",
+      "content_hash": "083347a2abd71572"
+    },
+    {
+      "name": "one-liner: sort | uniq -c pattern",
+      "script": "echo -e 'apple\\nbanana\\napple\\ncherry\\napple\\nbanana' | sort | uniq -c | sort -rn",
+      "content_hash": "9d86b75c746af369"
+    },
+    {
+      "name": "one-liner: grep -c count matches",
+      "script": "echo -e 'foo\\nbar\\nfoo\\nbaz\\nfoo' | grep -c foo",
+      "content_hash": "3b79f7af0f85c70c"
+    },
+    {
+      "name": "one-liner: awk field extraction",
+      "script": "echo -e 'alice 30\\nbob 25\\ncharlie 35' | awk '{print $1}'",
+      "content_hash": "6eeff81a3301a492"
+    },
+    {
+      "name": "one-liner: tr squeeze whitespace",
+      "script": "echo 'hello     world    foo' | tr -s ' '",
+      "content_hash": "c5ba448c28900215"
+    },
+    {
+      "name": "one-liner: cut -d and paste -d",
+      "script": "echo -e 'a:1\\nb:2\\nc:3' | cut -d: -f2",
+      "content_hash": "2970dfa9a50ddb14"
+    },
+    {
+      "name": "one-liner: xargs -I replacement",
+      "script": "echo -e 'one\\ntwo\\nthree' | xargs -I{} echo 'item: {}'",
+      "content_hash": "349023f7ed641054"
+    },
+    {
+      "name": "one-liner: subshell variable isolation",
+      "script": "X=outer; (X=inner; echo $X); echo $X",
+      "content_hash": "c628dcdbe4252c5f"
+    },
+    {
+      "name": "one-liner: while read loop with IFS",
+      "script": "echo -e 'a,1\\nb,2\\nc,3' | while IFS=, read -r key val; do echo \"$key=$val\"; done",
+      "content_hash": "d14924a4f4853e17"
+    },
+    {
+      "name": "one-liner: printf format string",
+      "script": "printf '%-10s %5d\\n' alice 30 bob 25 charlie 35",
+      "content_hash": "cddacda6f0b7191b"
+    },
+    {
+      "name": "one-liner: seq into arithmetic",
+      "script": "seq 1 5 | paste -sd+ | bc",
+      "opts": {"ignore_stderr": true},
+      "content_hash": "07110906f0b5c126"
+    },
+    {
+      "name": "one-liner: nested pipelines",
+      "script": "echo -e 'the quick brown fox\\njumps over the lazy dog' | tr ' ' '\\n' | sort | uniq | wc -l",
+      "content_hash": "6f0a7fdaffe87eeb"
+    },
+    {
+      "name": "one-liner: sed and grep pipeline",
+      "script": "echo -e 'ERROR: disk full\\nINFO: started\\nERROR: timeout\\nINFO: done' | grep ERROR | sed 's/ERROR: //'",
+      "content_hash": "47e28e1f2ab57443"
+    },
+    {
+      "name": "one-liner: awk sum column",
+      "script": "echo -e '10\\n20\\n30\\n40' | awk '{s+=$1} END {print s}'",
+      "content_hash": "99756c361f26f918"
+    },
+    {
+      "name": "one-liner: head and tail to extract middle",
+      "script": "echo -e '1\\n2\\n3\\n4\\n5\\n6\\n7\\n8\\n9\\n10' | head -7 | tail -3",
+      "content_hash": "00e6d02eceb4529d"
+    },
+    {
+      "name": "one-liner: cat - for stdin in pipeline",
+      "script": "echo hello | cat -",
+      "content_hash": "1f5fd4c459e3af9a"
+    },
+    {
+      "name": "one-liner: rev and cut for last field",
+      "script": "echo '/path/to/some/file.txt' | rev | cut -d/ -f1 | rev",
+      "content_hash": "9cbf6b06d4af11ae"
+    },
+    {
+      "name": "one-liner: tr delete characters",
+      "script": "echo 'Hello, World! 123' | tr -d '[:digit:][:punct:]'",
+      "content_hash": "803f68986f94d7ee"
+    },
+    {
+      "name": "one-liner: sort -t -k field sort",
+      "script": "echo -e 'c:3\\na:1\\nb:2' | sort -t: -k2 -n",
+      "content_hash": "1d1e66fd89e6a570"
+    },
+    {
+      "name": "one-liner: command substitution in echo",
+      "script": "echo \"there are $(echo -e 'a\\nb\\nc' | wc -l | tr -d ' ') lines\"",
+      "content_hash": "df28220700b4bc69"
+    },
+    {
+      "name": "one-liner: tail -c byte mode",
+      "script": "echo -n 'abcdefghij' | tail -c 5",
+      "content_hash": "a4602a1af2bbb56d"
+    },
+    {
+      "name": "one-liner: multiple pipes with wc -lw",
+      "script": "echo -e 'one two three\\nfour five' | wc -lw",
+      "content_hash": "4a9f5f03127723c0"
+    },
+    {
+      "name": "one-liner: for loop with seq",
+      "script": "for i in $(seq 1 5); do echo \"num:$i\"; done",
+      "content_hash": "3419f4248a3df601"
+    },
+    {
+      "name": "one-liner: grep -v | sort -u dedup",
+      "script": "echo -e 'apple\\n\\nbanana\\n\\napple\\ncherry' | grep -v '^$' | sort -u",
+      "content_hash": "0fdc8b2425e0deb0"
+    },
+    {
+      "name": "one-liner: awk NR line numbers",
+      "script": "echo -e 'first\\nsecond\\nthird' | awk '{print NR\": \"$0}'",
+      "content_hash": "efebc32e5cab5fe2"
+    },
+    {
+      "name": "one-liner: tr character translation",
+      "script": "echo 'hello world' | tr 'a-z' 'A-Z'",
+      "content_hash": "8dd4f831fccb49a1"
+    },
+    {
+      "name": "one-liner: head -c with wc -c to verify",
+      "script": "echo -n 'abcdefghij' | head -c 5 | wc -c | tr -d ' '",
+      "content_hash": "5baf2740972bb77c"
+    },
+    {
+      "name": "one-liner: nested command substitution",
+      "script": "echo \"$(echo hello | tr 'a-z' 'A-Z') $(echo world | rev)\"",
+      "content_hash": "0a91498ee638b805"
+    }
+  ]
+}

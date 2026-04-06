@@ -40,6 +40,28 @@ defmodule JustBash.Commands.TextProcessingTest do
       {result, _} = JustBash.exec(bash, "cat /a.txt /b.txt")
       assert result.stdout == "aaa\nbbb\n"
     end
+
+    test "cat - reads from stdin" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo hello | cat -")
+      assert result.exit_code == 0
+      assert result.stdout == "hello\n"
+    end
+
+    test "cat - interleaved with files" do
+      bash = JustBash.new(files: %{"/a.txt" => "AAA", "/b.txt" => "BBB"})
+      {result, _} = JustBash.exec(bash, "echo STDIN | cat /a.txt - /b.txt")
+      assert result.exit_code == 0
+      assert result.stdout == "AAASTDIN\nBBB"
+    end
+
+    test "cat with multiple - reads stdin once" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo hello | cat - -")
+      assert result.exit_code == 0
+      # first - consumes stdin, second - gets empty
+      assert result.stdout == "hello\n"
+    end
   end
 
   describe "head command" do
@@ -93,6 +115,67 @@ defmodule JustBash.Commands.TextProcessingTest do
       assert result.stdout =~ "==> /b.txt <=="
       assert result.stdout =~ "line1b"
     end
+
+    test "head -c N outputs first N bytes from file" do
+      bash = JustBash.new(files: %{"/file.txt" => "Hello, World!\n"})
+      {result, _} = JustBash.exec(bash, "head -c 5 /file.txt")
+      assert result.exit_code == 0
+      assert result.stdout == "Hello"
+    end
+
+    test "head -c N outputs first N bytes from stdin" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, ~s(echo -n "abcdefghij" | head -c 3))
+      assert result.exit_code == 0
+      assert result.stdout == "abc"
+    end
+
+    test "head -c with N larger than content returns full content" do
+      bash = JustBash.new(files: %{"/file.txt" => "short"})
+      {result, _} = JustBash.exec(bash, "head -c 500 /file.txt")
+      assert result.exit_code == 0
+      assert result.stdout == "short"
+    end
+
+    test "head -c 0 outputs nothing" do
+      bash = JustBash.new(files: %{"/file.txt" => "content"})
+      {result, _} = JustBash.exec(bash, "head -c 0 /file.txt")
+      assert result.exit_code == 0
+      assert result.stdout == ""
+    end
+
+    test "head -c on empty file" do
+      bash = JustBash.new(files: %{"/empty.txt" => ""})
+      {result, _} = JustBash.exec(bash, "head -c 10 /empty.txt")
+      assert result.exit_code == 0
+      assert result.stdout == ""
+    end
+
+    test "head -c with multibyte content truncates at byte boundary" do
+      bash = JustBash.new(files: %{"/file.txt" => "abcdef"})
+      {result, _} = JustBash.exec(bash, "head -c 3 /file.txt")
+      assert result.exit_code == 0
+      assert result.stdout == "abc"
+    end
+
+    test "head -c with multiple files" do
+      bash =
+        JustBash.new(files: %{"/a.txt" => "ABCDEFGH", "/b.txt" => "12345678"})
+
+      {result, _} = JustBash.exec(bash, "head -c 4 /a.txt /b.txt")
+      assert result.exit_code == 0
+      assert result.stdout =~ "==> /a.txt <=="
+      assert result.stdout =~ "ABCD"
+      assert result.stdout =~ "==> /b.txt <=="
+      assert result.stdout =~ "1234"
+    end
+
+    test "head -c file not found" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "head -c 10 /nonexistent")
+      assert result.exit_code == 1
+      assert result.stderr =~ "No such file or directory"
+    end
   end
 
   describe "tail command" do
@@ -139,6 +222,60 @@ defmodule JustBash.Commands.TextProcessingTest do
       assert result.stdout =~ "line2a"
       assert result.stdout =~ "==> /b.txt <=="
       assert result.stdout =~ "line2b"
+    end
+
+    test "tail -c N outputs last N bytes from file" do
+      bash = JustBash.new(files: %{"/file.txt" => "Hello, World!\n"})
+      {result, _} = JustBash.exec(bash, "tail -c 7 /file.txt")
+      assert result.exit_code == 0
+      assert result.stdout == "World!\n"
+    end
+
+    test "tail -c N outputs last N bytes from stdin" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, ~s(echo -n "abcdefghij" | tail -c 4))
+      assert result.exit_code == 0
+      assert result.stdout == "ghij"
+    end
+
+    test "tail -c with N larger than content returns full content" do
+      bash = JustBash.new(files: %{"/file.txt" => "short"})
+      {result, _} = JustBash.exec(bash, "tail -c 500 /file.txt")
+      assert result.exit_code == 0
+      assert result.stdout == "short"
+    end
+
+    test "tail -c 0 outputs nothing" do
+      bash = JustBash.new(files: %{"/file.txt" => "content"})
+      {result, _} = JustBash.exec(bash, "tail -c 0 /file.txt")
+      assert result.exit_code == 0
+      assert result.stdout == ""
+    end
+
+    test "tail -c on empty file" do
+      bash = JustBash.new(files: %{"/empty.txt" => ""})
+      {result, _} = JustBash.exec(bash, "tail -c 10 /empty.txt")
+      assert result.exit_code == 0
+      assert result.stdout == ""
+    end
+
+    test "tail -c with multiple files" do
+      bash =
+        JustBash.new(files: %{"/a.txt" => "ABCDEFGH", "/b.txt" => "12345678"})
+
+      {result, _} = JustBash.exec(bash, "tail -c 3 /a.txt /b.txt")
+      assert result.exit_code == 0
+      assert result.stdout =~ "==> /a.txt <=="
+      assert result.stdout =~ "FGH"
+      assert result.stdout =~ "==> /b.txt <=="
+      assert result.stdout =~ "678"
+    end
+
+    test "tail -c file not found" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "tail -c 10 /nonexistent")
+      assert result.exit_code == 1
+      assert result.stderr =~ "No such file or directory"
     end
   end
 
@@ -840,6 +977,48 @@ defmodule JustBash.Commands.TextProcessingTest do
       assert result.stdout =~ "5"
       assert result.stdout =~ "8"
       assert result.stdout =~ "total"
+    end
+
+    test "wc -lw combines line and word count flags" do
+      bash = JustBash.new(files: %{"/file.txt" => "hello world\nfoo bar baz\n"})
+      {result, _} = JustBash.exec(bash, "wc -lw /file.txt")
+      assert result.exit_code == 0
+      assert result.stdout =~ "2"
+      assert result.stdout =~ "5"
+      # should NOT include byte count
+      refute result.stdout =~ "23"
+    end
+
+    test "wc -lc combines line and byte count flags" do
+      bash = JustBash.new(files: %{"/file.txt" => "hello\n"})
+      {result, _} = JustBash.exec(bash, "wc -lc /file.txt")
+      assert result.exit_code == 0
+      assert result.stdout =~ "1"
+      assert result.stdout =~ "6"
+    end
+
+    test "wc -lwc shows all three columns" do
+      bash = JustBash.new(files: %{"/file.txt" => "one two\nthree\n"})
+      {result, _} = JustBash.exec(bash, "wc -lwc /file.txt")
+      assert result.exit_code == 0
+      assert result.stdout =~ "2"
+      assert result.stdout =~ "3"
+    end
+
+    test "wc -wc combines word and byte count flags" do
+      bash = JustBash.new(files: %{"/file.txt" => "hello world\n"})
+      {result, _} = JustBash.exec(bash, "wc -wc /file.txt")
+      assert result.exit_code == 0
+      assert result.stdout =~ "2"
+      assert result.stdout =~ "12"
+    end
+
+    test "wc combined flags from stdin" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo 'a b c' | wc -lw")
+      assert result.exit_code == 0
+      assert result.stdout =~ "1"
+      assert result.stdout =~ "3"
     end
   end
 

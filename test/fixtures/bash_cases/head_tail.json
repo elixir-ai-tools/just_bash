@@ -25,6 +25,66 @@
       "name": "head tail comparison: tail from line",
       "script": "echo -e '1\n2\n3\n4\n5' | tail -n +3",
       "content_hash": "e50482750515ec6f"
+    },
+    {
+      "name": "head -c byte mode: first 5 bytes",
+      "script": "echo -n 'Hello, World!' | head -c 5",
+      "content_hash": "a5922d6daf8dda41"
+    },
+    {
+      "name": "head -c byte mode: from stdin pipe",
+      "script": "echo -n 'abcdefghij' | head -c 3",
+      "content_hash": "f2cc07f2b479ff77"
+    },
+    {
+      "name": "head -c byte mode: N larger than input",
+      "script": "echo -n 'short' | head -c 500",
+      "content_hash": "74f4ff0916d80285"
+    },
+    {
+      "name": "head -c byte mode: zero bytes",
+      "script": "echo -n 'content' | head -c 0",
+      "content_hash": "c239fa665b670645"
+    },
+    {
+      "name": "head -c byte mode: empty input",
+      "script": "echo -n '' | head -c 10",
+      "content_hash": "a9cfeb0cd1dbaa26"
+    },
+    {
+      "name": "head -c byte mode: includes newlines",
+      "script": "printf 'line1\nline2\nline3\n' | head -c 8",
+      "content_hash": "c6d52634160a6c13"
+    },
+    {
+      "name": "tail -c byte mode: last 7 bytes",
+      "script": "echo -n 'Hello, World!' | tail -c 6",
+      "content_hash": "ac6c29f2e051b845"
+    },
+    {
+      "name": "tail -c byte mode: from stdin pipe",
+      "script": "echo -n 'abcdefghij' | tail -c 4",
+      "content_hash": "cd8e1303f084b24b"
+    },
+    {
+      "name": "tail -c byte mode: N larger than input",
+      "script": "echo -n 'short' | tail -c 500",
+      "content_hash": "5b4394666e2e4a52"
+    },
+    {
+      "name": "tail -c byte mode: zero bytes",
+      "script": "echo -n 'content' | tail -c 0",
+      "content_hash": "19681666c21ef715"
+    },
+    {
+      "name": "tail -c byte mode: empty input",
+      "script": "echo -n '' | tail -c 10",
+      "content_hash": "575c18be3c2725b7"
+    },
+    {
+      "name": "tail -c byte mode: includes newlines",
+      "script": "printf 'line1\nline2\nline3\n' | tail -c 8",
+      "content_hash": "d0ef8df077e5a212"
     }
   ]
 }
