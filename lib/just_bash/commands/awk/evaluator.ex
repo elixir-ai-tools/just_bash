@@ -1287,6 +1287,11 @@ defmodule JustBash.Commands.Awk.Evaluator do
     Map.get(arr, key, "")
   end
 
+  # Defensive catch-all: unknown AST shapes return an empty string rather than
+  # crashing the whole bash process. Real awk would raise a syntax error at
+  # parse time; we'd rather keep the shell alive and let the user see nothing.
+  def evaluate_expression(_unknown, _state), do: ""
+
   @doc """
   Evaluate an expression and return both the value and potentially updated state.
   Most expressions don't modify state, but increment/decrement expressions do.

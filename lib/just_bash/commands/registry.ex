@@ -97,7 +97,9 @@ defmodule JustBash.Commands.Registry do
     "nproc" => Commands.Nproc,
     "arch" => Commands.Arch,
     "yes" => Commands.Yes,
-    "type" => Commands.Type
+    "type" => Commands.Type,
+    "xxd" => Commands.Xxd,
+    "od" => Commands.Od
   }
 
   # Shell builtins — commands that are part of the shell itself, not external programs.

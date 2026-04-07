@@ -324,6 +324,31 @@ defmodule JustBash.Commands.TextProcessingTest do
       {result, _} = JustBash.exec(bash, "echo -e 'apple\\nbanana\\napricot' | grep ap")
       assert result.stdout == "apple\napricot\n"
     end
+
+    test "grep -oP finds all matches (PCRE flag is accepted)" do
+      content = ~s(prefix apiKey: "abc123" middle apiKey: "def456" suffix\n)
+      bash = JustBash.new(files: %{"/f.txt" => content})
+      {result, _} = JustBash.exec(bash, ~s(grep -oP 'apiKey: "[^"]+"' /f.txt))
+      assert result.exit_code == 0
+      assert result.stdout == ~s(apiKey: "abc123"\napiKey: "def456"\n)
+    end
+
+    test "grep -oP alternation returns each match" do
+      content = "alpha apiKey beta Authorization gamma apiKey\n"
+      bash = JustBash.new(files: %{"/f.txt" => content})
+      {result, _} = JustBash.exec(bash, "grep -oP 'apiKey|Authorization' /f.txt")
+      assert result.exit_code == 0
+      assert result.stdout == "apiKey\nAuthorization\napiKey\n"
+    end
+
+    test "grep -o works on long single-line input" do
+      padding = String.duplicate("x", 200_000)
+      content = padding <> "FINDME" <> padding <> "FINDME" <> padding <> "\n"
+      bash = JustBash.new(files: %{"/big.js" => content})
+      {result, _} = JustBash.exec(bash, "grep -o FINDME /big.js")
+      assert result.exit_code == 0
+      assert result.stdout == "FINDME\nFINDME\n"
+    end
   end
 
   describe "sed command" do

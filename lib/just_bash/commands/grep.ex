@@ -13,6 +13,7 @@ defmodule JustBash.Commands.Grep do
       :v,
       :e_ext,
       :f_fixed,
+      :p_pcre,
       :c,
       :l,
       :n,
@@ -27,6 +28,7 @@ defmodule JustBash.Commands.Grep do
     aliases: %{
       "E" => :e_ext,
       "F" => :f_fixed,
+      "P" => :p_pcre,
       "H" => :with_filename,
       "h" => :no_filename,
       "R" => :r
@@ -37,6 +39,7 @@ defmodule JustBash.Commands.Grep do
       v: false,
       e_ext: false,
       f_fixed: false,
+      p_pcre: false,
       c: false,
       l: false,
       n: false,

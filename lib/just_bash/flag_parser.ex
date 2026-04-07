@@ -111,12 +111,14 @@ defmodule JustBash.FlagParser do
         end
 
       String.length(flag_str) > 1 ->
-        case try_attached_value_flag(flag_str, spec, flags, lookup) do
+        combined_lookup = Map.merge(lookup, aliases)
+
+        case try_attached_value_flag(flag_str, spec, flags, combined_lookup) do
           {:ok, new_flags} ->
             {:ok, new_flags, remaining}
 
           :error ->
-            case parse_combined_flags(flag_str, spec, flags, lookup) do
+            case parse_combined_flags(flag_str, spec, flags, combined_lookup) do
               {:ok, new_flags} -> {:ok, new_flags, remaining}
               :error -> try_numeric_flag(flag_str, remaining, spec, flags)
             end

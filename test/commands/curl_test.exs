@@ -129,6 +129,37 @@ defmodule JustBash.Commands.CurlTest do
       assert result.stdout =~ "test"
     end
 
+    test "curl --version reports a version line" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "curl --version")
+      assert result.exit_code == 0
+      assert result.stdout =~ ~r/^curl \d/
+    end
+
+    test "curl -D dumps response headers to a file" do
+      bash =
+        JustBash.new(network: %{enabled: true, allow_list: :all}, http_client: MockHttpClient)
+
+      {result, new_bash} =
+        JustBash.exec(bash, "curl -s -D /tmp/headers.txt https://httpbin.org/get")
+
+      assert result.exit_code == 0
+      {read_result, _} = JustBash.exec(new_bash, "cat /tmp/headers.txt")
+      assert read_result.stdout =~ "HTTP/"
+      assert read_result.stdout =~ "content-type"
+    end
+
+    test "curl -w writes a format string to stdout after the body" do
+      bash =
+        JustBash.new(network: %{enabled: true, allow_list: :all}, http_client: MockHttpClient)
+
+      {result, _} =
+        JustBash.exec(bash, ~s[curl -s -o /dev/null -w "%{http_code}" https://httpbin.org/get])
+
+      assert result.exit_code == 0
+      assert result.stdout == "200"
+    end
+
     test "curl follows redirects with -L" do
       bash =
         JustBash.new(network: %{enabled: true, allow_list: :all}, http_client: MockHttpClient)

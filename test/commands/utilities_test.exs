@@ -3,6 +3,26 @@ defmodule JustBash.Commands.UtilitiesTest do
 
   alias JustBash.Commands.Env
 
+  describe "xxd command" do
+    test "xxd produces a canonical hex+ASCII dump of stdin" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo -n hello | xxd")
+      assert result.exit_code == 0
+      assert result.stdout =~ "6865 6c6c 6f"
+      assert result.stdout =~ "hello"
+    end
+  end
+
+  describe "od command" do
+    test "od -c shows characters" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo -n hi | od -c")
+      assert result.exit_code == 0
+      assert result.stdout =~ "h"
+      assert result.stdout =~ "i"
+    end
+  end
+
   describe "basic commands" do
     test "echo with multiple arguments" do
       bash = JustBash.new()

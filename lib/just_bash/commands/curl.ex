@@ -39,6 +39,9 @@ defmodule JustBash.Commands.Curl do
           opts.help ->
             {Command.ok(help_text()), bash}
 
+          opts.version ->
+            {Command.ok(version_text()), bash}
+
           opts.url == nil ->
             {Command.error("curl: no URL specified\n"), bash}
 
@@ -129,7 +132,10 @@ defmodule JustBash.Commands.Curl do
       user: [short: "-u", long: "--user", type: :string],
       user_agent: [short: "-A", long: "--user-agent", type: :string],
       timeout: [short: "-m", long: "--max-time", type: :integer, default: @default_timeout],
-      connect_timeout: [long: "--connect-timeout", type: :integer]
+      connect_timeout: [long: "--connect-timeout", type: :integer],
+      version: [short: "-V", long: "--version", type: :boolean],
+      write_out: [short: "-w", long: "--write-out", type: :string],
+      dump_header: [short: "-D", long: "--dump-header", type: :string]
     ]
   end
 
@@ -194,24 +200,69 @@ defmodule JustBash.Commands.Curl do
 
   defp handle_response(bash, response, opts) do
     output = build_output(response, opts)
-    write_output(bash, output, opts)
+
+    case maybe_dump_header(bash, response, opts) do
+      {:ok, bash} ->
+        write_output(bash, output, response, opts)
+
+      {:error, reason} ->
+        {Command.error("curl: #{opts.dump_header}: #{reason}\n"), bash}
+    end
   end
 
-  defp write_output(bash, output, %{output_file: nil}) do
-    {Command.ok(output), bash}
+  defp maybe_dump_header(bash, _response, %{dump_header: nil}), do: {:ok, bash}
+
+  defp maybe_dump_header(bash, response, %{dump_header: path}) do
+    status_line = "HTTP/1.1 #{response.status} #{status_text(response.status)}\r\n"
+    headers = Enum.map_join(response.headers, fn {k, v} -> "#{k}: #{v}\r\n" end)
+    content = status_line <> headers <> "\r\n"
+    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+
+    case InMemoryFs.write_file(bash.fs, resolved, content) do
+      {:ok, fs} -> {:ok, %{bash | fs: fs}}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
-  defp write_output(bash, output, opts) do
+  defp write_output(bash, output, response, %{output_file: nil} = opts) do
+    {Command.ok(output <> render_write_out(response, opts)), bash}
+  end
+
+  defp write_output(bash, output, response, opts) do
     resolved = InMemoryFs.resolve_path(bash.cwd, opts.output_file)
+    body = if opts.output_file == "/dev/null", do: :discard, else: output
 
-    case InMemoryFs.write_file(bash.fs, resolved, output) do
+    result =
+      case body do
+        :discard -> {:ok, bash.fs}
+        content -> InMemoryFs.write_file(bash.fs, resolved, content)
+      end
+
+    case result do
       {:ok, new_fs} ->
         progress = if opts.silent, do: "", else: "  % Total    % Received\n"
-        {Command.ok(progress), %{bash | fs: new_fs}}
+        stdout = progress <> render_write_out(response, opts)
+        bash = if body == :discard, do: bash, else: %{bash | fs: new_fs}
+        {Command.ok(stdout), bash}
 
       {:error, reason} ->
         {Command.error("curl: #{opts.output_file}: #{reason}\n"), bash}
     end
+  end
+
+  defp render_write_out(_response, %{write_out: nil}), do: ""
+
+  defp render_write_out(response, %{write_out: fmt}) do
+    fmt
+    |> String.replace("%{http_code}", Integer.to_string(response.status))
+    |> String.replace("%{response_code}", Integer.to_string(response.status))
+    |> String.replace("\\n", "\n")
+    |> String.replace("\\r", "\r")
+    |> String.replace("\\t", "\t")
+  end
+
+  defp version_text do
+    "curl 8.0.0 (just_bash) libcurl/8.0.0\nRelease-Date: 2025-01-01\nProtocols: http https\nFeatures: \n"
   end
 
   defp build_output(response, opts) do
