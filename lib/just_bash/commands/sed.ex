@@ -14,7 +14,7 @@ defmodule JustBash.Commands.Sed do
 
   alias JustBash.Commands.Command
   alias JustBash.Commands.Sed.{Executor, Parser}
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @impl true
   def names, do: ["sed"]
@@ -169,9 +169,9 @@ defmodule JustBash.Commands.Sed do
   defp process_files_to_output(bash, files, commands, opts) do
     result =
       Enum.reduce_while(files, {:ok, ""}, fn file, {:ok, acc} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+        resolved = Fs.resolve_path(bash.cwd, file)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
+        case Fs.read_file(bash.fs, resolved) do
           {:ok, content} ->
             output = Executor.execute(content, commands, opts.silent)
             {:cont, {:ok, acc <> output}}
@@ -200,9 +200,9 @@ defmodule JustBash.Commands.Sed do
   end
 
   defp process_single_file_in_place(bash, file, commands, opts) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = Fs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
+    case Fs.read_file(bash.fs, resolved) do
       {:ok, content} ->
         write_processed_content(bash, resolved, file, content, commands, opts)
 
@@ -214,7 +214,7 @@ defmodule JustBash.Commands.Sed do
   defp write_processed_content(bash, resolved, file, content, commands, opts) do
     output = Executor.execute(content, commands, opts.silent)
 
-    case InMemoryFs.write_file(bash.fs, resolved, output) do
+    case Fs.write_file(bash.fs, resolved, output) do
       {:ok, new_fs} ->
         {:cont, {:ok, %{bash | fs: new_fs}}}
 

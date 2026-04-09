@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Ln do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @impl true
   def names, do: ["ln"]
@@ -17,7 +17,7 @@ defmodule JustBash.Commands.Ln do
     else
       [target | rest] = opts.files
       link_name = List.last(rest)
-      link_path = InMemoryFs.resolve_path(bash.cwd, link_name)
+      link_path = Fs.resolve_path(bash.cwd, link_name)
 
       case create_link(bash, target, link_path, link_name, opts) do
         {:ok, new_bash, output} ->
@@ -111,7 +111,7 @@ defmodule JustBash.Commands.Ln do
   end
 
   defp maybe_force_remove(fs, link_path, true) do
-    case InMemoryFs.rm(fs, link_path) do
+    case Fs.rm(fs, link_path) do
       {:ok, new_fs} -> new_fs
       {:error, _} -> fs
     end
@@ -120,15 +120,15 @@ defmodule JustBash.Commands.Ln do
   defp maybe_force_remove(fs, _link_path, false), do: fs
 
   defp perform_link(_bash, fs, target, link_path, true) do
-    InMemoryFs.symlink(fs, target, link_path)
+    Fs.symlink(fs, target, link_path)
   end
 
   defp perform_link(bash, fs, target, link_path, false) do
-    target_path = InMemoryFs.resolve_path(bash.cwd, target)
+    target_path = Fs.resolve_path(bash.cwd, target)
 
-    case InMemoryFs.stat(fs, target_path) do
+    case Fs.stat(fs, target_path) do
       {:ok, %{is_file: true}} ->
-        InMemoryFs.link(fs, target_path, link_path)
+        Fs.link(fs, target_path, link_path)
 
       {:ok, %{is_directory: true}} ->
         {:error, :eperm}

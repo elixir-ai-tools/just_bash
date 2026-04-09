@@ -17,7 +17,7 @@ defmodule JustBash.Eval.Commands.KV do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @store_path "/.kv_store.json"
 
@@ -118,7 +118,7 @@ defmodule JustBash.Eval.Commands.KV do
   end
 
   defp read_store(fs) do
-    case InMemoryFs.read_file(fs, @store_path) do
+    case Fs.read_file(fs, @store_path) do
       {:ok, content} ->
         case Jason.decode(content) do
           {:ok, map} when is_map(map) -> map
@@ -132,7 +132,7 @@ defmodule JustBash.Eval.Commands.KV do
 
   defp write_store(bash, store) do
     content = Jason.encode!(store)
-    {:ok, fs} = InMemoryFs.write_file(bash.fs, @store_path, content)
+    {:ok, fs} = Fs.write_file(bash.fs, @store_path, content)
     %{bash | fs: fs}
   end
 end

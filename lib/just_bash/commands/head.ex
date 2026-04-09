@@ -4,7 +4,7 @@ defmodule JustBash.Commands.Head do
 
   alias JustBash.Commands.Command
   alias JustBash.FlagParser
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @flag_spec %{
     boolean: [],
@@ -36,9 +36,9 @@ defmodule JustBash.Commands.Head do
   defp head_multiple(bash, files, mode) do
     {outputs, errors, exit_code} =
       Enum.reduce(files, {[], [], 0}, fn file, {out_acc, err_acc, code} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+        resolved = Fs.resolve_path(bash.cwd, file)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
+        case Fs.read_file(bash.fs, resolved) do
           {:ok, content} ->
             header = "==> #{file} <==\n"
             body = take_content(content, mode)
@@ -57,9 +57,9 @@ defmodule JustBash.Commands.Head do
   end
 
   defp head_file(bash, file, mode) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = Fs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
+    case Fs.read_file(bash.fs, resolved) do
       {:ok, content} ->
         output = take_content(content, mode)
         {Command.ok(output), bash}

@@ -18,7 +18,7 @@ defmodule JustBash.Commands.Markdown do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @impl true
   def names, do: ["markdown", "md"]
@@ -70,9 +70,9 @@ defmodule JustBash.Commands.Markdown do
   end
 
   defp get_content(bash, %{file: file}, _stdin) when is_binary(file) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = Fs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
+    case Fs.read_file(bash.fs, resolved) do
       {:ok, content} -> {:ok, content}
       {:error, _} -> {:error, "cannot read '#{file}'"}
     end

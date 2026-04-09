@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Od do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @impl true
   def names, do: ["od"]
@@ -39,9 +39,9 @@ defmodule JustBash.Commands.Od do
   defp read_input(_bash, "-", stdin), do: {:ok, stdin || ""}
 
   defp read_input(bash, file, _stdin) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = Fs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
+    case Fs.read_file(bash.fs, resolved) do
       {:ok, c} -> {:ok, c}
       {:error, _} -> {:error, "od: #{file}: No such file or directory\n"}
     end
