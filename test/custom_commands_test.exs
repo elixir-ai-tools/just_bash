@@ -186,6 +186,18 @@ defmodule JustBash.CustomCommandsTest do
     end
   end
 
+  defmodule ContextDumper do
+    @behaviour JustBash.Commands.Command
+
+    @impl true
+    def names, do: ["ctxdump"]
+
+    @impl true
+    def execute(bash, _args, _stdin) do
+      {%{stdout: inspect(bash.context) <> "\n", stderr: "", exit_code: 0}, bash}
+    end
+  end
+
   defmodule Counter do
     @doc "A command that reads a file, increments the number in it, and writes it back"
     @behaviour JustBash.Commands.Command
@@ -264,6 +276,29 @@ defmodule JustBash.CustomCommandsTest do
       assert result.exit_code == 1
       assert result.stderr =~ "throwy"
       assert result.stderr =~ "throw"
+    end
+  end
+
+  describe "custom command context" do
+    test "custom command receives bash.context from JustBash.new" do
+      ctx = %{"api_key" => "secret", greeting: "hello"}
+
+      bash =
+        JustBash.new(
+          context: ctx,
+          commands: %{"ctxdump" => ContextDumper}
+        )
+
+      {result, _} = JustBash.exec(bash, "ctxdump")
+      assert String.trim(result.stdout) == inspect(ctx)
+      assert result.exit_code == 0
+    end
+
+    test "custom command sees default empty context when :context omitted" do
+      bash = JustBash.new(commands: %{"ctxdump" => ContextDumper})
+      {result, _} = JustBash.exec(bash, "ctxdump")
+      assert String.trim(result.stdout) == inspect(%{})
+      assert result.exit_code == 0
     end
   end
 

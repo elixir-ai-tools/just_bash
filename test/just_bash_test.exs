@@ -110,6 +110,24 @@ defmodule JustBashTest do
     end
   end
 
+  describe "new/1 :context option" do
+    test "defaults context to an empty map" do
+      bash = JustBash.new()
+      assert bash.context == %{}
+    end
+
+    test "sets context from option" do
+      bash = JustBash.new(context: %{"api_key" => "secret", :tenant => 1})
+      assert bash.context == %{"api_key" => "secret", :tenant => 1}
+    end
+
+    test "raises when context is not a map" do
+      assert_raise ArgumentError, ~r/expected :context to be a map/, fn ->
+        JustBash.new(context: :not_a_map)
+      end
+    end
+  end
+
   describe "exec/2" do
     test "executes echo command" do
       bash = JustBash.new()

@@ -107,6 +107,36 @@ bash = JustBash.new(commands: %{"greet" => MyApp.Commands.Greet})
 result.stdout  #=> "Hello, world!\n"
 ```
 
+#### Custom command context
+
+Pass caller data into custom commands with the `:context` option. It is stored on the `JustBash`
+struct as `context` (default `%{}`) and is readable inside any custom command as `bash.context`.
+Builtins and the interpreter ignore it.
+
+```elixir
+defmodule MyApp.Commands.Whoami do
+  @behaviour JustBash.Commands.Command
+
+  @impl true
+  def names, do: ["whoami_ctx"]
+
+  @impl true
+  def execute(bash, _args, _stdin) do
+    user = Map.get(bash.context, :user, "anonymous")
+    {%{stdout: "#{user}\n", stderr: "", exit_code: 0}, bash}
+  end
+end
+
+bash =
+  JustBash.new(
+    context: %{user: "alice"},
+    commands: %{"whoami_ctx" => MyApp.Commands.Whoami}
+  )
+
+{result, _bash} = JustBash.exec(bash, "whoami_ctx")
+result.stdout  #=> "alice\n"
+```
+
 Important caveats:
 
 - Custom commands run arbitrary Elixir code in the host BEAM process

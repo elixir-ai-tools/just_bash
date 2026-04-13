@@ -86,6 +86,7 @@ defmodule JustBash do
             cwd: "/home/user",
             functions: %{},
             commands: %{},
+            context: %{},
             exit_code: 0,
             last_exit_code: 0,
             network: %{enabled: false, allow_list: [], allow_insecure: false},
@@ -123,6 +124,7 @@ defmodule JustBash do
           cwd: String.t(),
           functions: map(),
           commands: %{String.t() => module()},
+          context: map(),
           exit_code: non_neg_integer(),
           last_exit_code: non_neg_integer(),
           network: network_config(),
@@ -151,6 +153,9 @@ defmodule JustBash do
     Custom commands override regular builtins but are overridden by shell functions. Protected
     stateful builtins such as `cd` and `export` cannot be overridden.
     Dispatch order: shell functions > custom commands > builtins.
+  - `:context` - Optional map of caller data for custom commands. Stored on the `JustBash` struct
+    as `context` and readable inside any custom command as `bash.context`. Defaults to `%{}`.
+    Not used by builtins or the interpreter; only host-defined custom commands should read it.
   - `:network` - Network configuration map with:
     - `:enabled` - Whether network access is allowed (default: false)
     - `:allow_list` - Allowed hosts/patterns. Use `:all` to allow all hosts, or a list of
@@ -181,6 +186,9 @@ defmodule JustBash do
 
       # Custom HTTP client for testing:
       bash = JustBash.new(network: %{enabled: true}, http_client: MyTestHttpClient)
+
+      # Pass data to custom commands via bash.context:
+      bash = JustBash.new(context: %{user_id: 42}, commands: %{"my_cmd" => MyCommand})
   """
   @spec new(keyword()) :: t()
   def new(opts \\ []) do
@@ -194,6 +202,7 @@ defmodule JustBash do
     max_call_depth = Keyword.get(opts, :max_call_depth, 1_000)
     limits = opts |> Keyword.get(:limits, :default) |> Limit.new()
     jq_module_paths = Keyword.get(opts, :jq_module_paths, [])
+    context = opts |> Keyword.get(:context, %{}) |> validate_context!()
 
     default_env = %{
       "HOME" => cwd,
@@ -213,6 +222,7 @@ defmodule JustBash do
       cwd: cwd,
       functions: %{},
       commands: commands,
+      context: context,
       exit_code: 0,
       last_exit_code: 0,
       network: Map.merge(%{enabled: false, allow_list: [], allow_insecure: false}, network),
@@ -223,6 +233,12 @@ defmodule JustBash do
       jq_module_paths: jq_module_paths,
       interpreter: State.new()
     }
+  end
+
+  defp validate_context!(context) when is_map(context), do: context
+
+  defp validate_context!(other) do
+    raise ArgumentError, "expected :context to be a map, got: #{inspect(other)}"
   end
 
   defp normalize_commands!(commands) when is_map(commands) do
