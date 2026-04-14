@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/elixir-ai-tools/just_bash/compare/v0.2.0...v0.3.0) (2026-04-14)
+
+
+### Features
+
+* add context option to justbash struct for custom commands ([#34](https://github.com/elixir-ai-tools/just_bash/issues/34)) ([8824fd9](https://github.com/elixir-ai-tools/just_bash/commit/8824fd96db0863f2c7d07dc2925df6a280be4281))
+* add xxd/od, curl flags, grep -P, awk crash guard ([#32](https://github.com/elixir-ai-tools/just_bash/issues/32)) ([4afdb3b](https://github.com/elixir-ai-tools/just_bash/commit/4afdb3b))
+* add production resource limits and execution stats ([#28](https://github.com/elixir-ai-tools/just_bash/issues/28)) ([9c7a36d](https://github.com/elixir-ai-tools/just_bash/commit/9c7a36d))
+* add missing command flags, stdin support, and bash comparison fixtures ([#31](https://github.com/elixir-ai-tools/just_bash/issues/31)) ([67de3b0](https://github.com/elixir-ai-tools/just_bash/commit/67de3b0))
+* replace NimbleParsec lexer with hand-written state machine ([#30](https://github.com/elixir-ai-tools/just_bash/issues/30)) ([bc05d36](https://github.com/elixir-ai-tools/just_bash/commit/bc05d36))
+* add telemetry instrumentation for script execution ([#29](https://github.com/elixir-ai-tools/just_bash/issues/29)) ([b8cac23](https://github.com/elixir-ai-tools/just_bash/commit/b8cac23))
+
+
+### Bug Fixes
+
+* jq parser failing to resolve builtin function names to atoms ([144cbe8](https://github.com/elixir-ai-tools/just_bash/commit/144cbe8))
+
 ## [0.2.0](https://github.com/elixir-ai-tools/just_bash/compare/v0.1.0...v0.2.0) (2026-03-23)
 
 
