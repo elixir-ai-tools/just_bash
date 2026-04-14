@@ -1,7 +1,7 @@
 defmodule JustBash.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.3.0"
   @source_url "https://github.com/elixir-ai-tools/just_bash"
   @description "A simulated bash environment with virtual filesystem for safe command execution"
 
