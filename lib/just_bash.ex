@@ -97,6 +97,7 @@ defmodule JustBash do
             max_call_depth: 1_000,
             limits: nil,
             jq_module_paths: [],
+            git: %{enabled: false, credentials: nil},
             interpreter: nil
 
   @type exec_result :: %{
@@ -118,6 +119,11 @@ defmodule JustBash do
           pipefail: boolean()
         }
 
+  @type git_config :: %{
+          enabled: boolean(),
+          credentials: term()
+        }
+
   @type t :: %__MODULE__{
           fs: Fs.t(),
           env: map(),
@@ -134,6 +140,7 @@ defmodule JustBash do
           max_call_depth: pos_integer(),
           limits: Limit.t() | nil,
           jq_module_paths: [String.t()],
+          git: git_config(),
           interpreter: State.t()
         }
 
@@ -174,6 +181,13 @@ defmodule JustBash do
     to disable. Default: `:default`. See `JustBash.Limit` for available keys.
   - `:jq_module_paths` - List of virtual filesystem paths to search for `jq` modules
     when using `import`/`include` directives (default: [])
+  - `:git` - Git configuration map with:
+    - `:enabled` - Whether the `git` command is available (default: false).
+      Requires the optional `exgit` dependency.
+    - `:credentials` - Authentication credentials for private repos. Accepts any
+      Exgit auth tuple (e.g. `{:bearer, token}`, `Exgit.Credentials.GitHub.auth(token)`).
+      Credentials are stored on the struct and never exposed inside the sandbox —
+      the LLM can run `git clone` but cannot read or print the token.
 
   ## Examples
 
@@ -189,6 +203,10 @@ defmodule JustBash do
 
       # Pass data to custom commands via bash.context:
       bash = JustBash.new(context: %{user_id: 42}, commands: %{"my_cmd" => MyCommand})
+
+      # Git access (requires exgit dependency):
+      bash = JustBash.new(git: %{enabled: true})
+      bash = JustBash.new(git: %{enabled: true, credentials: {:bearer, "ghp_xxx"}})
   """
   @spec new(keyword()) :: t()
   def new(opts \\ []) do
@@ -205,6 +223,7 @@ defmodule JustBash do
     limits = opts |> Keyword.get(:limits, :default) |> Limit.new()
     jq_module_paths = Keyword.get(opts, :jq_module_paths, [])
     context = opts |> Keyword.get(:context, %{}) |> validate_context!()
+    git = Keyword.get(opts, :git, %{})
 
     if custom_fs && (files != %{} || extra_mounts != []) do
       raise ArgumentError,
@@ -241,6 +260,7 @@ defmodule JustBash do
       max_call_depth: max_call_depth,
       limits: limits,
       jq_module_paths: jq_module_paths,
+      git: Map.merge(%{enabled: false, credentials: nil}, git),
       interpreter: State.new()
     }
   end

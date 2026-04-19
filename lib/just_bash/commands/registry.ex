@@ -102,6 +102,10 @@ defmodule JustBash.Commands.Registry do
     "od" => Commands.Od
   }
 
+  @optional_commands %{
+    "git" => {Commands.Git, Exgit}
+  }
+
   # Shell builtins — commands that are part of the shell itself, not external programs.
   # In real bash, these have no file on disk (or the file is a separate binary).
   # `which` should report these as builtins, not fake paths.
@@ -140,13 +144,18 @@ defmodule JustBash.Commands.Registry do
   Get the module that implements the given command.
   """
   @spec get(String.t()) :: module() | nil
-  def get(name), do: Map.get(@commands, name)
+  def get(name) do
+    case Map.get(@commands, name) do
+      nil -> resolve_optional(name)
+      mod -> mod
+    end
+  end
 
   @doc """
   Check if a command exists.
   """
   @spec exists?(String.t()) :: boolean()
-  def exists?(name), do: Map.has_key?(@commands, name)
+  def exists?(name), do: Map.has_key?(@commands, name) or resolve_optional(name) != nil
 
   @doc """
   Check if a command is a shell builtin.
@@ -158,5 +167,17 @@ defmodule JustBash.Commands.Registry do
   List all available command names.
   """
   @spec list() :: [String.t()]
-  def list, do: Map.keys(@commands)
+  def list do
+    optional =
+      for {name, {_mod, dep}} <- @optional_commands, Code.ensure_loaded?(dep), do: name
+
+    Map.keys(@commands) ++ optional
+  end
+
+  defp resolve_optional(name) do
+    case Map.get(@optional_commands, name) do
+      {mod, dep} -> if Code.ensure_loaded?(dep), do: mod
+      nil -> nil
+    end
+  end
 end
