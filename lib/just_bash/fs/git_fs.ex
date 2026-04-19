@@ -96,6 +96,9 @@ if Code.ensure_loaded?(Exgit) do
         {:error, :not_found} ->
           {:error, :enoent}
 
+        {:error, :not_a_tree} ->
+          {:error, :enotdir}
+
         {:error, _} = err ->
           err
       end
