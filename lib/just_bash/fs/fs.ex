@@ -122,6 +122,20 @@ defmodule JustBash.Fs do
     Enum.map(mounts, fn {mp, mod, _state} -> {mp, mod} end)
   end
 
+  @doc """
+  Find the mount backing a given path, returning `{mountpoint, module, state}` or `nil`.
+  """
+  @spec find_mount(t(), String.t()) :: {String.t(), module(), term()} | nil
+  def find_mount(%__MODULE__{mounts: mounts}, path) do
+    normalized = normalize_path(path)
+
+    mounts
+    |> Enum.filter(fn {mp, _mod, _state} ->
+      normalized == mp or String.starts_with?(normalized, mp <> "/") or mp == "/"
+    end)
+    |> Enum.max_by(fn {mp, _mod, _state} -> byte_size(mp) end, fn -> nil end)
+  end
+
   # ---------------------------------------------------------------------------
   # Pure path helpers (canonical implementations)
   # ---------------------------------------------------------------------------

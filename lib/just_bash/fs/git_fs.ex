@@ -33,10 +33,12 @@ if Code.ensure_loaded?(Exgit) do
             repo: Exgit.Repository.t(),
             ref: String.t(),
             tree: binary() | nil,
-            writable: boolean()
+            writable: boolean(),
+            url: String.t() | nil,
+            parent_commit: binary() | nil
           }
 
-    defstruct [:repo, :ref, :tree, writable: false]
+    defstruct [:repo, :ref, :tree, :url, :parent_commit, writable: false]
 
     @spec new(String.t(), keyword()) :: t()
     def new(url, opts \\ []) do
@@ -44,9 +46,16 @@ if Code.ensure_loaded?(Exgit) do
       writable = Keyword.get(opts, :writable, false)
       {:ok, repo} = Exgit.clone(url)
 
-      tree = resolve_initial_tree(repo, ref)
+      {tree, parent_commit} = resolve_initial_tree_and_commit(repo, ref)
 
-      %__MODULE__{repo: repo, ref: ref, tree: tree, writable: writable}
+      %__MODULE__{
+        repo: repo,
+        ref: ref,
+        tree: tree,
+        writable: writable,
+        url: url,
+        parent_commit: parent_commit
+      }
     end
 
     # --- Read ops ---
@@ -278,16 +287,16 @@ if Code.ensure_loaded?(Exgit) do
     defp reference(%__MODULE__{tree: nil, ref: ref}), do: ref
     defp reference(%__MODULE__{tree: tree}), do: tree
 
-    defp resolve_initial_tree(repo, ref) do
+    defp resolve_initial_tree_and_commit(repo, ref) do
       case Exgit.RefStore.resolve(repo.ref_store, ref) do
         {:ok, commit_sha} ->
           case ObjectStore.get(repo.object_store, commit_sha) do
-            {:ok, %Commit{} = c} -> Commit.tree(c)
-            _ -> nil
+            {:ok, %Commit{} = c} -> {Commit.tree(c), commit_sha}
+            _ -> {nil, nil}
           end
 
         _ ->
-          nil
+          {nil, nil}
       end
     end
 

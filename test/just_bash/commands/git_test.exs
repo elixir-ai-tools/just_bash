@@ -70,7 +70,7 @@ defmodule JustBash.Commands.GitTest do
     end
 
     test "unknown subcommand fails", %{bash: bash} do
-      {result, _bash} = JustBash.exec(bash, "git push")
+      {result, _bash} = JustBash.exec(bash, "git status")
       assert result.exit_code == 1
       assert result.stderr =~ "not a git command"
     end
