@@ -21,5 +21,6 @@
   # every function that accepts/returns it.  These are false positives.
   {"lib/just_bash/interpreter/state.ex", :contract_with_opaque},
   {"lib/just_bash.ex", :contract_with_opaque},
-  {"lib/just_bash/sigil.ex", :call_without_opaque}
+  {"lib/just_bash/sigil.ex", :call_without_opaque},
+  {"lib/just_bash/fs/overlay_fs.ex", :contract_with_opaque}
 ]
