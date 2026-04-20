@@ -358,6 +358,16 @@ defmodule JustBash.Fs.MountTest do
       assert result.exit_code == 0
       assert result.stdout == "hello\n"
     end
+
+    test ":context is preserved alongside mounts" do
+      fs = Fs.new()
+      {:ok, fs} = Fs.mount(fs, "/data", NullFs, NullFs.new())
+
+      bash = JustBash.new(fs: fs, context: %{x: 1, api_key: "secret"})
+
+      assert bash.context == %{x: 1, api_key: "secret"}
+      assert {"/data", NullFs} in Fs.mounts(bash.fs)
+    end
   end
 
   # ---------------------------------------------------------------------------
