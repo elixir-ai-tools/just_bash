@@ -54,7 +54,7 @@ defmodule JustBash do
 
   alias JustBash.Formatter
   alias JustBash.Fs
-  alias JustBash.Fs.InMemoryFs
+
   alias JustBash.Interpreter.Executor
   alias JustBash.Interpreter.State
   alias JustBash.Limit
@@ -97,6 +97,7 @@ defmodule JustBash do
             max_call_depth: 1_000,
             limits: nil,
             jq_module_paths: [],
+            git: %{enabled: false, credentials: nil},
             interpreter: nil
 
   @type exec_result :: %{
@@ -118,8 +119,13 @@ defmodule JustBash do
           pipefail: boolean()
         }
 
+  @type git_config :: %{
+          enabled: boolean(),
+          credentials: term()
+        }
+
   @type t :: %__MODULE__{
-          fs: InMemoryFs.t(),
+          fs: Fs.t(),
           env: map(),
           cwd: String.t(),
           functions: map(),
@@ -134,6 +140,7 @@ defmodule JustBash do
           max_call_depth: pos_integer(),
           limits: Limit.t() | nil,
           jq_module_paths: [String.t()],
+          git: git_config(),
           interpreter: State.t()
         }
 
@@ -174,6 +181,13 @@ defmodule JustBash do
     to disable. Default: `:default`. See `JustBash.Limit` for available keys.
   - `:jq_module_paths` - List of virtual filesystem paths to search for `jq` modules
     when using `import`/`include` directives (default: [])
+  - `:git` - Git configuration map with:
+    - `:enabled` - Whether the `git` command is available (default: false).
+      Requires the optional `exgit` dependency.
+    - `:credentials` - Authentication credentials for private repos. Accepts any
+      Exgit auth tuple (e.g. `{:bearer, token}`, `Exgit.Credentials.GitHub.auth(token)`).
+      Credentials are stored on the struct and never exposed inside the sandbox —
+      the LLM can run `git clone` but cannot read or print the token.
 
   ## Examples
 
@@ -189,10 +203,16 @@ defmodule JustBash do
 
       # Pass data to custom commands via bash.context:
       bash = JustBash.new(context: %{user_id: 42}, commands: %{"my_cmd" => MyCommand})
+
+      # Git access (requires exgit dependency):
+      bash = JustBash.new(git: %{enabled: true})
+      bash = JustBash.new(git: %{enabled: true, credentials: {:bearer, "ghp_xxx"}})
   """
   @spec new(keyword()) :: t()
   def new(opts \\ []) do
+    custom_fs = Keyword.get(opts, :fs)
     files = Keyword.get(opts, :files, %{})
+    extra_mounts = Keyword.get(opts, :mounts, [])
     env = Keyword.get(opts, :env, %{})
     cwd = Keyword.get(opts, :cwd, "/home/user")
     commands = opts |> Keyword.get(:commands, %{}) |> normalize_commands!()
@@ -203,6 +223,15 @@ defmodule JustBash do
     limits = opts |> Keyword.get(:limits, :default) |> Limit.new()
     jq_module_paths = Keyword.get(opts, :jq_module_paths, [])
     context = opts |> Keyword.get(:context, %{}) |> validate_context!()
+    git = Keyword.get(opts, :git, %{})
+
+    if custom_fs && (files != %{} || extra_mounts != []) do
+      raise ArgumentError,
+            "cannot combine :fs option with :files or :mounts — " <>
+              "when :fs is given, the caller owns the full mount table"
+    end
+
+    fs = init_filesystem(custom_fs, files, extra_mounts)
 
     default_env = %{
       "HOME" => cwd,
@@ -217,7 +246,7 @@ defmodule JustBash do
     }
 
     %__MODULE__{
-      fs: init_filesystem(files),
+      fs: fs,
       env: Map.merge(default_env, env),
       cwd: cwd,
       functions: %{},
@@ -231,6 +260,7 @@ defmodule JustBash do
       max_call_depth: max_call_depth,
       limits: limits,
       jq_module_paths: jq_module_paths,
+      git: Map.merge(%{enabled: false, credentials: nil}, git),
       interpreter: State.new()
     }
   end
@@ -310,7 +340,9 @@ defmodule JustBash do
           "invalid custom command registration #{inspect(name)} => #{inspect(module)}; expected a string name and module"
   end
 
-  defp init_filesystem(files) do
+  defp init_filesystem(%Fs{} = custom_fs, _files, _mounts), do: custom_fs
+
+  defp init_filesystem(nil, files, extra_mounts) do
     default_dirs = [
       "/home",
       "/home/user",
@@ -320,19 +352,26 @@ defmodule JustBash do
       "/tmp"
     ]
 
-    fs = InMemoryFs.new()
+    fs = Fs.new()
 
     fs =
       Enum.reduce(default_dirs, fs, fn path, acc_fs ->
-        case InMemoryFs.mkdir(acc_fs, path, recursive: true) do
+        case Fs.mkdir(acc_fs, path, recursive: true) do
           {:ok, new_fs} -> new_fs
           {:error, :eexist} -> acc_fs
           _ -> acc_fs
         end
       end)
 
-    Enum.reduce(files, fs, fn {path, content}, acc_fs ->
-      {:ok, new_fs} = InMemoryFs.write_file(acc_fs, path, content)
+    fs =
+      Enum.reduce(files, fs, fn {path, content}, acc_fs ->
+        {:ok, new_fs} = Fs.write_file(acc_fs, path, content)
+        new_fs
+      end)
+
+    Enum.reduce(extra_mounts, fs, fn {mountpoint, module, init_arg}, acc_fs ->
+      backend_state = module.new(init_arg)
+      {:ok, new_fs} = Fs.mount(acc_fs, mountpoint, module, backend_state)
       new_fs
     end)
   end

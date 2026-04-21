@@ -10,7 +10,7 @@ defmodule JustBash.Commands.Chmod do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @impl true
   def names, do: ["chmod"]
@@ -44,9 +44,9 @@ defmodule JustBash.Commands.Chmod do
   defp check_paths(bash, paths, _recursive) do
     {stderr, exit_code} =
       Enum.reduce(paths, {"", 0}, fn path, {err, code} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, path)
+        resolved = Fs.resolve_path(bash.cwd, path)
 
-        case InMemoryFs.stat(bash.fs, resolved) do
+        case Fs.stat(bash.fs, resolved) do
           {:ok, _} -> {err, code}
           {:error, _} -> {err <> "chmod: cannot access '#{path}': No such file or directory\n", 1}
         end
