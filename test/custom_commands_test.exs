@@ -377,9 +377,7 @@ defmodule JustBash.CustomCommandsTest do
 
     test "custom command mutation of bash.context persists to the next command" do
       bash =
-        JustBash.new(
-          commands: %{"ctxset" => ContextSetter, "ctxget" => ContextGetter}
-        )
+        JustBash.new(commands: %{"ctxset" => ContextSetter, "ctxget" => ContextGetter})
 
       {result, _} = JustBash.exec(bash, "ctxset k v; ctxget k")
       assert result.exit_code == 0
@@ -388,9 +386,7 @@ defmodule JustBash.CustomCommandsTest do
 
     test "context mutation is returned on the final bash struct" do
       bash =
-        JustBash.new(
-          commands: %{"ctxset" => ContextSetter}
-        )
+        JustBash.new(commands: %{"ctxset" => ContextSetter})
 
       {_result, bash_after} = JustBash.exec(bash, "ctxset tenant 42")
       assert bash_after.context == %{"tenant" => "42"}
