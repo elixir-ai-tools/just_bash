@@ -34,7 +34,7 @@ defmodule JustBash.FS.GitFSAgentTest do
     # Partial clone (filter: blob:none) — ls/stat are in-memory after one
     # round trip. Materialize before grep so all file reads are in-memory too.
     {:ok, state} = GitFS.new(url: @repo_url)
-    state = GitFS.materialize(state)
+    {:ok, state} = GitFS.materialize(state)
 
     {:ok, fs} = FS.mount(FS.new(), "/repo", state)
     bash = JustBash.new(fs: fs)

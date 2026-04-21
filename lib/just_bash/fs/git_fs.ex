@@ -39,8 +39,6 @@ defmodule JustBash.FS.GitFS do
       refs + commits + trees, and blobs are fetched on demand. `ls`,
       `stat`, and `exists?` are served from memory immediately after
       `new/1`; only `read_file` (or `materialize/1`) hits the network.
-    * `:path` — local path to cache the clone on disk; omit to clone into
-      memory only
 
   ## Processless — and what that implies for repeated reads
 
@@ -118,24 +116,40 @@ defmodule JustBash.FS.GitFS do
   @doc """
   Fetch all blobs reachable from the mounted ref into the in-memory store.
 
-  After `materialize/1`, `read_file` is served entirely from memory — no
-  network. Use this before grep-heavy or multi-file workloads where every
-  file will be read at least once:
+  After a successful `materialize/1`, `read_file` is served entirely from
+  memory — no network. Use this before grep-heavy or multi-file workloads
+  where every file will be read at least once:
 
-      state =
-        GitFS.new(url: "https://github.com/user/repo", lazy: true)
-        |> GitFS.materialize()
+      with {:ok, state} <- GitFS.new(url: "https://github.com/user/repo"),
+           {:ok, state} <- GitFS.materialize(state),
+           {:ok, fs} <- FS.mount(FS.new(), "/repo", state) do
+        {:ok, JustBash.new(fs: fs)}
+      end
 
-      {:ok, fs} = FS.mount(FS.new(), "/repo", state)
-
-  `new/1` already prefetches commits and trees so `ls`/`stat` are in-memory
-  from the start. `materialize/1` adds the blobs — the remaining layer that
+  `new/1` already pulls commits and trees so `ls`/`stat` are in-memory from
+  the start. `materialize/1` adds the blobs — the remaining layer that
   `read_file` would otherwise fetch on demand.
+
+  Network failures are returned as `{:error, reason}`; see `materialize!/1`
+  for a raise-on-failure variant.
   """
-  @spec materialize(t()) :: t()
+  @spec materialize(t()) :: {:ok, t()} | {:error, term()}
   def materialize(%__MODULE__{repo: repo, ref: ref} = state) do
-    {:ok, materialized} = Exgit.Repository.materialize(repo, ref)
-    %{state | repo: materialized}
+    case Exgit.Repository.materialize(repo, ref) do
+      {:ok, materialized} -> {:ok, %{state | repo: materialized}}
+      {:error, _} = err -> err
+    end
+  end
+
+  @doc """
+  Like `materialize/1` but raises on network failure.
+  """
+  @spec materialize!(t()) :: t()
+  def materialize!(%__MODULE__{} = state) do
+    case materialize(state) do
+      {:ok, new_state} -> new_state
+      {:error, reason} -> raise "GitFS.materialize!/1 failed: #{inspect(reason)}"
+    end
   end
 
   @doc """
@@ -163,7 +177,6 @@ defmodule JustBash.FS.GitFS do
       []
       |> then(&if eager, do: &1, else: [{:filter, {:blob, :none}} | &1])
       |> then(&if auth, do: [{:auth, auth} | &1], else: &1)
-      |> maybe_add_path(opts)
 
     case Exgit.clone(url, clone_opts) do
       {:ok, repo} -> {:ok, %__MODULE__{repo: repo, ref: ref}}
@@ -172,7 +185,7 @@ defmodule JustBash.FS.GitFS do
   end
 
   @doc """
-  Like `new/1` but raises on clone or prefetch failure.
+  Like `new/1` but raises on clone failure.
   """
   @spec new!(keyword()) :: t()
   def new!(opts) do
@@ -255,13 +268,6 @@ defmodule JustBash.FS.GitFS do
   # (relative, no leading slash). The root "/" becomes "".
   defp exgit_path("/"), do: ""
   defp exgit_path(path), do: String.trim_leading(path, "/")
-
-  defp maybe_add_path(opts, kw) do
-    case Keyword.get(kw, :path) do
-      nil -> opts
-      path -> [{:path, path} | opts]
-    end
-  end
 
   # Git tree entries don't carry mtimes — the value that would be correct
   # (the committer timestamp of the last commit to touch this path) costs
