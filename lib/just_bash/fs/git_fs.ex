@@ -13,7 +13,7 @@ defmodule JustBash.FS.GitFS do
 
   ## Usage
 
-      # Mount a public repo at /repo
+      # Mount at /repo, alongside the default InMemoryFS root
       {:ok, repo_fs} = GitFS.new(url: "https://github.com/user/repo")
       {:ok, fs} = FS.mount(FS.new(), "/repo", repo_fs)
       bash = JustBash.new(fs: fs)
@@ -22,11 +22,14 @@ defmodule JustBash.FS.GitFS do
       {r, _} = JustBash.exec(bash, "cat /repo/README.md")
       {r, _} = JustBash.exec(bash, "grep -r defmodule /repo/lib")
 
-      # Or mount it as the root filesystem
+      # Or mount as the root filesystem — mount/3 replaces the default
+      # InMemoryFS at "/" with the repo.
       {:ok, repo_fs} = GitFS.new(url: "https://github.com/user/repo")
-      bash = JustBash.new(fs: FS.new(root: repo_fs))
+      {:ok, fs} = FS.mount(FS.new(), "/", repo_fs)
+      bash = JustBash.new(fs: fs)
 
       {r, _} = JustBash.exec(bash, "ls /")
+      {r, _} = JustBash.exec(bash, "cat README.md")
 
   ## Options for `new/1`
 

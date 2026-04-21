@@ -263,15 +263,23 @@ defmodule JustBash.FS.MountTest do
       assert {:error, :einval} = FS.mount(fs, "data", NullFS.new())
     end
 
-    test "mount at already-mounted point returns :eexist" do
+    test "mount at already-mounted point replaces the existing mount" do
+      data1 = InMemoryFS.new(%{"/file.txt" => "first"})
+      data2 = InMemoryFS.new(%{"/file.txt" => "second"})
+
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
-      assert {:error, :eexist} = FS.mount(fs, "/data", NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", data1)
+      {:ok, "first"} = FS.read_file(fs, "/data/file.txt")
+
+      {:ok, fs} = FS.mount(fs, "/data", data2)
+      assert {:ok, "second"} = FS.read_file(fs, "/data/file.txt")
     end
 
-    test "mount at / returns :eexist" do
+    test "mount at / replaces the default InMemoryFS root" do
+      custom_root = InMemoryFS.new(%{"/hello.txt" => "custom"})
       fs = FS.new()
-      assert {:error, :eexist} = FS.mount(fs, "/", NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/", custom_root)
+      assert {:ok, "custom"} = FS.read_file(fs, "/hello.txt")
     end
 
     test "umount of / returns :ebusy" do
@@ -418,10 +426,10 @@ defmodule JustBash.FS.MountTest do
   # FS.new/1 root: variant
   # ---------------------------------------------------------------------------
 
-  describe "FS.new(root:)" do
-    test "creates filesystem with custom root backend" do
+  describe "mount at /" do
+    test "replaces the default root with a custom backend" do
       inner = InMemoryFS.new(%{"/hello.txt" => "custom root"})
-      fs = FS.new(root: inner)
+      {:ok, fs} = FS.mount(FS.new(), "/", inner)
 
       {:ok, content} = FS.read_file(fs, "/hello.txt")
       assert content == "custom root"
