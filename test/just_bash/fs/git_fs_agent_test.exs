@@ -31,6 +31,12 @@ defmodule JustBash.FS.GitFSAgentTest do
             "exgit not available — add {:exgit, github: \"ivarvong/exgit\", branch: \"main\"} to deps"
     end
 
+    # Attach a telemetry tracer so we can see exactly what exgit does
+    # during the clone/materialize/read cycle. Controlled by EXGIT_TRACE=1.
+    if System.get_env("EXGIT_TRACE") in ["1", "true"] do
+      attach_exgit_tracer()
+    end
+
     # Partial clone (filter: blob:none) — ls/stat are in-memory after one
     # round trip. Materialize before grep so all file reads are in-memory too.
     {:ok, state} = GitFS.new(url: @repo_url)
@@ -40,6 +46,60 @@ defmodule JustBash.FS.GitFSAgentTest do
     bash = JustBash.new(fs: fs)
 
     %{bash: bash}
+  end
+
+  # Attaches a print-on-stop handler to every *high-signal* exgit span
+  # event. Skips object_store.get/put/has? (floods output — every tree
+  # walk hits hundreds of gets) and the *.shared_promisor.* family.
+  #
+  # Output shape:   [evt] 12.3 ms  key=value key=value
+  defp attach_exgit_tracer do
+    handler_id = "exgit-tracer-#{inspect(self())}"
+
+    events =
+      for e <- Exgit.Telemetry.events(),
+          not noisy_event?(e),
+          do: e ++ [:stop]
+
+    :telemetry.attach_many(
+      handler_id,
+      events,
+      &__MODULE__.trace_event/4,
+      nil
+    )
+
+    ExUnit.Callbacks.on_exit(fn -> :telemetry.detach(handler_id) end)
+  end
+
+  @noisy_suffixes [
+    [:object_store, :get],
+    [:object_store, :put],
+    [:object_store, :has?]
+  ]
+
+  defp noisy_event?([:exgit | rest]) do
+    Enum.any?(@noisy_suffixes, &match_prefix?(rest, &1)) or
+      (length(rest) >= 2 and Enum.at(rest, 1) == :shared_promisor)
+  end
+
+  defp match_prefix?(rest, prefix), do: Enum.take(rest, length(prefix)) == prefix
+
+  @doc false
+  def trace_event(event, %{duration: duration}, metadata, _config) do
+    us = System.convert_time_unit(duration, :native, :microsecond) / 1000
+    name = event |> Enum.drop(1) |> List.delete_at(-1) |> Enum.join(".")
+
+    meta =
+      metadata
+      |> Map.drop([
+        :transport,
+        :store,
+        :telemetry_span_context,
+        :sha
+      ])
+      |> Enum.map_join(" ", fn {k, v} -> "#{k}=#{inspect(v, limit: 2)}" end)
+
+    IO.puts(:stderr, "  [#{name}] #{Float.round(us, 2)} ms  #{meta}")
   end
 
   # ---------------------------------------------------------------------------
