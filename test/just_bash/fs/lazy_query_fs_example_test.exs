@@ -69,9 +69,8 @@ defmodule JustBash.FS.LazyQueryFSExampleTest do
 
     @impl true
     def read_file(state, "/row-" <> idx) do
-      with {i, ""} <- Integer.parse(idx) do
-        state.fetch_fn.(i)
-      else
+      case Integer.parse(idx) do
+        {i, ""} -> state.fetch_fn.(i)
         _ -> {:error, :enoent}
       end
     end
@@ -200,7 +199,7 @@ defmodule JustBash.FS.LazyQueryFSExampleTest do
   end
 
   property "cat /rows/row-<id> returns fetch_fn content for any id", %{bash: bash, db: db} do
-    check all i <- integer(0..(@row_count - 1)) do
+    check all(i <- integer(0..(@row_count - 1))) do
       {r, _} = JustBash.exec(bash, "cat /rows/row-#{i}")
       assert r.stdout == Agent.get(db, &Map.fetch!(&1, i))
     end

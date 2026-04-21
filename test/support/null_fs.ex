@@ -31,23 +31,23 @@ defmodule JustBash.FS.NullFS do
   def readlink(%__MODULE__{}, _path), do: {:error, :enoent}
 
   @impl true
-  def write_file(s = %__MODULE__{}, _path, _content, _opts), do: {:ok, s}
+  def write_file(%__MODULE__{} = s, _path, _content, _opts), do: {:ok, s}
 
   @impl true
-  def append_file(s = %__MODULE__{}, _path, _content), do: {:ok, s}
+  def append_file(%__MODULE__{} = s, _path, _content), do: {:ok, s}
 
   @impl true
-  def mkdir(s = %__MODULE__{}, _path, _opts), do: {:ok, s}
+  def mkdir(%__MODULE__{} = s, _path, _opts), do: {:ok, s}
 
   @impl true
-  def rm(s = %__MODULE__{}, _path, _opts), do: {:ok, s}
+  def rm(%__MODULE__{} = s, _path, _opts), do: {:ok, s}
 
   @impl true
-  def chmod(s = %__MODULE__{}, _path, _mode), do: {:ok, s}
+  def chmod(%__MODULE__{} = s, _path, _mode), do: {:ok, s}
 
   @impl true
-  def symlink(s = %__MODULE__{}, _target, _link), do: {:ok, s}
+  def symlink(%__MODULE__{} = s, _target, _link), do: {:ok, s}
 
   @impl true
-  def link(s = %__MODULE__{}, _existing, _new), do: {:ok, s}
+  def link(%__MODULE__{} = s, _existing, _new), do: {:ok, s}
 end
