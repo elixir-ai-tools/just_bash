@@ -1,7 +1,7 @@
 defmodule JustBash.CustomCommandsTest do
   use ExUnit.Case, async: true
 
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   # --- Test command modules ---
 
@@ -68,9 +68,9 @@ defmodule JustBash.CustomCommandsTest do
     def execute(bash, args, stdin) do
       case args do
         [path] ->
-          resolved = InMemoryFs.resolve_path(bash.cwd, path)
+          resolved = FS.resolve_path(bash.cwd, path)
 
-          case InMemoryFs.write_file(bash.fs, resolved, stdin) do
+          case FS.write_file(bash.fs, resolved, stdin) do
             {:ok, new_fs} ->
               {%{stdout: "", stderr: "", exit_code: 0}, %{bash | fs: new_fs}}
 
@@ -198,6 +198,32 @@ defmodule JustBash.CustomCommandsTest do
     end
   end
 
+  defmodule ContextGetter do
+    @behaviour JustBash.Commands.Command
+
+    @impl true
+    def names, do: ["ctxget"]
+
+    @impl true
+    def execute(bash, [key], _stdin) do
+      value = Map.get(bash.context, key, "")
+      {%{stdout: "#{value}\n", stderr: "", exit_code: 0}, bash}
+    end
+  end
+
+  defmodule ContextSetter do
+    @behaviour JustBash.Commands.Command
+
+    @impl true
+    def names, do: ["ctxset"]
+
+    @impl true
+    def execute(bash, [key, value], _stdin) do
+      new_context = Map.put(bash.context, key, value)
+      {%{stdout: "", stderr: "", exit_code: 0}, %{bash | context: new_context}}
+    end
+  end
+
   defmodule Counter do
     @doc "A command that reads a file, increments the number in it, and writes it back"
     @behaviour JustBash.Commands.Command
@@ -213,16 +239,16 @@ defmodule JustBash.CustomCommandsTest do
           _ -> "/counter"
         end
 
-      resolved = InMemoryFs.resolve_path(bash.cwd, path)
+      resolved = FS.resolve_path(bash.cwd, path)
 
       current =
-        case InMemoryFs.read_file(bash.fs, resolved) do
+        case FS.read_file(bash.fs, resolved) do
           {:ok, content} -> String.trim(content) |> String.to_integer()
           {:error, :enoent} -> 0
         end
 
       next = current + 1
-      {:ok, new_fs} = InMemoryFs.write_file(bash.fs, resolved, Integer.to_string(next))
+      {:ok, new_fs} = FS.write_file(bash.fs, resolved, Integer.to_string(next))
       {%{stdout: "#{next}\n", stderr: "", exit_code: 0}, %{bash | fs: new_fs}}
     end
   end
@@ -299,6 +325,71 @@ defmodule JustBash.CustomCommandsTest do
       {result, _} = JustBash.exec(bash, "ctxdump")
       assert String.trim(result.stdout) == inspect(%{})
       assert result.exit_code == 0
+    end
+
+    test "context propagates into a pipeline" do
+      bash =
+        JustBash.new(
+          context: %{"k" => "v"},
+          commands: %{"ctxget" => ContextGetter}
+        )
+
+      {result, _} = JustBash.exec(bash, "ctxget k | cat")
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "v"
+    end
+
+    test "context propagates into a shell function body" do
+      bash =
+        JustBash.new(
+          context: %{"k" => "v"},
+          commands: %{"ctxget" => ContextGetter}
+        )
+
+      {result, _} = JustBash.exec(bash, "f() { ctxget k; }; f")
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "v"
+    end
+
+    test "context propagates into a subshell" do
+      bash =
+        JustBash.new(
+          context: %{"k" => "v"},
+          commands: %{"ctxget" => ContextGetter}
+        )
+
+      {result, _} = JustBash.exec(bash, "(ctxget k)")
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "v"
+    end
+
+    test "context propagates into command substitution" do
+      bash =
+        JustBash.new(
+          context: %{"k" => "v"},
+          commands: %{"ctxget" => ContextGetter}
+        )
+
+      {result, _} = JustBash.exec(bash, "x=$(ctxget k); echo \"got=$x\"")
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "got=v"
+    end
+
+    test "custom command mutation of bash.context persists to the next command" do
+      bash =
+        JustBash.new(commands: %{"ctxset" => ContextSetter, "ctxget" => ContextGetter})
+
+      {result, _} = JustBash.exec(bash, "ctxset k v; ctxget k")
+      assert result.exit_code == 0
+      assert String.trim(result.stdout) == "v"
+    end
+
+    test "context mutation is returned on the final bash struct" do
+      bash =
+        JustBash.new(commands: %{"ctxset" => ContextSetter})
+
+      {_result, bash_after} = JustBash.exec(bash, "ctxset tenant 42")
+      assert bash_after.context == %{"tenant" => "42"}
     end
   end
 

@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Mkdir do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["mkdir"]
@@ -14,9 +14,9 @@ defmodule JustBash.Commands.Mkdir do
 
     {stderr, exit_code, new_fs} =
       Enum.reduce(paths, {"", 0, bash.fs}, fn path, {err_acc, code_acc, fs_acc} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, path)
+        resolved = FS.resolve_path(bash.cwd, path)
 
-        case InMemoryFs.mkdir(fs_acc, resolved, recursive: flags.p) do
+        case FS.mkdir(fs_acc, resolved, recursive: flags.p) do
           {:ok, new_fs} ->
             {err_acc, code_acc, new_fs}
 
@@ -29,6 +29,13 @@ defmodule JustBash.Commands.Mkdir do
           {:error, :enoent} ->
             {err_acc <> "mkdir: cannot create directory '#{path}': No such file or directory\n",
              1, fs_acc}
+
+          {:error, :erofs} ->
+            {err_acc <> "mkdir: cannot create directory '#{path}': Read-only file system\n", 1,
+             fs_acc}
+
+          {:error, reason} ->
+            {err_acc <> "mkdir: cannot create directory '#{path}': #{reason}\n", 1, fs_acc}
         end
       end)
 

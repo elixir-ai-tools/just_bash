@@ -9,7 +9,7 @@ defmodule JustBash.Commands.Shasum do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["shasum"]
@@ -59,9 +59,9 @@ defmodule JustBash.Commands.Shasum do
   defp hash_files(bash, algorithm, files) do
     {stdout, stderr, exit_code} =
       Enum.reduce(files, {"", "", 0}, fn file, {out, err, code} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+        resolved = FS.resolve_path(bash.cwd, file)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
+        case FS.read_file(bash.fs, resolved) do
           {:ok, content} ->
             hash = :crypto.hash(algorithm, content) |> Base.encode16(case: :lower)
             {out <> "#{hash}  #{file}\n", err, code}
@@ -77,9 +77,9 @@ defmodule JustBash.Commands.Shasum do
   defp check_checksums(bash, algorithm, files) do
     {stdout, stderr, exit_code} =
       Enum.reduce(files, {"", "", 0}, fn file, {out, err, code} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+        resolved = FS.resolve_path(bash.cwd, file)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
+        case FS.read_file(bash.fs, resolved) do
           {:ok, content} ->
             verify_checksum_file(bash, algorithm, content, out, err, code)
 
@@ -107,9 +107,9 @@ defmodule JustBash.Commands.Shasum do
 
   defp verify_single_checksum(bash, expected_hash, file_path, algorithm, {o, e, c}) do
     trimmed = String.trim(file_path)
-    resolved = InMemoryFs.resolve_path(bash.cwd, trimmed)
+    resolved = FS.resolve_path(bash.cwd, trimmed)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
+    case FS.read_file(bash.fs, resolved) do
       {:ok, file_content} ->
         actual = :crypto.hash(algorithm, file_content) |> Base.encode16(case: :lower)
 

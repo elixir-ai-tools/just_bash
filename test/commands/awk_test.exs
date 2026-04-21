@@ -7,7 +7,7 @@ defmodule JustBash.Commands.AwkTest do
   """
   use ExUnit.Case, async: true
 
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   describe "basic field access" do
     test "print entire line with $0" do
@@ -1394,7 +1394,7 @@ defmodule JustBash.Commands.AwkTest do
         )
 
       assert result.exit_code == 0
-      {:ok, content} = InMemoryFs.read_file(updated_bash.fs, "/output.txt")
+      {:ok, content} = FS.read_file(updated_bash.fs, "/output.txt")
       assert content == "a=1\nb=2\nc=3\n"
     end
 
@@ -1408,7 +1408,7 @@ defmodule JustBash.Commands.AwkTest do
         )
 
       assert result.exit_code == 0
-      {:ok, content} = InMemoryFs.read_file(updated_bash.fs, "/out.txt")
+      {:ok, content} = FS.read_file(updated_bash.fs, "/out.txt")
       assert content == "x\ny\n"
     end
   end

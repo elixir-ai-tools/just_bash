@@ -15,7 +15,7 @@ defmodule JustBash.Commands.Mktemp do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["mktemp"]
@@ -59,10 +59,10 @@ defmodule JustBash.Commands.Mktemp do
         Path.join(tmpdir, generated)
       end
 
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
 
     if opts.directory do
-      case InMemoryFs.mkdir(bash.fs, resolved, recursive: true) do
+      case FS.mkdir(bash.fs, resolved, recursive: true) do
         {:ok, new_fs} ->
           {Command.ok(path <> "\n"), %{bash | fs: new_fs}}
 
@@ -70,7 +70,7 @@ defmodule JustBash.Commands.Mktemp do
           {Command.error("mktemp: failed to create directory: #{reason}\n"), bash}
       end
     else
-      case InMemoryFs.write_file(bash.fs, resolved, "") do
+      case FS.write_file(bash.fs, resolved, "") do
         {:ok, new_fs} ->
           {Command.ok(path <> "\n"), %{bash | fs: new_fs}}
 

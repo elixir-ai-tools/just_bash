@@ -6,7 +6,7 @@ defmodule JustBash.Commands.Command do
   interface for command execution.
   """
 
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @type bash :: JustBash.t()
   # Result map - may include control flow signals (__break__, __continue__, __return__)
@@ -28,7 +28,7 @@ defmodule JustBash.Commands.Command do
   """
   @spec resolve_path(bash(), String.t()) :: String.t()
   def resolve_path(bash, path) do
-    InMemoryFs.resolve_path(bash.cwd, path)
+    FS.resolve_path(bash.cwd, path)
   end
 
   @doc """

@@ -13,7 +13,7 @@ defmodule JustBash.Interpreter.Executor.Conditional do
   """
 
   alias JustBash.AST
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
   alias JustBash.Interpreter.Expansion
   alias JustBash.Limit
 
@@ -70,7 +70,7 @@ defmodule JustBash.Interpreter.Executor.Conditional do
 
   def evaluate(bash, %AST.CondUnary{operator: op, operand: word}) do
     path = Expansion.expand_word_parts_simple(bash, word.parts)
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
     {evaluate_unary(bash, op, path, resolved), bash}
   end
 
@@ -254,43 +254,43 @@ defmodule JustBash.Interpreter.Executor.Conditional do
   # --- File System Helpers ---
 
   defp file_exists?(bash, path) do
-    case InMemoryFs.stat(bash.fs, path) do
+    case FS.stat(bash.fs, path) do
       {:ok, _} -> true
       {:error, _} -> false
     end
   end
 
   defp regular_file?(bash, path) do
-    case InMemoryFs.stat(bash.fs, path) do
+    case FS.stat(bash.fs, path) do
       {:ok, stat} -> stat.is_file
       {:error, _} -> false
     end
   end
 
   defp directory?(bash, path) do
-    case InMemoryFs.stat(bash.fs, path) do
+    case FS.stat(bash.fs, path) do
       {:ok, stat} -> stat.is_directory
       {:error, _} -> false
     end
   end
 
   defp file_size_gt_zero?(bash, path) do
-    case InMemoryFs.stat(bash.fs, path) do
+    case FS.stat(bash.fs, path) do
       {:ok, stat} -> stat.size > 0
       {:error, _} -> false
     end
   end
 
   defp symlink?(bash, path) do
-    case InMemoryFs.lstat(bash.fs, path) do
+    case FS.lstat(bash.fs, path) do
       {:ok, stat} -> stat.is_symbolic_link
       {:error, _} -> false
     end
   end
 
   defp file_newer?(bash, path1, path2) do
-    with {:ok, stat1} <- InMemoryFs.stat(bash.fs, path1),
-         {:ok, stat2} <- InMemoryFs.stat(bash.fs, path2) do
+    with {:ok, stat1} <- FS.stat(bash.fs, path1),
+         {:ok, stat2} <- FS.stat(bash.fs, path2) do
       stat1.mtime > stat2.mtime
     else
       _ -> false
@@ -298,8 +298,8 @@ defmodule JustBash.Interpreter.Executor.Conditional do
   end
 
   defp same_file?(bash, path1, path2) do
-    resolved1 = InMemoryFs.resolve_path(bash.cwd, path1)
-    resolved2 = InMemoryFs.resolve_path(bash.cwd, path2)
+    resolved1 = FS.resolve_path(bash.cwd, path1)
+    resolved2 = FS.resolve_path(bash.cwd, path2)
     resolved1 == resolved2
   end
 end

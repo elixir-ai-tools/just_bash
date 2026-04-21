@@ -39,19 +39,19 @@ defmodule JustBash.TelemetryTest do
       assert result.stdout == "hello\n"
       assert result.exit_code == 0
 
-      assert_received {^ref, [:just_bash, :session, :run, :start], %{system_time: _},
-                       %{session: pid}}
+      assert_receive {^ref, [:just_bash, :session, :run, :start], %{system_time: _},
+                      %{session: pid}}
 
       assert is_pid(pid)
 
-      assert_received {^ref, [:just_bash, :session, :run, :stop], %{duration: duration},
-                       %{
-                         session: ^pid,
-                         status: :ok,
-                         exit_code: 0,
-                         bytes_in: bytes_in,
-                         bytes_out: bytes_out
-                       }}
+      assert_receive {^ref, [:just_bash, :session, :run, :stop], %{duration: duration},
+                      %{
+                        session: ^pid,
+                        status: :ok,
+                        exit_code: 0,
+                        bytes_in: bytes_in,
+                        bytes_out: bytes_out
+                      }}
 
       assert is_integer(duration)
       assert duration >= 0
@@ -65,10 +65,10 @@ defmodule JustBash.TelemetryTest do
 
       assert result.stdout == "hello\n"
 
-      assert_received {^ref, [:just_bash, :session, :run, :start], _, %{session: _}}
+      assert_receive {^ref, [:just_bash, :session, :run, :start], _, %{session: _}}
 
-      assert_received {^ref, [:just_bash, :session, :run, :stop], _,
-                       %{status: :ok, exit_code: 0, bytes_in: 10, bytes_out: 6}}
+      assert_receive {^ref, [:just_bash, :session, :run, :stop], _,
+                      %{status: :ok, exit_code: 0, bytes_in: 10, bytes_out: 6}}
     end
 
     test "reports error status on parse failure", %{ref: ref} do
@@ -77,10 +77,10 @@ defmodule JustBash.TelemetryTest do
 
       assert result.exit_code == 2
 
-      assert_received {^ref, [:just_bash, :session, :run, :start], _, _}
+      assert_receive {^ref, [:just_bash, :session, :run, :start], _, _}
 
-      assert_received {^ref, [:just_bash, :session, :run, :stop], _,
-                       %{status: :error, exit_code: 2, bytes_in: 7, bytes_out: bytes_out}}
+      assert_receive {^ref, [:just_bash, :session, :run, :stop], _,
+                      %{status: :error, exit_code: 2, bytes_in: 7, bytes_out: bytes_out}}
 
       assert bytes_out > 0
     end
@@ -92,10 +92,10 @@ defmodule JustBash.TelemetryTest do
         JustBash.exec!(bash, "if then")
       end
 
-      assert_received {^ref, [:just_bash, :session, :run, :start], _, _}
+      assert_receive {^ref, [:just_bash, :session, :run, :start], _, _}
 
-      assert_received {^ref, [:just_bash, :session, :run, :exception], %{duration: _},
-                       %{kind: :error, reason: %RuntimeError{}, stacktrace: stacktrace}}
+      assert_receive {^ref, [:just_bash, :session, :run, :exception], %{duration: _},
+                      %{kind: :error, reason: %RuntimeError{}, stacktrace: stacktrace}}
 
       assert is_list(stacktrace)
     end
@@ -105,8 +105,8 @@ defmodule JustBash.TelemetryTest do
       script = "echo hello; echo world"
       {result, _bash} = JustBash.exec(bash, script)
 
-      assert_received {^ref, [:just_bash, :session, :run, :stop], _,
-                       %{bytes_in: bytes_in, bytes_out: bytes_out}}
+      assert_receive {^ref, [:just_bash, :session, :run, :stop], _,
+                      %{bytes_in: bytes_in, bytes_out: bytes_out}}
 
       assert bytes_in == byte_size(script)
       assert bytes_out == byte_size(result.stdout) + byte_size(result.stderr)
@@ -118,17 +118,17 @@ defmodule JustBash.TelemetryTest do
       bash = JustBash.new()
       JustBash.exec(bash, "echo hello world")
 
-      assert_received {^ref, [:just_bash, :command, :start], %{system_time: _},
-                       %{command: "echo", args: ["hello", "world"]}}
+      assert_receive {^ref, [:just_bash, :command, :start], %{system_time: _},
+                      %{command: "echo", args: ["hello", "world"]}}
 
-      assert_received {^ref, [:just_bash, :command, :stop], %{duration: _},
-                       %{
-                         command: "echo",
-                         args: ["hello", "world"],
-                         exit_code: 0,
-                         bytes_in: 0,
-                         bytes_out: bytes_out
-                       }}
+      assert_receive {^ref, [:just_bash, :command, :stop], %{duration: _},
+                      %{
+                        command: "echo",
+                        args: ["hello", "world"],
+                        exit_code: 0,
+                        bytes_in: 0,
+                        bytes_out: bytes_out
+                      }}
 
       # "hello world\n"
       assert bytes_out == 12
@@ -139,16 +139,16 @@ defmodule JustBash.TelemetryTest do
       JustBash.exec(bash, "echo hello | cat")
 
       # cat receives "hello\n" as stdin
-      assert_received {^ref, [:just_bash, :command, :stop], _,
-                       %{command: "cat", bytes_in: 6, bytes_out: 6}}
+      assert_receive {^ref, [:just_bash, :command, :stop], _,
+                      %{command: "cat", bytes_in: 6, bytes_out: 6}}
     end
 
     test "reports exit code for failing commands", %{ref: ref} do
       bash = JustBash.new()
       JustBash.exec(bash, "cat nonexistent")
 
-      assert_received {^ref, [:just_bash, :command, :stop], _,
-                       %{command: "cat", exit_code: 1, bytes_out: bytes_out}}
+      assert_receive {^ref, [:just_bash, :command, :stop], _,
+                      %{command: "cat", exit_code: 1, bytes_out: bytes_out}}
 
       assert bytes_out > 0
     end
@@ -157,10 +157,10 @@ defmodule JustBash.TelemetryTest do
       bash = JustBash.new()
       JustBash.exec(bash, "echo hello | cat")
 
-      assert_received {^ref, [:just_bash, :command, :start], _, %{command: "echo"}}
-      assert_received {^ref, [:just_bash, :command, :stop], _, %{command: "echo"}}
-      assert_received {^ref, [:just_bash, :command, :start], _, %{command: "cat"}}
-      assert_received {^ref, [:just_bash, :command, :stop], _, %{command: "cat"}}
+      assert_receive {^ref, [:just_bash, :command, :start], _, %{command: "echo"}}
+      assert_receive {^ref, [:just_bash, :command, :stop], _, %{command: "echo"}}
+      assert_receive {^ref, [:just_bash, :command, :start], _, %{command: "cat"}}
+      assert_receive {^ref, [:just_bash, :command, :stop], _, %{command: "cat"}}
     end
 
     test "does not emit events for shell functions", %{ref: ref} do
@@ -168,8 +168,8 @@ defmodule JustBash.TelemetryTest do
       JustBash.exec(bash, "greet() { echo hi; }; greet")
 
       # Should see the inner echo command but not "greet" as a command span
-      assert_received {^ref, [:just_bash, :command, :start], _, %{command: "echo"}}
-      assert_received {^ref, [:just_bash, :command, :stop], _, %{command: "echo"}}
+      assert_receive {^ref, [:just_bash, :command, :start], _, %{command: "echo"}}
+      assert_receive {^ref, [:just_bash, :command, :stop], _, %{command: "echo"}}
       refute_received {^ref, [:just_bash, :command, :start], _, %{command: "greet"}}
     end
 
@@ -177,8 +177,8 @@ defmodule JustBash.TelemetryTest do
       bash = JustBash.new()
       JustBash.exec(bash, "nonexistent_command")
 
-      assert_received {^ref, [:just_bash, :command, :stop], _,
-                       %{command: "nonexistent_command", exit_code: 127}}
+      assert_receive {^ref, [:just_bash, :command, :stop], _,
+                      %{command: "nonexistent_command", exit_code: 127}}
     end
   end
 
@@ -187,21 +187,21 @@ defmodule JustBash.TelemetryTest do
       bash = JustBash.new()
       JustBash.exec(bash, "for i in a b c; do echo $i; done")
 
-      assert_received {^ref, [:just_bash, :for_loop, :start], %{system_time: _},
-                       %{variable: "i", item_count: 3}}
+      assert_receive {^ref, [:just_bash, :for_loop, :start], %{system_time: _},
+                      %{variable: "i", item_count: 3}}
 
-      assert_received {^ref, [:just_bash, :for_loop, :stop], %{duration: _},
-                       %{variable: "i", item_count: 3, iteration_count: 3, exit_code: 0}}
+      assert_receive {^ref, [:just_bash, :for_loop, :stop], %{duration: _},
+                      %{variable: "i", item_count: 3, iteration_count: 3, exit_code: 0}}
     end
 
     test "emits events for empty word list", %{ref: ref} do
       bash = JustBash.new()
       JustBash.exec(bash, "for i in; do echo $i; done")
 
-      assert_received {^ref, [:just_bash, :for_loop, :start], _, %{variable: "i", item_count: 0}}
+      assert_receive {^ref, [:just_bash, :for_loop, :start], _, %{variable: "i", item_count: 0}}
 
-      assert_received {^ref, [:just_bash, :for_loop, :stop], _,
-                       %{item_count: 0, iteration_count: 0}}
+      assert_receive {^ref, [:just_bash, :for_loop, :stop], _,
+                      %{item_count: 0, iteration_count: 0}}
     end
   end
 
@@ -210,28 +210,27 @@ defmodule JustBash.TelemetryTest do
       bash = JustBash.new()
       JustBash.exec(bash, "x=0; while [ $x -lt 3 ]; do x=$((x+1)); done")
 
-      assert_received {^ref, [:just_bash, :while_loop, :start], %{system_time: _},
-                       %{until: false}}
+      assert_receive {^ref, [:just_bash, :while_loop, :start], %{system_time: _}, %{until: false}}
 
-      assert_received {^ref, [:just_bash, :while_loop, :stop], %{duration: _},
-                       %{until: false, exit_code: 0}}
+      assert_receive {^ref, [:just_bash, :while_loop, :stop], %{duration: _},
+                      %{until: false, exit_code: 0}}
     end
 
     test "emits events for until loop with until: true", %{ref: ref} do
       bash = JustBash.new()
       JustBash.exec(bash, "x=0; until [ $x -ge 2 ]; do x=$((x+1)); done")
 
-      assert_received {^ref, [:just_bash, :while_loop, :start], _, %{until: true}}
+      assert_receive {^ref, [:just_bash, :while_loop, :start], _, %{until: true}}
 
-      assert_received {^ref, [:just_bash, :while_loop, :stop], %{duration: _},
-                       %{until: true, exit_code: 0}}
+      assert_receive {^ref, [:just_bash, :while_loop, :stop], %{duration: _},
+                      %{until: true, exit_code: 0}}
     end
 
     test "reports zero iterations when condition is false immediately", %{ref: ref} do
       bash = JustBash.new()
       JustBash.exec(bash, "while false; do echo nope; done")
 
-      assert_received {^ref, [:just_bash, :while_loop, :stop], _, %{exit_code: 0}}
+      assert_receive {^ref, [:just_bash, :while_loop, :stop], _, %{exit_code: 0}}
     end
   end
 end

@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Fold do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["fold"]
@@ -92,9 +92,9 @@ defmodule JustBash.Commands.Fold do
 
   defp read_files(bash, files) do
     Enum.reduce_while(files, {:ok, ""}, fn file, {:ok, acc} ->
-      resolved = InMemoryFs.resolve_path(bash.cwd, file)
+      resolved = FS.resolve_path(bash.cwd, file)
 
-      case InMemoryFs.read_file(bash.fs, resolved) do
+      case FS.read_file(bash.fs, resolved) do
         {:ok, data} -> {:cont, {:ok, acc <> data}}
         {:error, _} -> {:halt, {:error, "fold: #{file}: No such file or directory\n"}}
       end

@@ -18,7 +18,7 @@ defmodule JustBash.Commands.Curl do
 
   alias JustBash.Commands.ArgParser
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
   alias JustBash.Network
 
   @default_timeout 30_000
@@ -216,9 +216,9 @@ defmodule JustBash.Commands.Curl do
     status_line = "HTTP/1.1 #{response.status} #{status_text(response.status)}\r\n"
     headers = Enum.map_join(response.headers, fn {k, v} -> "#{k}: #{v}\r\n" end)
     content = status_line <> headers <> "\r\n"
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.write_file(bash.fs, resolved, content) do
+    case FS.write_file(bash.fs, resolved, content) do
       {:ok, fs} -> {:ok, %{bash | fs: fs}}
       {:error, reason} -> {:error, reason}
     end
@@ -229,13 +229,13 @@ defmodule JustBash.Commands.Curl do
   end
 
   defp write_output(bash, output, response, opts) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, opts.output_file)
+    resolved = FS.resolve_path(bash.cwd, opts.output_file)
     body = if opts.output_file == "/dev/null", do: :discard, else: output
 
     result =
       case body do
         :discard -> {:ok, bash.fs}
-        content -> InMemoryFs.write_file(bash.fs, resolved, content)
+        content -> FS.write_file(bash.fs, resolved, content)
       end
 
     case result do

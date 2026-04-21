@@ -12,7 +12,7 @@ defmodule JustBash.Commands.Jq.Evaluator do
   alias JustBash.Commands.Jq.Evaluator.Format
   alias JustBash.Commands.Jq.Evaluator.Functions
   alias JustBash.Commands.Jq.Parser
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @doc """
   Evaluate a jq AST against input data.
@@ -2629,14 +2629,14 @@ defmodule JustBash.Commands.Jq.Evaluator do
   defp read_virtual_file(opts, path) do
     case Map.get(opts, :fs) do
       nil -> {:error, :no_fs}
-      fs -> InMemoryFs.read_file(fs, path)
+      fs -> FS.read_file(fs, path)
     end
   end
 
   defp virtual_file_exists?(opts, path) do
     case Map.get(opts, :fs) do
       nil -> false
-      fs -> match?({:ok, _}, InMemoryFs.read_file(fs, path))
+      fs -> match?({:ok, _}, FS.read_file(fs, path))
     end
   end
 end

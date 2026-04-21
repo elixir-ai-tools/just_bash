@@ -1,7 +1,7 @@
 defmodule JustBash.Commands.FileOperationsTest do
   use ExUnit.Case, async: true
 
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   describe "ls command" do
     test "ls nonexistent directory fails" do
@@ -136,13 +136,13 @@ defmodule JustBash.Commands.FileOperationsTest do
     test "mv preserves file mode" do
       bash = JustBash.new()
 
-      {:ok, fs} = InMemoryFs.write_file(bash.fs, "/src.sh", "echo hi\n", mode: 0o755)
+      {:ok, fs} = FS.write_file(bash.fs, "/src.sh", "echo hi\n", mode: 0o755)
       bash = %{bash | fs: fs}
 
       {result, bash} = JustBash.exec(bash, "mv /src.sh /dest.sh")
       assert result.exit_code == 0
 
-      {:ok, stat} = InMemoryFs.stat(bash.fs, "/dest.sh")
+      {:ok, stat} = FS.stat(bash.fs, "/dest.sh")
       assert stat.mode == 0o755
     end
 

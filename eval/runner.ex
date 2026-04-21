@@ -10,7 +10,7 @@ defmodule JustBash.Eval.Runner do
   """
 
   alias JustBash.Eval.{Agent, Tasks, Validator}
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @type validator_result :: Validator.validator_result()
 
@@ -335,7 +335,7 @@ defmodule JustBash.Eval.Runner do
     fs =
       Enum.reduce(files, bash.fs, fn {path, content}, fs ->
         fs = ensure_parent_dirs(fs, path)
-        {:ok, fs} = InMemoryFs.write_file(fs, path, content)
+        {:ok, fs} = FS.write_file(fs, path, content)
         fs
       end)
 
@@ -349,7 +349,7 @@ defmodule JustBash.Eval.Runner do
     |> Enum.reduce({"", fs}, fn segment, {current, fs} ->
       dir = Path.join(current, segment)
 
-      case InMemoryFs.mkdir(fs, dir) do
+      case FS.mkdir(fs, dir) do
         {:ok, fs} -> {dir, fs}
         {:error, :eexist} -> {dir, fs}
       end

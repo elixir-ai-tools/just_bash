@@ -13,7 +13,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   """
 
   alias JustBash.AST
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
   alias JustBash.Interpreter.Expansion
   alias JustBash.Limit
 
@@ -76,7 +76,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
          target: target
        }) do
     target_path = Expansion.expand_redirect_target(bash, target)
-    resolved = InMemoryFs.resolve_path(bash.cwd, target_path)
+    resolved = FS.resolve_path(bash.cwd, target_path)
     redir_type = classify_redirection(fd, operator, target_path)
     apply_classified_redirection(redir_type, result, bash, resolved)
   end
@@ -165,7 +165,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   defp write_to_file(bash, path, content, result, stream) do
     Limit.check_file_size!(bash, content)
 
-    case InMemoryFs.write_file(bash.fs, path, content) do
+    case FS.write_file(bash.fs, path, content) do
       {:ok, new_fs} ->
         updated_result = clear_stream(result, stream)
         {updated_result, %{bash | fs: new_fs}}
@@ -178,7 +178,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   defp append_to_file(bash, path, content, result, stream) do
     current_content =
-      case InMemoryFs.read_file(bash.fs, path) do
+      case FS.read_file(bash.fs, path) do
         {:ok, existing} -> existing
         {:error, _} -> ""
       end
@@ -186,7 +186,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     new_content = current_content <> content
     Limit.check_file_size!(bash, new_content)
 
-    case InMemoryFs.write_file(bash.fs, path, new_content) do
+    case FS.write_file(bash.fs, path, new_content) do
       {:ok, new_fs} ->
         updated_result = clear_stream(result, stream)
         {updated_result, %{bash | fs: new_fs}}
@@ -200,7 +200,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   defp write_combined_to_file(bash, path, content, result) do
     Limit.check_file_size!(bash, content)
 
-    case InMemoryFs.write_file(bash.fs, path, content) do
+    case FS.write_file(bash.fs, path, content) do
       {:ok, new_fs} ->
         {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
 
@@ -212,7 +212,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   defp append_combined_to_file(bash, path, content, result) do
     current_content =
-      case InMemoryFs.read_file(bash.fs, path) do
+      case FS.read_file(bash.fs, path) do
         {:ok, existing} -> existing
         {:error, _} -> ""
       end
@@ -220,7 +220,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     new_content = current_content <> content
     Limit.check_file_size!(bash, new_content)
 
-    case InMemoryFs.write_file(bash.fs, path, new_content) do
+    case FS.write_file(bash.fs, path, new_content) do
       {:ok, new_fs} ->
         {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
 
@@ -240,6 +240,8 @@ defmodule JustBash.Interpreter.Executor.Redirection do
         :enoent -> "No such file or directory"
         :enotdir -> "Not a directory"
         :eacces -> "Permission denied"
+        :erofs -> "Read-only file system"
+        :exdev -> "Invalid cross-device link"
         other -> "#{other}"
       end
 
@@ -257,9 +259,9 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   # Input redirection: < file
   defp extract_stdin_content(bash, [%AST.Redirection{operator: :<, target: target} | _]) do
     path = Expansion.expand_redirect_target(bash, target)
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
+    case FS.read_file(bash.fs, resolved) do
       {:ok, content} -> content
       {:error, _} -> ""
     end

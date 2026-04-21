@@ -100,7 +100,7 @@ defmodule JustBash.Commands.JqSpecTest do
   use ExUnit.Case, async: true
 
   alias JustBash.Commands.Jq.{Evaluator, Parser}
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @moduletag :jq_spec
 
@@ -300,23 +300,44 @@ defmodule JustBash.Commands.JqSpecTest do
   defp load_modules_into_fs(real_dir, virtual_root) do
     real_dir
     |> File.ls!()
-    |> Enum.reduce(InMemoryFs.new(), fn entry, fs ->
+    |> Enum.reduce(FS.new(), fn entry, fs ->
       real_path = Path.join(real_dir, entry)
       virtual_path = Path.join(virtual_root, entry)
 
       if File.dir?(real_path) do
         load_modules_into_fs(real_path, virtual_path) |> merge_fs(fs)
       else
-        {:ok, fs} = InMemoryFs.write_file(fs, virtual_path, File.read!(real_path))
+        {:ok, fs} = FS.write_file(fs, virtual_path, File.read!(real_path))
         fs
       end
     end)
   end
 
   defp merge_fs(source_fs, target_fs) do
-    source_fs.data
-    |> Enum.reduce(target_fs, fn {path, entry}, fs ->
-      %{fs | data: Map.put(fs.data, path, entry)}
+    source_fs
+    |> FS.get_all_paths()
+    |> Enum.reject(&(&1 == "/"))
+    |> Enum.reduce(target_fs, fn path, fs ->
+      case FS.stat(source_fs, path) do
+        {:ok, %{is_directory: true}} ->
+          case FS.mkdir(fs, path, recursive: true) do
+            {:ok, fs} -> fs
+            {:error, :eexist} -> fs
+          end
+
+        {:ok, _} ->
+          case FS.read_file(source_fs, path) do
+            {:ok, content} ->
+              {:ok, fs} = FS.write_file(fs, path, content)
+              fs
+
+            {:error, _} ->
+              fs
+          end
+
+        {:error, _} ->
+          fs
+      end
     end)
   end
 

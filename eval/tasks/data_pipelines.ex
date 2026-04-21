@@ -128,7 +128,7 @@ defmodule JustBash.Eval.Tasks.DataPipelines do
          ]},
         {:custom, "bob_uses_new_email",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/merged.csv") do
+           case JustBash.FS.read_file(bash.fs, "/output/merged.csv") do
              {:ok, content} ->
                if String.contains?(content, "bob@example.com"),
                  do: {:error, "bob should have bob@corp.com from users2, not bob@example.com"},
@@ -261,7 +261,7 @@ defmodule JustBash.Eval.Tasks.DataPipelines do
          ]},
         {:custom, "widget_revenue",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/by_product.csv") do
+           case JustBash.FS.read_file(bash.fs, "/output/by_product.csv") do
              {:ok, content} ->
                widget_line =
                  content

@@ -3,7 +3,7 @@ defmodule JustBash.Commands.File do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["file"]
@@ -39,7 +39,7 @@ defmodule JustBash.Commands.File do
   end
 
   defp process_fs_file(bash, opts, file, acc_out, acc_code) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
     case detect_type(bash.fs, resolved, file) do
       {:ok, type_info} ->
@@ -123,12 +123,12 @@ defmodule JustBash.Commands.File do
   end
 
   defp detect_type(fs, path, filename) do
-    case InMemoryFs.stat(fs, path) do
+    case FS.stat(fs, path) do
       {:ok, %{is_directory: true}} ->
         {:ok, %{description: "directory", mime: "inode/directory"}}
 
       {:ok, %{is_file: true}} ->
-        case InMemoryFs.read_file(fs, path) do
+        case FS.read_file(fs, path) do
           {:ok, content} ->
             {:ok, detect_content_type(content, filename)}
 

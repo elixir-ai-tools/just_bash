@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Md5sum do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["md5sum"]
@@ -133,8 +133,8 @@ defmodule JustBash.Commands.Md5sum do
   defp read_file(_bash, "-", stdin), do: {:ok, stdin}
 
   defp read_file(bash, file, _stdin) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
-    InMemoryFs.read_file(bash.fs, resolved)
+    resolved = FS.resolve_path(bash.cwd, file)
+    FS.read_file(bash.fs, resolved)
   end
 
   defp md5(content) do

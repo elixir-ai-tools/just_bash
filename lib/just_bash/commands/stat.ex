@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Stat do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["stat"]
@@ -24,8 +24,8 @@ defmodule JustBash.Commands.Stat do
   defp execute_stat(bash, opts) do
     {output, stderr, has_error} =
       Enum.reduce(opts.files, {"", "", false}, fn file, acc ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
-        stat_result = InMemoryFs.stat(bash.fs, resolved)
+        resolved = FS.resolve_path(bash.cwd, file)
+        stat_result = FS.stat(bash.fs, resolved)
         accumulate_stat_result(stat_result, file, opts.format, acc)
       end)
 

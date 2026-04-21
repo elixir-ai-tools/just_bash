@@ -14,7 +14,7 @@ defmodule JustBash.Commands.Wget do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
   alias JustBash.Network
 
   @impl true
@@ -125,9 +125,9 @@ defmodule JustBash.Commands.Wget do
 
   defp write_to_file(bash, response, filename, opts) do
     body = response.body || ""
-    resolved = InMemoryFs.resolve_path(bash.cwd, filename)
+    resolved = FS.resolve_path(bash.cwd, filename)
 
-    case InMemoryFs.write_file(bash.fs, resolved, body) do
+    case FS.write_file(bash.fs, resolved, body) do
       {:ok, new_fs} ->
         progress = if opts.quiet, do: "", else: "Saving to: '#{filename}'\n"
         {Command.ok(progress), %{bash | fs: new_fs}}

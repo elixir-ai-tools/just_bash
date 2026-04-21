@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Cd do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["cd"]
@@ -17,9 +17,9 @@ defmodule JustBash.Commands.Cd do
         [path | _] -> path
       end
 
-    resolved = InMemoryFs.resolve_path(bash.cwd, target)
+    resolved = FS.resolve_path(bash.cwd, target)
 
-    case InMemoryFs.stat(bash.fs, resolved) do
+    case FS.stat(bash.fs, resolved) do
       {:ok, %{is_directory: true}} ->
         new_env =
           bash.env
