@@ -14,8 +14,8 @@ defmodule JustBash.Fs.MountDemoTest do
   Three backends ship in-tree:
 
     - `InMemoryFs`  — the default; a plain in-memory filesystem
-    - `ReadOnlyFs`  — a decorator that wraps any backend and blocks all writes
-    - `NullFs`      — a /dev/null sink (used in tests, not meant for production)
+    - `ReadOnlyFS`  — a decorator that wraps any backend and blocks all writes
+    - `NullFS`      — a /dev/null sink (used in tests, not meant for production)
 
   Key design points:
 
@@ -39,7 +39,7 @@ defmodule JustBash.Fs.MountDemoTest do
 
   alias JustBash.Fs
   alias JustBash.Fs.InMemoryFs
-  alias JustBash.Fs.ReadOnlyFs
+  alias JustBash.Fs.ReadOnlyFS
 
   # ---------------------------------------------------------------------------
   # Scenario 1: AI agent sandbox
@@ -60,7 +60,7 @@ defmodule JustBash.Fs.MountDemoTest do
       })
 
     fs = Fs.new()
-    {:ok, fs} = Fs.mount(fs, "/project", ReadOnlyFs, ReadOnlyFs.new(inner: {InMemoryFs, project}))
+    {:ok, fs} = Fs.mount(fs, "/project", ReadOnlyFS, ReadOnlyFS.new(inner: {InMemoryFs, project}))
     {:ok, fs} = Fs.mount(fs, "/workspace", InMemoryFs, InMemoryFs.new())
 
     bash = JustBash.new(fs: fs)
@@ -229,11 +229,11 @@ defmodule JustBash.Fs.MountDemoTest do
   test "API: building a multi-mount JustBash from scratch" do
     # Option A: build the Fs yourself and pass it in
     project = InMemoryFs.new(%{"/src/main.py" => "print('hello')\n"})
-    ro = ReadOnlyFs.new(inner: {InMemoryFs, project})
+    ro = ReadOnlyFS.new(inner: {InMemoryFs, project})
     scratch = InMemoryFs.new()
 
     fs = Fs.new()
-    {:ok, fs} = Fs.mount(fs, "/project", ReadOnlyFs, ro)
+    {:ok, fs} = Fs.mount(fs, "/project", ReadOnlyFS, ro)
     {:ok, fs} = Fs.mount(fs, "/scratch", InMemoryFs, scratch)
 
     bash = JustBash.new(fs: fs)
@@ -241,7 +241,7 @@ defmodule JustBash.Fs.MountDemoTest do
     # Verify the mount table
     mounts = Fs.mounts(bash.fs)
     assert {"/", InMemoryFs} in mounts
-    assert {"/project", ReadOnlyFs} in mounts
+    assert {"/project", ReadOnlyFS} in mounts
     assert {"/scratch", InMemoryFs} in mounts
 
     # Everything works through the shell

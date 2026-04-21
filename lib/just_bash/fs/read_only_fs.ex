@@ -1,4 +1,4 @@
-defmodule JustBash.Fs.ReadOnlyFs do
+defmodule JustBash.Fs.ReadOnlyFS do
   @moduledoc """
   A decorator backend that wraps another backend and rejects all mutating
   operations with `{:error, :erofs}`.
@@ -9,8 +9,8 @@ defmodule JustBash.Fs.ReadOnlyFs do
   ## Usage
 
       inner_state = InMemoryFs.new(%{"/readme.txt" => "hello"})
-      ro_state = ReadOnlyFs.new(inner: {InMemoryFs, inner_state})
-      {:ok, fs} = Fs.mount(fs, "/snapshot", ReadOnlyFs, ro_state)
+      ro_state = ReadOnlyFS.new(inner: {InMemoryFs, inner_state})
+      {:ok, fs} = Fs.mount(fs, "/snapshot", ReadOnlyFS, ro_state)
   """
 
   @behaviour JustBash.Fs.Backend

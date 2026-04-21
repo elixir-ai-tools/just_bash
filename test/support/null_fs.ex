@@ -1,4 +1,4 @@
-defmodule JustBash.Fs.NullFs do
+defmodule JustBash.Fs.NullFS do
   @moduledoc false
   # A /dev/null-style backend for testing mount-table mechanics.
   # Returns :enoent for every query and {:ok, :unit} for every mutation.
