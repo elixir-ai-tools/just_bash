@@ -10,7 +10,7 @@ defmodule JustBash.FS.ReadOnlyFS do
 
       inner_state = InMemoryFS.new(%{"/readme.txt" => "hello"})
       ro_state = ReadOnlyFS.new(inner: {InMemoryFS, inner_state})
-      {:ok, fs} = FS.mount(fs, "/snapshot", ReadOnlyFS, ro_state)
+      {:ok, fs} = FS.mount(fs, "/snapshot", ro_state)
   """
 
   @behaviour JustBash.FS.Backend

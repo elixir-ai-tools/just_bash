@@ -20,7 +20,7 @@ defmodule JustBash.FS.MountTest do
 
     test "ls /data with /data mounted to NullFS dispatches to NullFS" do
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
       bash = JustBash.new(fs: fs)
 
       # NullFS returns :enoent for readdir, but synthetic visibility
@@ -33,7 +33,7 @@ defmodule JustBash.FS.MountTest do
     test "ls /data/sub routes to /data backend with path /sub" do
       inner = InMemoryFS.new(%{"/sub/file.txt" => "content"})
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, inner)
+      {:ok, fs} = FS.mount(fs, "/data", inner)
       bash = JustBash.new(fs: fs)
 
       {result, _} = JustBash.exec(bash, "cat /data/sub/file.txt")
@@ -43,7 +43,7 @@ defmodule JustBash.FS.MountTest do
 
     test "/datastore does not match /data mount (boundary check)" do
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
       {:ok, fs} = FS.write_file(fs, "/datastore/file.txt", "root content")
 
       # /datastore/file.txt should route to root, not /data
@@ -56,8 +56,8 @@ defmodule JustBash.FS.MountTest do
       cache_inner = InMemoryFS.new(%{"/hot.bin" => "cached"})
 
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data_inner)
-      {:ok, fs} = FS.mount(fs, "/data/cache", InMemoryFS, cache_inner)
+      {:ok, fs} = FS.mount(fs, "/data", data_inner)
+      {:ok, fs} = FS.mount(fs, "/data/cache", cache_inner)
 
       {:ok, content1} = FS.read_file(fs, "/data/readme.txt")
       assert content1 == "data readme"
@@ -74,7 +74,7 @@ defmodule JustBash.FS.MountTest do
   describe "synthetic visibility" do
     test "ls / shows mounted /data even with empty root" do
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
 
       {:ok, entries} = FS.readdir(fs, "/")
       assert "data" in entries
@@ -82,7 +82,7 @@ defmodule JustBash.FS.MountTest do
 
     test "ls / shows union of root entries and mounted /data" do
       fs = FS.new(%{"/tmp/a" => "x", "/home/b" => "y"})
-      {:ok, fs} = FS.mount(fs, "/data", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
 
       {:ok, entries} = FS.readdir(fs, "/")
       assert "data" in entries
@@ -92,7 +92,7 @@ defmodule JustBash.FS.MountTest do
 
     test "ls / with shadowed /data entry shows data exactly once" do
       fs = FS.new(%{"/data/old.txt" => "old"})
-      {:ok, fs} = FS.mount(fs, "/data", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
 
       {:ok, entries} = FS.readdir(fs, "/")
       assert Enum.count(entries, &(&1 == "data")) == 1
@@ -100,7 +100,7 @@ defmodule JustBash.FS.MountTest do
 
     test "stat /data with /data mounted reports is_directory: true" do
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
 
       {:ok, stat} = FS.stat(fs, "/data")
       assert stat.is_directory == true
@@ -108,7 +108,7 @@ defmodule JustBash.FS.MountTest do
 
     test "stat synthetic ancestor directory when only nested mount exists" do
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data/nested/sub", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data/nested/sub", NullFS.new())
 
       {:ok, stat} = FS.stat(fs, "/data/nested")
       assert stat.is_directory == true
@@ -119,7 +119,7 @@ defmodule JustBash.FS.MountTest do
 
     test "cd to synthetic ancestor directory succeeds" do
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data/nested/sub", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data/nested/sub", NullFS.new())
       bash = JustBash.new(fs: fs)
 
       {result, bash} = JustBash.exec(bash, "cd /data/nested && pwd")
@@ -130,7 +130,7 @@ defmodule JustBash.FS.MountTest do
 
     test "[ -e /data ] returns exit 0 for mounted path" do
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
       bash = JustBash.new(fs: fs)
 
       {result, _} = JustBash.exec(bash, "[ -e /data ]")
@@ -139,7 +139,7 @@ defmodule JustBash.FS.MountTest do
 
     test "exists? returns true for mountpoints and synthetic ancestors" do
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data/nested/sub", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data/nested/sub", NullFS.new())
 
       assert FS.exists?(fs, "/data") == true
       assert FS.exists?(fs, "/data/nested") == true
@@ -156,7 +156,7 @@ defmodule JustBash.FS.MountTest do
     test "cp across mounts succeeds" do
       data_inner = InMemoryFS.new()
       fs = FS.new(%{"/tmp/a.txt" => "hello"})
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data_inner)
+      {:ok, fs} = FS.mount(fs, "/data", data_inner)
 
       bash = JustBash.new(fs: fs)
       {result, bash} = JustBash.exec(bash, "cp /tmp/a.txt /data/a.txt")
@@ -174,7 +174,7 @@ defmodule JustBash.FS.MountTest do
     test "cp -r across backends for directory" do
       data_inner = InMemoryFS.new()
       fs = FS.new(%{"/project/src/a.ex" => "defmodule A", "/project/src/b.ex" => "defmodule B"})
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data_inner)
+      {:ok, fs} = FS.mount(fs, "/data", data_inner)
       bash = JustBash.new(fs: fs)
 
       {result, bash} = JustBash.exec(bash, "cp -r /project /data/backup")
@@ -187,7 +187,7 @@ defmodule JustBash.FS.MountTest do
     test "mv across backends fails with cross-device link" do
       data_inner = InMemoryFS.new()
       fs = FS.new(%{"/tmp/a.txt" => "hello"})
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data_inner)
+      {:ok, fs} = FS.mount(fs, "/data", data_inner)
       bash = JustBash.new(fs: fs)
 
       {result, bash} = JustBash.exec(bash, "mv /tmp/a.txt /data/a.txt")
@@ -201,7 +201,7 @@ defmodule JustBash.FS.MountTest do
     test "mv within same mount succeeds" do
       data_inner = InMemoryFS.new(%{"/a.txt" => "hello"})
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data_inner)
+      {:ok, fs} = FS.mount(fs, "/data", data_inner)
       bash = JustBash.new(fs: fs)
 
       {result, bash} = JustBash.exec(bash, "mv /data/a.txt /data/b.txt")
@@ -220,7 +220,7 @@ defmodule JustBash.FS.MountTest do
     test "cat missing file on backend returns No such file or directory" do
       data_inner = InMemoryFS.new()
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data_inner)
+      {:ok, fs} = FS.mount(fs, "/data", data_inner)
       bash = JustBash.new(fs: fs)
 
       {result, _} = JustBash.exec(bash, "cat /data/missing.txt")
@@ -232,7 +232,7 @@ defmodule JustBash.FS.MountTest do
       inner = InMemoryFS.new(%{"/readme.txt" => "hello"})
       ro = ReadOnlyFS.new(inner: {InMemoryFS, inner})
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/snapshot", ReadOnlyFS, ro)
+      {:ok, fs} = FS.mount(fs, "/snapshot", ro)
       bash = JustBash.new(fs: fs)
 
       {result, _} = JustBash.exec(bash, "echo x > /snapshot/new.txt")
@@ -244,7 +244,7 @@ defmodule JustBash.FS.MountTest do
       inner = InMemoryFS.new(%{"/readme.txt" => "hello world"})
       ro = ReadOnlyFS.new(inner: {InMemoryFS, inner})
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/snapshot", ReadOnlyFS, ro)
+      {:ok, fs} = FS.mount(fs, "/snapshot", ro)
       bash = JustBash.new(fs: fs)
 
       {result, _} = JustBash.exec(bash, "cat /snapshot/readme.txt")
@@ -260,18 +260,18 @@ defmodule JustBash.FS.MountTest do
   describe "mount lifecycle" do
     test "mount with non-absolute path returns :einval" do
       fs = FS.new()
-      assert {:error, :einval} = FS.mount(fs, "data", NullFS, NullFS.new())
+      assert {:error, :einval} = FS.mount(fs, "data", NullFS.new())
     end
 
     test "mount at already-mounted point returns :eexist" do
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", NullFS, NullFS.new())
-      assert {:error, :eexist} = FS.mount(fs, "/data", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
+      assert {:error, :eexist} = FS.mount(fs, "/data", NullFS.new())
     end
 
     test "mount at / returns :eexist" do
       fs = FS.new()
-      assert {:error, :eexist} = FS.mount(fs, "/", NullFS, NullFS.new())
+      assert {:error, :eexist} = FS.mount(fs, "/", NullFS.new())
     end
 
     test "umount of / returns :ebusy" do
@@ -286,7 +286,7 @@ defmodule JustBash.FS.MountTest do
 
     test "umount restores shadowed content" do
       fs = FS.new(%{"/data/old.txt" => "old content"})
-      {:ok, fs} = FS.mount(fs, "/data", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
 
       # Shadowed — NullFS returns :enoent
       assert {:error, :enoent} = FS.read_file(fs, "/data/old.txt")
@@ -301,13 +301,12 @@ defmodule JustBash.FS.MountTest do
 
     test "mounts/1 lists all current mounts" do
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
 
       {:ok, fs} =
         FS.mount(
           fs,
           "/snapshot",
-          ReadOnlyFS,
           ReadOnlyFS.new(inner: {InMemoryFS, InMemoryFS.new()})
         )
 
@@ -361,7 +360,7 @@ defmodule JustBash.FS.MountTest do
 
     test ":context is preserved alongside mounts" do
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", NullFS, NullFS.new())
+      {:ok, fs} = FS.mount(fs, "/data", NullFS.new())
 
       bash = JustBash.new(fs: fs, context: %{x: 1, api_key: "secret"})
 
@@ -375,14 +374,14 @@ defmodule JustBash.FS.MountTest do
   # ---------------------------------------------------------------------------
 
   describe "NullFS" do
-    test "queries return :enoent, mutations return {:ok, :unit}" do
+    test "queries return :enoent, mutations return {:ok, state}" do
       s = NullFS.new()
       assert NullFS.exists?(s, "/anything") == false
       assert {:error, :enoent} = NullFS.stat(s, "/x")
       assert {:error, :enoent} = NullFS.read_file(s, "/x")
-      assert {:ok, :unit} = NullFS.write_file(s, "/x", "data", [])
-      assert {:ok, :unit} = NullFS.mkdir(s, "/x", [])
-      assert {:ok, :unit} = NullFS.rm(s, "/x", [])
+      assert {:ok, %NullFS{}} = NullFS.write_file(s, "/x", "data", [])
+      assert {:ok, %NullFS{}} = NullFS.mkdir(s, "/x", [])
+      assert {:ok, %NullFS{}} = NullFS.rm(s, "/x", [])
     end
   end
 
@@ -438,7 +437,7 @@ defmodule JustBash.FS.MountTest do
     test "clears all mount backends" do
       data_inner = InMemoryFS.new(%{"/file.txt" => "data content"})
       fs = FS.new(%{"/root.txt" => "root content"})
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data_inner)
+      {:ok, fs} = FS.mount(fs, "/data", data_inner)
 
       # Both files exist
       assert FS.exists?(fs, "/root.txt")
@@ -468,7 +467,7 @@ defmodule JustBash.FS.MountTest do
       inner = InMemoryFS.new()
       ro = ReadOnlyFS.new(inner: {InMemoryFS, inner})
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/ro", ReadOnlyFS, ro)
+      {:ok, fs} = FS.mount(fs, "/ro", ro)
       bash = JustBash.new(fs: fs)
 
       # This triggers :erofs which is handled. The shell should not crash.
@@ -490,7 +489,7 @@ defmodule JustBash.FS.MountTest do
     test "hard link across mounts returns :exdev" do
       data_inner = InMemoryFS.new(%{"/a.txt" => "content"})
       fs = FS.new(%{"/root.txt" => "root"})
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data_inner)
+      {:ok, fs} = FS.mount(fs, "/data", data_inner)
 
       assert {:error, :exdev} = FS.link(fs, "/root.txt", "/data/link.txt")
       assert {:error, :exdev} = FS.link(fs, "/data/a.txt", "/root_link.txt")
@@ -499,7 +498,7 @@ defmodule JustBash.FS.MountTest do
     test "symlink target crossing mount boundary returns :einval at FS level" do
       data_inner = InMemoryFS.new()
       fs = FS.new(%{"/root.txt" => "root"})
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data_inner)
+      {:ok, fs} = FS.mount(fs, "/data", data_inner)
 
       # Creating a symlink at /data/link pointing to /root.txt crosses mounts
       assert {:error, :einval} = FS.symlink(fs, "/root.txt", "/data/link")
@@ -508,7 +507,7 @@ defmodule JustBash.FS.MountTest do
     test "symlink within same mount succeeds" do
       data_inner = InMemoryFS.new(%{"/a.txt" => "content"})
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data_inner)
+      {:ok, fs} = FS.mount(fs, "/data", data_inner)
 
       # Target /data/a.txt resolves to the same mount as link /data/link
       assert {:ok, _} = FS.symlink(fs, "/data/a.txt", "/data/link")
@@ -547,8 +546,8 @@ defmodule JustBash.FS.MountTest do
       workspace_state = InMemoryFS.new()
 
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/project", ReadOnlyFS, ro_state)
-      {:ok, fs} = FS.mount(fs, "/workspace", InMemoryFS, workspace_state)
+      {:ok, fs} = FS.mount(fs, "/project", ro_state)
+      {:ok, fs} = FS.mount(fs, "/workspace", workspace_state)
       bash = JustBash.new(fs: fs)
 
       # ---------------------------------------------------------------
@@ -691,7 +690,7 @@ defmodule JustBash.FS.MountTest do
 
       # Mount an overlay at /data — shadows the original
       overlay = InMemoryFS.new(%{"/overlay.txt" => "I am the overlay"})
-      {:ok, new_fs} = FS.mount(bash.fs, "/data", InMemoryFS, overlay)
+      {:ok, new_fs} = FS.mount(bash.fs, "/data", overlay)
       bash = %{bash | fs: new_fs}
 
       # Original is hidden
@@ -728,8 +727,8 @@ defmodule JustBash.FS.MountTest do
       cache_state = InMemoryFS.new(cache_files)
 
       fs = FS.new()
-      {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data_state)
-      {:ok, fs} = FS.mount(fs, "/data/cache", InMemoryFS, cache_state)
+      {:ok, fs} = FS.mount(fs, "/data", data_state)
+      {:ok, fs} = FS.mount(fs, "/data/cache", cache_state)
       bash = JustBash.new(fs: fs)
 
       # ls /data shows both real entries AND the synthetic "cache" child

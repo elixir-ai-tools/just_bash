@@ -351,7 +351,7 @@ defmodule JustBash do
 
     Enum.reduce(extra_mounts, fs, fn {mountpoint, module, init_arg}, acc_fs ->
       backend_state = module.new(init_arg)
-      {:ok, new_fs} = FS.mount(acc_fs, mountpoint, module, backend_state)
+      {:ok, new_fs} = FS.mount(acc_fs, mountpoint, backend_state)
       new_fs
     end)
   end

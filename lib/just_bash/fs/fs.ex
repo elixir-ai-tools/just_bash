@@ -70,12 +70,17 @@ defmodule JustBash.FS do
   @doc """
   Mount a backend at the given mountpoint.
 
+  `backend_state` must be a struct; its module is extracted automatically via
+  `backend_state.__struct__`.
+
   The mountpoint must be absolute and is normalized before storage.
   Duplicate mountpoints return `{:error, :eexist}`.
   Non-absolute mountpoints return `{:error, :einval}`.
   """
-  @spec mount(t(), String.t(), module(), term()) :: {:ok, t()} | {:error, :einval | :eexist}
-  def mount(%__MODULE__{mounts: mounts} = fs, mountpoint, module, backend_state) do
+  @spec mount(t(), String.t(), term()) :: {:ok, t()} | {:error, :einval | :eexist}
+  def mount(%__MODULE__{mounts: mounts} = fs, mountpoint, backend_state) do
+    module = backend_state.__struct__
+
     if String.starts_with?(mountpoint, "/") do
       normalized =
         mountpoint

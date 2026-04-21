@@ -5,47 +5,49 @@ defmodule JustBash.FS.NullFS do
 
   @behaviour JustBash.FS.Backend
 
-  @type t :: :unit
+  @type t :: %__MODULE__{}
+
+  defstruct []
 
   @spec new() :: t()
-  def new, do: :unit
+  def new, do: %__MODULE__{}
 
   @impl true
-  def exists?(:unit, _path), do: false
+  def exists?(%__MODULE__{}, _path), do: false
 
   @impl true
-  def stat(:unit, _path), do: {:error, :enoent}
+  def stat(%__MODULE__{}, _path), do: {:error, :enoent}
 
   @impl true
-  def lstat(:unit, _path), do: {:error, :enoent}
+  def lstat(%__MODULE__{}, _path), do: {:error, :enoent}
 
   @impl true
-  def read_file(:unit, _path), do: {:error, :enoent}
+  def read_file(%__MODULE__{}, _path), do: {:error, :enoent}
 
   @impl true
-  def readdir(:unit, _path), do: {:error, :enoent}
+  def readdir(%__MODULE__{}, _path), do: {:error, :enoent}
 
   @impl true
-  def readlink(:unit, _path), do: {:error, :enoent}
+  def readlink(%__MODULE__{}, _path), do: {:error, :enoent}
 
   @impl true
-  def write_file(:unit, _path, _content, _opts), do: {:ok, :unit}
+  def write_file(s = %__MODULE__{}, _path, _content, _opts), do: {:ok, s}
 
   @impl true
-  def append_file(:unit, _path, _content), do: {:ok, :unit}
+  def append_file(s = %__MODULE__{}, _path, _content), do: {:ok, s}
 
   @impl true
-  def mkdir(:unit, _path, _opts), do: {:ok, :unit}
+  def mkdir(s = %__MODULE__{}, _path, _opts), do: {:ok, s}
 
   @impl true
-  def rm(:unit, _path, _opts), do: {:ok, :unit}
+  def rm(s = %__MODULE__{}, _path, _opts), do: {:ok, s}
 
   @impl true
-  def chmod(:unit, _path, _mode), do: {:ok, :unit}
+  def chmod(s = %__MODULE__{}, _path, _mode), do: {:ok, s}
 
   @impl true
-  def symlink(:unit, _target, _link), do: {:ok, :unit}
+  def symlink(s = %__MODULE__{}, _target, _link), do: {:ok, s}
 
   @impl true
-  def link(:unit, _existing, _new), do: {:ok, :unit}
+  def link(s = %__MODULE__{}, _existing, _new), do: {:ok, s}
 end

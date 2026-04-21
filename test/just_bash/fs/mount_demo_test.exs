@@ -60,8 +60,8 @@ defmodule JustBash.FS.MountDemoTest do
       })
 
     fs = FS.new()
-    {:ok, fs} = FS.mount(fs, "/project", ReadOnlyFS, ReadOnlyFS.new(inner: {InMemoryFS, project}))
-    {:ok, fs} = FS.mount(fs, "/workspace", InMemoryFS, InMemoryFS.new())
+    {:ok, fs} = FS.mount(fs, "/project", ReadOnlyFS.new(inner: {InMemoryFS, project}))
+    {:ok, fs} = FS.mount(fs, "/workspace", InMemoryFS.new())
 
     bash = JustBash.new(fs: fs)
 
@@ -124,7 +124,7 @@ defmodule JustBash.FS.MountDemoTest do
 
     # Mount an overlay at /data — original content is now hidden
     overlay = InMemoryFS.new(%{"/public.txt" => "overlay content"})
-    {:ok, new_fs} = FS.mount(bash.fs, "/data", InMemoryFS, overlay)
+    {:ok, new_fs} = FS.mount(bash.fs, "/data", overlay)
     bash = %{bash | fs: new_fs}
 
     {r, bash} = JustBash.exec(bash, "cat /data/secret.txt")
@@ -155,8 +155,8 @@ defmodule JustBash.FS.MountDemoTest do
     cache = InMemoryFS.new(%{"/session.bin" => "cached_session"})
 
     fs = FS.new()
-    {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data)
-    {:ok, fs} = FS.mount(fs, "/data/cache", InMemoryFS, cache)
+    {:ok, fs} = FS.mount(fs, "/data", data)
+    {:ok, fs} = FS.mount(fs, "/data/cache", cache)
     bash = JustBash.new(fs: fs)
 
     # ls /data shows real entries AND the synthetic "cache" child
@@ -192,7 +192,7 @@ defmodule JustBash.FS.MountDemoTest do
     store = InMemoryFS.new()
 
     fs = FS.new(%{"/tmp/report.csv" => "col1,col2\na,b\n"})
-    {:ok, fs} = FS.mount(fs, "/store", InMemoryFS, store)
+    {:ok, fs} = FS.mount(fs, "/store", store)
     bash = JustBash.new(fs: fs)
 
     # cp across mounts works
@@ -233,8 +233,8 @@ defmodule JustBash.FS.MountDemoTest do
     scratch = InMemoryFS.new()
 
     fs = FS.new()
-    {:ok, fs} = FS.mount(fs, "/project", ReadOnlyFS, ro)
-    {:ok, fs} = FS.mount(fs, "/scratch", InMemoryFS, scratch)
+    {:ok, fs} = FS.mount(fs, "/project", ro)
+    {:ok, fs} = FS.mount(fs, "/scratch", scratch)
 
     bash = JustBash.new(fs: fs)
 
