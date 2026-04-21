@@ -53,11 +53,11 @@ defmodule JustBash.FS.GitFS do
   ## Processless
 
   `GitFS` is a plain struct — no processes, no ETS, no side effects. `new/1`
-  clones into memory and returns a value. Lazy fetches that `exgit` threads
-  through each operation are local to that call; the returned struct is
-  discarded and the next call re-fetches if needed. For workloads that read
-  the same files repeatedly, pass `lazy: false` for a full upfront clone so
-  all reads are in-memory.
+  clones lazily and prefetches commits + trees so `ls`, `stat`, and `exists?`
+  are served from memory. Blobs remain lazy: each `read_file` call fetches
+  the blob on demand and discards the updated repo struct, so repeated reads
+  of the same file re-fetch. Call `materialize/1` before grep-heavy workloads
+  to pull all blobs into the struct up front.
   """
 
   @behaviour JustBash.FS.Backend
@@ -71,23 +71,24 @@ defmodule JustBash.FS.GitFS do
   # ---------------------------------------------------------------------------
 
   @doc """
-  Prefetch all objects reachable from the mounted ref into memory.
+  Fetch all blobs reachable from the mounted ref into the in-memory store.
 
-  After `prefetch/1`, all `ls`, `stat`, and `read_file` calls are served
-  from the in-memory object store — no network. Use this before grep-heavy
-  or multi-file workloads to pay the network cost once:
+  After `materialize/1`, `read_file` is served entirely from memory — no
+  network. Use this before grep-heavy or multi-file workloads where every
+  file will be read at least once:
 
-      state = GitFS.new(url: "https://github.com/user/repo", lazy: true)
-      state = GitFS.prefetch(state)   # fetch everything up front
+      state =
+        GitFS.new(url: "https://github.com/user/repo", lazy: true)
+        |> GitFS.materialize()
+
       {:ok, fs} = FS.mount(FS.new(), "/repo", state)
 
-  With a lazy clone, objects are fetched on demand but the updated repo
-  struct is discarded between calls (no cross-call cache). `prefetch/1`
-  materialises the repo into a single in-memory struct so subsequent reads
-  cost nothing.
+  `new/1` already prefetches commits and trees so `ls`/`stat` are in-memory
+  from the start. `materialize/1` adds the blobs — the remaining layer that
+  `read_file` would otherwise fetch on demand.
   """
-  @spec prefetch(t()) :: t()
-  def prefetch(%__MODULE__{repo: repo, ref: ref} = state) do
+  @spec materialize(t()) :: t()
+  def materialize(%__MODULE__{repo: repo, ref: ref} = state) do
     {:ok, materialized} = Exgit.Repository.materialize(repo, ref)
     %{state | repo: materialized}
   end
@@ -115,6 +116,9 @@ defmodule JustBash.FS.GitFS do
       |> maybe_add_path(opts)
 
     {:ok, repo} = Exgit.clone(url, clone_opts)
+    # Prefetch commits + trees so ls/stat/exists? are served from the
+    # in-memory object store. Blobs remain lazy — fetched on read_file.
+    {:ok, repo} = Exgit.FS.prefetch(repo, ref)
 
     %__MODULE__{repo: repo, ref: ref}
   end
