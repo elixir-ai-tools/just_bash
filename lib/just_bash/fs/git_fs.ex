@@ -53,6 +53,31 @@ defmodule JustBash.FS.GitFS do
   `new/1` to pull every blob reachable from the ref into the struct up
   front. All subsequent `read_file` calls are in-memory.
 
+  ## Network failures
+
+  `new/1` returns `{:error, reason}` on network failure:
+
+    * DNS failure:  `{:error, %Req.TransportError{reason: :nxdomain}}`
+    * Refused:      `{:error, %Req.TransportError{reason: :econnrefused}}`
+    * HTTP 4xx/5xx: `{:error, {:http_error, status, body}}`
+    * Auth denied:  `{:error, {:http_error, 401 | 403, _}}`
+
+  Connect timeout is 10s, receive timeout is 5 min (both configurable via
+  the underlying `Exgit.Transport.HTTP` struct). Fails fast on unreachable
+  hosts.
+
+  If the remote goes down **after** `new/1`, behaviour depends on whether
+  you've called `materialize/1`:
+
+    * Post-materialize, everything is local — `ls`, `stat`, `read_file`,
+      `grep -r` all work with no network at all.
+    * Pre-materialize, `ls`/`stat` still work (trees are cached) but
+      `read_file` returns `{:error, :eio}` which surfaces in the shell
+      as "I/O error".
+
+  For long-running agents that need to survive transient network issues,
+  call `materialize/1` up front.
+
   ## Credentials
 
   Pass any `Exgit.Credentials` value directly:
