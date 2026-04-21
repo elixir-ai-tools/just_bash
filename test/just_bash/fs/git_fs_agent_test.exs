@@ -31,11 +31,10 @@ defmodule JustBash.FS.GitFSAgentTest do
             "exgit not available — add {:exgit, github: \"ivarvong/exgit\", branch: \"main\"} to deps"
     end
 
-    # Lazy clone + tree prefetch: ls/stat are in-memory, blobs fetched on
-    # demand. Materialize before grep so all file reads are in-memory too.
-    state =
-      GitFS.new(url: @repo_url, lazy: true)
-      |> GitFS.materialize()
+    # Partial clone (filter: blob:none) — ls/stat are in-memory after one
+    # round trip. Materialize before grep so all file reads are in-memory too.
+    {:ok, state} = GitFS.new(url: @repo_url)
+    state = GitFS.materialize(state)
 
     {:ok, fs} = FS.mount(FS.new(), "/repo", state)
     bash = JustBash.new(fs: fs)

@@ -24,7 +24,7 @@ defmodule JustBash.FS.GitFSTest do
             "exgit not available — add {:exgit, github: \"ivarvong/exgit\", branch: \"main\"} to deps"
     end
 
-    state = GitFS.new(url: @test_repo, lazy: true)
+    {:ok, state} = GitFS.new(url: @test_repo)
 
     {:ok, fs} = FS.mount(FS.new(), "/repo", state)
     bash = JustBash.new(fs: fs)
@@ -135,7 +135,7 @@ defmodule JustBash.FS.GitFSTest do
   describe "ref option" do
     test "mounting HEAD explicitly works", %{bash: _bash} do
       # HEAD is the default — just sanity-check the option is accepted
-      state2 = GitFS.new(url: @test_repo, ref: "HEAD", lazy: true)
+      {:ok, state2} = GitFS.new(url: @test_repo, ref: "HEAD")
 
       {:ok, fs2} = FS.mount(FS.new(), "/repo2", state2)
       bash2 = JustBash.new(fs: fs2)
