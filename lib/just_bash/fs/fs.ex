@@ -37,28 +37,25 @@ defmodule JustBash.FS do
   # ---------------------------------------------------------------------------
 
   @doc """
-  Create a new filesystem with a root `/` mount.
+  Create a new filesystem with a root `/` mount backed by `InMemoryFS`.
+
+  To use a different backend as the root, create a plain `FS.new()` and
+  replace the root mount via `mount/3`:
+
+      {:ok, fs} = FS.mount(FS.new(), "/", MyBackend.new(...))
 
   ## Variants
 
-      FS.new()                          # root backed by InMemoryFS
-      FS.new(%{"/a.txt" => "hi"})       # InMemoryFS seeded with initial files
-      FS.new(root: {MyBackend, state})  # custom root backend
+      FS.new()                      # empty InMemoryFS root
+      FS.new(%{"/a.txt" => "hi"})   # InMemoryFS seeded with initial files
 
   ## Examples
 
       iex> fs = JustBash.FS.new()
       iex> fs = JustBash.FS.new(%{"/hello.txt" => "world"})
-      iex> fs = JustBash.FS.new(root: {JustBash.FS.InMemoryFS, JustBash.FS.InMemoryFS.new()})
   """
-  @spec new(map() | keyword()) :: t()
-  def new(opts \\ %{})
-
-  def new(root: {module, state}) do
-    %__MODULE__{mounts: [{"/", module, state}]}
-  end
-
-  def new(initial_files) when is_map(initial_files) do
+  @spec new(map()) :: t()
+  def new(initial_files \\ %{}) when is_map(initial_files) do
     root_state = InMemoryFS.new(initial_files)
     %__MODULE__{mounts: [{"/", InMemoryFS, root_state}]}
   end
@@ -73,11 +70,14 @@ defmodule JustBash.FS do
   `backend_state` must be a struct; its module is extracted automatically via
   `backend_state.__struct__`.
 
+  If a backend is already mounted at `mountpoint`, it is replaced. This
+  lets callers mount at `/` without first having to tear down the default
+  `InMemoryFS` that `new/0` installs there.
+
   The mountpoint must be absolute and is normalized before storage.
-  Duplicate mountpoints return `{:error, :eexist}`.
   Non-absolute mountpoints return `{:error, :einval}`.
   """
-  @spec mount(t(), String.t(), term()) :: {:ok, t()} | {:error, :einval | :eexist}
+  @spec mount(t(), String.t(), term()) :: {:ok, t()} | {:error, :einval}
   def mount(%__MODULE__{mounts: mounts} = fs, mountpoint, backend_state) do
     module = backend_state.__struct__
 
@@ -91,11 +91,15 @@ defmodule JustBash.FS do
           other -> other
         end
 
-      if Enum.any?(mounts, fn {mp, _mod, _state} -> mp == normalized end) do
-        {:error, :eexist}
-      else
-        {:ok, %{fs | mounts: mounts ++ [{normalized, module, backend_state}]}}
-      end
+      new_entry = {normalized, module, backend_state}
+
+      new_mounts =
+        case Enum.find_index(mounts, fn {mp, _mod, _state} -> mp == normalized end) do
+          nil -> mounts ++ [new_entry]
+          idx -> List.replace_at(mounts, idx, new_entry)
+        end
+
+      {:ok, %{fs | mounts: new_mounts}}
     else
       {:error, :einval}
     end
