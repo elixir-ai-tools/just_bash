@@ -1,6 +1,7 @@
 defmodule JustBash.FS.InMemoryFSTest do
   use ExUnit.Case, async: true
 
+  alias JustBash.FS
   alias JustBash.FS.InMemoryFS
 
   describe "new/1" do
@@ -30,64 +31,64 @@ defmodule JustBash.FS.InMemoryFSTest do
 
   describe "normalize_path/1" do
     test "handles root path" do
-      assert InMemoryFS.normalize_path("/") == "/"
-      assert InMemoryFS.normalize_path("") == "/"
+      assert FS.normalize_path("/") == "/"
+      assert FS.normalize_path("") == "/"
     end
 
     test "removes trailing slashes" do
-      assert InMemoryFS.normalize_path("/home/user/") == "/home/user"
+      assert FS.normalize_path("/home/user/") == "/home/user"
     end
 
     test "ensures leading slash" do
-      assert InMemoryFS.normalize_path("home/user") == "/home/user"
+      assert FS.normalize_path("home/user") == "/home/user"
     end
 
     test "resolves . and .." do
-      assert InMemoryFS.normalize_path("/home/user/../user/./file") == "/home/user/file"
-      assert InMemoryFS.normalize_path("/home/../etc") == "/etc"
-      assert InMemoryFS.normalize_path("/home/user/../../") == "/"
+      assert FS.normalize_path("/home/user/../user/./file") == "/home/user/file"
+      assert FS.normalize_path("/home/../etc") == "/etc"
+      assert FS.normalize_path("/home/user/../../") == "/"
     end
 
     test "handles multiple slashes" do
-      assert InMemoryFS.normalize_path("//home//user//") == "/home/user"
+      assert FS.normalize_path("//home//user//") == "/home/user"
     end
   end
 
   describe "dirname/1" do
     test "returns parent directory" do
-      assert InMemoryFS.dirname("/home/user/file.txt") == "/home/user"
-      assert InMemoryFS.dirname("/home/user") == "/home"
+      assert FS.dirname("/home/user/file.txt") == "/home/user"
+      assert FS.dirname("/home/user") == "/home"
     end
 
     test "returns root for top-level paths" do
-      assert InMemoryFS.dirname("/file.txt") == "/"
-      assert InMemoryFS.dirname("/") == "/"
+      assert FS.dirname("/file.txt") == "/"
+      assert FS.dirname("/") == "/"
     end
   end
 
   describe "basename/1" do
     test "returns file name" do
-      assert InMemoryFS.basename("/home/user/file.txt") == "file.txt"
-      assert InMemoryFS.basename("/home/user") == "user"
+      assert FS.basename("/home/user/file.txt") == "file.txt"
+      assert FS.basename("/home/user") == "user"
     end
 
     test "handles root" do
-      assert InMemoryFS.basename("/") == "/"
+      assert FS.basename("/") == "/"
     end
   end
 
   describe "resolve_path/2" do
     test "resolves absolute paths" do
-      assert InMemoryFS.resolve_path("/home/user", "/etc/passwd") == "/etc/passwd"
+      assert FS.resolve_path("/home/user", "/etc/passwd") == "/etc/passwd"
     end
 
     test "resolves relative paths" do
-      assert InMemoryFS.resolve_path("/home/user", "file.txt") == "/home/user/file.txt"
-      assert InMemoryFS.resolve_path("/home/user", "subdir/file") == "/home/user/subdir/file"
+      assert FS.resolve_path("/home/user", "file.txt") == "/home/user/file.txt"
+      assert FS.resolve_path("/home/user", "subdir/file") == "/home/user/subdir/file"
     end
 
     test "handles root base" do
-      assert InMemoryFS.resolve_path("/", "file.txt") == "/file.txt"
+      assert FS.resolve_path("/", "file.txt") == "/file.txt"
     end
   end
 
