@@ -52,7 +52,8 @@ defmodule JustBash.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:stream_data, "~> 1.0", only: [:dev, :test]},
-      {:benchee, "~> 1.0", only: :dev}
+      {:benchee, "~> 1.0", only: :dev},
+      {:exgit, github: "ivarvong/exgit", branch: "main", optional: true}
     ]
   end
 
@@ -80,7 +81,7 @@ defmodule JustBash.MixProject do
         Core: [JustBash],
         Parser: [JustBash.Parser, JustBash.Parser.Lexer, JustBash.Parser.WordParts],
         AST: [JustBash.AST],
-        Filesystem: [JustBash.FS, JustBash.FS.InMemoryFS],
+        Filesystem: [JustBash.FS, JustBash.FS.InMemoryFS, JustBash.FS.GitFS],
         Utilities: [JustBash.Arithmetic]
       ]
     ]
