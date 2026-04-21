@@ -13,13 +13,20 @@ defmodule JustBash.FS.GitFS do
 
   ## Usage
 
-      # Mount a public repo — lazy clone fetches blobs on demand
-      {:ok, fs} = FS.mount(FS.new(), "/repo", GitFS.new(url: "https://github.com/user/repo"))
+      # Mount a public repo at /repo
+      {:ok, repo_fs} = GitFS.new(url: "https://github.com/user/repo")
+      {:ok, fs} = FS.mount(FS.new(), "/repo", repo_fs)
       bash = JustBash.new(fs: fs)
 
       {r, _} = JustBash.exec(bash, "ls /repo")
       {r, _} = JustBash.exec(bash, "cat /repo/README.md")
       {r, _} = JustBash.exec(bash, "grep -r defmodule /repo/lib")
+
+      # Or mount it as the root filesystem
+      {:ok, repo_fs} = GitFS.new(url: "https://github.com/user/repo")
+      bash = JustBash.new(fs: FS.new(root: repo_fs))
+
+      {r, _} = JustBash.exec(bash, "ls /")
 
   ## Options for `new/1`
 

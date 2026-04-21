@@ -421,7 +421,7 @@ defmodule JustBash.FS.MountTest do
   describe "FS.new(root:)" do
     test "creates filesystem with custom root backend" do
       inner = InMemoryFS.new(%{"/hello.txt" => "custom root"})
-      fs = FS.new(root: {InMemoryFS, inner})
+      fs = FS.new(root: inner)
 
       {:ok, content} = FS.read_file(fs, "/hello.txt")
       assert content == "custom root"

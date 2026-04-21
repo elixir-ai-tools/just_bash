@@ -41,21 +41,23 @@ defmodule JustBash.FS do
 
   ## Variants
 
-      FS.new()                          # root backed by InMemoryFS
-      FS.new(%{"/a.txt" => "hi"})       # InMemoryFS seeded with initial files
-      FS.new(root: {MyBackend, state})  # custom root backend
+      FS.new()                           # root backed by InMemoryFS
+      FS.new(%{"/a.txt" => "hi"})        # InMemoryFS seeded with initial files
+      FS.new(root: backend_state)        # custom root backend (any struct
+                                         # implementing JustBash.FS.Backend)
 
   ## Examples
 
       iex> fs = JustBash.FS.new()
       iex> fs = JustBash.FS.new(%{"/hello.txt" => "world"})
-      iex> fs = JustBash.FS.new(root: {JustBash.FS.InMemoryFS, JustBash.FS.InMemoryFS.new()})
+      iex> fs = JustBash.FS.new(root: JustBash.FS.InMemoryFS.new())
   """
   @spec new(map() | keyword()) :: t()
   def new(opts \\ %{})
 
-  def new(root: {module, state}) do
-    %__MODULE__{mounts: [{"/", module, state}]}
+  def new(root: backend_state) do
+    module = backend_state.__struct__
+    %__MODULE__{mounts: [{"/", module, backend_state}]}
   end
 
   def new(initial_files) when is_map(initial_files) do
