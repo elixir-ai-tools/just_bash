@@ -2,7 +2,7 @@ defmodule JustBash.Commands.Diff do
   @moduledoc "The `diff` command - compare files line by line."
   @behaviour JustBash.Commands.Command
 
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["diff"]
@@ -87,9 +87,9 @@ defmodule JustBash.Commands.Diff do
   defp read_file(_bash, "-", stdin), do: {:ok, stdin}
 
   defp read_file(bash, file, _stdin) do
-    resolved = Fs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case Fs.read_file(bash.fs, resolved) do
+    case FS.read_file(bash.fs, resolved) do
       {:ok, content} -> {:ok, content}
       {:error, _} -> {:error, file}
     end

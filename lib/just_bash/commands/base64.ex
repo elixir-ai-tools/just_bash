@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Base64 do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["base64"]
@@ -88,9 +88,9 @@ defmodule JustBash.Commands.Base64 do
   defp read_single_file(_bash, "-", acc), do: {:cont, {:ok, acc}}
 
   defp read_single_file(bash, file, acc) do
-    resolved = Fs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case Fs.read_file(bash.fs, resolved) do
+    case FS.read_file(bash.fs, resolved) do
       {:ok, data} -> {:cont, {:ok, acc <> data}}
       {:error, _} -> {:halt, {:error, "base64: #{file}: No such file or directory\n"}}
     end

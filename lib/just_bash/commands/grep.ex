@@ -4,7 +4,7 @@ defmodule JustBash.Commands.Grep do
 
   alias JustBash.Commands.Command
   alias JustBash.FlagParser
-  alias JustBash.Fs
+  alias JustBash.FS
   alias JustBash.Limit
 
   @flag_spec %{
@@ -94,9 +94,9 @@ defmodule JustBash.Commands.Grep do
 
   defp expand_files(bash, files, true) do
     Enum.flat_map(files, fn file ->
-      resolved = Fs.resolve_path(bash.cwd, file)
+      resolved = FS.resolve_path(bash.cwd, file)
 
-      case Fs.stat(bash.fs, resolved) do
+      case FS.stat(bash.fs, resolved) do
         {:ok, %{is_directory: true}} ->
           find_files_recursive(bash.fs, resolved, file)
 
@@ -110,13 +110,13 @@ defmodule JustBash.Commands.Grep do
   end
 
   defp find_files_recursive(fs, full_path, display_path) do
-    case Fs.readdir(fs, full_path) do
+    case FS.readdir(fs, full_path) do
       {:ok, entries} ->
         Enum.flat_map(entries, fn entry ->
           child_full = join_path(full_path, entry)
           child_display = join_path(display_path, entry)
 
-          case Fs.stat(fs, child_full) do
+          case FS.stat(fs, child_full) do
             {:ok, %{is_directory: true}} ->
               find_files_recursive(fs, child_full, child_display)
 
@@ -137,9 +137,9 @@ defmodule JustBash.Commands.Grep do
   defp join_path(path, entry), do: "#{path}/#{entry}"
 
   defp process_file(bash, file, regex, flags, show_filename, acc, had_match) do
-    resolved = Fs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case Fs.read_file(bash.fs, resolved) do
+    case FS.read_file(bash.fs, resolved) do
       {:ok, content} ->
         prefix = if show_filename, do: "#{file}:", else: ""
         lines = process_content(content, regex, flags, prefix)

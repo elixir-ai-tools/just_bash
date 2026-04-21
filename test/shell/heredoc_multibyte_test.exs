@@ -62,7 +62,7 @@ defmodule JustBash.Shell.HeredocMultibyteTest do
         """)
 
       assert result.exit_code == 0
-      {:ok, content} = JustBash.Fs.read_file(bash.fs, "/home/user/myfile.txt")
+      {:ok, content} = JustBash.FS.read_file(bash.fs, "/home/user/myfile.txt")
       assert content =~ "must not be silently dropped"
     end
 

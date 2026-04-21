@@ -4,7 +4,7 @@ defmodule JustBash.Commands.Uniq do
 
   alias JustBash.Commands.Command
   alias JustBash.FlagParser
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @flag_spec %{
     boolean: [:c, :d, :u],
@@ -25,9 +25,9 @@ defmodule JustBash.Commands.Uniq do
           stdin
 
         [file | _] ->
-          resolved = Fs.resolve_path(bash.cwd, file)
+          resolved = FS.resolve_path(bash.cwd, file)
 
-          case Fs.read_file(bash.fs, resolved) do
+          case FS.read_file(bash.fs, resolved) do
             {:ok, c} -> c
             {:error, _} -> ""
           end

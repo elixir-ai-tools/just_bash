@@ -80,7 +80,7 @@ defmodule JustBash.MixProject do
         Core: [JustBash],
         Parser: [JustBash.Parser, JustBash.Parser.Lexer, JustBash.Parser.WordParts],
         AST: [JustBash.AST],
-        Filesystem: [JustBash.Fs, JustBash.Fs.InMemoryFs],
+        Filesystem: [JustBash.FS, JustBash.FS.InMemoryFS],
         Utilities: [JustBash.Arithmetic]
       ]
     ]

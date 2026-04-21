@@ -8,7 +8,7 @@ defmodule JustBash.Commands.Realpath do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["realpath"]
@@ -24,9 +24,9 @@ defmodule JustBash.Commands.Realpath do
       _ ->
         {out_parts, err_parts, exit_code} =
           Enum.reduce(paths, {[], [], 0}, fn path, {out, err, code} ->
-            resolved = Fs.resolve_path(bash.cwd, path)
+            resolved = FS.resolve_path(bash.cwd, path)
 
-            case Fs.stat(bash.fs, resolved) do
+            case FS.stat(bash.fs, resolved) do
               {:ok, _} ->
                 {[out, resolved, "\n"], err, code}
 

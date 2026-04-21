@@ -24,7 +24,7 @@ defmodule JustBash.Commands.Jq do
 
   alias JustBash.Commands.Command
   alias JustBash.Commands.Jq.{Evaluator, Parser}
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["jq"]
@@ -91,9 +91,9 @@ defmodule JustBash.Commands.Jq do
   end
 
   defp read_file_input(bash, file) do
-    resolved = Fs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case Fs.read_file(bash.fs, resolved) do
+    case FS.read_file(bash.fs, resolved) do
       {:ok, content} -> {:ok, content}
       {:error, _} -> {:error, "jq: #{file}: No such file or directory\n"}
     end

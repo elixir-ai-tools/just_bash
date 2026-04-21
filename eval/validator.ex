@@ -8,7 +8,7 @@ defmodule JustBash.Eval.Validator do
   """
 
   alias JustBash.Eval.Client
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @type agent_result :: %{
           success: boolean(),
@@ -63,7 +63,7 @@ defmodule JustBash.Eval.Validator do
 
   # file_contains now returns one result per sub-check for granular diagnostics
   defp execute({:file_contains, path, checks}, %{bash: bash}) do
-    case Fs.read_file(bash.fs, path) do
+    case FS.read_file(bash.fs, path) do
       {:ok, content} ->
         Enum.map(checks, fn check ->
           name = file_check_name(path, check)

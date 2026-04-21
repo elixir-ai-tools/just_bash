@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Mkdir do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["mkdir"]
@@ -14,9 +14,9 @@ defmodule JustBash.Commands.Mkdir do
 
     {stderr, exit_code, new_fs} =
       Enum.reduce(paths, {"", 0, bash.fs}, fn path, {err_acc, code_acc, fs_acc} ->
-        resolved = Fs.resolve_path(bash.cwd, path)
+        resolved = FS.resolve_path(bash.cwd, path)
 
-        case Fs.mkdir(fs_acc, resolved, recursive: flags.p) do
+        case FS.mkdir(fs_acc, resolved, recursive: flags.p) do
           {:ok, new_fs} ->
             {err_acc, code_acc, new_fs}
 

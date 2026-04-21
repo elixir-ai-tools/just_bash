@@ -7,7 +7,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   """
 
   alias JustBash.Commands.Awk.{Formatter, Parser}
-  alias JustBash.Fs
+  alias JustBash.FS
   alias JustBash.Limit
 
   @type state :: %{
@@ -1382,13 +1382,13 @@ defmodule JustBash.Commands.Awk.Evaluator do
       end
 
     # Resolve path against bash cwd
-    resolved = Fs.resolve_path(state.bash.cwd, file_path)
+    resolved = FS.resolve_path(state.bash.cwd, file_path)
 
     # Track file read positions in state.variables using a sentinel key
     pos_key = "__getline_pos_#{resolved}__"
     pos = parse_number(Map.get(state.variables, pos_key, "0")) |> trunc()
 
-    case Fs.read_file(state.bash.fs, resolved) do
+    case FS.read_file(state.bash.fs, resolved) do
       {:ok, content} ->
         lines = String.split(content, "\n", trim: true)
 

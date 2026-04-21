@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Readlink do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["readlink"]
@@ -26,7 +26,7 @@ defmodule JustBash.Commands.Readlink do
   defp execute_readlink(bash, opts) do
     {output, any_error} =
       Enum.reduce(opts.files, {"", false}, fn file, acc ->
-        resolved = Fs.resolve_path(bash.cwd, file)
+        resolved = FS.resolve_path(bash.cwd, file)
         result = process_file(bash.fs, resolved, file, opts.canonicalize)
         accumulate_readlink_result(result, acc)
       end)
@@ -70,7 +70,7 @@ defmodule JustBash.Commands.Readlink do
   end
 
   defp process_file(fs, path, _original, false) do
-    case Fs.readlink(fs, path) do
+    case FS.readlink(fs, path) do
       {:ok, target} -> {:ok, target}
       {:error, _} -> {:error, :not_symlink}
     end
@@ -90,7 +90,7 @@ defmodule JustBash.Commands.Readlink do
   end
 
   defp resolve_path_uncached(fs, path, seen) do
-    case Fs.readlink(fs, path) do
+    case FS.readlink(fs, path) do
       {:ok, target} ->
         new_path = resolve_target(path, target)
         do_resolve_path(fs, new_path, MapSet.put(seen, path))
@@ -104,6 +104,6 @@ defmodule JustBash.Commands.Readlink do
 
   defp resolve_target(path, target) do
     dir = Path.dirname(path)
-    Fs.resolve_path(dir, target)
+    FS.resolve_path(dir, target)
   end
 end

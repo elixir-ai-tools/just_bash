@@ -4,7 +4,7 @@ defmodule JustBash.Commands.Which do
 
   alias JustBash.Commands.Command
   alias JustBash.Commands.Registry
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["which"]
@@ -126,7 +126,7 @@ defmodule JustBash.Commands.Which do
   end
 
   defp file_exists?(fs, path) do
-    case Fs.stat(fs, path) do
+    case FS.stat(fs, path) do
       {:ok, %{is_file: true}} -> true
       _ -> false
     end

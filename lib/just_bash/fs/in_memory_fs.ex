@@ -1,4 +1,4 @@
-defmodule JustBash.Fs.InMemoryFs do
+defmodule JustBash.FS.InMemoryFS do
   @moduledoc """
   In-memory filesystem implementation for JustBash.
 
@@ -12,9 +12,9 @@ defmodule JustBash.Fs.InMemoryFs do
   All operations are synchronous and work on an in-memory data structure.
   """
 
-  @behaviour JustBash.Fs.Backend
+  @behaviour JustBash.FS.Backend
 
-  alias JustBash.Fs
+  alias JustBash.FS
 
   defstruct data: %{}
 
@@ -69,9 +69,9 @@ defmodule JustBash.Fs.InMemoryFs do
 
   ## Examples
 
-      iex> fs = InMemoryFs.new()
-      iex> fs = InMemoryFs.new(%{"/home/user/file.txt" => "hello"})
-      iex> fs = InMemoryFs.new(%{"/bin/script" => %{content: "#!/bin/bash", mode: 0o755}})
+      iex> fs = InMemoryFS.new()
+      iex> fs = InMemoryFS.new(%{"/home/user/file.txt" => "hello"})
+      iex> fs = InMemoryFS.new(%{"/bin/script" => %{content: "#!/bin/bash", mode: 0o755}})
   """
   @spec new(map()) :: t()
   def new(initial_files \\ %{}) do
@@ -98,54 +98,54 @@ defmodule JustBash.Fs.InMemoryFs do
   @doc """
   Normalize a filesystem path.
 
-  Delegates to `JustBash.Fs.normalize_path/1`.
+  Delegates to `JustBash.FS.normalize_path/1`.
   """
-  @deprecated "Use JustBash.Fs.normalize_path/1 instead"
+  @deprecated "Use JustBash.FS.normalize_path/1 instead"
   @spec normalize_path(String.t()) :: String.t()
-  defdelegate normalize_path(path), to: Fs
+  defdelegate normalize_path(path), to: FS
 
   @doc """
   Get the directory name (parent path) of a path.
 
-  Delegates to `JustBash.Fs.dirname/1`.
+  Delegates to `JustBash.FS.dirname/1`.
   """
-  @deprecated "Use JustBash.Fs.dirname/1 instead"
+  @deprecated "Use JustBash.FS.dirname/1 instead"
   @spec dirname(String.t()) :: String.t()
-  defdelegate dirname(path), to: Fs
+  defdelegate dirname(path), to: FS
 
   @doc """
   Get the base name (file name) of a path.
 
-  Delegates to `JustBash.Fs.basename/1`.
+  Delegates to `JustBash.FS.basename/1`.
   """
-  @deprecated "Use JustBash.Fs.basename/1 instead"
+  @deprecated "Use JustBash.FS.basename/1 instead"
   @spec basename(String.t()) :: String.t()
-  defdelegate basename(path), to: Fs
+  defdelegate basename(path), to: FS
 
   @doc """
   Resolve a path relative to a base path.
 
-  Delegates to `JustBash.Fs.resolve_path/2`.
+  Delegates to `JustBash.FS.resolve_path/2`.
   """
-  @deprecated "Use JustBash.Fs.resolve_path/2 instead"
+  @deprecated "Use JustBash.FS.resolve_path/2 instead"
   @spec resolve_path(String.t(), String.t()) :: String.t()
-  defdelegate resolve_path(base, path), to: Fs
+  defdelegate resolve_path(base, path), to: FS
 
   @doc """
   Check if a path exists in the filesystem.
 
   ## Examples
 
-      iex> fs = InMemoryFs.new(%{"/file.txt" => "hello"})
-      iex> InMemoryFs.exists?(fs, "/file.txt")
+      iex> fs = InMemoryFS.new(%{"/file.txt" => "hello"})
+      iex> InMemoryFS.exists?(fs, "/file.txt")
       true
-      iex> InMemoryFs.exists?(fs, "/nonexistent")
+      iex> InMemoryFS.exists?(fs, "/nonexistent")
       false
   """
   @impl true
   @spec exists?(t(), String.t()) :: boolean()
   def exists?(%__MODULE__{data: data}, path) do
-    Map.has_key?(data, Fs.normalize_path(path))
+    Map.has_key?(data, FS.normalize_path(path))
   end
 
   @doc """
@@ -168,7 +168,7 @@ defmodule JustBash.Fs.InMemoryFs do
   @impl true
   @spec stat(t(), String.t()) :: {:ok, stat_result()} | {:error, :enoent}
   def stat(%__MODULE__{} = fs, path) do
-    normalized = Fs.normalize_path(path)
+    normalized = FS.normalize_path(path)
 
     case get_entry_following_symlinks(fs, normalized) do
       {:ok, entry} ->
@@ -199,7 +199,7 @@ defmodule JustBash.Fs.InMemoryFs do
   @impl true
   @spec lstat(t(), String.t()) :: {:ok, stat_result()} | {:error, :enoent}
   def lstat(%__MODULE__{data: data}, path) do
-    normalized = Fs.normalize_path(path)
+    normalized = FS.normalize_path(path)
 
     case Map.get(data, normalized) do
       nil ->
@@ -248,7 +248,7 @@ defmodule JustBash.Fs.InMemoryFs do
   @impl true
   @spec read_file(t(), String.t()) :: {:ok, binary()} | {:error, :enoent | :eisdir | :eloop}
   def read_file(%__MODULE__{} = fs, path) do
-    normalized = Fs.normalize_path(path)
+    normalized = FS.normalize_path(path)
 
     case get_entry_following_symlinks(fs, normalized) do
       {:ok, %{type: :file, content: content}} ->
@@ -284,7 +284,7 @@ defmodule JustBash.Fs.InMemoryFs do
   @spec write_file(t(), String.t(), binary(), write_opts()) ::
           {:ok, t()} | {:error, :eisdir}
   def write_file(%__MODULE__{} = fs, path, content, opts) do
-    normalized = Fs.normalize_path(path)
+    normalized = FS.normalize_path(path)
 
     case Map.get(fs.data, normalized) do
       %{type: :directory} ->
@@ -313,7 +313,7 @@ defmodule JustBash.Fs.InMemoryFs do
   @impl true
   @spec append_file(t(), String.t(), binary()) :: {:ok, t()} | {:error, :eisdir}
   def append_file(%__MODULE__{} = fs, path, content) do
-    normalized = Fs.normalize_path(path)
+    normalized = FS.normalize_path(path)
 
     case Map.get(fs.data, normalized) do
       %{type: :directory} ->
@@ -348,7 +348,7 @@ defmodule JustBash.Fs.InMemoryFs do
   @impl true
   @spec mkdir(t(), String.t(), mkdir_opts()) :: {:ok, t()} | {:error, :eexist | :enoent}
   def mkdir(%__MODULE__{data: data} = fs, path, opts) do
-    normalized = Fs.normalize_path(path)
+    normalized = FS.normalize_path(path)
     recursive = Keyword.get(opts, :recursive, false)
 
     case Map.get(data, normalized) do
@@ -367,7 +367,7 @@ defmodule JustBash.Fs.InMemoryFs do
   end
 
   defp mkdir_with_parent(fs, data, normalized, recursive) do
-    parent = Fs.dirname(normalized)
+    parent = FS.dirname(normalized)
     parent_exists = parent == "/" or Map.has_key?(data, parent)
 
     case {parent_exists, recursive} do
@@ -400,7 +400,7 @@ defmodule JustBash.Fs.InMemoryFs do
   @impl true
   @spec readdir(t(), String.t()) :: {:ok, [String.t()]} | {:error, :enoent | :enotdir}
   def readdir(%__MODULE__{data: data}, path) do
-    normalized = Fs.normalize_path(path)
+    normalized = FS.normalize_path(path)
 
     case Map.get(data, normalized) do
       nil ->
@@ -449,7 +449,7 @@ defmodule JustBash.Fs.InMemoryFs do
   @impl true
   @spec rm(t(), String.t(), rm_opts()) :: {:ok, t()} | {:error, :enoent | :enotempty}
   def rm(%__MODULE__{data: data} = fs, path, opts) do
-    normalized = Fs.normalize_path(path)
+    normalized = FS.normalize_path(path)
     recursive = Keyword.get(opts, :recursive, false)
     force = Keyword.get(opts, :force, false)
 
@@ -504,8 +504,8 @@ defmodule JustBash.Fs.InMemoryFs do
   @spec cp(t(), String.t(), String.t(), cp_opts()) ::
           {:ok, t()} | {:error, :enoent | :eisdir | :enotdir}
   def cp(%__MODULE__{data: data} = fs, src, dest, opts \\ []) do
-    src_norm = Fs.normalize_path(src)
-    dest_norm = Fs.normalize_path(dest)
+    src_norm = FS.normalize_path(src)
+    dest_norm = FS.normalize_path(dest)
     recursive = Keyword.get(opts, :recursive, false)
 
     case Map.get(data, src_norm) do
@@ -555,8 +555,8 @@ defmodule JustBash.Fs.InMemoryFs do
   """
   @spec mv(t(), String.t(), String.t()) :: {:ok, t()} | {:error, :enoent | :eisdir | :enotdir}
   def mv(%__MODULE__{} = fs, src, dest) do
-    src_norm = Fs.normalize_path(src)
-    dest_norm = Fs.normalize_path(dest)
+    src_norm = FS.normalize_path(src)
+    dest_norm = FS.normalize_path(dest)
 
     if src_norm == dest_norm do
       {:ok, fs}
@@ -574,7 +574,7 @@ defmodule JustBash.Fs.InMemoryFs do
   @impl true
   @spec chmod(t(), String.t(), non_neg_integer()) :: {:ok, t()} | {:error, :enoent}
   def chmod(%__MODULE__{data: data} = fs, path, mode) do
-    normalized = Fs.normalize_path(path)
+    normalized = FS.normalize_path(path)
 
     case Map.get(data, normalized) do
       nil ->
@@ -592,7 +592,7 @@ defmodule JustBash.Fs.InMemoryFs do
   @impl true
   @spec symlink(t(), String.t(), String.t()) :: {:ok, t()} | {:error, :eexist}
   def symlink(%__MODULE__{data: data} = fs, target, link_path) do
-    normalized = Fs.normalize_path(link_path)
+    normalized = FS.normalize_path(link_path)
 
     if Map.has_key?(data, normalized) do
       {:error, :eexist}
@@ -616,7 +616,7 @@ defmodule JustBash.Fs.InMemoryFs do
   @impl true
   @spec readlink(t(), String.t()) :: {:ok, String.t()} | {:error, :enoent | :einval}
   def readlink(%__MODULE__{data: data}, path) do
-    normalized = Fs.normalize_path(path)
+    normalized = FS.normalize_path(path)
 
     case Map.get(data, normalized) do
       nil -> {:error, :enoent}
@@ -631,8 +631,8 @@ defmodule JustBash.Fs.InMemoryFs do
   @impl true
   @spec link(t(), String.t(), String.t()) :: {:ok, t()} | {:error, :enoent | :eperm | :eexist}
   def link(%__MODULE__{data: data} = fs, existing_path, new_path) do
-    existing_norm = Fs.normalize_path(existing_path)
-    new_norm = Fs.normalize_path(new_path)
+    existing_norm = FS.normalize_path(existing_path)
+    new_norm = FS.normalize_path(new_path)
 
     cond do
       not Map.has_key?(data, existing_norm) ->
@@ -660,7 +660,7 @@ defmodule JustBash.Fs.InMemoryFs do
   end
 
   defp ensure_parent_dirs(%__MODULE__{} = fs, path) do
-    dir = Fs.dirname(path)
+    dir = FS.dirname(path)
 
     if dir == "/" do
       fs
@@ -700,11 +700,11 @@ defmodule JustBash.Fs.InMemoryFs do
 
   defp resolve_symlink_target(symlink_path, target) do
     if String.starts_with?(target, "/") do
-      Fs.normalize_path(target)
+      FS.normalize_path(target)
     else
-      dir = Fs.dirname(symlink_path)
+      dir = FS.dirname(symlink_path)
       combined = if dir == "/", do: "/" <> target, else: dir <> "/" <> target
-      Fs.normalize_path(combined)
+      FS.normalize_path(combined)
     end
   end
 end

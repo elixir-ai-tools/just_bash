@@ -14,7 +14,7 @@ defmodule JustBash.Commands.Awk do
 
   alias JustBash.Commands.Awk.{Evaluator, Parser}
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["awk"]
@@ -65,7 +65,7 @@ defmodule JustBash.Commands.Awk do
         # Write any file outputs from print/printf redirections
         bash =
           Enum.reduce(file_outputs, bash, fn {filename, content}, acc_bash ->
-            case Fs.write_file(acc_bash.fs, filename, content) do
+            case FS.write_file(acc_bash.fs, filename, content) do
               {:ok, fs} -> %{acc_bash | fs: fs}
               {:error, _} -> acc_bash
             end
@@ -172,9 +172,9 @@ defmodule JustBash.Commands.Awk do
 
   defp read_files_with_names(bash, files) do
     Enum.reduce_while(files, {:ok, []}, fn file, {:ok, acc} ->
-      resolved = Fs.resolve_path(bash.cwd, file)
+      resolved = FS.resolve_path(bash.cwd, file)
 
-      case Fs.read_file(bash.fs, resolved) do
+      case FS.read_file(bash.fs, resolved) do
         {:ok, content} -> {:cont, {:ok, acc ++ [{resolved, content}]}}
         {:error, _} -> {:halt, {:error, "awk: #{file}: No such file or directory\n"}}
       end

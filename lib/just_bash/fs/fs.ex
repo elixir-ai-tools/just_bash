@@ -1,8 +1,8 @@
-defmodule JustBash.Fs do
+defmodule JustBash.FS do
   @moduledoc """
   Virtual filesystem with a mount-table-based routing layer.
 
-  `%JustBash.Fs{}` owns a list of mounts — `{mountpoint, module, backend_state}`
+  `%JustBash.FS{}` owns a list of mounts — `{mountpoint, module, backend_state}`
   triples — and dispatches every filesystem operation to the appropriate backend
   via longest-prefix mountpoint matching.
 
@@ -10,7 +10,7 @@ defmodule JustBash.Fs do
   `basename/1`) live here as plain module functions shared by all backends.
   """
 
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS.InMemoryFS
 
   @type mount :: {mountpoint :: String.t(), module(), backend_state :: term()}
 
@@ -41,15 +41,15 @@ defmodule JustBash.Fs do
 
   ## Variants
 
-      Fs.new()                          # root backed by InMemoryFs
-      Fs.new(%{"/a.txt" => "hi"})       # InMemoryFs seeded with initial files
-      Fs.new(root: {MyBackend, state})  # custom root backend
+      FS.new()                          # root backed by InMemoryFS
+      FS.new(%{"/a.txt" => "hi"})       # InMemoryFS seeded with initial files
+      FS.new(root: {MyBackend, state})  # custom root backend
 
   ## Examples
 
-      iex> fs = JustBash.Fs.new()
-      iex> fs = JustBash.Fs.new(%{"/hello.txt" => "world"})
-      iex> fs = JustBash.Fs.new(root: {JustBash.Fs.InMemoryFs, JustBash.Fs.InMemoryFs.new()})
+      iex> fs = JustBash.FS.new()
+      iex> fs = JustBash.FS.new(%{"/hello.txt" => "world"})
+      iex> fs = JustBash.FS.new(root: {JustBash.FS.InMemoryFS, JustBash.FS.InMemoryFS.new()})
   """
   @spec new(map() | keyword()) :: t()
   def new(opts \\ %{})
@@ -59,8 +59,8 @@ defmodule JustBash.Fs do
   end
 
   def new(initial_files) when is_map(initial_files) do
-    root_state = InMemoryFs.new(initial_files)
-    %__MODULE__{mounts: [{"/", InMemoryFs, root_state}]}
+    root_state = InMemoryFS.new(initial_files)
+    %__MODULE__{mounts: [{"/", InMemoryFS, root_state}]}
   end
 
   # ---------------------------------------------------------------------------
@@ -137,7 +137,7 @@ defmodule JustBash.Fs do
 
   ## Examples
 
-      iex> JustBash.Fs.normalize_path("/home/user/../user/./file")
+      iex> JustBash.FS.normalize_path("/home/user/../user/./file")
       "/home/user/file"
   """
   @spec normalize_path(String.t()) :: String.t()
@@ -175,9 +175,9 @@ defmodule JustBash.Fs do
 
   ## Examples
 
-      iex> JustBash.Fs.dirname("/home/user/file.txt")
+      iex> JustBash.FS.dirname("/home/user/file.txt")
       "/home/user"
-      iex> JustBash.Fs.dirname("/file.txt")
+      iex> JustBash.FS.dirname("/file.txt")
       "/"
   """
   @spec dirname(String.t()) :: String.t()
@@ -200,7 +200,7 @@ defmodule JustBash.Fs do
 
   ## Examples
 
-      iex> JustBash.Fs.basename("/home/user/file.txt")
+      iex> JustBash.FS.basename("/home/user/file.txt")
       "file.txt"
   """
   @spec basename(String.t()) :: String.t()
@@ -219,9 +219,9 @@ defmodule JustBash.Fs do
 
   ## Examples
 
-      iex> JustBash.Fs.resolve_path("/home/user", "file.txt")
+      iex> JustBash.FS.resolve_path("/home/user", "file.txt")
       "/home/user/file.txt"
-      iex> JustBash.Fs.resolve_path("/home/user", "/etc/passwd")
+      iex> JustBash.FS.resolve_path("/home/user", "/etc/passwd")
       "/etc/passwd"
   """
   @spec resolve_path(String.t(), String.t()) :: String.t()
@@ -547,7 +547,7 @@ defmodule JustBash.Fs do
   @doc """
   Copy a file or directory.
 
-  Composed at the Fs level via read_file + write_file so it works transparently
+  Composed at the FS level via read_file + write_file so it works transparently
   across mount boundaries.
   """
   @spec cp(t(), String.t(), String.t()) :: {:ok, t()} | {:error, atom()}

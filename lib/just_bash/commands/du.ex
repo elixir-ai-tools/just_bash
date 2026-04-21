@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Du do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @short_flags %{
     ?a => :all_files,
@@ -45,7 +45,7 @@ defmodule JustBash.Commands.Du do
   end
 
   defp process_single_target(bash, target, opts, {acc_out, acc_err, acc_total}) do
-    resolved = Fs.resolve_path(bash.cwd, target)
+    resolved = FS.resolve_path(bash.cwd, target)
 
     case calculate_size(bash.fs, resolved, target, opts, 0) do
       {:ok, out, size} -> {acc_out <> out, acc_err, acc_total + size}
@@ -100,7 +100,7 @@ defmodule JustBash.Commands.Du do
   end
 
   defp calculate_size(fs, path, display_path, opts, depth) do
-    case Fs.stat(fs, path) do
+    case FS.stat(fs, path) do
       {:ok, %{is_directory: false, size: size}} ->
         calculate_file_size(size, display_path, opts, depth)
 
@@ -124,7 +124,7 @@ defmodule JustBash.Commands.Du do
   end
 
   defp calculate_dir_size(fs, path, display_path, opts, depth) do
-    case Fs.readdir(fs, path) do
+    case FS.readdir(fs, path) do
       {:ok, entries} ->
         {output, dir_size} =
           Enum.reduce(entries, {"", 0}, fn entry, {acc_out, acc_size} ->
@@ -143,7 +143,7 @@ defmodule JustBash.Commands.Du do
     entry_path = if path == "/", do: "/#{entry}", else: "#{path}/#{entry}"
     entry_display = if display_path == ".", do: entry, else: "#{display_path}/#{entry}"
 
-    case Fs.stat(fs, entry_path) do
+    case FS.stat(fs, entry_path) do
       {:ok, %{is_directory: true}} ->
         process_subdir(fs, entry_path, entry_display, opts, depth, acc_out, acc_size)
 

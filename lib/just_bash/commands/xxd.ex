@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Xxd do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["xxd"]
@@ -52,9 +52,9 @@ defmodule JustBash.Commands.Xxd do
   defp read_input(_bash, "-", stdin), do: {:ok, stdin || ""}
 
   defp read_input(bash, file, _stdin) do
-    resolved = Fs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case Fs.read_file(bash.fs, resolved) do
+    case FS.read_file(bash.fs, resolved) do
       {:ok, c} -> {:ok, c}
       {:error, _} -> {:error, "xxd: #{file}: No such file or directory\n"}
     end

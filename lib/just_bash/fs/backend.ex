@@ -1,10 +1,10 @@
-defmodule JustBash.Fs.Backend do
+defmodule JustBash.FS.Backend do
   @moduledoc """
   Behaviour for pluggable filesystem backends.
 
   Backends operate on their own root-relative paths and have no knowledge of the
   mount table. All cross-backend concerns (cross-mount `cp`, synthetic mountpoint
-  entries, longest-prefix routing) live in `JustBash.Fs`.
+  entries, longest-prefix routing) live in `JustBash.FS`.
 
   ## Path contract
 

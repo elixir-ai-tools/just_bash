@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Tree do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["tree"]
@@ -69,7 +69,7 @@ defmodule JustBash.Commands.Tree do
   end
 
   defp process_single_directory(ctx, cwd, dir, {acc_out, acc_err, acc_dirs, acc_files}) do
-    resolved = Fs.resolve_path(cwd, dir)
+    resolved = FS.resolve_path(cwd, dir)
 
     case build_tree(ctx, resolved, dir, 0) do
       {:ok, out, d, f} -> {acc_out <> out, acc_err, acc_dirs + d, acc_files + f}
@@ -78,7 +78,7 @@ defmodule JustBash.Commands.Tree do
   end
 
   defp build_tree(ctx, path, display_path, depth) do
-    case Fs.stat(ctx.fs, path) do
+    case FS.stat(ctx.fs, path) do
       {:ok, %{is_directory: false}} -> {:ok, "#{display_path}\n", 0, 1}
       {:ok, %{is_directory: true}} -> build_directory_tree(ctx, path, display_path, depth)
       {:error, _} -> {:error, "tree: #{display_path}: No such file or directory\n"}
@@ -98,7 +98,7 @@ defmodule JustBash.Commands.Tree do
   defp at_max_depth?(opts, depth), do: opts.max_depth != nil and depth >= opts.max_depth
 
   defp build_directory_contents(ctx, path, display_path, output, depth) do
-    case Fs.readdir(ctx.fs, path) do
+    case FS.readdir(ctx.fs, path) do
       {:ok, entries} ->
         filtered = filter_and_sort_entries(entries, ctx.opts)
         {tree_output, dir_count, file_count} = build_entries(ctx, path, filtered, "", depth)
@@ -138,7 +138,7 @@ defmodule JustBash.Commands.Tree do
   end
 
   defp build_single_entry(ctx, entry_ctx, depth, acc) do
-    case Fs.stat(ctx.fs, entry_ctx.entry_path) do
+    case FS.stat(ctx.fs, entry_ctx.entry_path) do
       {:ok, %{is_directory: true}} -> build_dir_entry(ctx, entry_ctx, depth, acc)
       {:ok, %{is_file: true}} -> build_file_entry(ctx, entry_ctx, acc)
       _ -> acc
@@ -162,7 +162,7 @@ defmodule JustBash.Commands.Tree do
   end
 
   defp build_subdirectory(ctx, entry_ctx, depth, acc_out, acc_dirs, acc_files, line) do
-    case Fs.readdir(ctx.fs, entry_ctx.entry_path) do
+    case FS.readdir(ctx.fs, entry_ctx.entry_path) do
       {:ok, sub_entries} ->
         filtered = filter_and_sort_entries(sub_entries, ctx.opts)
 

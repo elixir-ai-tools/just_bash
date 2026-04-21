@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Tee do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["tee"]
@@ -58,7 +58,7 @@ defmodule JustBash.Commands.Tee do
       if file == "/dev/null" do
         {acc_fs, acc_stderr, acc_code}
       else
-        resolved = Fs.resolve_path(cwd, file)
+        resolved = FS.resolve_path(cwd, file)
         write_single_file(acc_fs, resolved, file, content, append, acc_stderr, acc_code)
       end
     end)
@@ -67,7 +67,7 @@ defmodule JustBash.Commands.Tee do
   defp write_single_file(fs, resolved, file, content, append, acc_stderr, acc_code) do
     parent = Path.dirname(resolved)
 
-    case Fs.stat(fs, parent) do
+    case FS.stat(fs, parent) do
       {:ok, %{is_directory: true}} ->
         do_write_file(fs, resolved, file, content, append, acc_stderr, acc_code)
 
@@ -86,10 +86,10 @@ defmodule JustBash.Commands.Tee do
   end
 
   defp write_or_append(fs, resolved, content, true) do
-    Fs.append_file(fs, resolved, content)
+    FS.append_file(fs, resolved, content)
   end
 
   defp write_or_append(fs, resolved, content, false) do
-    Fs.write_file(fs, resolved, content)
+    FS.write_file(fs, resolved, content)
   end
 end

@@ -99,7 +99,7 @@ defmodule JustBash.Eval.Tasks.TextProcessing do
          ]},
         {:custom, "correct_count",
          fn %{bash: bash} ->
-           case JustBash.Fs.read_file(bash.fs, "/output/errors.txt") do
+           case JustBash.FS.read_file(bash.fs, "/output/errors.txt") do
              {:ok, content} ->
                first_line = content |> String.split("\n") |> hd() |> String.trim()
 
@@ -149,7 +149,7 @@ defmodule JustBash.Eval.Tasks.TextProcessing do
          ]},
         {:custom, "top_word_is_the",
          fn %{bash: bash} ->
-           case JustBash.Fs.read_file(bash.fs, "/output/top_words.txt") do
+           case JustBash.FS.read_file(bash.fs, "/output/top_words.txt") do
              {:ok, content} ->
                first_line =
                  content |> String.trim() |> String.split("\n") |> hd() |> String.trim()
@@ -213,7 +213,7 @@ defmodule JustBash.Eval.Tasks.TextProcessing do
          ]},
         {:custom, "sorted_output",
          fn %{bash: bash} ->
-           case JustBash.Fs.read_file(bash.fs, "/output/app.env") do
+           case JustBash.FS.read_file(bash.fs, "/output/app.env") do
              {:ok, content} ->
                lines =
                  content
@@ -294,7 +294,7 @@ defmodule JustBash.Eval.Tasks.TextProcessing do
          ]},
         {:custom, "correct_categorization",
          fn %{bash: bash} ->
-           case JustBash.Fs.read_file(bash.fs, "/output/CHANGELOG.md") do
+           case JustBash.FS.read_file(bash.fs, "/output/CHANGELOG.md") do
              {:ok, content} ->
                # Verify features section has 3 items and fixes has 3
                features_section =

@@ -1,7 +1,7 @@
 defmodule JustBash.CustomCommandsTest do
   use ExUnit.Case, async: true
 
-  alias JustBash.Fs
+  alias JustBash.FS
 
   # --- Test command modules ---
 
@@ -68,9 +68,9 @@ defmodule JustBash.CustomCommandsTest do
     def execute(bash, args, stdin) do
       case args do
         [path] ->
-          resolved = Fs.resolve_path(bash.cwd, path)
+          resolved = FS.resolve_path(bash.cwd, path)
 
-          case Fs.write_file(bash.fs, resolved, stdin) do
+          case FS.write_file(bash.fs, resolved, stdin) do
             {:ok, new_fs} ->
               {%{stdout: "", stderr: "", exit_code: 0}, %{bash | fs: new_fs}}
 
@@ -213,16 +213,16 @@ defmodule JustBash.CustomCommandsTest do
           _ -> "/counter"
         end
 
-      resolved = Fs.resolve_path(bash.cwd, path)
+      resolved = FS.resolve_path(bash.cwd, path)
 
       current =
-        case Fs.read_file(bash.fs, resolved) do
+        case FS.read_file(bash.fs, resolved) do
           {:ok, content} -> String.trim(content) |> String.to_integer()
           {:error, :enoent} -> 0
         end
 
       next = current + 1
-      {:ok, new_fs} = Fs.write_file(bash.fs, resolved, Integer.to_string(next))
+      {:ok, new_fs} = FS.write_file(bash.fs, resolved, Integer.to_string(next))
       {%{stdout: "#{next}\n", stderr: "", exit_code: 0}, %{bash | fs: new_fs}}
     end
   end

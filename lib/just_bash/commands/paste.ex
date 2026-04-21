@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Paste do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["paste"]
@@ -116,9 +116,9 @@ defmodule JustBash.Commands.Paste do
   end
 
   defp read_file_lines(bash, file, _stdin_lines, _stdin_count, stdin_idx) do
-    resolved = Fs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case Fs.read_file(bash.fs, resolved) do
+    case FS.read_file(bash.fs, resolved) do
       {:ok, content} ->
         {:ok, split_lines(content), stdin_idx}
 

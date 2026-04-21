@@ -53,7 +53,7 @@ defmodule JustBash do
   """
 
   alias JustBash.Formatter
-  alias JustBash.Fs
+  alias JustBash.FS
 
   alias JustBash.Interpreter.Executor
   alias JustBash.Interpreter.State
@@ -119,7 +119,7 @@ defmodule JustBash do
         }
 
   @type t :: %__MODULE__{
-          fs: Fs.t(),
+          fs: FS.t(),
           env: map(),
           cwd: String.t(),
           functions: map(),
@@ -320,7 +320,7 @@ defmodule JustBash do
           "invalid custom command registration #{inspect(name)} => #{inspect(module)}; expected a string name and module"
   end
 
-  defp init_filesystem(%Fs{} = custom_fs, _files, _mounts), do: custom_fs
+  defp init_filesystem(%FS{} = custom_fs, _files, _mounts), do: custom_fs
 
   defp init_filesystem(nil, files, extra_mounts) do
     default_dirs = [
@@ -332,11 +332,11 @@ defmodule JustBash do
       "/tmp"
     ]
 
-    fs = Fs.new()
+    fs = FS.new()
 
     fs =
       Enum.reduce(default_dirs, fs, fn path, acc_fs ->
-        case Fs.mkdir(acc_fs, path, recursive: true) do
+        case FS.mkdir(acc_fs, path, recursive: true) do
           {:ok, new_fs} -> new_fs
           {:error, :eexist} -> acc_fs
           _ -> acc_fs
@@ -345,13 +345,13 @@ defmodule JustBash do
 
     fs =
       Enum.reduce(files, fs, fn {path, content}, acc_fs ->
-        {:ok, new_fs} = Fs.write_file(acc_fs, path, content)
+        {:ok, new_fs} = FS.write_file(acc_fs, path, content)
         new_fs
       end)
 
     Enum.reduce(extra_mounts, fs, fn {mountpoint, module, init_arg}, acc_fs ->
       backend_state = module.new(init_arg)
-      {:ok, new_fs} = Fs.mount(acc_fs, mountpoint, module, backend_state)
+      {:ok, new_fs} = FS.mount(acc_fs, mountpoint, module, backend_state)
       new_fs
     end)
   end
@@ -598,9 +598,9 @@ defmodule JustBash do
   """
   @spec exec_file(t(), String.t()) :: {exec_result(), t()}
   def exec_file(%JustBash{} = bash, path) do
-    resolved = Fs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
 
-    case Fs.read_file(bash.fs, resolved) do
+    case FS.read_file(bash.fs, resolved) do
       {:ok, script} ->
         exec(bash, script)
 

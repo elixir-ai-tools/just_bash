@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Cp do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["cp"]
@@ -35,15 +35,15 @@ defmodule JustBash.Commands.Cp do
   end
 
   defp do_copy(bash, src, dest, opts) do
-    src_resolved = Fs.resolve_path(bash.cwd, src)
-    dest_resolved = Fs.resolve_path(bash.cwd, dest)
+    src_resolved = FS.resolve_path(bash.cwd, src)
+    dest_resolved = FS.resolve_path(bash.cwd, dest)
     recursive = :recursive in opts
 
     # If dest is an existing directory, copy into it
     dest_final =
-      case Fs.stat(bash.fs, dest_resolved) do
+      case FS.stat(bash.fs, dest_resolved) do
         {:ok, %{is_directory: true}} ->
-          Fs.normalize_path(dest_resolved <> "/" <> Fs.basename(src_resolved))
+          FS.normalize_path(dest_resolved <> "/" <> FS.basename(src_resolved))
 
         _ ->
           dest_resolved
@@ -51,7 +51,7 @@ defmodule JustBash.Commands.Cp do
 
     cp_opts = if recursive, do: [recursive: true], else: []
 
-    case Fs.cp(bash.fs, src_resolved, dest_final, cp_opts) do
+    case FS.cp(bash.fs, src_resolved, dest_final, cp_opts) do
       {:ok, new_fs} ->
         {Command.ok(), %{bash | fs: new_fs}}
 

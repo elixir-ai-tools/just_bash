@@ -9,7 +9,7 @@ defmodule JustBash.Commands.Chown do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["chown"]
@@ -42,9 +42,9 @@ defmodule JustBash.Commands.Chown do
   defp check_paths(bash, paths) do
     {stderr, exit_code} =
       Enum.reduce(paths, {"", 0}, fn path, {err, code} ->
-        resolved = Fs.resolve_path(bash.cwd, path)
+        resolved = FS.resolve_path(bash.cwd, path)
 
-        case Fs.stat(bash.fs, resolved) do
+        case FS.stat(bash.fs, resolved) do
           {:ok, _} -> {err, code}
           {:error, _} -> {err <> "chown: cannot access '#{path}': No such file or directory\n", 1}
         end

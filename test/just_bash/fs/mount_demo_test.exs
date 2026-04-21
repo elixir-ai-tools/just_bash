@@ -1,4 +1,4 @@
-defmodule JustBash.Fs.MountDemoTest do
+defmodule JustBash.FS.MountDemoTest do
   @moduledoc """
   Demonstration of the mountable virtual filesystem.
 
@@ -8,12 +8,12 @@ defmodule JustBash.Fs.MountDemoTest do
       mix test test/just_bash/fs/mount_demo_test.exs
 
   The mount system lets callers compose multiple filesystem backends behind a
-  single `%JustBash.Fs{}` struct. The shell sees one unified directory tree.
-  Backends are pluggable modules that implement `JustBash.Fs.Backend`.
+  single `%JustBash.FS{}` struct. The shell sees one unified directory tree.
+  Backends are pluggable modules that implement `JustBash.FS.Backend`.
 
   Three backends ship in-tree:
 
-    - `InMemoryFs`  — the default; a plain in-memory filesystem
+    - `InMemoryFS`  — the default; a plain in-memory filesystem
     - `ReadOnlyFS`  — a decorator that wraps any backend and blocks all writes
     - `NullFS`      — a /dev/null sink (used in tests, not meant for production)
 
@@ -37,9 +37,9 @@ defmodule JustBash.Fs.MountDemoTest do
 
   use ExUnit.Case, async: true
 
-  alias JustBash.Fs
-  alias JustBash.Fs.InMemoryFs
-  alias JustBash.Fs.ReadOnlyFS
+  alias JustBash.FS
+  alias JustBash.FS.InMemoryFS
+  alias JustBash.FS.ReadOnlyFS
 
   # ---------------------------------------------------------------------------
   # Scenario 1: AI agent sandbox
@@ -52,16 +52,16 @@ defmodule JustBash.Fs.MountDemoTest do
   test "AI agent sandbox: read-only project + writable workspace" do
     # -- Setup: build the mount table --
     project =
-      InMemoryFs.new(%{
+      InMemoryFS.new(%{
         "/lib/app.ex" => "defmodule App do\n  def run, do: :ok\nend\n",
         "/lib/helpers.ex" => "defmodule Helpers do\n  def format(x), do: inspect(x)\nend\n",
         "/mix.exs" => "defmodule App.MixProject do\n  use Mix.Project\nend\n",
         "/README.md" => "# App\n\nA sample project.\n"
       })
 
-    fs = Fs.new()
-    {:ok, fs} = Fs.mount(fs, "/project", ReadOnlyFS, ReadOnlyFS.new(inner: {InMemoryFs, project}))
-    {:ok, fs} = Fs.mount(fs, "/workspace", InMemoryFs, InMemoryFs.new())
+    fs = FS.new()
+    {:ok, fs} = FS.mount(fs, "/project", ReadOnlyFS, ReadOnlyFS.new(inner: {InMemoryFS, project}))
+    {:ok, fs} = FS.mount(fs, "/workspace", InMemoryFS, InMemoryFS.new())
 
     bash = JustBash.new(fs: fs)
 
@@ -123,8 +123,8 @@ defmodule JustBash.Fs.MountDemoTest do
     assert r.stdout == "original secret"
 
     # Mount an overlay at /data — original content is now hidden
-    overlay = InMemoryFs.new(%{"/public.txt" => "overlay content"})
-    {:ok, new_fs} = Fs.mount(bash.fs, "/data", InMemoryFs, overlay)
+    overlay = InMemoryFS.new(%{"/public.txt" => "overlay content"})
+    {:ok, new_fs} = FS.mount(bash.fs, "/data", InMemoryFS, overlay)
     bash = %{bash | fs: new_fs}
 
     {r, bash} = JustBash.exec(bash, "cat /data/secret.txt")
@@ -135,7 +135,7 @@ defmodule JustBash.Fs.MountDemoTest do
     assert r.stdout == "overlay content"
 
     # Unmount — original is back
-    {:ok, new_fs} = Fs.umount(bash.fs, "/data")
+    {:ok, new_fs} = FS.umount(bash.fs, "/data")
     bash = %{bash | fs: new_fs}
 
     {r, _bash} = JustBash.exec(bash, "cat /data/secret.txt")
@@ -151,12 +151,12 @@ defmodule JustBash.Fs.MountDemoTest do
   # ---------------------------------------------------------------------------
 
   test "nested mounts: /data and /data/cache are independent" do
-    data = InMemoryFs.new(%{"/readme.txt" => "data root", "/reports/q1.csv" => "revenue,100"})
-    cache = InMemoryFs.new(%{"/session.bin" => "cached_session"})
+    data = InMemoryFS.new(%{"/readme.txt" => "data root", "/reports/q1.csv" => "revenue,100"})
+    cache = InMemoryFS.new(%{"/session.bin" => "cached_session"})
 
-    fs = Fs.new()
-    {:ok, fs} = Fs.mount(fs, "/data", InMemoryFs, data)
-    {:ok, fs} = Fs.mount(fs, "/data/cache", InMemoryFs, cache)
+    fs = FS.new()
+    {:ok, fs} = FS.mount(fs, "/data", InMemoryFS, data)
+    {:ok, fs} = FS.mount(fs, "/data/cache", InMemoryFS, cache)
     bash = JustBash.new(fs: fs)
 
     # ls /data shows real entries AND the synthetic "cache" child
@@ -189,10 +189,10 @@ defmodule JustBash.Fs.MountDemoTest do
   # ---------------------------------------------------------------------------
 
   test "cross-mount: cp succeeds, mv is refused" do
-    store = InMemoryFs.new()
+    store = InMemoryFS.new()
 
-    fs = Fs.new(%{"/tmp/report.csv" => "col1,col2\na,b\n"})
-    {:ok, fs} = Fs.mount(fs, "/store", InMemoryFs, store)
+    fs = FS.new(%{"/tmp/report.csv" => "col1,col2\na,b\n"})
+    {:ok, fs} = FS.mount(fs, "/store", InMemoryFS, store)
     bash = JustBash.new(fs: fs)
 
     # cp across mounts works
@@ -227,22 +227,22 @@ defmodule JustBash.Fs.MountDemoTest do
   # ---------------------------------------------------------------------------
 
   test "API: building a multi-mount JustBash from scratch" do
-    # Option A: build the Fs yourself and pass it in
-    project = InMemoryFs.new(%{"/src/main.py" => "print('hello')\n"})
-    ro = ReadOnlyFS.new(inner: {InMemoryFs, project})
-    scratch = InMemoryFs.new()
+    # Option A: build the FS yourself and pass it in
+    project = InMemoryFS.new(%{"/src/main.py" => "print('hello')\n"})
+    ro = ReadOnlyFS.new(inner: {InMemoryFS, project})
+    scratch = InMemoryFS.new()
 
-    fs = Fs.new()
-    {:ok, fs} = Fs.mount(fs, "/project", ReadOnlyFS, ro)
-    {:ok, fs} = Fs.mount(fs, "/scratch", InMemoryFs, scratch)
+    fs = FS.new()
+    {:ok, fs} = FS.mount(fs, "/project", ReadOnlyFS, ro)
+    {:ok, fs} = FS.mount(fs, "/scratch", InMemoryFS, scratch)
 
     bash = JustBash.new(fs: fs)
 
     # Verify the mount table
-    mounts = Fs.mounts(bash.fs)
-    assert {"/", InMemoryFs} in mounts
+    mounts = FS.mounts(bash.fs)
+    assert {"/", InMemoryFS} in mounts
     assert {"/project", ReadOnlyFS} in mounts
-    assert {"/scratch", InMemoryFs} in mounts
+    assert {"/scratch", InMemoryFS} in mounts
 
     # Everything works through the shell
     {r, _} =
