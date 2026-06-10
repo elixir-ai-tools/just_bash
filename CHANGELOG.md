@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0](https://github.com/elixir-ai-tools/just_bash/compare/v0.3.0...v0.4.0) (2026-06-10)
+
+
+### Features
+
+* add JustBash.CLI for namespaced subcommand tools ([#39](https://github.com/elixir-ai-tools/just_bash/issues/39)) ([2761adf](https://github.com/elixir-ai-tools/just_bash/commit/2761adf6ba25a46b4c294f5cc75b663de45bb5b4))
+* add put_context/3 and get_context/3 accessors ([#41](https://github.com/elixir-ai-tools/just_bash/issues/41)) ([2c6e6b7](https://github.com/elixir-ai-tools/just_bash/commit/2c6e6b70ea914b66f3f620ed25d69abb7887c4ec))
+
 ## [0.3.0](https://github.com/elixir-ai-tools/just_bash/compare/v0.2.0...v0.3.0) (2026-04-14)
 
 
