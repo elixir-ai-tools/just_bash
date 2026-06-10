@@ -270,8 +270,31 @@ defmodule JustBash do
     raise ArgumentError, "expected :commands to be a map, got: #{inspect(commands)}"
   end
 
-  # Validates the registration and returns the list of names from the module.
+  # Validates the registration and returns the list of names.
   # Called once per registration entry to avoid double-calling names/0.
+  #
+  # A registered value is either a module implementing JustBash.Commands.Command, or a
+  # %JustBash.CLI{} struct (a declarative subcommand tool — see JustBash.CLI).
+  defp validate_command_registration!(name, %JustBash.CLI{} = cli) when is_binary(name) do
+    if name == "" do
+      raise ArgumentError, "custom command name must not be empty"
+    end
+
+    if name in @protected_builtin_names do
+      raise ArgumentError, "custom commands cannot override protected builtin #{inspect(name)}"
+    end
+
+    names = [cli.name | cli.aliases]
+
+    unless name in names do
+      raise ArgumentError,
+            "CLI #{inspect(cli.name)} was registered as #{inspect(name)} but its registered " <>
+              "names are #{inspect(names)} (the CLI name plus :aliases)"
+    end
+
+    names
+  end
+
   defp validate_command_registration!(name, module) when is_binary(name) and is_atom(module) do
     if name == "" do
       raise ArgumentError,

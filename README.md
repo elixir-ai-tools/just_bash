@@ -145,6 +145,101 @@ Important caveats:
 - Shell functions still win over custom commands at execution time
 - Protected stateful builtins such as `cd`, `export`, `trap`, and `return` cannot be overridden
 
+### Namespaced CLIs (`JustBash.CLI`)
+
+When a single tool needs many subcommands — `acme pr review`, `acme product list` — don't
+hand-roll a `case` router, manual `--help`, and ad-hoc error strings in `execute/3`.
+`JustBash.CLI` is a declarative subcommand layer that gives you **routing**, **typed
+argument parsing**, and **auto-generated help, errors, and docs** from a single source of
+truth. A CLI is plain data (a `%JustBash.CLI{}` tree) that registers like any other
+command:
+
+```elixir
+alias JustBash.CLI
+alias JustBash.Commands.Command
+
+cli =
+  CLI.new("acme", doc: "Acme operations toolkit", commands: [
+    CLI.command("pr", doc: "Pull request management", commands: [
+      CLI.command("review",
+        doc: "Review a pull request",
+        flags: [
+          report:  [type: :integer, required: true, doc: "ID of the report to review"],
+          format:  [type: :string, default: "text", values: ~w(text json), doc: "Output format"],
+          verbose: [type: :boolean, short: "-v"]
+        ],
+        run: fn inv ->
+          tag = if inv.flags.verbose, do: "[v] ", else: ""
+          {Command.ok("#{tag}report #{inv.flags.report} as #{inv.flags.format}\n"), inv.bash}
+        end)
+    ])
+  ])
+
+bash = JustBash.new(commands: %{"acme" => cli})
+{result, _} = JustBash.exec(bash, "acme pr review --report 42 --format json")
+result.stdout  #=> "report 42 as json\n"
+```
+
+Each leaf's `:run` handler takes a single `%JustBash.CLI.Invocation{}` (`flags`, `args`,
+`bash`, `stdin`, `path`) and returns `{result, bash}` — the same contract as a plain
+custom command, so handlers keep full access to `bash.fs`, `bash.context`, etc. Use a
+capture (`run: &Acme.PR.review/1`) to keep handler logic in named, testable functions.
+
+Help, `did you mean` suggestions, and usage-bearing errors come for free and are
+consistent across every CLI — which is exactly what an agent needs to recover from a typo
+in one turn:
+
+```text
+$ acme pr review --help
+acme pr review - Review a pull request
+
+Usage: acme pr review --report <int> [--format text|json] [-v]
+
+Options:
+  --report <int>       ID of the report to review (required)
+  --format text|json   Output format (values: text, json) (default: text)
+  -v, --verbose
+
+$ acme pr reviw
+acme: unknown command 'pr reviw'
+Did you mean 'pr review'?
+Run 'acme --help' for available commands.      # exit code 2
+
+$ acme pr review
+acme pr review: missing required flag: --report
+Usage: acme pr review --report <int> [--format text|json] [-v]   # exit code 2
+```
+
+Because the spec is declarative, you can introspect it to generate the tool documentation
+that goes into an agent's system prompt — from the same source as the runtime behavior:
+
+```elixir
+JustBash.CLI.describe(cli)
+#=> %{name: "acme", doc: "...", commands: [%{path: ["pr", "review"], flags: [...], ...}]}
+
+JustBash.CLI.render_docs(cli, format: :markdown)  # a markdown manual
+```
+
+If you prefer a CLI to live as a module alongside your other command modules, `use
+JustBash.CLI` and define `spec/0` (conventional `use`-wiring, not a DSL):
+
+```elixir
+defmodule Acme.CLI do
+  use JustBash.CLI
+
+  @impl true
+  def spec, do: JustBash.CLI.new("acme", doc: "Acme toolkit", commands: [...])
+end
+
+bash = JustBash.new(commands: %{"acme" => Acme.CLI})
+```
+
+For a complete before/after, compare [`eval/commands/kv.ex`](eval/commands/kv.ex) (a
+hand-rolled router with help text duplicated by hand) against
+[`eval/commands/kv_cli.ex`](eval/commands/kv_cli.ex) (the same tool on `JustBash.CLI`,
+where only the storage logic remains). CLI handlers carry the same trust model and crash
+isolation as any custom command — they are host code and are **not** sandboxed.
+
 ### Execute Script Files
 
 ```elixir

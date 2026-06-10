@@ -59,7 +59,10 @@ defmodule JustBash.Commands.CommandBuiltin do
             {out <> "#{name} is a function\n", err, found}
 
           :custom ->
-            {out <> "#{name} is #{name}\n", err, found}
+            description =
+              JustBash.CLI.custom_command_description(Map.get(bash.commands, name), name)
+
+            {out <> description <> "\n", err, found}
 
           :builtin ->
             {out <> "#{name} is a shell builtin\n", err, found}
