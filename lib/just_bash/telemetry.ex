@@ -39,6 +39,9 @@ defmodule JustBash.Telemetry do
     * Measurement: `%{duration: native_time, monotonic_time: integer}`
     * Metadata: `%{command: String.t(), args: list(String.t()), exit_code: integer,
       bytes_in: integer, bytes_out: integer, telemetry_span_context: reference()}`
+    * When the command is a `JustBash.CLI` tool, metadata also includes
+      `subcommand: list(String.t())` — the resolved subcommand path (e.g. `["pr", "review"]`)
+      — so observability doesn't collapse an entire CLI into a single `command` bucket.
 
   * `[:just_bash, :command, :exception]` - Emitted when a command raises
     * Measurement: `%{duration: native_time, monotonic_time: integer}`

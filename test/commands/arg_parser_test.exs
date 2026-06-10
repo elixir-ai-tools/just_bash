@@ -55,6 +55,16 @@ defmodule JustBash.Commands.ArgParserTest do
       {:ok, opts, _} = ArgParser.parse([], @basic_flags)
       assert opts.count == 1
     end
+
+    test "rejects a value with trailing characters" do
+      assert {:error, message} = ArgParser.parse(["-n", "10x"], @basic_flags)
+      assert message =~ "invalid integer value: 10x"
+    end
+
+    test "rejects an underscore-separated value rather than silently truncating" do
+      assert {:error, message} = ArgParser.parse(["-n", "1_000"], @basic_flags)
+      assert message =~ "invalid integer value: 1_000"
+    end
   end
 
   describe "parse/3 with accumulator flags" do
@@ -132,6 +142,84 @@ defmodule JustBash.Commands.ArgParserTest do
     test "applies transform function to value" do
       {:ok, opts, _} = ArgParser.parse(["-X", "post"], @transform_flags)
       assert opts.method == "POST"
+    end
+  end
+
+  describe "float type" do
+    @float_flags [
+      ratio: [long: "--ratio", type: :float]
+    ]
+
+    test "parses a float value" do
+      {:ok, opts, _} = ArgParser.parse(["--ratio", "1.5"], @float_flags)
+      assert opts.ratio == 1.5
+    end
+
+    test "parses an integer-looking value as a float" do
+      {:ok, opts, _} = ArgParser.parse(["--ratio", "2"], @float_flags)
+      assert opts.ratio == 2.0
+    end
+
+    test "errors on a non-numeric value" do
+      assert {:error, message} = ArgParser.parse(["--ratio", "abc"], @float_flags)
+      assert message =~ "invalid float value: abc"
+    end
+
+    test "rejects a value with trailing characters" do
+      assert {:error, message} = ArgParser.parse(["--ratio", "1.5.6"], @float_flags)
+      assert message =~ "invalid float value: 1.5.6"
+    end
+  end
+
+  describe "required option" do
+    @required_flags [
+      report: [long: "--report", type: :integer, required: true],
+      format: [long: "--format", type: :string, default: "text"]
+    ]
+
+    test "succeeds when the required flag is provided" do
+      {:ok, opts, _} = ArgParser.parse(["--report", "12"], @required_flags)
+      assert opts.report == 12
+    end
+
+    test "errors when a required flag is missing" do
+      assert {:error, message} = ArgParser.parse([], @required_flags)
+      assert message =~ "missing required flag: --report"
+    end
+
+    test "includes the command name in the required error when given" do
+      assert {:error, message} =
+               ArgParser.parse([], @required_flags, command: "acme pr review")
+
+      assert message =~ "acme pr review: missing required flag: --report"
+    end
+
+    test "uses the short flag name in the error when no long form exists" do
+      flags = [count: [short: "-n", type: :integer, required: true]]
+      assert {:error, message} = ArgParser.parse([], flags)
+      assert message =~ "missing required flag: -n"
+    end
+  end
+
+  describe "values (enum) option" do
+    @enum_flags [
+      format: [long: "--format", type: :string, values: ["text", "json"], default: "text"]
+    ]
+
+    test "accepts an allowed value" do
+      {:ok, opts, _} = ArgParser.parse(["--format", "json"], @enum_flags)
+      assert opts.format == "json"
+    end
+
+    test "errors on a disallowed value" do
+      assert {:error, message} = ArgParser.parse(["--format", "yaml"], @enum_flags)
+      assert message =~ "invalid value for --format: yaml"
+      assert message =~ "text, json"
+    end
+
+    test "allows the default when the flag is omitted" do
+      {:ok, opts, _} = ArgParser.parse([], @enum_flags)
+      assert opts.format == "text"
     end
   end
 end

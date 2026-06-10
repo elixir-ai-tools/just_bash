@@ -27,23 +27,28 @@ defmodule JustBash.Commands.ArgParser do
   - `:boolean` - Flag is present or absent (no value needed)
   - `:string` - Takes a string value
   - `:integer` - Takes an integer value
+  - `:float` - Takes a floating-point value
   - `:accumulator` - Accumulates multiple values into a list (for -H headers, etc.)
 
   ## Options
 
   - `:short` - Short flag form (e.g., "-s")
-  - `:long` - Long flag form (e.g., "--silent")  
-  - `:type` - Value type (`:boolean`, `:string`, `:integer`, `:accumulator`)
+  - `:long` - Long flag form (e.g., "--silent")
+  - `:type` - Value type (`:boolean`, `:string`, `:integer`, `:float`, `:accumulator`)
   - `:default` - Default value if flag not provided
+  - `:required` - When `true`, parsing fails if the flag is not provided
+  - `:values` - List of allowed values; parsing fails on anything else (enum)
   - `:transform` - Optional function to transform the value
   """
 
-  @type flag_type :: :boolean | :string | :integer | :accumulator
+  @type flag_type :: :boolean | :string | :integer | :float | :accumulator
   @type flag_spec :: [
           short: String.t(),
           long: String.t(),
           type: flag_type(),
           default: any(),
+          required: boolean(),
+          values: [any()],
           transform: (String.t() -> any())
         ]
   @type flags_spec :: [{atom(), flag_spec()}]
@@ -72,9 +77,13 @@ defmodule JustBash.Commands.ArgParser do
       allow_unknown: Keyword.get(opts, :allow_unknown, false)
     }
 
-    # Build defaults and parse arguments
-    defaults = build_defaults(flags)
-    parse_loop(args, ctx, defaults, [])
+    # Parse into a map of only the flags that were actually provided, so we can
+    # distinguish "set" from "defaulted" for required-flag checking. Defaults are
+    # merged in afterwards.
+    with {:ok, provided, positional} <- parse_loop(args, ctx, %{}, []),
+         :ok <- check_required(flags, provided, ctx.command) do
+      {:ok, merge_defaults(flags, provided), positional}
+    end
   end
 
   defp build_flag_maps(flags) do
@@ -85,18 +94,43 @@ defmodule JustBash.Commands.ArgParser do
     end)
   end
 
-  defp build_defaults(flags) do
-    Enum.reduce(flags, %{}, fn {name, spec}, acc ->
-      default =
-        case spec[:type] do
-          :boolean -> Keyword.get(spec, :default, false)
-          :accumulator -> Keyword.get(spec, :default, [])
-          _ -> Keyword.get(spec, :default)
-        end
-
-      Map.put(acc, name, default)
+  # Fill in defaults for any flag that was not provided on the command line.
+  defp merge_defaults(flags, provided) do
+    Enum.reduce(flags, provided, fn {name, spec}, acc ->
+      if Map.has_key?(acc, name) do
+        acc
+      else
+        Map.put(acc, name, default_for(spec))
+      end
     end)
   end
+
+  defp default_for(spec) do
+    case spec[:type] do
+      :boolean -> Keyword.get(spec, :default, false)
+      :accumulator -> Keyword.get(spec, :default, [])
+      _ -> Keyword.get(spec, :default)
+    end
+  end
+
+  # Fail if any flag marked `required: true` was not provided.
+  defp check_required(flags, provided, command) do
+    Enum.reduce_while(flags, :ok, fn {name, spec}, :ok ->
+      if spec[:required] && not Map.has_key?(provided, name) do
+        {:halt, {:error, format_required_error(command, spec)}}
+      else
+        {:cont, :ok}
+      end
+    end)
+  end
+
+  defp flag_display_name(spec), do: spec[:long] || spec[:short]
+
+  defp format_required_error("", spec),
+    do: "missing required flag: #{flag_display_name(spec)}\n"
+
+  defp format_required_error(cmd, spec),
+    do: "#{cmd}: missing required flag: #{flag_display_name(spec)}\n"
 
   defp parse_loop([], _ctx, opts, positional) do
     {:ok, opts, Enum.reverse(positional)}
@@ -209,7 +243,7 @@ defmodule JustBash.Commands.ArgParser do
         new_opts = Map.put(opts, name, true)
         parse_loop(args, ctx, new_opts, positional)
 
-      type when type in [:string, :integer, :accumulator] ->
+      type when type in [:string, :integer, :float, :accumulator] ->
         case args do
           [value | rest] ->
             case apply_value(opts, name, spec, value) do
@@ -227,30 +261,58 @@ defmodule JustBash.Commands.ArgParser do
   end
 
   defp apply_value(opts, name, spec, value) do
+    with {:ok, typed} <- coerce_value(spec[:type], value),
+         transformed = apply_transform(spec, typed),
+         :ok <- check_enum(spec, transformed) do
+      {:ok, store_value(opts, name, spec, transformed)}
+    end
+  end
+
+  defp coerce_value(:string, value), do: {:ok, value}
+  defp coerce_value(:accumulator, value), do: {:ok, value}
+
+  defp coerce_value(:boolean, value), do: {:ok, value in ["true", "1", "yes"]}
+
+  # Strict: the whole value must be the number, so a typo like "42x" or a
+  # thousands-separated "1_000" is a loud error rather than a silent truncation to 42/1.
+  defp coerce_value(:integer, value) do
+    case Integer.parse(value) do
+      {n, ""} -> {:ok, n}
+      _ -> {:error, "invalid integer value: #{value}\n"}
+    end
+  end
+
+  defp coerce_value(:float, value) do
+    case Float.parse(value) do
+      {f, ""} -> {:ok, f}
+      _ -> {:error, "invalid float value: #{value}\n"}
+    end
+  end
+
+  # Accumulators append to a list; every other type overwrites.
+  defp store_value(opts, name, spec, value) do
     case spec[:type] do
-      :string ->
-        transformed = apply_transform(spec, value)
-        {:ok, Map.put(opts, name, transformed)}
-
-      :integer ->
-        case Integer.parse(value) do
-          {n, _} ->
-            transformed = apply_transform(spec, n)
-            {:ok, Map.put(opts, name, transformed)}
-
-          :error ->
-            {:error, "invalid integer value: #{value}\n"}
-        end
-
       :accumulator ->
-        transformed = apply_transform(spec, value)
         current = Map.get(opts, name, [])
-        {:ok, Map.put(opts, name, current ++ [transformed])}
+        Map.put(opts, name, current ++ [value])
 
-      :boolean ->
-        # For boolean with explicit value
-        bool_value = value in ["true", "1", "yes"]
-        {:ok, Map.put(opts, name, bool_value)}
+      _ ->
+        Map.put(opts, name, value)
+    end
+  end
+
+  defp check_enum(spec, value) do
+    case spec[:values] do
+      nil ->
+        :ok
+
+      values ->
+        if value in values do
+          :ok
+        else
+          {:error,
+           "invalid value for #{flag_display_name(spec)}: #{value} (allowed: #{Enum.join(values, ", ")})\n"}
+        end
     end
   end
 

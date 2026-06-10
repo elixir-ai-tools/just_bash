@@ -408,12 +408,22 @@ defmodule JustBash.Interpreter.Executor do
                   )
               end
 
-            {{result, new_bash},
-             %{
-               exit_code: result.exit_code,
-               bytes_in: byte_size(effective_stdin),
-               bytes_out: byte_size(result.stdout) + byte_size(result.stderr)
-             }}
+            # A JustBash.CLI router stashes the resolved subcommand path here; surface it
+            # in telemetry and strip it before the result reaches the shell.
+            {subcommand, result} = Map.pop(result, :__subcommand__)
+
+            stop_metadata = %{
+              exit_code: result.exit_code,
+              bytes_in: byte_size(effective_stdin),
+              bytes_out: byte_size(result.stdout) + byte_size(result.stderr)
+            }
+
+            stop_metadata =
+              if subcommand,
+                do: Map.put(stop_metadata, :subcommand, subcommand),
+                else: stop_metadata
+
+            {{result, new_bash}, stop_metadata}
           end)
 
         func_body ->
@@ -819,12 +829,12 @@ defmodule JustBash.Interpreter.Executor do
 
   @control_signal_keys [:__break__, :__continue__, :__return__]
 
-  defp execute_custom_command(bash, cmd_name, module, args, stdin) do
+  defp execute_custom_command(bash, cmd_name, command, args, stdin) do
     bash = Limit.step!(bash)
 
     # credo:disable-for-next-line Credo.Check.Readability.PreferImplicitTry
     try do
-      case module.execute(bash, args, stdin) do
+      case dispatch_custom_command(command, bash, args, stdin) do
         {%{stdout: stdout, stderr: stderr, exit_code: exit_code} = result, %JustBash{} = new_bash}
         when is_binary(stdout) and is_binary(stderr) and is_integer(exit_code) and exit_code >= 0 ->
           # Strip any internal control-flow signals that could leak from custom commands
@@ -844,6 +854,16 @@ defmodule JustBash.Interpreter.Executor do
         message = "custom command #{kind}: #{inspect(reason)}"
         custom_command_error(bash, cmd_name, message)
     end
+  end
+
+  # A registered command is either a module implementing JustBash.Commands.Command,
+  # or a %JustBash.CLI{} declarative subcommand tool.
+  defp dispatch_custom_command(%JustBash.CLI{} = cli, bash, args, stdin) do
+    JustBash.CLI.run(cli, bash, args, stdin)
+  end
+
+  defp dispatch_custom_command(module, bash, args, stdin) when is_atom(module) do
+    module.execute(bash, args, stdin)
   end
 
   defp custom_command_error(bash, cmd_name, message) do

@@ -105,8 +105,13 @@ defmodule JustBash.TelemetryTest do
       script = "echo hello; echo world"
       {result, _bash} = JustBash.exec(bash, script)
 
+      # Bind this run's session pid from the start event so a concurrent async test's
+      # session :stop (delivered to us by the globally-attached handler) can't be matched
+      # here by mistake.
+      assert_received {^ref, [:just_bash, :session, :run, :start], _, %{session: pid}}
+
       assert_received {^ref, [:just_bash, :session, :run, :stop], _,
-                       %{bytes_in: bytes_in, bytes_out: bytes_out}}
+                       %{session: ^pid, bytes_in: bytes_in, bytes_out: bytes_out}}
 
       assert bytes_in == byte_size(script)
       assert bytes_out == byte_size(result.stdout) + byte_size(result.stderr)

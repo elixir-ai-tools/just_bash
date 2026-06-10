@@ -38,7 +38,7 @@ defmodule JustBash.Commands.Type do
         {:ok, "#{name} is a shell builtin"}
 
       Map.has_key?(bash.commands, name) ->
-        {:ok, "#{name} is #{name}"}
+        {:ok, JustBash.CLI.custom_command_description(Map.get(bash.commands, name), name)}
 
       Registry.exists?(name) ->
         path = find_in_path(bash, name)
