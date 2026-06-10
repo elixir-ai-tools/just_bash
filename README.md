@@ -137,6 +137,34 @@ bash =
 result.stdout  #=> "alice\n"
 ```
 
+#### Updating context after construction
+
+The `:context` option seeds caller data at construction. To add or update entries *afterward*, use
+the `put_context/3` and `get_context/3` accessors (modeled on `Plug.Conn.put_private/3`). Both target
+the same `context` map, keys are atoms, and the map is ignored by builtins and the interpreter.
+
+```elixir
+defmodule MyApp.Commands.Counter do
+  @behaviour JustBash.Commands.Command
+
+  @impl true
+  def names, do: ["counter_ctx"]
+
+  @impl true
+  def execute(bash, _args, _stdin) do
+    count = JustBash.get_context(bash, :count, 0)
+    {%{stdout: "#{count}\n", stderr: "", exit_code: 0}, bash}
+  end
+end
+
+bash =
+  JustBash.new(commands: %{"counter_ctx" => MyApp.Commands.Counter})
+  |> JustBash.put_context(:count, 41)
+
+{result, _bash} = JustBash.exec(bash, "counter_ctx")
+result.stdout  #=> "41\n"
+```
+
 Important caveats:
 
 - Custom commands run arbitrary Elixir code in the host BEAM process

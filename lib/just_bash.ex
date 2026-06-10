@@ -156,6 +156,7 @@ defmodule JustBash do
   - `:context` - Optional map of caller data for custom commands. Stored on the `JustBash` struct
     as `context` and readable inside any custom command as `bash.context`. Defaults to `%{}`.
     Not used by builtins or the interpreter; only host-defined custom commands should read it.
+    To add or update entries *after* construction, use `put_context/3` and `get_context/3`.
   - `:network` - Network configuration map with:
     - `:enabled` - Whether network access is allowed (default: false)
     - `:allow_list` - Allowed hosts/patterns. Use `:all` to allow all hosts, or a list of
@@ -589,5 +590,61 @@ defmodule JustBash do
         error_msg = "#{path}: No such file or directory\n"
         {%{stdout: "", stderr: error_msg, exit_code: 1, env: bash.env}, bash}
     end
+  end
+
+  @doc """
+  Store a host-side value on the `JustBash` struct's `context` map under an atom key.
+
+  This is the post-construction counterpart to the `:context` option of `new/1`,
+  modeled on `Plug.Conn.put_private/3`. The `context` map is reserved for the
+  library *caller* to stash arbitrary data that travels with the struct. Keys
+  must be atoms; values may be any term. Builtins and the interpreter never read
+  `context` — only host-defined custom commands should, via `bash.context` or
+  `get_context/3`.
+
+  Use the `:context` option to seed values at construction, and `put_context/3`
+  to add or update them afterward — both target the same `context` map.
+
+  ## Examples
+
+      bash = JustBash.new()
+      bash = JustBash.put_context(bash, :request_id, "abc123")
+      bash.context
+      #=> %{request_id: "abc123"}
+
+      # Construction-time seeding and post-construction updates compose:
+      bash =
+        JustBash.new(context: %{tenant: "acme"})
+        |> JustBash.put_context(:request_id, "abc123")
+      bash.context
+      #=> %{tenant: "acme", request_id: "abc123"}
+  """
+  @spec put_context(t(), atom(), term()) :: t()
+  def put_context(%JustBash{context: context} = bash, key, value) when is_atom(key) do
+    %{bash | context: Map.put(context, key, value)}
+  end
+
+  @doc """
+  Read a host-side value from the `JustBash` struct's `context` map.
+
+  Returns `default` (which itself defaults to `nil`) when the key is absent.
+  Keys must be atoms. This reads the same map seeded by the `:context` option of
+  `new/1` and written by `put_context/3`.
+
+  ## Examples
+
+      bash = JustBash.new() |> JustBash.put_context(:request_id, "abc123")
+      JustBash.get_context(bash, :request_id)
+      #=> "abc123"
+
+      JustBash.get_context(bash, :missing)
+      #=> nil
+
+      JustBash.get_context(bash, :missing, :fallback)
+      #=> :fallback
+  """
+  @spec get_context(t(), atom(), term()) :: term()
+  def get_context(%JustBash{context: context}, key, default \\ nil) when is_atom(key) do
+    Map.get(context, key, default)
   end
 end

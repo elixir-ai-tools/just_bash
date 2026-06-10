@@ -198,6 +198,27 @@ defmodule JustBash.CustomCommandsTest do
     end
   end
 
+  defmodule ContextProbe do
+    @behaviour JustBash.Commands.Command
+
+    @impl true
+    def names, do: ["ctxprobe"]
+
+    @impl true
+    def execute(bash, args, _stdin) do
+      out =
+        case args do
+          [key | _] ->
+            inspect(JustBash.get_context(bash, String.to_atom(key), "DEFAULT"))
+
+          [] ->
+            inspect(bash.context)
+        end
+
+      {%{stdout: out <> "\n", stderr: "", exit_code: 0}, bash}
+    end
+  end
+
   defmodule Counter do
     @doc "A command that reads a file, increments the number in it, and writes it back"
     @behaviour JustBash.Commands.Command
@@ -299,6 +320,42 @@ defmodule JustBash.CustomCommandsTest do
       {result, _} = JustBash.exec(bash, "ctxdump")
       assert String.trim(result.stdout) == inspect(%{})
       assert result.exit_code == 0
+    end
+  end
+
+  describe "custom command context via put_context" do
+    test "custom command reads context seeded via put_context" do
+      bash =
+        JustBash.new(commands: %{"ctxprobe" => ContextProbe})
+        |> JustBash.put_context(:token, "secret")
+
+      {result, _} = JustBash.exec(bash, "ctxprobe token")
+      assert String.trim(result.stdout) == inspect("secret")
+      assert result.exit_code == 0
+    end
+
+    test "custom command sees empty context map when nothing seeded" do
+      bash = JustBash.new(commands: %{"ctxprobe" => ContextProbe})
+      {result, _} = JustBash.exec(bash, "ctxprobe")
+      assert String.trim(result.stdout) == inspect(%{})
+      assert result.exit_code == 0
+    end
+
+    test "custom command can use get_context with a default" do
+      bash = JustBash.new(commands: %{"ctxprobe" => ContextProbe})
+      {result, _} = JustBash.exec(bash, "ctxprobe missing")
+      assert String.trim(result.stdout) == inspect("DEFAULT")
+      assert result.exit_code == 0
+    end
+
+    test "context survives across exec calls in the returned bash struct" do
+      bash =
+        JustBash.new(commands: %{"ctxprobe" => ContextProbe})
+        |> JustBash.put_context(:token, "secret")
+
+      {_result, bash} = JustBash.exec(bash, "ctxprobe token")
+      {result, _} = JustBash.exec(bash, "ctxprobe token")
+      assert String.trim(result.stdout) == inspect("secret")
     end
   end
 

@@ -128,6 +128,79 @@ defmodule JustBashTest do
     end
   end
 
+  describe "put_context/3 and get_context/3" do
+    test "context defaults to an empty map" do
+      bash = JustBash.new()
+      assert bash.context == %{}
+    end
+
+    test "put_context stores a value retrievable by get_context" do
+      bash = JustBash.new() |> JustBash.put_context(:k, "v")
+      assert JustBash.get_context(bash, :k) == "v"
+      assert bash.context == %{k: "v"}
+    end
+
+    test "get_context returns nil for a missing key by default" do
+      assert JustBash.get_context(JustBash.new(), :missing) == nil
+    end
+
+    test "get_context returns the supplied default for a missing key" do
+      assert JustBash.get_context(JustBash.new(), :missing, :fallback) == :fallback
+    end
+
+    test "put_context overwrites an existing key" do
+      bash =
+        JustBash.new()
+        |> JustBash.put_context(:k, 1)
+        |> JustBash.put_context(:k, 2)
+
+      assert JustBash.get_context(bash, :k) == 2
+    end
+
+    test "put_context with a non-atom key raises FunctionClauseError" do
+      bash = JustBash.new()
+
+      assert_raise FunctionClauseError, fn ->
+        JustBash.put_context(bash, "str", 1)
+      end
+    end
+
+    test "get_context with a non-atom key raises FunctionClauseError" do
+      bash = JustBash.new()
+
+      assert_raise FunctionClauseError, fn ->
+        JustBash.get_context(bash, "str")
+      end
+    end
+
+    test "put_context accepts any term as value" do
+      value = {:a, [1, 2, 3]}
+      bash = JustBash.new() |> JustBash.put_context(:data, value)
+      assert JustBash.get_context(bash, :data) == value
+    end
+
+    test "put_context composes with the :context option seeding" do
+      bash =
+        JustBash.new(context: %{a: 1})
+        |> JustBash.put_context(:b, 2)
+
+      assert bash.context == %{a: 1, b: 2}
+      assert JustBash.get_context(bash, :a) == 1
+      assert JustBash.get_context(bash, :b) == 2
+      assert JustBash.get_context(bash, :missing) == nil
+    end
+
+    test "put_context preserves other context keys" do
+      bash =
+        JustBash.new()
+        |> JustBash.put_context(:a, 1)
+        |> JustBash.put_context(:b, 2)
+
+      assert JustBash.get_context(bash, :a) == 1
+      assert JustBash.get_context(bash, :b) == 2
+    end
+  end
+
   describe "exec/2" do
     test "executes echo command" do
       bash = JustBash.new()
