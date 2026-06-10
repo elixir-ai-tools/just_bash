@@ -44,6 +44,40 @@ defmodule JustBash.CLI do
   `:float`, `:accumulator`), `:short`, `:long` (defaults to `--name`), `:default`,
   `:required`, `:values` (enum), `:transform`, and `:doc` (used in help output).
 
+  Flag specs are validated at build time (`command/2` raises `ArgumentError`):
+
+    * `--help`/`-h` are **reserved** — see "Reserved flags" below.
+    * `:required` and `:default` are mutually exclusive (a required flag errors when omitted,
+      so the default could never apply).
+    * a `:default` must be a member of `:values` when both are given (the enum check only
+      runs on flags the user actually provides, so an out-of-range default would slip past it).
+
+  `:values` is compared against the **coerced** value, so list members must match the flag's
+  `:type` — e.g. `type: :integer, values: [1, 2]` (integers, not `~w(1 2)`). The raw
+  `:values` list is also what `describe/1` and the help text surface to agents.
+
+  ## Reserved flags
+
+  `--help` and `-h` are reserved: the router intercepts them before a leaf ever parses, so a
+  leaf can request help in one turn. A flag spec may not claim either form (including a flag
+  named `:help`, whose derived long is `--help`) — `command/2` raises if it does. Because
+  interception happens first, `--help`/`-h` anywhere before a `--` terminator wins even when
+  it would otherwise be a flag's value (e.g. `acme pr review --format -h` shows help).
+
+  ## `--` handling
+
+  A leading `--` *before* a subcommand is consumed and routing continues (`acme -- pr review`
+  reaches `pr review`), so wrappers that prepend `--` still route. This is intentionally not
+  POSIX `--` semantics — `--` only acts as an options/help terminator once routing reaches a
+  leaf and hands the remaining tokens to the parser.
+
+  ## Positional arguments
+
+  Positionals are a flat list, so `command/2` rejects ambiguous shapes at build time: a
+  required positional may not follow an optional one, and a variadic must be last. A lone
+  `-` (the stdin convention) is treated as a flag by the router and is **not** supported as a
+  positional; pass it after `--` if a leaf needs it as a literal value.
+
   ## Trust model
 
   CLI handlers are ordinary host Elixir code with the same trust model and crash
@@ -108,7 +142,10 @@ defmodule JustBash.CLI do
       @behaviour JustBash.CLI
 
       @impl JustBash.Commands.Command
-      def names, do: [spec().name | spec().aliases]
+      def names do
+        s = spec()
+        [s.name | s.aliases]
+      end
 
       @impl JustBash.Commands.Command
       def execute(bash, args, stdin), do: JustBash.CLI.run(spec(), bash, args, stdin)
@@ -135,6 +172,9 @@ defmodule JustBash.CLI do
   @spec custom_command_description(term(), String.t()) :: String.t()
   def custom_command_description(value, name) do
     if cli?(value) do
+      # `describe/1` flattens to leaves only (groups are recursed into, not listed), so this
+      # counts runnable commands, not tree nodes. If `describe/1`'s shape ever changes, the
+      # "describes a CLI tool" tests in test/cli/shell_integration_test.exs pin this count.
       count = value |> describe() |> Map.fetch!(:commands) |> length()
       "#{name} is a CLI tool (#{count} #{pluralize(count, "command", "commands")})"
     else
@@ -361,8 +401,12 @@ defmodule JustBash.CLI do
   # %CLI{} or a %Command{} group; both expose `name`/`doc`/`commands`.
   defp route(group, [], path), do: {:no_subcommand, group, path, []}
 
-  # A `--` options terminator before a subcommand is consumed; routing continues with the
-  # rest, so `acme -- pr review` reaches `pr review` instead of erroring as a stray flag.
+  # A leading `--` before a subcommand is consumed; routing continues with the rest, so
+  # `acme -- pr review` reaches `pr review` instead of erroring as a stray flag. This is
+  # deliberately NOT POSIX `--` semantics (which would make everything after it positional):
+  # it lets wrappers that prepend `--` still route to subcommands. `--` only acts as an
+  # options/help terminator once routing reaches a leaf and hands the rest to the parser.
+  # See the "`--` handling" note in the moduledoc.
   defp route(group, ["--" | rest], path), do: route(group, rest, path)
 
   defp route(group, ["-" <> _ | _] = remaining, path),
@@ -534,7 +578,9 @@ defmodule JustBash.CLI do
               "command #{inspect(name)} flag #{inspect(flag_name)} spec must be a keyword list, got: #{inspect(spec)}"
       end
 
-      {flag_name, Keyword.put_new(spec, :long, default_long(flag_name))}
+      spec = Keyword.put_new(spec, :long, default_long(flag_name))
+      validate_flag_spec!(name, flag_name, spec)
+      {flag_name, spec}
     end)
   end
 
@@ -543,21 +589,71 @@ defmodule JustBash.CLI do
           "command #{inspect(name)} :flags must be a keyword list of flag specs, got: #{inspect(flags)}"
   end
 
+  # Build-time guards that can't drift into runtime surprises:
+  #   * `--help`/`-h` are intercepted by the router before any leaf parses, so a flag that
+  #     claims them could never receive its value (see the "reserved flags" note in the
+  #     moduledoc).
+  #   * `:required` + `:default` is contradictory — the default can never apply, since a
+  #     required flag errors when omitted.
+  #   * a `:default` outside `:values` would silently bypass the enum check, which only
+  #     runs on provided flags.
+  defp validate_flag_spec!(name, flag_name, spec) do
+    cond do
+      spec[:long] == "--help" or spec[:short] == "-h" ->
+        reserved = if spec[:long] == "--help", do: "--help", else: "-h"
+
+        raise ArgumentError,
+              "command #{inspect(name)} flag #{inspect(flag_name)}: #{reserved} is reserved for help and cannot be used as a flag"
+
+      spec[:required] && Keyword.has_key?(spec, :default) ->
+        raise ArgumentError,
+              "command #{inspect(name)} flag #{inspect(flag_name)} cannot be both :required and have a :default"
+
+      true ->
+        validate_default_in_values!(name, flag_name, spec)
+    end
+  end
+
+  defp validate_default_in_values!(name, flag_name, spec) do
+    with {:ok, default} <- Keyword.fetch(spec, :default),
+         values when is_list(values) <- spec[:values],
+         false <- default in values do
+      raise ArgumentError,
+            "command #{inspect(name)} flag #{inspect(flag_name)}: :default #{inspect(default)} " <>
+              "is not one of :values #{inspect(values)}"
+    else
+      _ -> :ok
+    end
+  end
+
   defp default_long(flag_name) do
     "--" <> String.replace(Atom.to_string(flag_name), "_", "-")
   end
 
   defp validate_args!(name, args) when is_list(args) do
-    {normalized, _seen_variadic} =
-      Enum.map_reduce(args, false, fn arg, variadic_seen? ->
+    {normalized, _acc} =
+      Enum.map_reduce(args, %{variadic?: false, optional?: false}, fn arg, acc ->
         spec = normalize_arg!(name, arg)
 
-        if variadic_seen? do
+        if acc.variadic? do
           raise ArgumentError,
                 "command #{inspect(name)}: a variadic positional argument must be last"
         end
 
-        {spec, spec.variadic}
+        # A required positional after an optional one is ambiguous: the handler receives a
+        # flat list and can't tell which slot a single value bound to. Reject it at build
+        # time, mirroring the variadic-must-be-last rule.
+        if spec.required and acc.optional? do
+          raise ArgumentError,
+                "command #{inspect(name)}: required positional argument #{inspect(spec.name)} " <>
+                  "cannot follow an optional one"
+        end
+
+        {spec,
+         %{
+           variadic?: acc.variadic? or spec.variadic,
+           optional?: acc.optional? or not spec.required
+         }}
       end)
 
     normalized

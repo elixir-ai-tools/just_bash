@@ -123,6 +123,19 @@ defmodule JustBash.CLI.HelpTest do
       refute result.stderr =~ "Did you mean"
     end
 
+    test "unknown subcommand under a group points --help at the group, not the root" do
+      result = run("acme pr reviw")
+      assert result.exit_code == 2
+      assert result.stderr =~ "Run 'acme pr --help' for available commands."
+      refute result.stderr =~ "Run 'acme --help'"
+    end
+
+    test "unknown top-level subcommand points --help at the root" do
+      result = run("acme nope")
+      assert result.exit_code == 2
+      assert result.stderr =~ "Run 'acme --help' for available commands."
+    end
+
     test "missing required flag includes the usage line" do
       result = run("acme pr review")
       assert result.exit_code == 2

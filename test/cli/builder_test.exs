@@ -74,6 +74,73 @@ defmodule JustBash.CLI.BuilderTest do
       end
     end
 
+    test "raises when a required positional follows an optional one" do
+      assert_raise ArgumentError,
+                   ~r/required positional argument .* cannot follow an optional/,
+                   fn ->
+                     CLI.command("x",
+                       args: [%{name: :a}, %{name: :b, required: true}],
+                       run: fn i -> {ok(), i.bash} end
+                     )
+                   end
+    end
+
+    test "allows required positionals before optional ones" do
+      cmd =
+        CLI.command("x",
+          args: [%{name: :a, required: true}, %{name: :b}],
+          run: fn i -> {ok(), i.bash} end
+        )
+
+      assert [%{name: :a, required: true}, %{name: :b, required: false}] = cmd.args
+    end
+
+    test "raises when a flag declares both :required and :default" do
+      assert_raise ArgumentError, ~r/cannot be both :required and have a :default/, fn ->
+        CLI.command("x",
+          flags: [n: [type: :integer, required: true, default: 1]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises when a flag :default is not a member of :values" do
+      assert_raise ArgumentError, ~r/:default "xml" is not one of :values/, fn ->
+        CLI.command("x",
+          flags: [format: [type: :string, default: "xml", values: ~w(text json)]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "allows a flag :default that is a member of :values" do
+      cmd =
+        CLI.command("x",
+          flags: [format: [type: :string, default: "text", values: ~w(text json)]],
+          run: fn i -> {ok(), i.bash} end
+        )
+
+      assert cmd.flags[:format][:default] == "text"
+    end
+
+    test "raises when a flag claims the reserved --help long form" do
+      assert_raise ArgumentError, ~r/--help.* is reserved/, fn ->
+        CLI.command("x",
+          flags: [help: [type: :boolean]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises when a flag claims the reserved -h short form" do
+      assert_raise ArgumentError, ~r/-h.* is reserved/, fn ->
+        CLI.command("x",
+          flags: [height: [type: :integer, short: "-h"]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
     test "raises on flags that are not a keyword list" do
       assert_raise ArgumentError, ~r/:flags must be a keyword list/, fn ->
         CLI.command("x", flags: %{not: :keyword}, run: fn i -> {ok(), i.bash} end)

@@ -68,8 +68,10 @@ defmodule JustBash.CLI.Help do
         name -> "Did you mean '#{Enum.join(path ++ [name], " ")}'?\n"
       end
 
+    # Point `--help` at the group the unknown token was a child of (`acme pr --help`), not
+    # always the root — that's where the available commands actually live.
     "#{cli.name}: unknown command '#{attempted}'\n" <>
-      suggestion <> "Run '#{cli.name} --help' for available commands.\n"
+      suggestion <> "Run '#{label(cli, path)} --help' for available commands.\n"
   end
 
   @doc """

@@ -15,6 +15,13 @@ defmodule JustBash.Commands.Command do
 
   @doc """
   Execute the command with the given arguments and stdin.
+
+  The returned result map must carry `:stdout`, `:stderr`, and `:exit_code`, but **may
+  contain extra keys**. The executor preserves them past result validation, dropping only
+  internal control-flow signals before the result reaches the shell. This is load-bearing:
+  `JustBash.CLI` smuggles its resolved subcommand path through under `:__subcommand__` so
+  command telemetry can attribute it (the executor pops it into span metadata). Do not
+  tighten the result match to reject unknown keys.
   """
   @callback execute(bash(), args :: [String.t()], stdin :: String.t()) :: execution_result()
 

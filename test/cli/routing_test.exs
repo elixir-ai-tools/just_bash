@@ -122,7 +122,8 @@ defmodule JustBash.CLI.RoutingTest do
       result = run("acme pr nope")
       assert result.exit_code == 2
       assert result.stderr =~ "unknown command 'pr nope'"
-      assert result.stderr =~ "Run 'acme --help'"
+      # The help pointer targets the group the unknown token sat under, not the root.
+      assert result.stderr =~ "Run 'acme pr --help'"
     end
 
     test "missing required flag exits 2" do
