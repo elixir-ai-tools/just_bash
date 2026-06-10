@@ -221,6 +221,7 @@ defmodule JustBash.CLI do
     args = Keyword.get(opts, :args, [])
 
     validate_node_kind!(name, commands, run)
+    validate_leaf_only!(name, commands, flags, args)
     validate_commands!(commands)
     validate_unique_names!(commands, name)
     flags = normalize_flags!(name, flags)
@@ -248,23 +249,27 @@ defmodule JustBash.CLI do
   """
   @spec run(t(), JustBash.t(), [String.t()], String.t()) :: {map(), JustBash.t()}
   def run(%__MODULE__{} = cli, bash, args, stdin) do
+    # Every routed result carries its resolved subcommand path (the valid prefix, even
+    # for help/usage errors) so command telemetry can attribute the bucket; the executor
+    # reads it into span metadata and strips it before the result reaches the shell.
     case route(cli, args, []) do
       {:leaf, leaf, path, rest} ->
         if wants_help?(rest) do
-          {help_result(Help.leaf_help(cli, path, leaf)), bash}
+          {tag_subcommand(help_result(Help.leaf_help(cli, path, leaf)), path), bash}
         else
           dispatch_leaf(cli, leaf, path, rest, bash, stdin)
         end
 
       {:no_subcommand, group, path, remaining} ->
         if wants_help?(remaining) do
-          {help_result(Help.group_help(cli, path, group)), bash}
+          {tag_subcommand(help_result(Help.group_help(cli, path, group)), path), bash}
         else
-          {usage_error(Help.missing_subcommand(cli, path, group)), bash}
+          {tag_subcommand(usage_error(Help.missing_subcommand(cli, path, group)), path), bash}
         end
 
       {:unknown_subcommand, group, path, token} ->
-        {usage_error(Help.unknown_subcommand(cli, path, group, token)), bash}
+        {tag_subcommand(usage_error(Help.unknown_subcommand(cli, path, group, token)), path),
+         bash}
     end
   end
 
@@ -356,6 +361,10 @@ defmodule JustBash.CLI do
   # %CLI{} or a %Command{} group; both expose `name`/`doc`/`commands`.
   defp route(group, [], path), do: {:no_subcommand, group, path, []}
 
+  # A `--` options terminator before a subcommand is consumed; routing continues with the
+  # rest, so `acme -- pr review` reaches `pr review` instead of erroring as a stray flag.
+  defp route(group, ["--" | rest], path), do: route(group, rest, path)
+
   defp route(group, ["-" <> _ | _] = remaining, path),
     do: {:no_subcommand, group, path, remaining}
 
@@ -388,8 +397,12 @@ defmodule JustBash.CLI do
       }
 
       case leaf.run.(invocation) do
-        {result, new_bash} -> {tag_subcommand(result, path), new_bash}
-        other -> other
+        {result, %JustBash{} = new_bash} ->
+          {tag_subcommand(result, path), new_bash}
+
+        other ->
+          raise ArgumentError,
+                "#{label} handler must return {result, bash}, got: #{inspect(other)}"
       end
     else
       {:error, message} ->
@@ -465,6 +478,17 @@ defmodule JustBash.CLI do
   end
 
   defp validate_node_kind!(_name, _commands, _run), do: :ok
+
+  # Groups route to children and never parse their own flags/args, so reject them on a
+  # group node — otherwise a misplaced flag is a silent no-op rather than a loud error.
+  defp validate_leaf_only!(name, commands, flags, args)
+       when commands != [] and (flags != [] or args != []) do
+    raise ArgumentError,
+          "command #{inspect(name)} is a group (:commands) and cannot define :flags or :args; " <>
+            "move them to a leaf command"
+  end
+
+  defp validate_leaf_only!(_name, _commands, _flags, _args), do: :ok
 
   defp validate_commands!(commands) when is_list(commands) do
     Enum.each(commands, fn

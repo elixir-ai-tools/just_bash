@@ -109,6 +109,12 @@ defmodule JustBash.CLI.RoutingTest do
       result = run("acme whoami", context: %{user: "dave"})
       assert result.stdout == "dave\n"
     end
+
+    test "a leading -- is consumed as an options terminator before a subcommand" do
+      result = run("acme -- pr review --report 5")
+      assert result.exit_code == 0
+      assert result.stdout == "review report=5 format=text\n"
+    end
   end
 
   describe "errors" do
@@ -161,6 +167,18 @@ defmodule JustBash.CLI.RoutingTest do
       {result, _bash} = JustBash.exec(bash, "boom go")
       assert result.exit_code == 1
       assert result.stderr =~ "boom"
+    end
+
+    test "a handler that returns a non-tuple yields a clear, CLI-attributed error" do
+      cli =
+        CLI.new("boom",
+          commands: [CLI.command("bad", run: fn _inv -> :not_a_tuple end)]
+        )
+
+      bash = JustBash.new(commands: %{"boom" => cli})
+      {result, _bash} = JustBash.exec(bash, "boom bad")
+      assert result.exit_code == 1
+      assert result.stderr =~ "handler must return {result, bash}"
     end
   end
 end

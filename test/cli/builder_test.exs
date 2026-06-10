@@ -79,6 +79,22 @@ defmodule JustBash.CLI.BuilderTest do
         CLI.command("x", flags: %{not: :keyword}, run: fn i -> {ok(), i.bash} end)
       end
     end
+
+    test "raises when a group node is given flags" do
+      child = CLI.command("review", run: fn i -> {ok(), i.bash} end)
+
+      assert_raise ArgumentError, ~r/group .* cannot define :flags or :args/, fn ->
+        CLI.command("pr", commands: [child], flags: [verbose: [type: :boolean]])
+      end
+    end
+
+    test "raises when a group node is given positional args" do
+      child = CLI.command("review", run: fn i -> {ok(), i.bash} end)
+
+      assert_raise ArgumentError, ~r/group .* cannot define :flags or :args/, fn ->
+        CLI.command("pr", commands: [child], args: [%{name: :id}])
+      end
+    end
   end
 
   describe "new/2" do

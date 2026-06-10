@@ -55,6 +55,16 @@ defmodule JustBash.Commands.ArgParserTest do
       {:ok, opts, _} = ArgParser.parse([], @basic_flags)
       assert opts.count == 1
     end
+
+    test "rejects a value with trailing characters" do
+      assert {:error, message} = ArgParser.parse(["-n", "10x"], @basic_flags)
+      assert message =~ "invalid integer value: 10x"
+    end
+
+    test "rejects an underscore-separated value rather than silently truncating" do
+      assert {:error, message} = ArgParser.parse(["-n", "1_000"], @basic_flags)
+      assert message =~ "invalid integer value: 1_000"
+    end
   end
 
   describe "parse/3 with accumulator flags" do
@@ -153,6 +163,11 @@ defmodule JustBash.Commands.ArgParserTest do
     test "errors on a non-numeric value" do
       assert {:error, message} = ArgParser.parse(["--ratio", "abc"], @float_flags)
       assert message =~ "invalid float value: abc"
+    end
+
+    test "rejects a value with trailing characters" do
+      assert {:error, message} = ArgParser.parse(["--ratio", "1.5.6"], @float_flags)
+      assert message =~ "invalid float value: 1.5.6"
     end
   end
 

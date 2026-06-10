@@ -85,5 +85,28 @@ defmodule JustBash.CLI.ShellIntegrationTest do
       assert result.stdout == "r\n"
       refute Map.has_key?(result, :__subcommand__)
     end
+
+    test "tags the routed path on a group's --help", %{ref: ref} do
+      run("acme pr --help")
+      assert_received {^ref, %{command: "acme", subcommand: ["pr"]}}
+    end
+
+    test "tags the resolved prefix on an unknown subcommand", %{ref: ref} do
+      run("acme pr nope")
+      assert_received {^ref, %{command: "acme", subcommand: ["pr"]}}
+    end
+
+    test "tags the empty path when the root is invoked without a subcommand", %{ref: ref} do
+      run("acme")
+      assert_received {^ref, %{command: "acme", subcommand: []}}
+    end
+
+    test "the subcommand key never leaks into help or error output" do
+      help = run("acme pr --help")
+      refute Map.has_key?(help, :__subcommand__)
+
+      error = run("acme pr nope")
+      refute Map.has_key?(error, :__subcommand__)
+    end
   end
 end

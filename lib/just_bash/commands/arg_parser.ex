@@ -273,18 +273,19 @@ defmodule JustBash.Commands.ArgParser do
 
   defp coerce_value(:boolean, value), do: {:ok, value in ["true", "1", "yes"]}
 
+  # Strict: the whole value must be the number, so a typo like "42x" or a
+  # thousands-separated "1_000" is a loud error rather than a silent truncation to 42/1.
   defp coerce_value(:integer, value) do
     case Integer.parse(value) do
       {n, ""} -> {:ok, n}
-      {n, _} -> {:ok, n}
-      :error -> {:error, "invalid integer value: #{value}\n"}
+      _ -> {:error, "invalid integer value: #{value}\n"}
     end
   end
 
   defp coerce_value(:float, value) do
     case Float.parse(value) do
-      {f, _} -> {:ok, f}
-      :error -> {:error, "invalid float value: #{value}\n"}
+      {f, ""} -> {:ok, f}
+      _ -> {:error, "invalid float value: #{value}\n"}
     end
   end
 
