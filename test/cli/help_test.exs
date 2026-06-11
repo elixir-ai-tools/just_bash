@@ -28,6 +28,10 @@ defmodule JustBash.CLI.HelpTest do
             CLI.command("open",
               doc: "Open a pull request",
               args: [%{name: :id, required: true, doc: "PR id"}],
+              examples: [
+                "acme pr open 123",
+                %{cmd: "acme pr open 456", doc: "open PR 456"}
+              ],
               run: fn inv -> {Command.ok("ok\n"), inv.bash} end
             )
           ]
@@ -105,6 +109,48 @@ defmodule JustBash.CLI.HelpTest do
       assert result.stdout =~ "Arguments:"
       assert result.stdout =~ "<id>"
       assert result.stdout =~ "PR id (required)"
+    end
+
+    test "lists worked examples" do
+      result = run("acme pr open --help")
+      assert result.stdout =~ "Examples:"
+      assert result.stdout =~ "acme pr open 123"
+      assert result.stdout =~ "acme pr open 456"
+      assert result.stdout =~ "open PR 456"
+    end
+  end
+
+  describe "on_missing_subcommand" do
+    defp help_group_cli do
+      CLI.new("acme",
+        commands: [
+          CLI.command("pr",
+            doc: "Pull request management",
+            on_missing_subcommand: :help,
+            commands: [
+              CLI.command("list",
+                doc: "List PRs",
+                run: fn inv -> {Command.ok("l\n"), inv.bash} end
+              )
+            ]
+          )
+        ]
+      )
+    end
+
+    test "a bare group with :help prints the listing at exit 0" do
+      {result, _bash} =
+        JustBash.exec(JustBash.new(commands: %{"acme" => help_group_cli()}), "acme pr")
+
+      assert result.exit_code == 0
+      assert result.stdout =~ "Usage: acme pr <command> [args]"
+      assert result.stdout =~ "list"
+    end
+
+    test "the default :error still exits 2 with a missing-subcommand message" do
+      result = run("acme pr")
+      assert result.exit_code == 2
+      assert result.stderr =~ "missing subcommand"
     end
   end
 

@@ -16,12 +16,32 @@ defmodule JustBash.CLI.Command do
     * `:doc` — one-line description shown in help output
     * `:flags` — a `JustBash.Commands.ArgParser` flag spec (keyword list); leaves only
     * `:args` — positional argument specs (see `t:arg_spec/0`); leaves only
+    * `:examples` — worked examples surfaced in help, `describe/1`, and docs (see `t:example/0`)
     * `:commands` — nested child nodes (groups only)
     * `:run` — the handler, `(JustBash.CLI.Invocation.t() -> {map(), JustBash.t()})`; leaves only
+    * `:validate` — optional `(JustBash.CLI.Invocation.t() -> :ok | {:error, String.t()})`
+      run after parsing and before `:run`; an error yields the same exit-2 + usage line as a
+      flag error (leaves only)
+    * `:allow_unknown_flags` — when `true`, undeclared flags are collected into
+      `Invocation.extra_flags` instead of erroring (leaves only)
+    * `:visible?` — optional `(JustBash.t() -> boolean())` predicate; when it returns `false`
+      the node is **absent** (unroutable and omitted from help/`describe`) for that caller
+    * `:on_missing_subcommand` — `:error` (default) or `:help`; what a bare group does when
+      invoked without a subcommand (groups and the root only)
   """
 
   @enforce_keys [:name]
-  defstruct name: nil, doc: nil, flags: [], args: [], commands: [], run: nil
+  defstruct name: nil,
+            doc: nil,
+            flags: [],
+            args: [],
+            examples: [],
+            commands: [],
+            run: nil,
+            validate: nil,
+            allow_unknown_flags: false,
+            visible?: nil,
+            on_missing_subcommand: :error
 
   @typedoc """
   A positional argument specification.
@@ -38,15 +58,28 @@ defmodule JustBash.CLI.Command do
           optional(:variadic) => boolean()
         }
 
+  @typedoc """
+  A worked example, normalized to a map. `:cmd` is the example invocation; `:doc` is an
+  optional one-line description.
+  """
+  @type example :: %{cmd: String.t(), doc: String.t() | nil}
+
   @type handler :: (JustBash.CLI.Invocation.t() -> {map(), JustBash.t()})
+  @type validator :: (JustBash.CLI.Invocation.t() -> :ok | {:error, String.t()})
+  @type visibility :: (JustBash.t() -> boolean())
 
   @type t :: %__MODULE__{
           name: String.t(),
           doc: String.t() | nil,
           flags: keyword(),
           args: [arg_spec()],
+          examples: [example()],
           commands: [t()],
-          run: handler() | nil
+          run: handler() | nil,
+          validate: validator() | nil,
+          allow_unknown_flags: boolean(),
+          visible?: visibility() | nil,
+          on_missing_subcommand: :error | :help
         }
 
   @doc """

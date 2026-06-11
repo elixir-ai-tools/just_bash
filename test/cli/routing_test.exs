@@ -157,6 +157,109 @@ defmodule JustBash.CLI.RoutingTest do
     end
   end
 
+  describe "passthrough flags" do
+    defp passthrough_cli do
+      CLI.new("acme",
+        commands: [
+          CLI.command("run",
+            doc: "Run on a target, forwarding backend flags",
+            args: [%{name: :target, required: true}],
+            allow_unknown_flags: true,
+            flags: [verbose: [type: :boolean, short: "-v"]],
+            run: fn inv ->
+              {Command.ok("target=#{hd(inv.args)} extra=#{inspect(inv.extra_flags)}\n"), inv.bash}
+            end
+          )
+        ]
+      )
+    end
+
+    defp run_pt(script) do
+      bash = JustBash.new(commands: %{"acme" => passthrough_cli()})
+      {result, _bash} = JustBash.exec(bash, script)
+      result
+    end
+
+    test "collects undeclared flags into extra_flags, keeping positionals clean" do
+      result = run_pt("acme run target --some-dynamic-flag value")
+      assert result.exit_code == 0
+      assert result.stdout == ~s(target=target extra=["--some-dynamic-flag", "value"]\n)
+    end
+
+    test "still parses declared flags normally" do
+      result = run_pt("acme run target -v --dyn x")
+      assert result.exit_code == 0
+      assert result.stdout == ~s(target=target extra=["--dyn", "x"]\n)
+    end
+
+    test "an undeclared flag still errors when allow_unknown_flags is not set" do
+      result = run("acme pr review --report 1 --bogus x")
+      assert result.exit_code == 2
+      assert result.stderr =~ "unknown option: --bogus"
+    end
+  end
+
+  describe "command-level validation" do
+    defp validating_cli do
+      CLI.new("acme",
+        commands: [
+          CLI.command("book",
+            doc: "Book a range",
+            flags: [
+              start: [type: :integer, required: true, long: "--start"],
+              finish: [type: :integer, required: true, long: "--finish"]
+            ],
+            validate: fn inv ->
+              if inv.flags.start <= inv.flags.finish,
+                do: :ok,
+                else: {:error, "acme book: --start must be <= --finish"}
+            end,
+            run: fn inv -> {Command.ok("booked\n"), inv.bash} end
+          )
+        ]
+      )
+    end
+
+    defp run_val(script) do
+      bash = JustBash.new(commands: %{"acme" => validating_cli()})
+      {result, _bash} = JustBash.exec(bash, script)
+      result
+    end
+
+    test "an :ok validation proceeds to the handler" do
+      result = run_val("acme book --start 1 --finish 5")
+      assert result.exit_code == 0
+      assert result.stdout == "booked\n"
+    end
+
+    test "an {:error, msg} validation exits 2 with a usage line" do
+      result = run_val("acme book --start 5 --finish 1")
+      assert result.exit_code == 2
+      assert result.stderr =~ "--start must be <= --finish"
+      assert result.stderr =~ "Usage: acme book"
+    end
+
+    test "validation runs after defaults are merged" do
+      cli =
+        CLI.new("acme",
+          commands: [
+            CLI.command("go",
+              flags: [mode: [type: :string, default: "fast"]],
+              validate: fn inv ->
+                if inv.flags.mode == "fast", do: :ok, else: {:error, "bad mode"}
+              end,
+              run: fn inv -> {Command.ok("#{inv.flags.mode}\n"), inv.bash} end
+            )
+          ]
+        )
+
+      bash = JustBash.new(commands: %{"acme" => cli})
+      {result, _bash} = JustBash.exec(bash, "acme go")
+      assert result.exit_code == 0
+      assert result.stdout == "fast\n"
+    end
+  end
+
   describe "crash isolation" do
     test "a crashing handler is caught and turned into an error" do
       cli =

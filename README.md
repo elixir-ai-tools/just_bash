@@ -248,6 +248,28 @@ JustBash.CLI.describe(cli)
 JustBash.CLI.render_docs(cli, format: :markdown)  # a markdown manual
 ```
 
+A few options on `command/2` cover the rough edges a real consumer hits:
+
+- **`:examples`** — worked examples, co-located with the command and surfaced in `--help`,
+  `describe/1`, and `render_docs`: `examples: ["acme pr review --report 42", %{cmd: "...", doc: "..."}]`.
+- **`:validate`** — a `(Invocation -> :ok | {:error, msg})` callback for cross-field rules
+  (e.g. `start <= end`); an error produces the same exit-2 + usage line as a flag error, so
+  every failure has one contract. (A flag `:transform` may likewise return `{:error, msg}`
+  for single-field checks like a numeric range.)
+- **`allow_unknown_flags: true`** — collect undeclared flags into `inv.extra_flags` (a raw
+  token list) instead of erroring, for a leaf that forwards them to a dynamic backend.
+- **`visible?: fn bash -> ... end`** — make a node *absent* (unroutable and omitted from
+  help/`describe`) for callers it rejects, decided from `bash.context`. Pass the same `bash`
+  to `describe(cli, bash)` to get the catalog that caller sees. For fully dynamic trees,
+  build the `%JustBash.CLI{}` per session and conditionally append gated groups — the tree
+  is plain data, so routing, help, and `describe` always reflect exactly what you built.
+- **`on_missing_subcommand: :help`** — print the command listing at exit 0 (instead of a
+  usage error) when a group is invoked with no subcommand.
+
+For handler-level unit tests, drive through `CLI.run/4` or `CLI.invoke(spec, path, args, bash, stdin)`
+rather than hand-building an `%Invocation{}` — only the parser merges flag defaults, so a
+hand-built invocation would see `nil` where a `:default` should be.
+
 If you prefer a CLI to live as a module alongside your other command modules, `use
 JustBash.CLI` and define `spec/0` (conventional `use`-wiring, not a DSL):
 
