@@ -226,7 +226,7 @@ defmodule JustBash.Eval.Tasks.ShellFeatures do
          ]},
         {:custom, "day3_access_log",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/logs/2024-01-03/access.log") do
+           case JustBash.Fs.read_file(bash.fs, "/logs/2024-01-03/access.log") do
              {:ok, content} ->
                if String.contains?(content, "2024-01-03"),
                  do: :ok,

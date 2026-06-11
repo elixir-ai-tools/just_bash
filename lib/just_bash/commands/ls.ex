@@ -4,7 +4,7 @@ defmodule JustBash.Commands.Ls do
 
   alias JustBash.Commands.Command
   alias JustBash.FlagParser
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @flag_spec %{
     boolean: [:a, :l, :h, :r, :R, :S, :t, :one],
@@ -30,9 +30,9 @@ defmodule JustBash.Commands.Ls do
   end
 
   defp list_path(bash, path, flags, {out_acc, err_acc, code_acc}) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = Fs.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.readdir(bash.fs, resolved) do
+    case Fs.readdir(bash.fs, resolved) do
       {:ok, entries} ->
         formatted = format_entries(bash.fs, resolved, entries, flags)
         {out_acc <> formatted, err_acc, code_acc}
@@ -61,16 +61,16 @@ defmodule JustBash.Commands.Ls do
   defp format_filtered(_fs, _resolved, filtered, _flags), do: Enum.join(filtered, "\n")
 
   defp handle_not_dir(fs, resolved, path, {out_acc, err_acc, code_acc}) do
-    case InMemoryFs.stat(fs, resolved) do
+    case Fs.stat(fs, resolved) do
       {:ok, _} -> {out_acc <> path <> "\n", err_acc, code_acc}
       _ -> {out_acc, err_acc <> "ls: cannot access '#{path}': Not a directory\n", 1}
     end
   end
 
   defp format_entry(fs, dir, name, human_readable) do
-    path = InMemoryFs.resolve_path(dir, name)
+    path = Fs.resolve_path(dir, name)
 
-    case InMemoryFs.stat(fs, path) do
+    case Fs.stat(fs, path) do
       {:ok, stat} ->
         type = if stat.is_directory, do: "d", else: "-"
         mode = format_mode(stat.mode)

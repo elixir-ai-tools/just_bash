@@ -1,1 +1,1 @@
-ExUnit.start(exclude: [:live])
+ExUnit.start(exclude: [:live, :git_fs])

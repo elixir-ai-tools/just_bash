@@ -11,10 +11,7 @@
   # valid_path_expr? catch-all returns false, but dialyzer infers callers only
   # pass values that match earlier (true-returning) clauses — defensive by design
   {"lib/just_bash/commands/jq/evaluator/functions.ex", :pattern_match},
-  # format_redirection_error handles multiple POSIX error atoms defensively,
-  # but InMemoryFs.write_file currently only returns :eisdir
-  {"lib/just_bash/interpreter/executor/redirection.ex", :pattern_match},
-  {"lib/just_bash/interpreter/executor/redirection.ex", :pattern_match_cov},
+
   # format_array_key catch-all handles any type defensively, but dialyzer infers
   # callers only pass float/integer/binary values covered by earlier clauses
   {"lib/just_bash/commands/awk/evaluator.ex", :pattern_match_cov},
@@ -24,5 +21,6 @@
   # every function that accepts/returns it.  These are false positives.
   {"lib/just_bash/interpreter/state.ex", :contract_with_opaque},
   {"lib/just_bash.ex", :contract_with_opaque},
-  {"lib/just_bash/sigil.ex", :call_without_opaque}
+  {"lib/just_bash/sigil.ex", :call_without_opaque},
+  {"lib/just_bash/fs/overlay_fs.ex", :contract_with_opaque}
 ]

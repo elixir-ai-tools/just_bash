@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Comm do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @impl true
   def names, do: ["comm"]
@@ -91,9 +91,9 @@ defmodule JustBash.Commands.Comm do
   defp read_file(_bash, "-", stdin), do: {:ok, stdin}
 
   defp read_file(bash, file, _stdin) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = Fs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
+    case Fs.read_file(bash.fs, resolved) do
       {:ok, content} -> {:ok, content}
       {:error, _} -> {:error, "comm: #{file}: No such file or directory\n"}
     end

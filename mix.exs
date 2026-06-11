@@ -48,6 +48,7 @@ defmodule JustBash.MixProject do
       {:req, "~> 0.5"},
       {:jason, "~> 1.4"},
       {:earmark, "~> 1.4"},
+      {:exgit, github: "ivarvong/exgit", only: [:dev, :test]},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

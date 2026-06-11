@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Cut do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @impl true
   def names, do: ["cut"]
@@ -83,9 +83,9 @@ defmodule JustBash.Commands.Cut do
 
   defp get_content(bash, files, _stdin) do
     Enum.map_join(files, "", fn file ->
-      resolved = InMemoryFs.resolve_path(bash.cwd, file)
+      resolved = Fs.resolve_path(bash.cwd, file)
 
-      case InMemoryFs.read_file(bash.fs, resolved) do
+      case Fs.read_file(bash.fs, resolved) do
         {:ok, content} -> content
         {:error, _} -> ""
       end

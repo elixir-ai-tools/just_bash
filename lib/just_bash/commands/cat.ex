@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Cat do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @impl true
   def names, do: ["cat"]
@@ -33,9 +33,9 @@ defmodule JustBash.Commands.Cat do
   end
 
   defp read_and_accumulate(bash, path, _stdin, {out_acc, err_acc, code_acc, stdin_consumed}) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = Fs.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
+    case Fs.read_file(bash.fs, resolved) do
       {:ok, content} ->
         {out_acc <> content, err_acc, code_acc, stdin_consumed}
 

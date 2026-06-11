@@ -1,31 +1,68 @@
 defmodule JustBash.Commands.Cp do
-  @moduledoc "The `cp` command - copy files."
+  @moduledoc "The `cp` command - copy files and directories."
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @impl true
   def names, do: ["cp"]
 
   @impl true
   def execute(bash, args, _stdin) do
-    case args do
+    {opts, positional} = parse_args(args)
+
+    case positional do
       [src, dest] ->
-        src_resolved = InMemoryFs.resolve_path(bash.cwd, src)
-        dest_resolved = InMemoryFs.resolve_path(bash.cwd, dest)
-
-        case InMemoryFs.read_file(bash.fs, src_resolved) do
-          {:ok, content} ->
-            {:ok, new_fs} = InMemoryFs.write_file(bash.fs, dest_resolved, content)
-            {Command.ok(), %{bash | fs: new_fs}}
-
-          {:error, _} ->
-            {Command.error("cp: cannot stat '#{src}': No such file or directory\n"), bash}
-        end
+        do_copy(bash, src, dest, opts)
 
       _ ->
         {Command.error("cp: missing file operand\n"), bash}
+    end
+  end
+
+  defp parse_args(args) do
+    {opts, positional} =
+      Enum.reduce(args, {[], []}, fn
+        "-r", {opts, pos} -> {[:recursive | opts], pos}
+        "-R", {opts, pos} -> {[:recursive | opts], pos}
+        "--recursive", {opts, pos} -> {[:recursive | opts], pos}
+        "-a", {opts, pos} -> {[:recursive | opts], pos}
+        arg, {opts, pos} -> {opts, pos ++ [arg]}
+      end)
+
+    {Enum.uniq(opts), positional}
+  end
+
+  defp do_copy(bash, src, dest, opts) do
+    src_resolved = Fs.resolve_path(bash.cwd, src)
+    dest_resolved = Fs.resolve_path(bash.cwd, dest)
+    recursive = :recursive in opts
+
+    # If dest is an existing directory, copy into it
+    dest_final =
+      case Fs.stat(bash.fs, dest_resolved) do
+        {:ok, %{is_directory: true}} ->
+          Fs.normalize_path(dest_resolved <> "/" <> Fs.basename(src_resolved))
+
+        _ ->
+          dest_resolved
+      end
+
+    cp_opts = if recursive, do: [recursive: true], else: []
+
+    case Fs.cp(bash.fs, src_resolved, dest_final, cp_opts) do
+      {:ok, new_fs} ->
+        {Command.ok(), %{bash | fs: new_fs}}
+
+      {:error, :enoent} ->
+        {Command.error("cp: cannot stat '#{src}': No such file or directory\n"), bash}
+
+      {:error, :eisdir} ->
+        {Command.error("cp: -r not specified; omitting directory '#{src}'\n"), bash}
+
+      {:error, reason} ->
+        {Command.error("cp: #{reason}\n"), bash}
     end
   end
 end

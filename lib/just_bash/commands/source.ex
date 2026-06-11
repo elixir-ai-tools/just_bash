@@ -8,7 +8,7 @@ defmodule JustBash.Commands.Source do
 
   @behaviour JustBash.Commands.Command
 
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
   alias JustBash.Interpreter.Executor
   alias JustBash.Parser
 
@@ -22,9 +22,9 @@ defmodule JustBash.Commands.Source do
         {%{stdout: "", stderr: "bash: source: filename argument required\n", exit_code: 2}, bash}
 
       [filename | _extra_args] ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, filename)
+        resolved = Fs.resolve_path(bash.cwd, filename)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
+        case Fs.read_file(bash.fs, resolved) do
           {:ok, content} ->
             execute_script_content(bash, content)
 

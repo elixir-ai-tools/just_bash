@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Wc do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @short_flags %{?l => :l, ?w => :w, ?c => :c}
 
@@ -28,9 +28,9 @@ defmodule JustBash.Commands.Wc do
   end
 
   defp wc_single_file(bash, file, flags) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = Fs.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
+    case Fs.read_file(bash.fs, resolved) do
       {:ok, content} ->
         output = format_output(content, file, flags)
         {Command.ok(output), bash}
@@ -45,9 +45,9 @@ defmodule JustBash.Commands.Wc do
       Enum.reduce(files, {[], %{lines: 0, words: 0, bytes: 0}, [], 0}, fn file,
                                                                           {out_acc, totals,
                                                                            err_acc, code} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+        resolved = Fs.resolve_path(bash.cwd, file)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
+        case Fs.read_file(bash.fs, resolved) do
           {:ok, content} ->
             counts = count_content(content)
 

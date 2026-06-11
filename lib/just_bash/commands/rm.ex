@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Rm do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.Fs
 
   @impl true
   def names, do: ["rm"]
@@ -14,9 +14,9 @@ defmodule JustBash.Commands.Rm do
 
     {stderr, exit_code, new_fs} =
       Enum.reduce(paths, {"", 0, bash.fs}, fn path, {err_acc, code_acc, fs_acc} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, path)
+        resolved = Fs.resolve_path(bash.cwd, path)
 
-        case InMemoryFs.rm(fs_acc, resolved, recursive: flags.r, force: flags.f) do
+        case Fs.rm(fs_acc, resolved, recursive: flags.r, force: flags.f) do
           {:ok, new_fs} ->
             {err_acc, code_acc, new_fs}
 
@@ -28,6 +28,12 @@ defmodule JustBash.Commands.Rm do
 
           {:error, :enotempty} ->
             {err_acc <> "rm: cannot remove '#{path}': Directory not empty\n", 1, fs_acc}
+
+          {:error, :erofs} ->
+            {err_acc <> "rm: cannot remove '#{path}': Read-only file system\n", 1, fs_acc}
+
+          {:error, reason} ->
+            {err_acc <> "rm: cannot remove '#{path}': #{reason}\n", 1, fs_acc}
         end
       end)
 
