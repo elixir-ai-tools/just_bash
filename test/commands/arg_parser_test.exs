@@ -223,6 +223,14 @@ defmodule JustBash.Commands.ArgParserTest do
       {:ok, opts, _} = ArgParser.parse(["-X", "post"], @transform_flags)
       assert opts.method == "POST"
     end
+
+    test "raises when transform returns {:error, non_binary} rather than silently passing it" do
+      flags = [n: [long: "--n", type: :integer, transform: fn _ -> {:error, :not_a_string} end]]
+
+      assert_raise ArgumentError, ~r/error message must be a String\.t\(\)/, fn ->
+        ArgParser.parse(["--n", "1"], flags)
+      end
+    end
   end
 
   describe "float type" do

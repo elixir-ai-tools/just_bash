@@ -376,9 +376,18 @@ defmodule JustBash.Commands.ArgParser do
 
       fun when is_function(fun, 1) ->
         case fun.(value) do
-          {:ok, transformed} -> {:ok, transformed}
-          {:error, message} when is_binary(message) -> {:error, ensure_newline(message)}
-          bare -> {:ok, bare}
+          {:ok, transformed} ->
+            {:ok, transformed}
+
+          {:error, message} when is_binary(message) ->
+            {:error, ensure_newline(message)}
+
+          {:error, other} ->
+            raise ArgumentError,
+                  ":transform error message must be a String.t(), got: {:error, #{inspect(other)}}"
+
+          bare ->
+            {:ok, bare}
         end
     end
   end

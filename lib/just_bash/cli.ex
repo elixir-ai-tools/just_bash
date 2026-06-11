@@ -412,6 +412,10 @@ defmodule JustBash.CLI do
 
       {result, _bash} = JustBash.CLI.invoke(spec, ["pr", "review"], ["--report", "7"], bash)
 
+  Because it skips visibility pruning, `invoke/5` is **not an authorization boundary**: it will
+  dispatch a leaf whose `:visible?` predicate would reject this `bash`. Use `run/4` for any
+  caller-gated dispatch; reach for `invoke/5` only in tests or trusted internal call sites.
+
   Raises `ArgumentError` if `path` does not resolve to a leaf.
   """
   @spec invoke(spec(), [String.t()], [String.t()], JustBash.t(), String.t()) ::
@@ -559,9 +563,20 @@ defmodule JustBash.CLI do
 
   # Prune nodes whose `:visible?` predicate rejects this caller, so they're genuinely absent
   # (not merely hidden). A group emptied by pruning is dropped too — it was only a container
-  # for now-invisible children.
+  # for now-invisible children. Skip the rebuild entirely when no node gates on visibility
+  # (the common case), so `run/4` stays allocation-free for ungated trees.
   defp prune_visible(%__MODULE__{} = cli, bash) do
-    %{cli | commands: prune_commands(cli.commands, bash)}
+    if any_visibility?(cli.commands) do
+      %{cli | commands: prune_commands(cli.commands, bash)}
+    else
+      cli
+    end
+  end
+
+  defp any_visibility?(commands) do
+    Enum.any?(commands, fn %Command{visible?: vis, commands: children} ->
+      not is_nil(vis) or any_visibility?(children)
+    end)
   end
 
   defp prune_commands(commands, bash) do
@@ -647,10 +662,18 @@ defmodule JustBash.CLI do
   # flag error (caught by the `with`'s else clause): exit 2 with the usage line appended.
   defp run_validate(%Command{validate: nil}, _invocation), do: :ok
 
-  defp run_validate(%Command{validate: fun}, invocation) when is_function(fun, 1) do
+  defp run_validate(%Command{validate: fun, name: name}, invocation) when is_function(fun, 1) do
     case fun.(invocation) do
-      :ok -> :ok
-      {:error, message} when is_binary(message) -> {:error, ensure_newline(message)}
+      :ok ->
+        :ok
+
+      {:error, message} when is_binary(message) ->
+        {:error, ensure_newline(message)}
+
+      other ->
+        raise ArgumentError,
+              "command #{inspect(name)} :validate must return :ok or {:error, message :: String.t()}, " <>
+                "got: #{inspect(other)}"
     end
   end
 

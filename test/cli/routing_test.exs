@@ -197,6 +197,22 @@ defmodule JustBash.CLI.RoutingTest do
       assert result.exit_code == 2
       assert result.stderr =~ "unknown option: --bogus"
     end
+
+    # Documented limitation: an unknown `--flag` consumes the following non-flag token as its
+    # value, so a positional placed *after* a passthrough flag is swallowed into extra_flags.
+    # The convention (positionals first, or `--flag=value`) avoids this; the test pins the
+    # behavior so a change to the heuristic is a deliberate, visible decision.
+    test "a positional after a passthrough flag is swallowed (declare positionals first)" do
+      result = run_pt("acme run --dyn target")
+      assert result.exit_code == 2
+      assert result.stderr =~ "missing required argument"
+    end
+
+    test "--flag=value form does not swallow a following positional" do
+      result = run_pt("acme run --dyn=value target")
+      assert result.exit_code == 0
+      assert result.stdout == ~s(target=target extra=["--dyn=value"]\n)
+    end
   end
 
   describe "command-level validation" do
@@ -257,6 +273,23 @@ defmodule JustBash.CLI.RoutingTest do
       {result, _bash} = JustBash.exec(bash, "acme go")
       assert result.exit_code == 0
       assert result.stdout == "fast\n"
+    end
+
+    test "a :validate returning a malformed value raises a clear, CLI-attributed error" do
+      cli =
+        CLI.new("acme",
+          commands: [
+            CLI.command("go",
+              validate: fn _inv -> :nope end,
+              run: fn inv -> {Command.ok(), inv.bash} end
+            )
+          ]
+        )
+
+      bash = JustBash.new(commands: %{"acme" => cli})
+      {result, _bash} = JustBash.exec(bash, "acme go")
+      assert result.exit_code == 1
+      assert result.stderr =~ ":validate must return :ok or {:error, message"
     end
   end
 
