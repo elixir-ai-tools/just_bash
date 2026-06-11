@@ -23,9 +23,16 @@ defmodule JustBash.CLI.IntrospectionTest do
             CLI.command("open",
               doc: "Open a PR",
               args: [%{name: :id, required: true, doc: "PR id"}],
+              examples: [%{cmd: "acme pr open 123", doc: "open PR 123"}],
               run: fn inv -> {Command.ok(), inv.bash} end
             )
           ]
+        ),
+        CLI.command("run",
+          doc: "Run, forwarding backend flags",
+          args: [%{name: :target, required: true}],
+          allow_unknown_flags: true,
+          run: fn inv -> {Command.ok(), inv.bash} end
         ),
         CLI.command("whoami", doc: "Print user", run: fn inv -> {Command.ok(), inv.bash} end)
       ]
@@ -42,7 +49,16 @@ defmodule JustBash.CLI.IntrospectionTest do
 
     test "flattens leaves with full invocation paths" do
       paths = CLI.describe(acme()).commands |> Enum.map(& &1.path)
-      assert paths == [["pr", "review"], ["pr", "open"], ["whoami"]]
+      assert paths == [["pr", "review"], ["pr", "open"], ["run"], ["whoami"]]
+    end
+
+    test "surfaces examples and allow_unknown_flags per leaf" do
+      open = CLI.describe(acme()).commands |> Enum.find(&(&1.path == ["pr", "open"]))
+      assert open.examples == [%{cmd: "acme pr open 123", doc: "open PR 123"}]
+      assert open.allow_unknown_flags == false
+
+      run = CLI.describe(acme()).commands |> Enum.find(&(&1.path == ["run"]))
+      assert run.allow_unknown_flags == true
     end
 
     test "resolves flag specs into plain maps with derived long forms" do
@@ -82,6 +98,12 @@ defmodule JustBash.CLI.IntrospectionTest do
       assert md =~ "## acme pr open"
       assert md =~ "| Argument | Required | Description |"
       assert md =~ "| `id` | yes | PR id |"
+    end
+
+    test "markdown format includes worked examples" do
+      md = CLI.render_docs(acme(), format: :markdown)
+      assert md =~ "**Examples:**"
+      assert md =~ "- `acme pr open 123` — open PR 123"
     end
   end
 end

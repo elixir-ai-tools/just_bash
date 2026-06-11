@@ -54,8 +54,21 @@ defmodule JustBash.CLI.Docs do
       usage,
       "\n```\n",
       flags_table(node.flags),
-      args_table(node.args)
+      args_table(node.args),
+      examples_block(node.examples)
     ]
+  end
+
+  defp examples_block([]), do: []
+
+  defp examples_block(examples) do
+    rows =
+      Enum.map(examples, fn
+        %{cmd: cmd, doc: nil} -> ["- `", cmd, "`\n"]
+        %{cmd: cmd, doc: doc} -> ["- `", cmd, "` — ", doc, "\n"]
+      end)
+
+    ["\n**Examples:**\n\n", rows]
   end
 
   defp optional_para(nil), do: []

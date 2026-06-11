@@ -103,6 +103,57 @@ defmodule JustBash.Commands.ArgParserTest do
     end
   end
 
+  describe "parse/3 with collect_unknown" do
+    test "returns a 4-tuple collecting unknown flags into extra" do
+      {:ok, opts, positional, extra} =
+        ArgParser.parse(["-v", "target", "--dyn", "x"], @basic_flags, collect_unknown: true)
+
+      assert opts.verbose == true
+      assert positional == ["target"]
+      assert extra == ["--dyn", "x"]
+    end
+
+    test "forwards --flag=value as a single token" do
+      {:ok, _opts, _positional, extra} =
+        ArgParser.parse(["--dyn=x"], @basic_flags, collect_unknown: true)
+
+      assert extra == ["--dyn=x"]
+    end
+
+    test "does not consume a following flag as a value" do
+      {:ok, opts, _positional, extra} =
+        ArgParser.parse(["--dyn", "-v"], @basic_flags, collect_unknown: true)
+
+      assert opts.verbose == true
+      assert extra == ["--dyn"]
+    end
+
+    test "collects unknown short flags and their value" do
+      {:ok, _opts, positional, extra} =
+        ArgParser.parse(["target", "-Z", "val"], @basic_flags, collect_unknown: true)
+
+      assert positional == ["target"]
+      assert extra == ["-Z", "val"]
+    end
+
+    test "known flags and positionals stay out of extra" do
+      {:ok, opts, positional, extra} =
+        ArgParser.parse(["-o", "out", "file", "--dyn", "v"], @basic_flags, collect_unknown: true)
+
+      assert opts.output == "out"
+      assert positional == ["file"]
+      assert extra == ["--dyn", "v"]
+    end
+
+    test "no unknown flags yields an empty extra list" do
+      {:ok, _opts, positional, extra} =
+        ArgParser.parse(["-v", "file"], @basic_flags, collect_unknown: true)
+
+      assert positional == ["file"]
+      assert extra == []
+    end
+  end
+
   describe "parse/3 special cases" do
     test "stops parsing flags after --" do
       {:ok, opts, positional} =
@@ -142,6 +193,43 @@ defmodule JustBash.Commands.ArgParserTest do
     test "applies transform function to value" do
       {:ok, opts, _} = ArgParser.parse(["-X", "post"], @transform_flags)
       assert opts.method == "POST"
+    end
+  end
+
+  describe "transform error channel" do
+    defp ratio_flags do
+      [
+        ratio: [
+          long: "--ratio",
+          type: :float,
+          transform: fn f ->
+            if f >= 0.0 and f <= 1.0, do: {:ok, f}, else: {:error, "ratio must be in 0.0..1.0"}
+          end
+        ]
+      ]
+    end
+
+    test "returns the value when transform returns {:ok, v}" do
+      {:ok, opts, _} = ArgParser.parse(["--ratio", "0.5"], ratio_flags())
+      assert opts.ratio == 0.5
+    end
+
+    test "errors when transform returns {:error, msg}" do
+      assert {:error, msg} = ArgParser.parse(["--ratio", "2.0"], ratio_flags())
+      assert msg =~ "ratio must be in 0.0..1.0"
+    end
+
+    test "still supports a bare-value transform" do
+      {:ok, opts, _} = ArgParser.parse(["-X", "post"], @transform_flags)
+      assert opts.method == "POST"
+    end
+
+    test "raises when transform returns {:error, non_binary} rather than silently passing it" do
+      flags = [n: [long: "--n", type: :integer, transform: fn _ -> {:error, :not_a_string} end]]
+
+      assert_raise ArgumentError, ~r/error message must be a String\.t\(\)/, fn ->
+        ArgParser.parse(["--n", "1"], flags)
+      end
     end
   end
 

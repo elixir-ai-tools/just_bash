@@ -56,6 +56,41 @@ defmodule JustBash.CLI do
   `:type` — e.g. `type: :integer, values: [1, 2]` (integers, not `~w(1 2)`). The raw
   `:values` list is also what `describe/1` and the help text surface to agents.
 
+  Flag names are atoms, so a name that is an Elixir reserved word (e.g. `end`, `fn`, `do`)
+  can't be written bare in the keyword list. Give it an explicit `:long` instead:
+  `end_date: [type: :string, long: "--end"]`.
+
+  Beyond required-ness, types, and `:values`, two hooks cover custom validation, both
+  producing the same exit-2 + usage-line failure as a flag error:
+
+    * a flag's `:transform` may return `{:error, message}` for single-field checks (a numeric
+      range, a parseable date);
+    * a command-level `:validate` callback runs after parsing for cross-field rules
+      (`start <= end`). See `command/2`.
+
+  ## Passthrough flags
+
+  A leaf that wraps a backend whose flags aren't known at definition time can set
+  `allow_unknown_flags: true`. Undeclared flags are then collected into
+  `Invocation.extra_flags` as a raw token list (ready to forward verbatim) instead of
+  erroring, while declared flags and positionals are parsed as usual. Put declared
+  positionals before passthrough flags, and prefer `--flag=value` form for unambiguous
+  forwarding. See `command/2`.
+
+  ## Authorization
+
+  To make a subtree **present only for some callers** — genuinely absent, not just hidden —
+  there are two approaches:
+
+    * **Build the tree from context (first-class).** A `%JustBash.CLI{}` is plain data, so
+      build it per session and conditionally append gated groups based on `bash.context`
+      before registering it. Routing, help, and `describe/1` all reflect exactly the tree
+      you built. This is the most flexible path and the right one for fully dynamic trees.
+    * **A `:visible?` predicate (declarative sugar).** Attach `visible?: fn bash -> ... end`
+      to a node; `run/4` prunes nodes the predicate rejects before routing, so they're
+      unroutable (reported as unknown commands) and omitted from help. Pass the same `bash`
+      to `describe/2`/`render_docs/2` to get the catalog as that caller sees it.
+
   ## Reserved flags
 
   `--help` and `-h` are reserved: the router intercepts them before a leaf ever parses, so a
@@ -96,13 +131,14 @@ defmodule JustBash.CLI do
   @usage_exit 2
 
   @enforce_keys [:name]
-  defstruct name: nil, doc: nil, commands: [], aliases: []
+  defstruct name: nil, doc: nil, commands: [], aliases: [], on_missing_subcommand: :error
 
   @type t :: %__MODULE__{
           name: String.t(),
           doc: String.t() | nil,
           commands: [Command.t()],
-          aliases: [String.t()]
+          aliases: [String.t()],
+          on_missing_subcommand: :error | :help
         }
 
   @typedoc "A CLI value: either a built struct or a module that `use`s `JustBash.CLI`."
@@ -212,6 +248,8 @@ defmodule JustBash.CLI do
     * `:doc` — one-line description of the tool
     * `:commands` — a list of top-level `JustBash.CLI.Command` nodes (built with `command/2`)
     * `:aliases` — additional names the tool can be registered under
+    * `:on_missing_subcommand` — `:error` (default) or `:help`; what the root does when
+      invoked with no subcommand (see `command/2`)
 
   Raises `ArgumentError` if names are invalid or top-level command names collide.
   """
@@ -226,11 +264,15 @@ defmodule JustBash.CLI do
     aliases = Keyword.get(opts, :aliases, [])
     validate_aliases!(aliases)
 
+    on_missing = Keyword.get(opts, :on_missing_subcommand, :error)
+    validate_on_missing!(name, on_missing)
+
     %__MODULE__{
       name: name,
       doc: Keyword.get(opts, :doc),
       commands: commands,
-      aliases: aliases
+      aliases: aliases,
+      on_missing_subcommand: on_missing
     }
   end
 
@@ -248,6 +290,19 @@ defmodule JustBash.CLI do
       (makes this a leaf)
     * `:flags` — an `ArgParser` flag spec (leaves only)
     * `:args` — positional argument specs (leaves only); see `t:JustBash.CLI.Command.arg_spec/0`
+    * `:examples` — a list of worked examples (leaves only); each is a string or a map
+      `%{cmd: String.t(), doc: String.t() | nil}`, surfaced in help, `describe/1`, and docs
+    * `:validate` — a `(JustBash.CLI.Invocation.t() -> :ok | {:error, String.t()})` callback
+      (leaves only) run after parsing and before `:run`; an `{:error, msg}` produces the same
+      exit-2 + usage line as a flag error, giving cross-field validation a home
+    * `:allow_unknown_flags` — when `true` (leaves only), undeclared flags are collected into
+      `Invocation.extra_flags` (a raw token list) instead of erroring. Declared positionals
+      should precede passthrough flags, and `--flag=value` is forwarded as one token
+    * `:visible?` — a `(JustBash.t() -> boolean())` predicate; when it returns `false` the
+      node is **absent** for that caller — unroutable (reported as an unknown command) and
+      omitted from help and `describe/2`
+    * `:on_missing_subcommand` — `:error` (default) or `:help` (groups only); `:help` prints
+      the command listing at exit 0 instead of a usage error when the group is invoked bare
 
   Raises `ArgumentError` on invalid shape (e.g. both or neither of `:commands`/`:run`).
   """
@@ -259,21 +314,40 @@ defmodule JustBash.CLI do
     run = Keyword.get(opts, :run)
     flags = Keyword.get(opts, :flags, [])
     args = Keyword.get(opts, :args, [])
+    examples = Keyword.get(opts, :examples, [])
+    validate = Keyword.get(opts, :validate)
+    allow_unknown_flags = Keyword.get(opts, :allow_unknown_flags, false)
+    visible? = Keyword.get(opts, :visible?)
+    on_missing = Keyword.get(opts, :on_missing_subcommand, :error)
 
     validate_node_kind!(name, commands, run)
     validate_leaf_only!(name, commands, flags, args)
+    reject_on_group!(name, commands, :examples, examples, [])
+    reject_on_group!(name, commands, :validate, validate, nil)
+    reject_on_group!(name, commands, :allow_unknown_flags, allow_unknown_flags, false)
+    reject_on_leaf!(name, run, :on_missing_subcommand, on_missing, :error)
     validate_commands!(commands)
     validate_unique_names!(commands, name)
+    validate_callback!(name, :validate, validate)
+    validate_callback!(name, :visible?, visible?)
+    validate_boolean!(name, :allow_unknown_flags, allow_unknown_flags)
+    validate_on_missing!(name, on_missing)
     flags = normalize_flags!(name, flags)
     args = validate_args!(name, args)
+    examples = normalize_examples!(name, examples)
 
     %Command{
       name: name,
       doc: Keyword.get(opts, :doc),
       flags: flags,
       args: args,
+      examples: examples,
       commands: commands,
-      run: run
+      run: run,
+      validate: validate,
+      allow_unknown_flags: allow_unknown_flags,
+      visible?: visible?,
+      on_missing_subcommand: on_missing
     }
   end
 
@@ -285,10 +359,25 @@ defmodule JustBash.CLI do
   `c:JustBash.Commands.Command.execute/3`.
 
   Usage problems (unknown subcommand, bad flag, missing argument) return an error result
-  with exit code `2` and a usage hint, rather than raising.
+  with exit code `2` and a usage hint, rather than raising. A command-level `:validate`
+  failure uses the same exit-2 + usage-line shape.
+
+  Nodes whose `:visible?` predicate rejects this `bash` are pruned before routing, so they
+  are reported as unknown commands and never appear in help (see the moduledoc's
+  "Authorization" section).
+
+  > #### Result carries `:__subcommand__` {: .info}
+  > The returned `result` map includes a `:__subcommand__` key holding the resolved path,
+  > for command telemetry. The shell executor reads it into span metadata and strips it
+  > before the result reaches the shell, but a host calling `run/4` (or `invoke/5`) directly
+  > will see it. It's safe to ignore — read `:exit_code`/`:stdout`/`:stderr` as usual.
   """
   @spec run(t(), JustBash.t(), [String.t()], String.t()) :: {map(), JustBash.t()}
   def run(%__MODULE__{} = cli, bash, args, stdin) do
+    # Prune nodes hidden from this caller (by their `:visible?` predicate) once up front, so
+    # routing, help, and errors all operate on the same caller-specific view of the tree.
+    cli = prune_visible(cli, bash)
+
     # Every routed result carries its resolved subcommand path (the valid prefix, even
     # for help/usage errors) so command telemetry can attribute the bucket; the executor
     # reads it into span metadata and strips it before the result reaches the shell.
@@ -301,7 +390,7 @@ defmodule JustBash.CLI do
         end
 
       {:no_subcommand, group, path, remaining} ->
-        if wants_help?(remaining) do
+        if wants_help?(remaining) or group.on_missing_subcommand == :help do
           {tag_subcommand(help_result(Help.group_help(cli, path, group)), path), bash}
         else
           {tag_subcommand(usage_error(Help.missing_subcommand(cli, path, group)), path), bash}
@@ -310,6 +399,37 @@ defmodule JustBash.CLI do
       {:unknown_subcommand, group, path, token} ->
         {tag_subcommand(usage_error(Help.unknown_subcommand(cli, path, group, token)), path),
          bash}
+    end
+  end
+
+  @doc """
+  Invoke a leaf at an explicit `path`, bypassing routing and visibility.
+
+  Intended for handler-level unit tests: it builds the `%JustBash.CLI.Invocation{}` exactly
+  as `run/4` does — merging flag defaults, collecting `extra_flags`, and running `:validate`
+  — then calls the handler and returns `{result, bash}`. Prefer this (or `run/4`) over
+  hand-building an `%Invocation{}`, which skips default-merging.
+
+      {result, _bash} = JustBash.CLI.invoke(spec, ["pr", "review"], ["--report", "7"], bash)
+
+  Because it skips visibility pruning, `invoke/5` is **not an authorization boundary**: it will
+  dispatch a leaf whose `:visible?` predicate would reject this `bash`. Use `run/4` for any
+  caller-gated dispatch; reach for `invoke/5` only in tests or trusted internal call sites.
+
+  Raises `ArgumentError` if `path` does not resolve to a leaf.
+  """
+  @spec invoke(spec(), [String.t()], [String.t()], JustBash.t(), String.t()) ::
+          {map(), JustBash.t()}
+  def invoke(cli_or_module, path, args, bash, stdin \\ "") do
+    cli = resolve(cli_or_module)
+
+    case resolve_leaf(cli.commands, path) do
+      {:ok, leaf} ->
+        dispatch_leaf(cli, leaf, path, args, bash, stdin)
+
+      :error ->
+        raise ArgumentError,
+              "#{cli.name}: #{Enum.join(path, " ")} is not a leaf command"
     end
   end
 
@@ -324,7 +444,8 @@ defmodule JustBash.CLI do
   Return a plain-data description of the CLI's command tree.
 
   Useful for generating agent-facing documentation or building tab completion. Every
-  leaf is listed with its full invocation `path` and resolved flag/argument specs:
+  leaf is listed with its full invocation `path`, resolved flag/argument specs, worked
+  `examples`, and whether it accepts passthrough flags (`allow_unknown_flags`):
 
       JustBash.CLI.describe(cli)
       #=> %{
@@ -333,14 +454,20 @@ defmodule JustBash.CLI do
       #     aliases: [],
       #     commands: [
       #       %{path: ["pr", "review"], doc: "Review a pull request",
-      #         flags: [%{name: :report, type: :integer, required: true, ...}], args: []},
+      #         flags: [%{name: :report, type: :integer, required: true, ...}], args: [],
+      #         examples: [%{cmd: "acme pr review --report 42", doc: nil}],
+      #         allow_unknown_flags: false},
       #       ...
       #     ]
       #   }
+
+  Pass a `bash` as the second argument to get the catalog as a specific caller sees it:
+  nodes whose `:visible?` predicate returns `false` for that `bash` are omitted, mirroring
+  what routing and `--help` expose. With no `bash` (the default), every node is described.
   """
-  @spec describe(spec()) :: map()
-  def describe(cli_or_module) do
-    cli = resolve(cli_or_module)
+  @spec describe(spec(), JustBash.t() | nil) :: map()
+  def describe(cli_or_module, bash \\ nil) do
+    cli = cli_or_module |> resolve() |> maybe_prune(bash)
 
     %{
       name: cli.name,
@@ -354,12 +481,17 @@ defmodule JustBash.CLI do
   Render the CLI as a standalone document.
 
   Pass `format: :text` (default) for a plain-text manual, or `format: :markdown` for a
-  markdown document suitable for an agent's system prompt.
+  markdown document suitable for an agent's system prompt. Pass `bash: bash` to render only
+  the commands that caller can see (see `describe/2`).
   """
   @spec render_docs(spec(), keyword()) :: String.t()
   def render_docs(cli_or_module, opts \\ []) do
-    Docs.render(resolve(cli_or_module), Keyword.get(opts, :format, :text))
+    cli = cli_or_module |> resolve() |> maybe_prune(Keyword.get(opts, :bash))
+    Docs.render(cli, Keyword.get(opts, :format, :text))
   end
+
+  defp maybe_prune(cli, nil), do: cli
+  defp maybe_prune(cli, bash), do: prune_visible(cli, bash)
 
   defp describe_leaves(commands, prefix) do
     Enum.flat_map(commands, fn command ->
@@ -373,7 +505,9 @@ defmodule JustBash.CLI do
             path: path,
             doc: command.doc,
             flags: describe_flags(command.flags),
-            args: command.args
+            args: command.args,
+            examples: command.examples,
+            allow_unknown_flags: command.allow_unknown_flags
           }
         ]
       end
@@ -425,33 +559,137 @@ defmodule JustBash.CLI do
     end
   end
 
+  # --- visibility ---
+
+  # Prune nodes whose `:visible?` predicate rejects this caller, so they're genuinely absent
+  # (not merely hidden). A group emptied by pruning is dropped too — it was only a container
+  # for now-invisible children. Skip the rebuild entirely when no node gates on visibility
+  # (the common case), so `run/4` stays allocation-free for ungated trees.
+  defp prune_visible(%__MODULE__{} = cli, bash) do
+    if any_visibility?(cli.commands) do
+      %{cli | commands: prune_commands(cli.commands, bash)}
+    else
+      cli
+    end
+  end
+
+  defp any_visibility?(commands) do
+    Enum.any?(commands, fn %Command{visible?: vis, commands: children} ->
+      not is_nil(vis) or any_visibility?(children)
+    end)
+  end
+
+  defp prune_commands(commands, bash) do
+    Enum.flat_map(commands, fn command ->
+      cond do
+        not visible?(command, bash) ->
+          []
+
+        Command.group?(command) ->
+          case prune_commands(command.commands, bash) do
+            [] -> []
+            kept -> [%{command | commands: kept}]
+          end
+
+        true ->
+          [command]
+      end
+    end)
+  end
+
+  defp visible?(%Command{visible?: nil}, _bash), do: true
+  defp visible?(%Command{visible?: fun}, bash) when is_function(fun, 1), do: !!fun.(bash)
+
+  # Resolve an explicit subcommand `path` to its leaf (used by `invoke/5`, which skips routing).
+  defp resolve_leaf(commands, [name]) do
+    case Enum.find(commands, &(&1.name == name)) do
+      %Command{run: run} = leaf when not is_nil(run) -> {:ok, leaf}
+      _ -> :error
+    end
+  end
+
+  defp resolve_leaf(commands, [name | rest]) do
+    case Enum.find(commands, &(&1.name == name)) do
+      %Command{run: nil} = group -> resolve_leaf(group.commands, rest)
+      _ -> :error
+    end
+  end
+
+  defp resolve_leaf(_commands, []), do: :error
+
   # --- leaf dispatch ---
 
   defp dispatch_leaf(cli, %Command{} = leaf, path, rest, bash, stdin) do
     label = command_label(cli, path)
 
-    with {:ok, flags, positional} <- ArgParser.parse(rest, leaf.flags, command: label),
-         :ok <- validate_positionals(leaf.args, positional, label) do
-      invocation = %Invocation{
-        bash: bash,
-        flags: flags,
-        args: positional,
-        stdin: stdin,
-        path: path
-      }
-
-      case leaf.run.(invocation) do
-        {result, %JustBash{} = new_bash} ->
-          {tag_subcommand(result, path), new_bash}
-
-        other ->
-          raise ArgumentError,
-                "#{label} handler must return {result, bash}, got: #{inspect(other)}"
-      end
+    with {:ok, flags, positional, extra} <- parse_leaf_args(leaf, rest, label),
+         :ok <- validate_positionals(leaf.args, positional, label),
+         invocation = build_invocation(leaf, flags, positional, extra, bash, stdin, path),
+         :ok <- run_validate(leaf, invocation) do
+      dispatch_run(label, leaf, path, invocation)
     else
       {:error, message} ->
         {tag_subcommand(usage_error(message <> Help.usage_line(cli, path, leaf)), path), bash}
     end
+  end
+
+  # Parse a leaf's flags, normalizing to a 4-tuple so the caller is uniform. A leaf that
+  # opts into `allow_unknown_flags` collects undeclared flags into `extra`; otherwise `extra`
+  # is always empty.
+  defp parse_leaf_args(%Command{allow_unknown_flags: true} = leaf, rest, label) do
+    ArgParser.parse(rest, leaf.flags, command: label, collect_unknown: true)
+  end
+
+  defp parse_leaf_args(%Command{} = leaf, rest, label) do
+    case ArgParser.parse(rest, leaf.flags, command: label) do
+      {:ok, flags, positional} -> {:ok, flags, positional, []}
+      {:error, _} = err -> err
+    end
+  end
+
+  defp build_invocation(_leaf, flags, positional, extra, bash, stdin, path) do
+    %Invocation{
+      bash: bash,
+      flags: flags,
+      args: positional,
+      extra_flags: extra,
+      stdin: stdin,
+      path: path
+    }
+  end
+
+  # Run a leaf's `:validate` callback before its handler. An error is shaped exactly like a
+  # flag error (caught by the `with`'s else clause): exit 2 with the usage line appended.
+  defp run_validate(%Command{validate: nil}, _invocation), do: :ok
+
+  defp run_validate(%Command{validate: fun, name: name}, invocation) when is_function(fun, 1) do
+    case fun.(invocation) do
+      :ok ->
+        :ok
+
+      {:error, message} when is_binary(message) ->
+        {:error, ensure_newline(message)}
+
+      other ->
+        raise ArgumentError,
+              "command #{inspect(name)} :validate must return :ok or {:error, message :: String.t()}, " <>
+                "got: #{inspect(other)}"
+    end
+  end
+
+  defp dispatch_run(label, %Command{} = leaf, path, invocation) do
+    case leaf.run.(invocation) do
+      {result, %JustBash{} = new_bash} ->
+        {tag_subcommand(result, path), new_bash}
+
+      other ->
+        raise ArgumentError,
+              "#{label} handler must return {result, bash}, got: #{inspect(other)}"
+    end
+  end
+
+  defp ensure_newline(message) do
+    if String.ends_with?(message, "\n"), do: message, else: message <> "\n"
   end
 
   defp validate_positionals(specs, positional, label) do
@@ -533,6 +771,69 @@ defmodule JustBash.CLI do
   end
 
   defp validate_leaf_only!(_name, _commands, _flags, _args), do: :ok
+
+  # Leaf-only opts are meaningless on a group (which never parses or dispatches); reject
+  # them loudly rather than silently ignoring a misplaced option.
+  defp reject_on_group!(name, commands, opt, value, default)
+       when commands != [] and value != default do
+    raise ArgumentError,
+          "command #{inspect(name)} is a group (:commands) and cannot define #{inspect(opt)}; " <>
+            "move it to a leaf command"
+  end
+
+  defp reject_on_group!(_name, _commands, _opt, _value, _default), do: :ok
+
+  # `:on_missing_subcommand` only makes sense on a group/root; a leaf has no subcommands.
+  defp reject_on_leaf!(name, run, opt, value, default)
+       when not is_nil(run) and value != default do
+    raise ArgumentError,
+          "command #{inspect(name)} is a leaf (:run) and cannot define #{inspect(opt)}"
+  end
+
+  defp reject_on_leaf!(_name, _run, _opt, _value, _default), do: :ok
+
+  defp validate_callback!(_name, _opt, nil), do: :ok
+  defp validate_callback!(_name, _opt, fun) when is_function(fun, 1), do: :ok
+
+  defp validate_callback!(name, opt, other) do
+    raise ArgumentError,
+          "command #{inspect(name)} #{inspect(opt)} must be a 1-arity function or nil, got: #{inspect(other)}"
+  end
+
+  defp validate_boolean!(_name, _opt, value) when is_boolean(value), do: :ok
+
+  defp validate_boolean!(name, opt, other) do
+    raise ArgumentError,
+          "command #{inspect(name)} #{inspect(opt)} must be a boolean, got: #{inspect(other)}"
+  end
+
+  defp validate_on_missing!(_name, mode) when mode in [:error, :help], do: :ok
+
+  defp validate_on_missing!(name, other) do
+    raise ArgumentError,
+          "#{inspect(name)} :on_missing_subcommand must be :error or :help, got: #{inspect(other)}"
+  end
+
+  # Normalize examples to `%{cmd:, doc:}` maps so `describe/1` stays JSON-clean.
+  defp normalize_examples!(name, examples) when is_list(examples) do
+    Enum.map(examples, &normalize_example!(name, &1))
+  end
+
+  defp normalize_examples!(name, other) do
+    raise ArgumentError,
+          "command #{inspect(name)} :examples must be a list, got: #{inspect(other)}"
+  end
+
+  defp normalize_example!(_name, cmd) when is_binary(cmd), do: %{cmd: cmd, doc: nil}
+
+  defp normalize_example!(_name, %{cmd: cmd} = example) when is_binary(cmd),
+    do: %{cmd: cmd, doc: Map.get(example, :doc)}
+
+  defp normalize_example!(name, other) do
+    raise ArgumentError,
+          "command #{inspect(name)}: each :examples entry must be a string or a map with a " <>
+            ":cmd string, got: #{inspect(other)}"
+  end
 
   defp validate_commands!(commands) when is_list(commands) do
     Enum.each(commands, fn

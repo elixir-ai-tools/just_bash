@@ -38,7 +38,8 @@ defmodule JustBash.CLI.Help do
       title(label(cli, path), leaf.doc),
       usage_line(cli, path, leaf),
       args_section(leaf.args),
-      options_section(leaf.flags)
+      options_section(leaf.flags),
+      examples_section(leaf.examples)
     ]
     |> compact_join()
   end
@@ -122,6 +123,16 @@ defmodule JustBash.CLI.Help do
   defp options_section(flags) do
     rows = Enum.map(flags, fn {_name, spec} = flag -> {flag_label(flag), flag_detail(spec)} end)
     "Options:\n" <> aligned_rows(rows)
+  end
+
+  defp examples_section([]), do: ""
+
+  defp examples_section(examples) do
+    "Examples:\n" <>
+      Enum.map_join(examples, "", fn
+        %{cmd: cmd, doc: nil} -> "  #{cmd}\n"
+        %{cmd: cmd, doc: doc} -> "  #{cmd}\n      #{doc}\n"
+      end)
   end
 
   # --- flag/arg rendering ---

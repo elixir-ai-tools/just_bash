@@ -38,10 +38,14 @@ defmodule JustBash.Commands.ArgParser do
   - `:default` - Default value if flag not provided
   - `:required` - When `true`, parsing fails if the flag is not provided
   - `:values` - List of allowed values; parsing fails on anything else (enum)
-  - `:transform` - Optional function to transform the value
+  - `:transform` - Optional function to transform the (coerced) value. It may return a
+    bare value, `{:ok, value}`, or `{:error, message}`; the error channel fails parsing
+    with that message, giving single-field validation (e.g. a numeric range) the same
+    failure shape as a type or enum error.
   """
 
   @type flag_type :: :boolean | :string | :integer | :float | :accumulator
+  @type transform :: (term() -> term() | {:ok, term()} | {:error, String.t()})
   @type flag_spec :: [
           short: String.t(),
           long: String.t(),
@@ -49,40 +53,57 @@ defmodule JustBash.Commands.ArgParser do
           default: any(),
           required: boolean(),
           values: [any()],
-          transform: (String.t() -> any())
+          transform: transform()
         ]
   @type flags_spec :: [{atom(), flag_spec()}]
 
   # Parser context struct to reduce function arity
   defmodule Context do
     @moduledoc false
-    defstruct [:short_map, :long_map, :command, :allow_unknown]
+    defstruct [:short_map, :long_map, :command, :allow_unknown, :collect_unknown]
   end
 
   @doc """
   Parse command-line arguments according to the flag specification.
 
   Returns `{:ok, opts_map, positional_args}` or `{:error, message}`.
+
+  ## Options
+
+    * `:command` — name included in error messages (e.g. `"acme pr review"`)
+    * `:allow_unknown` — when `true`, an unrecognized flag is treated as a positional
+      argument instead of an error
+    * `:collect_unknown` — when `true`, unrecognized flags (and, for the bare `--flag value`
+      form, a following non-flag token taken as the flag's value) are collected into a
+      separate ordered list and the call returns a **4-tuple**
+      `{:ok, opts, positional, extra}`. Positionals stay out of `extra`, so a host can
+      forward the raw `extra` tokens to a backend whose flags aren't known at definition
+      time. `--flag=value` is forwarded as a single token.
   """
   @spec parse([String.t()], flags_spec(), keyword()) ::
-          {:ok, map(), [String.t()]} | {:error, String.t()}
+          {:ok, map(), [String.t()]}
+          | {:ok, map(), [String.t()], [String.t()]}
+          | {:error, String.t()}
   def parse(args, flags, opts \\ []) do
     # Build lookup maps for efficient flag matching
     {short_map, long_map} = build_flag_maps(flags)
+    collect_unknown = Keyword.get(opts, :collect_unknown, false)
 
     ctx = %Context{
       short_map: short_map,
       long_map: long_map,
       command: Keyword.get(opts, :command, ""),
-      allow_unknown: Keyword.get(opts, :allow_unknown, false)
+      allow_unknown: Keyword.get(opts, :allow_unknown, false),
+      collect_unknown: collect_unknown
     }
 
     # Parse into a map of only the flags that were actually provided, so we can
     # distinguish "set" from "defaulted" for required-flag checking. Defaults are
     # merged in afterwards.
-    with {:ok, provided, positional} <- parse_loop(args, ctx, %{}, []),
+    with {:ok, provided, positional, extra} <- parse_loop(args, ctx, %{}, [], []),
          :ok <- check_required(flags, provided, ctx.command) do
-      {:ok, merge_defaults(flags, provided), positional}
+      merged = merge_defaults(flags, provided)
+      if collect_unknown, do: {:ok, merged, positional, extra}, else: {:ok, merged, positional}
     end
   end
 
@@ -132,17 +153,17 @@ defmodule JustBash.Commands.ArgParser do
   defp format_required_error(cmd, spec),
     do: "#{cmd}: missing required flag: #{flag_display_name(spec)}\n"
 
-  defp parse_loop([], _ctx, opts, positional) do
-    {:ok, opts, Enum.reverse(positional)}
+  defp parse_loop([], _ctx, opts, positional, extra) do
+    {:ok, opts, Enum.reverse(positional), Enum.reverse(extra)}
   end
 
   # Stop parsing flags after --
-  defp parse_loop(["--" | rest], _ctx, opts, positional) do
-    {:ok, opts, Enum.reverse(positional) ++ rest}
+  defp parse_loop(["--" | rest], _ctx, opts, positional, extra) do
+    {:ok, opts, Enum.reverse(positional) ++ rest, Enum.reverse(extra)}
   end
 
   # Long flag with = value: --flag=value
-  defp parse_loop([<<"--", rest::binary>> = arg | args], ctx, opts, positional) do
+  defp parse_loop([<<"--", rest::binary>> = arg | args], ctx, opts, positional, extra) do
     case String.split(rest, "=", parts: 2) do
       [flag_name, value] ->
         long_flag = "--" <> flag_name
@@ -151,70 +172,99 @@ defmodule JustBash.Commands.ArgParser do
           {name, spec} ->
             case apply_value(opts, name, spec, value) do
               {:ok, new_opts} ->
-                parse_loop(args, ctx, new_opts, positional)
+                parse_loop(args, ctx, new_opts, positional, extra)
 
               {:error, _} = err ->
                 err
             end
 
           nil ->
-            if ctx.allow_unknown do
-              parse_loop(args, ctx, opts, [arg | positional])
-            else
-              {:error, format_unknown_error(ctx.command, arg)}
-            end
+            # `--flag=value` is self-contained — never consume a following token as its value.
+            unknown_self_contained(arg, args, ctx, opts, positional, extra)
         end
 
       [_flag_name] ->
         # No =, regular long flag
-        parse_long_flag(arg, args, ctx, opts, positional)
+        parse_long_flag(arg, args, ctx, opts, positional, extra)
     end
   end
 
   # Short flag
-  defp parse_loop([<<"-", _::binary>> = arg | args], ctx, opts, positional) do
-    parse_short_flag(arg, args, ctx, opts, positional)
+  defp parse_loop([<<"-", _::binary>> = arg | args], ctx, opts, positional, extra) do
+    parse_short_flag(arg, args, ctx, opts, positional, extra)
   end
 
   # Positional argument
-  defp parse_loop([arg | args], ctx, opts, positional) do
-    parse_loop(args, ctx, opts, [arg | positional])
+  defp parse_loop([arg | args], ctx, opts, positional, extra) do
+    parse_loop(args, ctx, opts, [arg | positional], extra)
   end
 
-  defp parse_long_flag(flag, args, ctx, opts, positional) do
+  defp parse_long_flag(flag, args, ctx, opts, positional, extra) do
     case Map.get(ctx.long_map, flag) do
       {name, spec} ->
-        handle_flag(name, spec, args, ctx, opts, positional)
+        handle_flag(name, spec, args, ctx, opts, positional, extra)
 
       nil ->
-        if ctx.allow_unknown do
-          parse_loop(args, ctx, opts, [flag | positional])
-        else
-          {:error, format_unknown_error(ctx.command, flag)}
-        end
+        unknown_valued(flag, args, ctx, opts, positional, extra)
     end
   end
 
-  defp parse_short_flag(flag, args, ctx, opts, positional) do
+  defp parse_short_flag(flag, args, ctx, opts, positional, extra) do
     with nil <- Map.get(ctx.short_map, flag),
          nil <- Map.get(ctx.long_map, flag) do
-      handle_unknown_short_flag(flag, args, ctx, opts, positional)
+      handle_unknown_short_flag(flag, args, ctx, opts, positional, extra)
     else
-      {name, spec} -> handle_flag(name, spec, args, ctx, opts, positional)
+      {name, spec} -> handle_flag(name, spec, args, ctx, opts, positional, extra)
     end
   end
 
-  defp handle_unknown_short_flag(flag, args, ctx, opts, positional) do
+  defp handle_unknown_short_flag(flag, args, ctx, opts, positional, extra) do
     case expand_combined_flags(flag, ctx) do
       {:ok, expanded} ->
-        parse_loop(expanded ++ args, ctx, opts, positional)
+        parse_loop(expanded ++ args, ctx, opts, positional, extra)
 
       :error ->
-        if ctx.allow_unknown,
-          do: parse_loop(args, ctx, opts, [flag | positional]),
-          else: {:error, format_unknown_error(ctx.command, flag)}
+        unknown_valued(flag, args, ctx, opts, positional, extra)
     end
   end
+
+  # An unrecognized self-contained token (`--flag=value`). In collect mode it is forwarded
+  # verbatim to `extra`; in allow mode it becomes a positional; otherwise it's an error.
+  defp unknown_self_contained(arg, args, ctx, opts, positional, extra) do
+    cond do
+      ctx.collect_unknown -> parse_loop(args, ctx, opts, positional, [arg | extra])
+      ctx.allow_unknown -> parse_loop(args, ctx, opts, [arg | positional], extra)
+      true -> {:error, format_unknown_error(ctx.command, arg)}
+    end
+  end
+
+  # An unrecognized bare flag (`--flag` or `-x`). In collect mode it is forwarded to `extra`
+  # along with a following non-flag token taken as its value (the `--flag value` passthrough
+  # form); in allow mode it becomes a positional; otherwise it's an error.
+  defp unknown_valued(flag, args, ctx, opts, positional, extra) do
+    cond do
+      ctx.collect_unknown ->
+        {extra, args} = consume_passthrough_value(flag, args, extra)
+        parse_loop(args, ctx, opts, positional, extra)
+
+      ctx.allow_unknown ->
+        parse_loop(args, ctx, opts, [flag | positional], extra)
+
+      true ->
+        {:error, format_unknown_error(ctx.command, flag)}
+    end
+  end
+
+  # Forward `flag`, plus the next token as its value when that token isn't itself a flag.
+  # `extra` is built reversed, so prepend value-then-flag to keep `[flag, value]` order.
+  defp consume_passthrough_value(flag, [<<"-", _::binary>> | _] = args, extra),
+    do: {[flag | extra], args}
+
+  defp consume_passthrough_value(flag, [value | rest], extra),
+    do: {[value, flag | extra], rest}
+
+  defp consume_passthrough_value(flag, [] = args, extra),
+    do: {[flag | extra], args}
 
   # Expand combined short flags like -fsSL into [-f, -s, -S, -L].
   # Only succeeds if ALL letters map to known boolean short flags.
@@ -237,18 +287,18 @@ defmodule JustBash.Commands.ArgParser do
 
   defp expand_combined_flags(_, _ctx), do: :error
 
-  defp handle_flag(name, spec, args, ctx, opts, positional) do
+  defp handle_flag(name, spec, args, ctx, opts, positional, extra) do
     case spec[:type] do
       :boolean ->
         new_opts = Map.put(opts, name, true)
-        parse_loop(args, ctx, new_opts, positional)
+        parse_loop(args, ctx, new_opts, positional, extra)
 
       type when type in [:string, :integer, :float, :accumulator] ->
         case args do
           [value | rest] ->
             case apply_value(opts, name, spec, value) do
               {:ok, new_opts} ->
-                parse_loop(rest, ctx, new_opts, positional)
+                parse_loop(rest, ctx, new_opts, positional, extra)
 
               {:error, _} = err ->
                 err
@@ -262,7 +312,7 @@ defmodule JustBash.Commands.ArgParser do
 
   defp apply_value(opts, name, spec, value) do
     with {:ok, typed} <- coerce_value(spec[:type], value),
-         transformed = apply_transform(spec, typed),
+         {:ok, transformed} <- apply_transform(spec, typed),
          :ok <- check_enum(spec, transformed) do
       {:ok, store_value(opts, name, spec, transformed)}
     end
@@ -316,11 +366,34 @@ defmodule JustBash.Commands.ArgParser do
     end
   end
 
+  # A transform may return a bare value (legacy), `{:ok, value}`, or `{:error, message}`.
+  # The error channel lets a single-field validation (e.g. a numeric range) fail with the
+  # same shape as a type/enum error, so it flows through the caller's `with`.
   defp apply_transform(spec, value) do
     case spec[:transform] do
-      nil -> value
-      fun when is_function(fun, 1) -> fun.(value)
+      nil ->
+        {:ok, value}
+
+      fun when is_function(fun, 1) ->
+        case fun.(value) do
+          {:ok, transformed} ->
+            {:ok, transformed}
+
+          {:error, message} when is_binary(message) ->
+            {:error, ensure_newline(message)}
+
+          {:error, other} ->
+            raise ArgumentError,
+                  ":transform error message must be a String.t(), got: {:error, #{inspect(other)}}"
+
+          bare ->
+            {:ok, bare}
+        end
     end
+  end
+
+  defp ensure_newline(message) do
+    if String.ends_with?(message, "\n"), do: message, else: message <> "\n"
   end
 
   defp format_unknown_error("", flag), do: "unknown option: #{flag}\n"
