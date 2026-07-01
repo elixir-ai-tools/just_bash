@@ -1,22 +1,35 @@
 defmodule JustBash.FS.Memory do
   @moduledoc """
-  JustBash's in-memory `VFS.Mountable` backend.
+  JustBash's in-memory `VFS.Mountable` backend — the default backend
+  mounted at `/` by `JustBash.FS.new/1`.
 
-  This is the default backend mounted at `/` by `JustBash.FS.new/1`. It
-  extends plain in-memory storage (see `VFS.Memory`) with the POSIX
-  features bash scripts rely on:
+  ## Why not `VFS.Memory`?
+
+  Not a legacy module, and deliberately not a delegate. `VFS.Mountable`
+  is a ten-operation protocol shaped to virtual-FS semantics (git blobs,
+  S3 objects, DB rows); vfs 0.1 intentionally cut `lstat`, `symlink`,
+  `readlink`, `link`, `chmod`, and `append_file` from it, and its stock
+  `VFS.Memory` backend stores bare `path => binary` pairs with no entry
+  metadata. Bash needs exactly what was cut: `ln`/`ln -s`, `readlink`,
+  `chmod`, `test -L`, `ls -l` modes, and mtime-honoring writes. Those
+  features require a richer entry model (file/directory/symlink entries
+  carrying mode + mtime, with link resolution), which cannot be layered
+  over `VFS.Memory`'s flat binary map — so this backend owns its own
+  storage and implements the protocol against it.
+
+  This module is the "real consumer" case the vfs SPEC anticipated: the
+  ten universal operations are implemented in the `VFS.Mountable`
+  `defimpl` below (reach them through the helpers on `VFS`), and the
+  POSIX extensions are dispatched through the `JustBash.FS.POSIX`
+  secondary protocol, which this backend implements natively and other
+  backends refuse gracefully.
+
+  Features beyond `VFS.Memory`:
 
   - Symbolic links (with loop detection on resolution)
   - Hard links
   - File permissions (mode)
   - Modification times
-
-  The ten universal filesystem operations are reached through the
-  `VFS.Mountable` protocol (use the helpers on `VFS`). The POSIX
-  extensions — `lstat/2`, `symlink/3`, `readlink/2`, `link/3`, `chmod/3`,
-  `append_file/3` — are deliberately *not* part of that protocol (see the
-  vfs design notes); they are dispatched through `JustBash.FS.POSIX`,
-  which this backend implements natively.
 
   All operations are pure: every mutation returns an updated struct.
   """

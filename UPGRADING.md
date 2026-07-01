@@ -151,7 +151,7 @@ Most legacy shapes **compile cleanly and misbehave at runtime**: a stale
 an `if` is a tuple — always truthy. Two lines of defense ship with 0.4:
 
 **Static:** run the migration auditor over your own code (it scans for
-all seven legacy shapes — see `JustBash.MigrationAudit` for the rule
+all seven legacy shapes — `mix help just_bash.audit` has the rule
 table):
 
 ```sh

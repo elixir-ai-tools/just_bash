@@ -1,26 +1,10 @@
-defmodule JustBash.MigrationAudit do
-  @moduledoc """
-  Static scanner for host-side code that still uses 0.3-era filesystem
-  call shapes.
-
-  The 0.3 → 0.4 filesystem migration (see `UPGRADING.md`) changed several
-  return shapes in ways the compiler cannot catch — the legacy patterns
-  still compile and then misbehave at runtime:
-
-  | Rule | Legacy shape | Failure mode in 0.4 |
-  |---|---|---|
-  | `legacy_module` | `JustBash.Fs` / `InMemoryFs` reference | compile error (undefined module) |
-  | `stale_ok_tuple` | `{:ok, x}` matched on a read | silently falls through to the error clause |
-  | `atom_error` | `{:error, :enoent}` clause | never matches; falls to catch-all or crashes |
-  | `exists_truthy` | `FS.exists?/2` in a condition | tuple is always truthy — branch always taken |
-  | `legacy_opt` | `mkdir recursive:` / `rm force:` | raises `ArgumentError` at runtime |
-  | `stat_boolean_field` | `stat.is_file` etc. | `KeyError` at runtime |
-  | `fs_data_access` | `bash.fs.data` | `KeyError` — `bash.fs` is a `%VFS{}` |
-
-  Calls are recognized on the `JustBash.FS` module, a discovered
-  `alias JustBash.FS[, as: ...]`, or the bare `FS` name (heuristic).
-  Run it over a codebase with `mix just_bash.audit [paths]`.
-  """
+defmodule Mix.Tasks.JustBash.Audit.Scanner do
+  # Static scanner for host-side code that still uses 0.3-era filesystem
+  # call shapes. Implementation detail of `mix just_bash.audit` — not part
+  # of the public API; it exists for the 0.3 → 0.4 migration window and
+  # goes away with it. The user-facing rule table lives in the task's
+  # @moduledoc (`mix help just_bash.audit`).
+  @moduledoc false
 
   @type finding :: %{file: String.t(), line: non_neg_integer(), rule: atom(), message: String.t()}
 
@@ -29,13 +13,10 @@ defmodule JustBash.MigrationAudit do
 
   @stat_boolean_fields [:is_file, :is_directory, :is_symbolic_link]
 
-  @doc """
-  Scan Elixir source text. `file` is used only for reporting — this module
-  never touches the real filesystem (the sandbox rule); `mix just_bash.audit`
-  does the file reading.
-
-  Unparseable source produces a single `:parse_error` finding.
-  """
+  # Scan Elixir source text. `file` is used only for reporting — the scanner
+  # never touches the real filesystem (the sandbox rule); the task's
+  # scan_paths/1 does the file reading. Unparseable source produces a single
+  # :parse_error finding.
   @spec scan_source(String.t(), String.t()) :: [finding()]
   def scan_source(source, file) do
     case Code.string_to_quoted(source, columns: false) do

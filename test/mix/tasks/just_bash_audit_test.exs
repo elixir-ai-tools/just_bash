@@ -1,11 +1,11 @@
-defmodule JustBash.MigrationAuditTest do
+defmodule Mix.Tasks.JustBash.AuditTest do
   use ExUnit.Case, async: true
 
-  alias JustBash.MigrationAudit
   alias Mix.Tasks.JustBash.Audit
+  alias Mix.Tasks.JustBash.Audit.Scanner
 
   defp rules(source) do
-    source |> MigrationAudit.scan_source("fixture.ex") |> Enum.map(& &1.rule)
+    source |> Scanner.scan_source("fixture.ex") |> Enum.map(& &1.rule)
   end
 
   describe "legacy_module" do
@@ -46,7 +46,7 @@ defmodule JustBash.MigrationAuditTest do
       end
       """
 
-      findings = MigrationAudit.scan_source(source, "fixture.ex")
+      findings = Scanner.scan_source(source, "fixture.ex")
       assert Enum.count(findings, &(&1.rule == :stale_ok_tuple)) == 3
     end
 
@@ -110,7 +110,7 @@ defmodule JustBash.MigrationAuditTest do
       end
       """
 
-      findings = MigrationAudit.scan_source(source, "fixture.ex")
+      findings = Scanner.scan_source(source, "fixture.ex")
       assert Enum.count(findings, &(&1.rule == :exists_truthy)) == 4
     end
 
@@ -143,7 +143,7 @@ defmodule JustBash.MigrationAuditTest do
       end
       """
 
-      findings = MigrationAudit.scan_source(source, "fixture.ex")
+      findings = Scanner.scan_source(source, "fixture.ex")
       assert Enum.count(findings, &(&1.rule == :legacy_opt)) == 2
     end
   end
@@ -193,7 +193,7 @@ defmodule JustBash.MigrationAuditTest do
       end
       """
 
-      findings = MigrationAudit.scan_source(source, "fixture.ex")
+      findings = Scanner.scan_source(source, "fixture.ex")
       assert Enum.count(findings, &(&1.rule == :stale_ok_tuple)) == 2
     end
 
