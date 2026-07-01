@@ -159,6 +159,32 @@ defmodule JustBash.FSTest do
       {:ok, stat, _fs} = FS.stat(fs, "/script.sh")
       assert stat.mode == 0o755
     end
+
+    test "appends through a symlink to the target, keeping the link" do
+      fs = FS.new(%{"/target.txt" => "hello"})
+      {:ok, fs} = FS.symlink(fs, "/target.txt", "/link")
+      {:ok, fs} = FS.append_file(fs, "/link", " world")
+
+      assert {:ok, "hello world", fs} = FS.read_file(fs, "/target.txt")
+      assert {:ok, %VFS.Stat{type: :symlink}, _fs} = FS.lstat(fs, "/link")
+    end
+
+    test "appending to a dangling symlink creates the target" do
+      fs = FS.new()
+      {:ok, fs} = FS.symlink(fs, "/missing.txt", "/link")
+      {:ok, fs} = FS.append_file(fs, "/link", "created")
+
+      assert {:ok, "created", fs} = FS.read_file(fs, "/missing.txt")
+      assert {:ok, %VFS.Stat{type: :symlink}, _fs} = FS.lstat(fs, "/link")
+    end
+
+    test "appending through a symlink loop fails with :eloop" do
+      fs = FS.new()
+      {:ok, fs} = FS.symlink(fs, "/l2", "/l1")
+      {:ok, fs} = FS.symlink(fs, "/l1", "/l2")
+
+      assert {:error, %VFS.Error{kind: :eloop}} = FS.append_file(fs, "/l1", "x")
+    end
   end
 
   describe "mkdir/3" do
@@ -478,6 +504,24 @@ defmodule JustBash.FSTest do
 
       paths = fs |> FS.walk("/") |> Enum.map(&elem(&1, 0)) |> Enum.sort()
       assert paths == ["/a.txt", "/dir/b.txt"]
+    end
+  end
+
+  describe "legacy option guards" do
+    test "mkdir rejects the 0.3 :recursive option loudly" do
+      fs = FS.new()
+
+      assert_raise ArgumentError, ~r/parents: true/, fn ->
+        FS.mkdir(fs, "/a/b", recursive: true)
+      end
+    end
+
+    test "rm rejects the 0.3 :force option loudly" do
+      fs = FS.new()
+
+      assert_raise ArgumentError, ~r/UPGRADING/, fn ->
+        FS.rm(fs, "/nope", force: true)
+      end
     end
   end
 

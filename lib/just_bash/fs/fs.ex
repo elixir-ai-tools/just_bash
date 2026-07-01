@@ -112,11 +112,31 @@ defmodule JustBash.FS do
 
   @doc "See `VFS.mkdir/3`. Pass `parents: true` for `mkdir -p` behavior."
   @spec mkdir(t(), String.t(), mkdir_opts()) :: {:ok, t()} | {:error, Error.t()}
-  defdelegate mkdir(fs, path, opts \\ []), to: VFS
+  def mkdir(fs, path, opts \\ []) do
+    # The 0.3 option was `recursive:`; silently ignoring it would make
+    # `mkdir -p`-style callers fail far from the cause. Refuse loudly.
+    if Keyword.has_key?(opts, :recursive) do
+      raise ArgumentError,
+            "JustBash.FS.mkdir/3 has no :recursive option — vfs names it parents: true. " <>
+              "See UPGRADING.md."
+    end
+
+    VFS.mkdir(fs, path, opts)
+  end
 
   @doc "See `VFS.rm/3`. Pass `recursive: true` to remove directory trees."
   @spec rm(t(), String.t(), rm_opts()) :: {:ok, t()} | {:error, Error.t()}
-  defdelegate rm(fs, path, opts \\ []), to: VFS
+  def rm(fs, path, opts \\ []) do
+    # The 0.3 option was `force:`; silently ignoring it would surface as
+    # spurious :enoent errors. Refuse loudly.
+    if Keyword.has_key?(opts, :force) do
+      raise ArgumentError,
+            "JustBash.FS.rm/3 has no :force option — match " <>
+              "{:error, %VFS.Error{kind: :enoent}} at the call site instead. See UPGRADING.md."
+    end
+
+    VFS.rm(fs, path, opts)
+  end
 
   @doc "See `VFS.walk/3`."
   @spec walk(t(), String.t(), keyword()) :: Enumerable.t()

@@ -2,9 +2,49 @@
 
 ## 0.3 → 0.4: the vfs filesystem
 
-Bash scripts are unaffected: every command, redirection, glob, and
-conditional behaves as before. `JustBash.new/1`, `exec/2`, `exec_file/2`,
-the `~b` sigil, `:context`, and `JustBash.CLI` are unchanged.
+`JustBash.new/1`, `exec/2`, `exec_file/2`, the `~b` sigil, `:context`,
+and `JustBash.CLI` are unchanged. Bash scripts behave as before except
+for the exact deltas below.
+
+### Exact behavioral changes at the bash level
+
+Every difference a script can observe, verified against the 0.3 sources:
+
+1. **`>>`, `&>>`, and `tee -a` now append through symlinks** (POSIX
+   `O_APPEND` semantics): the target file receives the bytes and the link
+   survives; appending through a dangling symlink creates the target. In
+   0.3, `>> link` replaced the link with a regular file holding target
+   content plus the appended bytes, and `tee -a link` replaced it with
+   *only* the appended bytes (dropping the target's content). Appending
+   through a symlink loop now fails with "Too many levels of symbolic
+   links". (`> link` still replaces the link with a regular file — a
+   pre-existing 0.3 divergence from bash, unchanged in this release.)
+2. **`>>` preserves the target's mode.** 0.3 reset it to `0o644` on every
+   append.
+3. **`cat` on a symlink loop** prints
+   `cat: PATH: Too many levels of symbolic links` and exits 1. 0.3 raised
+   a `CaseClauseError` out of `JustBash.exec/2`.
+4. **`mktemp`, `curl` (`-o`/`-D`), and `wget`** report filesystem write
+   failures with conventional text ("File exists") where 0.3 interpolated
+   the raw error atom ("eexist").
+5. **`[[ a -nt b ]]` / `-ot`** compare mtimes chronologically
+   (`DateTime.after?/2`). 0.3 used structural term comparison, which
+   disagrees with wall-clock order across field boundaries.
+6. **`ln` on a mount that doesn't support links** fails with
+   `ln: failed to create ...: Operation not supported` and exit 1 (new
+   situation — mounts didn't exist in 0.3; on the default backend, `ln`
+   output is byte-identical to 0.3, including the directory-hard-link
+   message).
+7. **With additional mounts only** (a 0.4 capability): the parents of a
+   mountpoint appear as synthetic directories, and foreign backends keep
+   their own semantics — e.g. a plain `VFS.Memory` mount treats
+   directories implicitly and refuses `rm` of an empty directory with
+   "Is a directory", where the default backend removes it.
+
+Everything else — every command's output text, exit codes, redirection,
+globbing, conditionals, heredocs — is covered by the unchanged 3,700-test
+suite plus the bash-comparison corpus, all passing on both sides of the
+migration.
 
 What changed is the filesystem underneath `bash.fs`. It is now a `%VFS{}`
 mount table from the [vfs](https://hexdocs.pm/vfs) library, with
@@ -15,10 +55,23 @@ into `bash.fs.data`, it needs the mapping below.
 
 ### Module renames
 
-| Old | New |
+Yes, the only visible difference in the first row is the case of the `s`.
+0.3 shipped `Fs`; the project convention (shared with the `vfs` package —
+`VFS`, never `Vfs`) fully uppercases acronyms, and the two spellings
+cannot coexist as deprecated aliases: `Elixir.JustBash.Fs.beam` and
+`Elixir.JustBash.FS.beam` are the same file on case-insensitive
+filesystems (macOS, Windows). So 0.4 completes the rename in one step,
+and `mix just_bash.audit` flags any survivor — don't proofread for the
+case of an `s` by eye.
+
+| Old (0.3) | New (0.4) |
 |---|---|
 | `JustBash.Fs` | `JustBash.FS` |
 | `JustBash.Fs.InMemoryFs` | `JustBash.FS.Memory` (but call through `JustBash.FS` — `bash.fs` is a `%VFS{}`, not a bare backend) |
+
+If you were on 0.3 locally, run `mix clean` once after updating — a stale
+`_build` can hold both spellings' beams, which case-insensitive
+filesystems silently conflate.
 
 ### Return shapes
 
@@ -89,6 +142,29 @@ def execute(bash, [path], _stdin) do
   end
 end
 ```
+
+### Auditing your code for silent breakage
+
+Most legacy shapes **compile cleanly and misbehave at runtime**: a stale
+`{:ok, content}` match silently falls through to your error clause, an
+`{:error, :enoent}` clause silently never matches, and `FS.exists?/2` in
+an `if` is a tuple — always truthy. Two lines of defense ship with 0.4:
+
+**Static:** run the migration auditor over your own code (it scans for
+all seven legacy shapes — see `JustBash.MigrationAudit` for the rule
+table):
+
+```sh
+mix just_bash.audit lib test
+# path/file.ex:42 [stale_ok_tuple] matches {:ok, _} on FS.read_file — success is now {:ok, payload, fs}; ...
+```
+
+It exits non-zero on findings, so it can gate CI while you migrate.
+
+**Runtime:** the two shapes that would otherwise be silently *ignored* —
+`FS.mkdir(fs, p, recursive: true)` and `FS.rm(fs, p, force: true)` —
+raise `ArgumentError` with a pointer here instead of doing the wrong
+thing quietly.
 
 ### What you get for the churn
 

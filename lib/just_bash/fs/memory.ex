@@ -220,22 +220,31 @@ defmodule JustBash.FS.Memory do
   @doc """
   Append content to a file, creating it if it doesn't exist.
 
-  Preserves the file's existing mode, unlike a read+write composition.
+  Follows symlinks to the final target (POSIX `O_APPEND` semantics): the
+  link survives and the target receives the bytes; appending to a
+  dangling symlink creates the target. Preserves the file's existing
+  mode, unlike a read+write composition.
   """
   @spec append_file(t(), String.t(), binary()) :: {:ok, t()} | {:error, Error.t()}
-  def append_file(%__MODULE__{data: data} = fs, path, content) do
+  def append_file(%__MODULE__{} = fs, path, content) do
     normalized = normalize(path)
 
-    case Map.get(data, normalized) do
-      %{type: :directory} ->
-        {:error, Error.new(:eisdir, path: normalized)}
+    case resolve_final_path(fs, normalized, MapSet.new()) do
+      {:error, :eloop} ->
+        {:error, Error.new(:eloop, path: normalized)}
 
-      %{type: :file} = entry ->
-        updated = %{entry | content: entry.content <> content, mtime: DateTime.utc_now()}
-        {:ok, %{fs | data: Map.put(fs.data, normalized, updated)}}
+      {:ok, target_path} ->
+        case Map.get(fs.data, target_path) do
+          %{type: :directory} ->
+            {:error, Error.new(:eisdir, path: normalized)}
 
-      _ ->
-        write_file(fs, path, content)
+          %{type: :file} = entry ->
+            updated = %{entry | content: entry.content <> content, mtime: DateTime.utc_now()}
+            {:ok, %{fs | data: Map.put(fs.data, target_path, updated)}}
+
+          nil ->
+            write_file(fs, target_path, content)
+        end
     end
   end
 
@@ -310,6 +319,25 @@ defmodule JustBash.FS.Memory do
 
       entry ->
         {:ok, entry}
+    end
+  end
+
+  # Walk a symlink chain to the final (non-symlink) path. A missing entry
+  # terminates the walk with the path it would occupy — that is where an
+  # append through a dangling link creates the file.
+  @dialyzer {:nowarn_function, resolve_final_path: 3}
+  defp resolve_final_path(%__MODULE__{data: data} = fs, path, seen) do
+    case Map.get(data, path) do
+      %{type: :symlink, target: target} ->
+        if MapSet.member?(seen, path) do
+          {:error, :eloop}
+        else
+          resolved = resolve_symlink_target(path, target)
+          resolve_final_path(fs, resolved, MapSet.put(seen, path))
+        end
+
+      _ ->
+        {:ok, path}
     end
   end
 
