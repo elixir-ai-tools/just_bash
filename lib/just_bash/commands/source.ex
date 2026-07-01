@@ -8,7 +8,7 @@ defmodule JustBash.Commands.Source do
 
   @behaviour JustBash.Commands.Command
 
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
   alias JustBash.Interpreter.Executor
   alias JustBash.Parser
 
@@ -22,20 +22,20 @@ defmodule JustBash.Commands.Source do
         {%{stdout: "", stderr: "bash: source: filename argument required\n", exit_code: 2}, bash}
 
       [filename | _extra_args] ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, filename)
+        resolved = FS.resolve_path(bash.cwd, filename)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
-          {:ok, content} ->
-            execute_script_content(bash, content)
+        case FS.read_file(bash.fs, resolved) do
+          {:ok, content, fs} ->
+            execute_script_content(%{bash | fs: fs}, content)
 
-          {:error, :enoent} ->
+          {:error, %VFS.Error{kind: :enoent}} ->
             {%{
                stdout: "",
                stderr: "bash: source: #{filename}: No such file or directory\n",
                exit_code: 1
              }, bash}
 
-          {:error, :eisdir} ->
+          {:error, %VFS.Error{kind: :eisdir}} ->
             {%{stdout: "", stderr: "bash: source: #{filename}: Is a directory\n", exit_code: 1},
              bash}
 

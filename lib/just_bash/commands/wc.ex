@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Wc do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @short_flags %{?l => :l, ?w => :w, ?c => :c}
 
@@ -28,12 +28,12 @@ defmodule JustBash.Commands.Wc do
   end
 
   defp wc_single_file(bash, file, flags) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} ->
+    case FS.read_file(bash.fs, resolved) do
+      {:ok, content, fs} ->
         output = format_output(content, file, flags)
-        {Command.ok(output), bash}
+        {Command.ok(output), %{bash | fs: fs}}
 
       {:error, _} ->
         {Command.error("wc: #{file}: No such file or directory\n"), bash}
@@ -41,14 +41,16 @@ defmodule JustBash.Commands.Wc do
   end
 
   defp wc_multiple_files(bash, files, flags) do
-    {outputs, total_counts, err_acc, exit_code} =
-      Enum.reduce(files, {[], %{lines: 0, words: 0, bytes: 0}, [], 0}, fn file,
-                                                                          {out_acc, totals,
-                                                                           err_acc, code} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    {outputs, total_counts, err_acc, exit_code, fs} =
+      Enum.reduce(files, {[], %{lines: 0, words: 0, bytes: 0}, [], 0, bash.fs}, fn file,
+                                                                                   {out_acc,
+                                                                                    totals,
+                                                                                    err_acc, code,
+                                                                                    fs} ->
+        resolved = FS.resolve_path(bash.cwd, file)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
-          {:ok, content} ->
+        case FS.read_file(fs, resolved) do
+          {:ok, content, fs} ->
             counts = count_content(content)
 
             new_totals = %{
@@ -58,11 +60,11 @@ defmodule JustBash.Commands.Wc do
             }
 
             line = format_output(content, file, flags)
-            {[line | out_acc], new_totals, err_acc, code}
+            {[line | out_acc], new_totals, err_acc, code, fs}
 
           {:error, _} ->
             err = "wc: #{file}: No such file or directory\n"
-            {out_acc, totals, [err | err_acc], 1}
+            {out_acc, totals, [err | err_acc], 1, fs}
         end
       end)
 
@@ -71,7 +73,7 @@ defmodule JustBash.Commands.Wc do
     stderr = err_acc |> Enum.reverse() |> Enum.join()
 
     result = %{stdout: stdout, stderr: stderr, exit_code: exit_code}
-    {result, bash}
+    {result, %{bash | fs: fs}}
   end
 
   defp format_output(content, file, flags) do

@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Paste do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["paste"]
@@ -28,9 +28,9 @@ defmodule JustBash.Commands.Paste do
       {:error, msg} ->
         {Command.error(msg), bash}
 
-      {:ok, file_contents} ->
+      {:ok, file_contents, fs} ->
         output = merge_file_contents(file_contents, opts)
-        {Command.ok(output), bash}
+        {Command.ok(output), %{bash | fs: fs}}
     end
   end
 
@@ -93,10 +93,10 @@ defmodule JustBash.Commands.Paste do
     stdin_count = Enum.count(files, &(&1 == "-"))
 
     {result, _stdin_idx} =
-      Enum.reduce_while(files, {{:ok, []}, 0}, fn file, {{:ok, acc}, stdin_idx} ->
-        case read_file_lines(bash, file, stdin_lines, stdin_count, stdin_idx) do
-          {:ok, lines, new_stdin_idx} ->
-            {:cont, {{:ok, acc ++ [lines]}, new_stdin_idx}}
+      Enum.reduce_while(files, {{:ok, [], bash.fs}, 0}, fn file, {{:ok, acc, fs}, stdin_idx} ->
+        case read_file_lines(bash, fs, file, stdin_lines, stdin_count, stdin_idx) do
+          {:ok, lines, fs, new_stdin_idx} ->
+            {:cont, {{:ok, acc ++ [lines], fs}, new_stdin_idx}}
 
           {:error, msg} ->
             {:halt, {{:error, msg}, stdin_idx}}
@@ -106,21 +106,21 @@ defmodule JustBash.Commands.Paste do
     result
   end
 
-  defp read_file_lines(_bash, "-", stdin_lines, stdin_count, stdin_idx) do
+  defp read_file_lines(_bash, fs, "-", stdin_lines, stdin_count, stdin_idx) do
     lines =
       stdin_lines
       |> Enum.drop(stdin_idx)
       |> Enum.take_every(stdin_count)
 
-    {:ok, lines, stdin_idx + 1}
+    {:ok, lines, fs, stdin_idx + 1}
   end
 
-  defp read_file_lines(bash, file, _stdin_lines, _stdin_count, stdin_idx) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+  defp read_file_lines(bash, fs, file, _stdin_lines, _stdin_count, stdin_idx) do
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} ->
-        {:ok, split_lines(content), stdin_idx}
+    case FS.read_file(fs, resolved) do
+      {:ok, content, fs} ->
+        {:ok, split_lines(content), fs, stdin_idx}
 
       {:error, _} ->
         {:error, "paste: #{file}: No such file or directory\n"}

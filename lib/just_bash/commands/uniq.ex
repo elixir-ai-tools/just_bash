@@ -4,7 +4,7 @@ defmodule JustBash.Commands.Uniq do
 
   alias JustBash.Commands.Command
   alias JustBash.FlagParser
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @flag_spec %{
     boolean: [:c, :d, :u],
@@ -19,17 +19,17 @@ defmodule JustBash.Commands.Uniq do
   def execute(bash, args, stdin) do
     {flags, files} = FlagParser.parse(args, @flag_spec)
 
-    content =
+    {content, fs} =
       case files do
         [] ->
-          stdin
+          {stdin, bash.fs}
 
         [file | _] ->
-          resolved = InMemoryFs.resolve_path(bash.cwd, file)
+          resolved = FS.resolve_path(bash.cwd, file)
 
-          case InMemoryFs.read_file(bash.fs, resolved) do
-            {:ok, c} -> c
-            {:error, _} -> ""
+          case FS.read_file(bash.fs, resolved) do
+            {:ok, c, fs} -> {c, fs}
+            {:error, _} -> {"", bash.fs}
           end
       end
 
@@ -70,6 +70,6 @@ defmodule JustBash.Commands.Uniq do
       end
 
     output = if output != "", do: output <> "\n", else: ""
-    {Command.ok(output), bash}
+    {Command.ok(output), %{bash | fs: fs}}
   end
 end

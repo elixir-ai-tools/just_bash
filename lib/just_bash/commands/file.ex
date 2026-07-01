@@ -3,7 +3,7 @@ defmodule JustBash.Commands.File do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["file"]
@@ -18,37 +18,37 @@ defmodule JustBash.Commands.File do
         if opts.files == [] do
           {Command.error("Usage: file [-bLi] FILE...\n"), bash}
         else
-          {output, exit_code} = process_files(bash, opts, stdin)
-          {%{stdout: output, stderr: "", exit_code: exit_code}, bash}
+          {output, exit_code, fs} = process_files(bash, opts, stdin)
+          {%{stdout: output, stderr: "", exit_code: exit_code}, %{bash | fs: fs}}
         end
     end
   end
 
   defp process_files(bash, opts, stdin) do
-    Enum.reduce(opts.files, {"", 0}, fn file, {acc_out, acc_code} ->
+    Enum.reduce(opts.files, {"", 0, bash.fs}, fn file, {acc_out, acc_code, fs} ->
       case file do
         "-" ->
           type_info = detect_stdin_type(stdin)
           line = format_success_line(opts, "/dev/stdin", type_info)
-          {acc_out <> line, acc_code}
+          {acc_out <> line, acc_code, fs}
 
         _ ->
-          process_fs_file(bash, opts, file, acc_out, acc_code)
+          process_fs_file(bash.cwd, opts, file, acc_out, acc_code, fs)
       end
     end)
   end
 
-  defp process_fs_file(bash, opts, file, acc_out, acc_code) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+  defp process_fs_file(cwd, opts, file, acc_out, acc_code, fs) do
+    resolved = FS.resolve_path(cwd, file)
 
-    case detect_type(bash.fs, resolved, file) do
-      {:ok, type_info} ->
+    case detect_type(fs, resolved, file) do
+      {:ok, type_info, fs} ->
         line = format_success_line(opts, file, type_info)
-        {acc_out <> line, acc_code}
+        {acc_out <> line, acc_code, fs}
 
       {:error, _} ->
         line = format_error_line(opts, file)
-        {acc_out <> line, 1}
+        {acc_out <> line, 1, fs}
     end
   end
 
@@ -123,14 +123,14 @@ defmodule JustBash.Commands.File do
   end
 
   defp detect_type(fs, path, filename) do
-    case InMemoryFs.stat(fs, path) do
-      {:ok, %{is_directory: true}} ->
-        {:ok, %{description: "directory", mime: "inode/directory"}}
+    case FS.stat(fs, path) do
+      {:ok, %VFS.Stat{type: :directory}, fs} ->
+        {:ok, %{description: "directory", mime: "inode/directory"}, fs}
 
-      {:ok, %{is_file: true}} ->
-        case InMemoryFs.read_file(fs, path) do
-          {:ok, content} ->
-            {:ok, detect_content_type(content, filename)}
+      {:ok, %VFS.Stat{type: :regular}, fs} ->
+        case FS.read_file(fs, path) do
+          {:ok, content, fs} ->
+            {:ok, detect_content_type(content, filename), fs}
 
           {:error, _} ->
             {:error, :read_error}

@@ -4,7 +4,7 @@ defmodule JustBash.Commands.Ls do
 
   alias JustBash.Commands.Command
   alias JustBash.FlagParser
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @flag_spec %{
     boolean: [:a, :l, :h, :r, :R, :S, :t, :one],
@@ -21,32 +21,32 @@ defmodule JustBash.Commands.Ls do
     {flags, paths} = FlagParser.parse(args, @flag_spec)
     paths = if paths == [], do: ["."], else: paths
 
-    {stdout, stderr, exit_code} =
-      Enum.reduce(paths, {"", "", 0}, fn path, acc ->
-        list_path(bash, path, flags, acc)
+    {stdout, stderr, exit_code, fs} =
+      Enum.reduce(paths, {"", "", 0, bash.fs}, fn path, acc ->
+        list_path(bash.cwd, path, flags, acc)
       end)
 
-    {Command.result(stdout, stderr, exit_code), bash}
+    {Command.result(stdout, stderr, exit_code), %{bash | fs: fs}}
   end
 
-  defp list_path(bash, path, flags, {out_acc, err_acc, code_acc}) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+  defp list_path(cwd, path, flags, {out_acc, err_acc, code_acc, fs}) do
+    resolved = FS.resolve_path(cwd, path)
 
-    case InMemoryFs.readdir(bash.fs, resolved) do
-      {:ok, entries} ->
-        formatted = format_entries(bash.fs, resolved, entries, flags)
-        {out_acc <> formatted, err_acc, code_acc}
+    case FS.readdir(fs, resolved) do
+      {:ok, entries, fs} ->
+        formatted = format_entries(fs, resolved, entries, flags)
+        {out_acc <> formatted, err_acc, code_acc, fs}
 
-      {:error, :enoent} ->
-        {out_acc, err_acc <> "ls: cannot access '#{path}': No such file or directory\n", 1}
+      {:error, %VFS.Error{kind: :enoent}} ->
+        {out_acc, err_acc <> "ls: cannot access '#{path}': No such file or directory\n", 1, fs}
 
-      {:error, :enotdir} ->
-        handle_not_dir(bash.fs, resolved, path, {out_acc, err_acc, code_acc})
+      {:error, %VFS.Error{kind: :enotdir}} ->
+        handle_not_dir(fs, resolved, path, {out_acc, err_acc, code_acc})
     end
   end
 
   defp format_entries(fs, resolved, entries, flags) do
-    filtered = filter_entries(entries, flags.a)
+    filtered = filter_entries(Enum.to_list(entries), flags.a)
     formatted = format_filtered(fs, resolved, filtered, flags)
     if formatted != "", do: formatted <> "\n", else: ""
   end
@@ -61,19 +61,19 @@ defmodule JustBash.Commands.Ls do
   defp format_filtered(_fs, _resolved, filtered, _flags), do: Enum.join(filtered, "\n")
 
   defp handle_not_dir(fs, resolved, path, {out_acc, err_acc, code_acc}) do
-    case InMemoryFs.stat(fs, resolved) do
-      {:ok, _} -> {out_acc <> path <> "\n", err_acc, code_acc}
-      _ -> {out_acc, err_acc <> "ls: cannot access '#{path}': Not a directory\n", 1}
+    case FS.stat(fs, resolved) do
+      {:ok, _stat, fs} -> {out_acc <> path <> "\n", err_acc, code_acc, fs}
+      _ -> {out_acc, err_acc <> "ls: cannot access '#{path}': Not a directory\n", 1, fs}
     end
   end
 
   defp format_entry(fs, dir, name, human_readable) do
-    path = InMemoryFs.resolve_path(dir, name)
+    path = FS.resolve_path(dir, name)
 
-    case InMemoryFs.stat(fs, path) do
-      {:ok, stat} ->
-        type = if stat.is_directory, do: "d", else: "-"
-        mode = format_mode(stat.mode)
+    case FS.stat(fs, path) do
+      {:ok, stat, _fs} ->
+        type = if stat.type == :directory, do: "d", else: "-"
+        mode = format_mode(stat.mode || if(stat.type == :directory, do: 0o755, else: 0o644))
 
         size =
           if human_readable, do: format_human_size(stat.size), else: Integer.to_string(stat.size)

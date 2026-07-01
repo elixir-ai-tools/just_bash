@@ -201,8 +201,8 @@ defmodule JustBash.Eval.Tasks.Reporting do
          ]},
         {:custom, "has_all_products",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/report.md") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/report.md") do
+             {:ok, content, _fs} ->
                products = ["Widget A", "Gadget B", "Tool C", "Device D", "Part E"]
                missing = Enum.reject(products, &String.contains?(content, &1))
 
@@ -309,8 +309,8 @@ defmodule JustBash.Eval.Tasks.Reporting do
          ]},
         {:custom, "correct_order",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/chart.txt") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/chart.txt") do
+             {:ok, content, _fs} ->
                lines =
                  content |> String.trim() |> String.split("\n") |> Enum.map(&String.trim/1)
 
@@ -368,8 +368,8 @@ defmodule JustBash.Eval.Tasks.Reporting do
          ]},
         {:custom, "largest_file_check",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/usage.txt") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/usage.txt") do
+             {:ok, content, _fs} ->
                # test_main.py is the largest file
                if String.contains?(content, "test_main.py"),
                  do: :ok,

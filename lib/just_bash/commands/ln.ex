@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Ln do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["ln"]
@@ -17,7 +17,7 @@ defmodule JustBash.Commands.Ln do
     else
       [target | rest] = opts.files
       link_name = List.last(rest)
-      link_path = InMemoryFs.resolve_path(bash.cwd, link_name)
+      link_path = FS.resolve_path(bash.cwd, link_name)
 
       case create_link(bash, target, link_path, link_name, opts) do
         {:ok, new_bash, output} ->
@@ -111,7 +111,7 @@ defmodule JustBash.Commands.Ln do
   end
 
   defp maybe_force_remove(fs, link_path, true) do
-    case InMemoryFs.rm(fs, link_path) do
+    case FS.rm(fs, link_path) do
       {:ok, new_fs} -> new_fs
       {:error, _} -> fs
     end
@@ -120,17 +120,17 @@ defmodule JustBash.Commands.Ln do
   defp maybe_force_remove(fs, _link_path, false), do: fs
 
   defp perform_link(_bash, fs, target, link_path, true) do
-    InMemoryFs.symlink(fs, target, link_path)
+    FS.symlink(fs, target, link_path)
   end
 
   defp perform_link(bash, fs, target, link_path, false) do
-    target_path = InMemoryFs.resolve_path(bash.cwd, target)
+    target_path = FS.resolve_path(bash.cwd, target)
 
-    case InMemoryFs.stat(fs, target_path) do
-      {:ok, %{is_file: true}} ->
-        InMemoryFs.link(fs, target_path, link_path)
+    case FS.stat(fs, target_path) do
+      {:ok, %VFS.Stat{type: :regular}, fs} ->
+        FS.link(fs, target_path, link_path)
 
-      {:ok, %{is_directory: true}} ->
+      {:ok, %VFS.Stat{type: :directory}, _fs} ->
         {:error, :eperm}
 
       {:error, _} ->
@@ -143,16 +143,30 @@ defmodule JustBash.Commands.Ln do
     {:ok, %{bash | fs: new_fs}, output}
   end
 
-  defp handle_link_result(_bash, {:error, :eexist}, _target, link_name, opts) do
+  defp handle_link_result(_bash, {:error, %VFS.Error{kind: :eexist}}, _target, link_name, opts) do
     link_type = if opts.symbolic, do: "symbolic ", else: ""
     {:error, "ln: failed to create #{link_type}link '#{link_name}': File exists\n"}
+  end
+
+  defp handle_link_result(_bash, {:error, %VFS.Error{kind: :enoent}}, target, _link_name, _opts) do
+    {:error, "ln: failed to access '#{target}': No such file or directory\n"}
   end
 
   defp handle_link_result(_bash, {:error, :enoent}, target, _link_name, _opts) do
     {:error, "ln: failed to access '#{target}': No such file or directory\n"}
   end
 
+  defp handle_link_result(_bash, {:error, %VFS.Error{kind: :eacces}}, target, _link_name, _opts) do
+    {:error, "ln: '#{target}': hard link not allowed for directory\n"}
+  end
+
   defp handle_link_result(_bash, {:error, :eperm}, target, _link_name, _opts) do
     {:error, "ln: '#{target}': hard link not allowed for directory\n"}
+  end
+
+  # Foreign mounts can refuse links entirely (:enotsup, :erofs, :exdev, ...).
+  defp handle_link_result(_bash, {:error, %VFS.Error{} = err}, _target, link_name, opts) do
+    link_type = if opts.symbolic, do: "symbolic ", else: ""
+    {:error, "ln: failed to create #{link_type}link '#{link_name}': #{FS.strerror(err)}\n"}
   end
 end

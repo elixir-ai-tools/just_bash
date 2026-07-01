@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Rev do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["rev"]
@@ -14,30 +14,27 @@ defmodule JustBash.Commands.Rev do
 
     content =
       if files == [] or files == ["-"] do
-        stdin
+        {:ok, stdin, bash.fs}
       else
-        case read_files(bash, files) do
-          {:ok, data} -> data
-          {:error, msg} -> {:error, msg}
-        end
+        read_files(bash, files)
       end
 
     case content do
       {:error, msg} ->
         {Command.error(msg), bash}
 
-      data ->
+      {:ok, data, fs} ->
         output = reverse_chars_per_line(data)
-        {Command.ok(output), bash}
+        {Command.ok(output), %{bash | fs: fs}}
     end
   end
 
   defp read_files(bash, files) do
-    Enum.reduce_while(files, {:ok, ""}, fn file, {:ok, acc} ->
-      resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    Enum.reduce_while(files, {:ok, "", bash.fs}, fn file, {:ok, acc, fs} ->
+      resolved = FS.resolve_path(bash.cwd, file)
 
-      case InMemoryFs.read_file(bash.fs, resolved) do
-        {:ok, data} -> {:cont, {:ok, acc <> data}}
+      case FS.read_file(fs, resolved) do
+        {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
         {:error, _} -> {:halt, {:error, "rev: #{file}: No such file or directory\n"}}
       end
     end)

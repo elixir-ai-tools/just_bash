@@ -18,7 +18,7 @@ defmodule JustBash.Eval.Commands.KVCli do
 
   alias JustBash.CLI
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @store_path "/.kv_store.json"
 
@@ -54,62 +54,69 @@ defmodule JustBash.Eval.Commands.KVCli do
 
   defp set(inv) do
     [key | value_parts] = inv.args
-    store = inv.bash.fs |> store_from() |> Map.put(key, Enum.join(value_parts, " "))
-    {Command.ok(""), write_store(inv.bash, store)}
+    {store, fs} = store_from(inv.bash.fs)
+    store = Map.put(store, key, Enum.join(value_parts, " "))
+    {Command.ok(""), write_store(%{inv.bash | fs: fs}, store)}
   end
 
   defp get(inv) do
     [key] = inv.args
+    {store, fs} = store_from(inv.bash.fs)
+    bash = %{inv.bash | fs: fs}
 
-    case Map.fetch(store_from(inv.bash.fs), key) do
-      {:ok, value} -> {Command.ok("#{value}\n"), inv.bash}
-      :error -> {Command.error("kv: key '#{key}' not found\n", 1), inv.bash}
+    case Map.fetch(store, key) do
+      {:ok, value} -> {Command.ok("#{value}\n"), bash}
+      :error -> {Command.error("kv: key '#{key}' not found\n", 1), bash}
     end
   end
 
   defp delete(inv) do
     [key] = inv.args
-    store = store_from(inv.bash.fs)
+    {store, fs} = store_from(inv.bash.fs)
+    bash = %{inv.bash | fs: fs}
 
     if Map.has_key?(store, key) do
-      {Command.ok(""), write_store(inv.bash, Map.delete(store, key))}
+      {Command.ok(""), write_store(bash, Map.delete(store, key))}
     else
-      {Command.error("kv: key '#{key}' not found\n", 1), inv.bash}
+      {Command.error("kv: key '#{key}' not found\n", 1), bash}
     end
   end
 
   defp list(inv) do
-    keys = inv.bash.fs |> store_from() |> Map.keys() |> Enum.sort()
-    {Command.ok(join_lines(keys)), inv.bash}
+    {store, fs} = store_from(inv.bash.fs)
+    keys = store |> Map.keys() |> Enum.sort()
+    {Command.ok(join_lines(keys)), %{inv.bash | fs: fs}}
   end
 
   defp dump(inv) do
+    {store, fs} = store_from(inv.bash.fs)
+
     pairs =
-      inv.bash.fs
-      |> store_from()
+      store
       |> Enum.sort_by(fn {k, _} -> k end)
       |> Enum.map(fn {k, v} -> "#{k}=#{v}" end)
 
-    {Command.ok(join_lines(pairs)), inv.bash}
+    {Command.ok(join_lines(pairs)), %{inv.bash | fs: fs}}
   end
 
   defp count(inv) do
-    {Command.ok("#{map_size(store_from(inv.bash.fs))}\n"), inv.bash}
+    {store, fs} = store_from(inv.bash.fs)
+    {Command.ok("#{map_size(store)}\n"), %{inv.bash | fs: fs}}
   end
 
   # --- storage (identical to JustBash.Eval.Commands.KV) ---
 
   defp store_from(fs) do
-    with {:ok, content} <- InMemoryFs.read_file(fs, @store_path),
+    with {:ok, content, fs} <- FS.read_file(fs, @store_path),
          {:ok, map} when is_map(map) <- Jason.decode(content) do
-      map
+      {map, fs}
     else
-      _ -> %{}
+      _ -> {%{}, fs}
     end
   end
 
   defp write_store(bash, store) do
-    {:ok, fs} = InMemoryFs.write_file(bash.fs, @store_path, Jason.encode!(store))
+    {:ok, fs} = FS.write_file(bash.fs, @store_path, Jason.encode!(store))
     %{bash | fs: fs}
   end
 

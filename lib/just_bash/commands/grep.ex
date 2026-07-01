@@ -4,7 +4,7 @@ defmodule JustBash.Commands.Grep do
 
   alias JustBash.Commands.Command
   alias JustBash.FlagParser
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
   alias JustBash.Limit
 
   @flag_spec %{
@@ -81,12 +81,12 @@ defmodule JustBash.Commands.Grep do
     show_filename =
       flags.with_filename or (length(expanded_files) > 1 and not flags.no_filename)
 
-    {results, any_match} =
-      Enum.reduce(expanded_files, {[], false}, fn file, {acc, had_match} ->
-        process_file(bash, file, regex, flags, show_filename, acc, had_match)
+    {results, any_match, fs} =
+      Enum.reduce(expanded_files, {[], false, bash.fs}, fn file, {acc, had_match, fs} ->
+        process_file(bash, fs, file, regex, flags, show_filename, acc, had_match)
       end)
 
-    build_files_result(bash, results, any_match, flags)
+    build_files_result(%{bash | fs: fs}, results, any_match, flags)
   end
 
   # Expand files recursively when -r flag is set
@@ -94,13 +94,13 @@ defmodule JustBash.Commands.Grep do
 
   defp expand_files(bash, files, true) do
     Enum.flat_map(files, fn file ->
-      resolved = InMemoryFs.resolve_path(bash.cwd, file)
+      resolved = FS.resolve_path(bash.cwd, file)
 
-      case InMemoryFs.stat(bash.fs, resolved) do
-        {:ok, %{is_directory: true}} ->
+      case FS.stat(bash.fs, resolved) do
+        {:ok, %VFS.Stat{type: :directory}, _fs} ->
           find_files_recursive(bash.fs, resolved, file)
 
-        {:ok, _} ->
+        {:ok, _, _fs} ->
           [file]
 
         {:error, _} ->
@@ -110,17 +110,17 @@ defmodule JustBash.Commands.Grep do
   end
 
   defp find_files_recursive(fs, full_path, display_path) do
-    case InMemoryFs.readdir(fs, full_path) do
-      {:ok, entries} ->
+    case FS.readdir(fs, full_path) do
+      {:ok, entries, _fs} ->
         Enum.flat_map(entries, fn entry ->
           child_full = join_path(full_path, entry)
           child_display = join_path(display_path, entry)
 
-          case InMemoryFs.stat(fs, child_full) do
-            {:ok, %{is_directory: true}} ->
+          case FS.stat(fs, child_full) do
+            {:ok, %VFS.Stat{type: :directory}, _fs} ->
               find_files_recursive(fs, child_full, child_display)
 
-            {:ok, _} ->
+            {:ok, _, _fs} ->
               [child_display]
 
             {:error, _} ->
@@ -136,19 +136,19 @@ defmodule JustBash.Commands.Grep do
   defp join_path("/", entry), do: "/#{entry}"
   defp join_path(path, entry), do: "#{path}/#{entry}"
 
-  defp process_file(bash, file, regex, flags, show_filename, acc, had_match) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+  defp process_file(bash, fs, file, regex, flags, show_filename, acc, had_match) do
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} ->
+    case FS.read_file(fs, resolved) do
+      {:ok, content, fs} ->
         prefix = if show_filename, do: "#{file}:", else: ""
         lines = process_content(content, regex, flags, prefix)
         matched = lines != []
         result = format_file_result(file, prefix, lines, matched, flags)
-        {if(result, do: [result | acc], else: acc), had_match or matched}
+        {if(result, do: [result | acc], else: acc), had_match or matched, fs}
 
       {:error, _} ->
-        {acc, had_match}
+        {acc, had_match, fs}
     end
   end
 

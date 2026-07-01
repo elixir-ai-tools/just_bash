@@ -17,7 +17,7 @@ defmodule JustBash.Eval.Commands.KV do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @store_path "/.kv_store.json"
 
@@ -60,14 +60,15 @@ defmodule JustBash.Eval.Commands.KV do
   end
 
   defp set(bash, key, value) do
-    store = read_store(bash.fs)
+    {store, fs} = read_store(bash.fs)
     store = Map.put(store, key, value)
-    bash = write_store(bash, store)
+    bash = write_store(%{bash | fs: fs}, store)
     {Command.ok(""), bash}
   end
 
   defp get(bash, key) do
-    store = read_store(bash.fs)
+    {store, fs} = read_store(bash.fs)
+    bash = %{bash | fs: fs}
 
     case Map.fetch(store, key) do
       {:ok, value} -> {Command.ok("#{value}\n"), bash}
@@ -76,7 +77,8 @@ defmodule JustBash.Eval.Commands.KV do
   end
 
   defp delete(bash, key) do
-    store = read_store(bash.fs)
+    {store, fs} = read_store(bash.fs)
+    bash = %{bash | fs: fs}
 
     if Map.has_key?(store, key) do
       store = Map.delete(store, key)
@@ -88,7 +90,7 @@ defmodule JustBash.Eval.Commands.KV do
   end
 
   defp list(bash) do
-    store = read_store(bash.fs)
+    {store, fs} = read_store(bash.fs)
 
     output =
       store
@@ -97,11 +99,11 @@ defmodule JustBash.Eval.Commands.KV do
       |> Enum.join("\n")
 
     output = if output == "", do: "", else: output <> "\n"
-    {Command.ok(output), bash}
+    {Command.ok(output), %{bash | fs: fs}}
   end
 
   defp dump(bash) do
-    store = read_store(bash.fs)
+    {store, fs} = read_store(bash.fs)
 
     output =
       store
@@ -109,30 +111,30 @@ defmodule JustBash.Eval.Commands.KV do
       |> Enum.map_join("\n", fn {k, v} -> "#{k}=#{v}" end)
 
     output = if output == "", do: "", else: output <> "\n"
-    {Command.ok(output), bash}
+    {Command.ok(output), %{bash | fs: fs}}
   end
 
   defp count(bash) do
-    store = read_store(bash.fs)
-    {Command.ok("#{map_size(store)}\n"), bash}
+    {store, fs} = read_store(bash.fs)
+    {Command.ok("#{map_size(store)}\n"), %{bash | fs: fs}}
   end
 
   defp read_store(fs) do
-    case InMemoryFs.read_file(fs, @store_path) do
-      {:ok, content} ->
+    case FS.read_file(fs, @store_path) do
+      {:ok, content, fs} ->
         case Jason.decode(content) do
-          {:ok, map} when is_map(map) -> map
-          _ -> %{}
+          {:ok, map} when is_map(map) -> {map, fs}
+          _ -> {%{}, fs}
         end
 
       {:error, _} ->
-        %{}
+        {%{}, fs}
     end
   end
 
   defp write_store(bash, store) do
     content = Jason.encode!(store)
-    {:ok, fs} = InMemoryFs.write_file(bash.fs, @store_path, content)
+    {:ok, fs} = FS.write_file(bash.fs, @store_path, content)
     %{bash | fs: fs}
   end
 end

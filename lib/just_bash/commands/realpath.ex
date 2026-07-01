@@ -8,7 +8,7 @@ defmodule JustBash.Commands.Realpath do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["realpath"]
@@ -22,16 +22,16 @@ defmodule JustBash.Commands.Realpath do
         {Command.error("realpath: missing operand\n"), bash}
 
       _ ->
-        {out_parts, err_parts, exit_code} =
-          Enum.reduce(paths, {[], [], 0}, fn path, {out, err, code} ->
-            resolved = InMemoryFs.resolve_path(bash.cwd, path)
+        {out_parts, err_parts, exit_code, fs} =
+          Enum.reduce(paths, {[], [], 0, bash.fs}, fn path, {out, err, code, fs} ->
+            resolved = FS.resolve_path(bash.cwd, path)
 
-            case InMemoryFs.stat(bash.fs, resolved) do
-              {:ok, _} ->
-                {[out, resolved, "\n"], err, code}
+            case FS.stat(fs, resolved) do
+              {:ok, _stat, fs} ->
+                {[out, resolved, "\n"], err, code, fs}
 
               {:error, _} ->
-                {out, [err, "realpath: ", path, ": No such file or directory\n"], 1}
+                {out, [err, "realpath: ", path, ": No such file or directory\n"], 1, fs}
             end
           end)
 
@@ -39,7 +39,7 @@ defmodule JustBash.Commands.Realpath do
            IO.iodata_to_binary(out_parts),
            IO.iodata_to_binary(err_parts),
            exit_code
-         ), bash}
+         ), %{bash | fs: fs}}
     end
   end
 

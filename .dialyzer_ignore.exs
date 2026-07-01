@@ -11,10 +11,13 @@
   # valid_path_expr? catch-all returns false, but dialyzer infers callers only
   # pass values that match earlier (true-returning) clauses — defensive by design
   {"lib/just_bash/commands/jq/evaluator/functions.ex", :pattern_match},
-  # format_redirection_error handles multiple POSIX error atoms defensively,
-  # but InMemoryFs.write_file currently only returns :eisdir
-  {"lib/just_bash/interpreter/executor/redirection.ex", :pattern_match},
-  {"lib/just_bash/interpreter/executor/redirection.ex", :pattern_match_cov},
+  # vfs 0.1 does not include :enotempty in VFS.Error's kind union, but POSIX
+  # rm of a non-empty directory needs it (rmdir(2) ENOTEMPTY). We construct
+  # and match it anyway — VFS.Error.new/2 doesn't validate kinds at runtime —
+  # and have proposed adding :enotempty to the union in vfs 0.2. Remove both
+  # skips when vfs ships it.
+  {"lib/just_bash/fs/memory.ex", :call},
+  {"lib/just_bash/commands/rm.ex", :pattern_match},
   # format_array_key catch-all handles any type defensively, but dialyzer infers
   # callers only pass float/integer/binary values covered by earlier clauses
   {"lib/just_bash/commands/awk/evaluator.ex", :pattern_match_cov},

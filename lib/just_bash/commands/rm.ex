@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Rm do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["rm"]
@@ -14,19 +14,19 @@ defmodule JustBash.Commands.Rm do
 
     {stderr, exit_code, new_fs} =
       Enum.reduce(paths, {"", 0, bash.fs}, fn path, {err_acc, code_acc, fs_acc} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, path)
+        resolved = FS.resolve_path(bash.cwd, path)
 
-        case InMemoryFs.rm(fs_acc, resolved, recursive: flags.r, force: flags.f) do
+        case FS.rm(fs_acc, resolved, recursive: flags.r) do
           {:ok, new_fs} ->
             {err_acc, code_acc, new_fs}
 
-          {:error, :enoent} when flags.f ->
+          {:error, %VFS.Error{kind: :enoent}} when flags.f ->
             {err_acc, code_acc, fs_acc}
 
-          {:error, :enoent} ->
+          {:error, %VFS.Error{kind: :enoent}} ->
             {err_acc <> "rm: cannot remove '#{path}': No such file or directory\n", 1, fs_acc}
 
-          {:error, :enotempty} ->
+          {:error, %VFS.Error{kind: :enotempty}} ->
             {err_acc <> "rm: cannot remove '#{path}': Directory not empty\n", 1, fs_acc}
         end
       end)

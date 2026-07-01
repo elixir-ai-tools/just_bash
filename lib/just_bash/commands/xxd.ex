@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Xxd do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["xxd"]
@@ -16,7 +16,7 @@ defmodule JustBash.Commands.Xxd do
 
       {:ok, opts} ->
         case read_input(bash, opts.file, stdin) do
-          {:ok, data} ->
+          {:ok, data, bash} ->
             data = slice(data, opts.seek, opts.len)
             out = if opts.plain, do: plain(data), else: dump(data, opts.cols)
             {Command.ok(out), bash}
@@ -48,14 +48,14 @@ defmodule JustBash.Commands.Xxd do
     end
   end
 
-  defp read_input(_bash, nil, stdin), do: {:ok, stdin || ""}
-  defp read_input(_bash, "-", stdin), do: {:ok, stdin || ""}
+  defp read_input(bash, nil, stdin), do: {:ok, stdin || "", bash}
+  defp read_input(bash, "-", stdin), do: {:ok, stdin || "", bash}
 
   defp read_input(bash, file, _stdin) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, c} -> {:ok, c}
+    case FS.read_file(bash.fs, resolved) do
+      {:ok, c, fs} -> {:ok, c, %{bash | fs: fs}}
       {:error, _} -> {:error, "xxd: #{file}: No such file or directory\n"}
     end
   end

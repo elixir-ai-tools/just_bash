@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Expand do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["expand"]
@@ -24,20 +24,17 @@ defmodule JustBash.Commands.Expand do
     process_and_return(bash, content, opts)
   end
 
-  defp get_content(_bash, %{files: []}, stdin), do: stdin
+  defp get_content(bash, %{files: []}, stdin), do: {:ok, stdin, bash.fs}
 
   defp get_content(bash, %{files: files}, _stdin) do
-    case read_files(bash, files) do
-      {:ok, data} -> data
-      {:error, msg} -> {:error, msg}
-    end
+    read_files(bash, files)
   end
 
   defp process_and_return(bash, {:error, msg}, _opts), do: {Command.error(msg), bash}
 
-  defp process_and_return(bash, data, opts) do
+  defp process_and_return(bash, {:ok, data, fs}, opts) do
     output = process_content(data, opts)
-    {Command.ok(output), bash}
+    {Command.ok(output), %{bash | fs: fs}}
   end
 
   defp parse_args(args) do
@@ -115,11 +112,11 @@ defmodule JustBash.Commands.Expand do
   end
 
   defp read_files(bash, files) do
-    Enum.reduce_while(files, {:ok, ""}, fn file, {:ok, acc} ->
-      resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    Enum.reduce_while(files, {:ok, "", bash.fs}, fn file, {:ok, acc, fs} ->
+      resolved = FS.resolve_path(bash.cwd, file)
 
-      case InMemoryFs.read_file(bash.fs, resolved) do
-        {:ok, data} -> {:cont, {:ok, acc <> data}}
+      case FS.read_file(fs, resolved) do
+        {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
         {:error, _} -> {:halt, {:error, "expand: #{file}: No such file or directory\n"}}
       end
     end)

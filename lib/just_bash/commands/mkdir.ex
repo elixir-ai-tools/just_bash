@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Mkdir do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["mkdir"]
@@ -14,19 +14,19 @@ defmodule JustBash.Commands.Mkdir do
 
     {stderr, exit_code, new_fs} =
       Enum.reduce(paths, {"", 0, bash.fs}, fn path, {err_acc, code_acc, fs_acc} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, path)
+        resolved = FS.resolve_path(bash.cwd, path)
 
-        case InMemoryFs.mkdir(fs_acc, resolved, recursive: flags.p) do
+        case FS.mkdir(fs_acc, resolved, parents: flags.p) do
           {:ok, new_fs} ->
             {err_acc, code_acc, new_fs}
 
-          {:error, :eexist} when flags.p ->
+          {:error, %VFS.Error{kind: :eexist}} when flags.p ->
             {err_acc, code_acc, fs_acc}
 
-          {:error, :eexist} ->
+          {:error, %VFS.Error{kind: :eexist}} ->
             {err_acc <> "mkdir: cannot create directory '#{path}': File exists\n", 1, fs_acc}
 
-          {:error, :enoent} ->
+          {:error, %VFS.Error{kind: :enoent}} ->
             {err_acc <> "mkdir: cannot create directory '#{path}': No such file or directory\n",
              1, fs_acc}
         end

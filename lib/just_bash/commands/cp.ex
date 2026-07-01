@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Cp do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["cp"]
@@ -12,12 +12,12 @@ defmodule JustBash.Commands.Cp do
   def execute(bash, args, _stdin) do
     case args do
       [src, dest] ->
-        src_resolved = InMemoryFs.resolve_path(bash.cwd, src)
-        dest_resolved = InMemoryFs.resolve_path(bash.cwd, dest)
+        src_resolved = FS.resolve_path(bash.cwd, src)
+        dest_resolved = FS.resolve_path(bash.cwd, dest)
 
-        case InMemoryFs.read_file(bash.fs, src_resolved) do
-          {:ok, content} ->
-            {:ok, new_fs} = InMemoryFs.write_file(bash.fs, dest_resolved, content)
+        case FS.read_file(bash.fs, src_resolved) do
+          {:ok, content, fs} ->
+            {:ok, new_fs} = FS.write_file(fs, dest_resolved, content)
             {Command.ok(), %{bash | fs: new_fs}}
 
           {:error, _} ->

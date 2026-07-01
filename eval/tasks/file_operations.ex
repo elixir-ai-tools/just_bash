@@ -48,8 +48,8 @@ defmodule JustBash.Eval.Tasks.FileOperations do
          ]},
         {:custom, "sorted_by_filename",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/manifest.txt") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/manifest.txt") do
+             {:ok, content, _fs} ->
                names =
                  content
                  |> String.trim()
@@ -97,8 +97,8 @@ defmodule JustBash.Eval.Tasks.FileOperations do
       validators: [
         {:custom, "app.log_empty",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/var/log/app.log") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/var/log/app.log") do
+             {:ok, content, _fs} ->
                if String.trim(content) == "", do: :ok, else: {:error, "app.log should be empty"}
 
              {:error, _} ->
@@ -143,8 +143,8 @@ defmodule JustBash.Eval.Tasks.FileOperations do
          ]},
         {:custom, "no_lost_files",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/manifest.txt") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/manifest.txt") do
+             {:ok, content, _fs} ->
                lines =
                  content |> String.trim() |> String.split("\n") |> Enum.map(&String.trim/1)
 
@@ -158,8 +158,8 @@ defmodule JustBash.Eval.Tasks.FileOperations do
          end},
         {:custom, "helper_conflict_resolved",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/manifest.txt") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/manifest.txt") do
+             {:ok, content, _fs} ->
                lines =
                  content |> String.trim() |> String.split("\n") |> Enum.map(&String.trim/1)
 
@@ -216,8 +216,10 @@ defmodule JustBash.Eval.Tasks.FileOperations do
          ]},
         {:custom, "files_in_organized",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.readdir(bash.fs, "/photos/organized") do
-             {:ok, entries} ->
+           case JustBash.FS.readdir(bash.fs, "/photos/organized") do
+             {:ok, entries, _fs} ->
+               entries = Enum.to_list(entries)
+
                if length(entries) == 5,
                  do: :ok,
                  else: {:error, "expected 5 files in /photos/organized/, got #{length(entries)}"}
@@ -259,8 +261,8 @@ defmodule JustBash.Eval.Tasks.FileOperations do
         {:file_contains, "/output/count.txt", [{:regex, ~r/30/}]},
         {:custom, "chunks_reversed",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/reversed_chunks.txt") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/reversed_chunks.txt") do
+             {:ok, content, _fs} ->
                lines = content |> String.trim() |> String.split("\n")
                # First line should be Line 10 (last of first chunk, reversed)
                first = hd(lines)
@@ -377,8 +379,8 @@ defmodule JustBash.Eval.Tasks.FileOperations do
          ]},
         {:custom, "lowercase_files",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/lowered/file.upper.txt") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/lowered/file.upper.txt") do
+             {:ok, content, _fs} ->
                if content == "upper works",
                  do: :ok,
                  else: {:error, "lowered file has wrong content: #{inspect(content)}"}
@@ -436,8 +438,8 @@ defmodule JustBash.Eval.Tasks.FileOperations do
          ]},
         {:custom, "symlinks_work",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/links/nginx.conf") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/links/nginx.conf") do
+             {:ok, content, _fs} ->
                if String.contains?(content, "worker_processes"),
                  do: :ok,
                  else: {:error, "symlink /links/nginx.conf doesn't resolve correctly"}

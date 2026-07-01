@@ -14,7 +14,7 @@ defmodule JustBash.Commands.Awk do
 
   alias JustBash.Commands.Awk.{Evaluator, Parser}
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["awk"]
@@ -49,7 +49,7 @@ defmodule JustBash.Commands.Awk do
       {:error, msg} ->
         {Command.error(msg), bash}
 
-      {:ok, file_data} ->
+      {:ok, file_data, bash} ->
         eval_opts = %{
           field_separator: opts.field_separator,
           variables: opts.variables,
@@ -65,7 +65,7 @@ defmodule JustBash.Commands.Awk do
         # Write any file outputs from print/printf redirections
         bash =
           Enum.reduce(file_outputs, bash, fn {filename, content}, acc_bash ->
-            case InMemoryFs.write_file(acc_bash.fs, filename, content) do
+            case FS.write_file(acc_bash.fs, filename, content) do
               {:ok, fs} -> %{acc_bash | fs: fs}
               {:error, _} -> acc_bash
             end
@@ -81,8 +81,8 @@ defmodule JustBash.Commands.Awk do
     end
   end
 
-  # Returns {:ok, [{filename, content}, ...]} for multi-file support
-  defp get_file_data(_bash, [], stdin), do: {:ok, [{"", stdin}]}
+  # Returns {:ok, [{filename, content}, ...], bash} for multi-file support
+  defp get_file_data(bash, [], stdin), do: {:ok, [{"", stdin}], bash}
 
   defp get_file_data(bash, files, _stdin) do
     read_files_with_names(bash, files)
@@ -171,14 +171,20 @@ defmodule JustBash.Commands.Awk do
   end
 
   defp read_files_with_names(bash, files) do
-    Enum.reduce_while(files, {:ok, []}, fn file, {:ok, acc} ->
-      resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    result =
+      Enum.reduce_while(files, {:ok, [], bash.fs}, fn file, {:ok, acc, fs} ->
+        resolved = FS.resolve_path(bash.cwd, file)
 
-      case InMemoryFs.read_file(bash.fs, resolved) do
-        {:ok, content} -> {:cont, {:ok, acc ++ [{resolved, content}]}}
-        {:error, _} -> {:halt, {:error, "awk: #{file}: No such file or directory\n"}}
-      end
-    end)
+        case FS.read_file(fs, resolved) do
+          {:ok, content, fs} -> {:cont, {:ok, acc ++ [{resolved, content}], fs}}
+          {:error, _} -> {:halt, {:error, "awk: #{file}: No such file or directory\n"}}
+        end
+      end)
+
+    case result do
+      {:ok, file_data, fs} -> {:ok, file_data, %{bash | fs: fs}}
+      {:error, _} = err -> err
+    end
   end
 
   # Interpret common escape sequences in strings (like \t, \n, etc.)

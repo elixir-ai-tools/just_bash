@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Cat do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["cat"]
@@ -15,35 +15,32 @@ defmodule JustBash.Commands.Cat do
     else
       args = if args == [], do: ["-"], else: args
 
-      {stdout, stderr, exit_code, _stdin_consumed} =
-        Enum.reduce(args, {"", "", 0, false}, fn path, acc ->
+      {stdout, stderr, exit_code, _stdin_consumed, fs} =
+        Enum.reduce(args, {"", "", 0, false, bash.fs}, fn path, acc ->
           read_and_accumulate(bash, path, stdin, acc)
         end)
 
-      {Command.result(stdout, stderr, exit_code), bash}
+      {Command.result(stdout, stderr, exit_code), %{bash | fs: fs}}
     end
   end
 
-  defp read_and_accumulate(_bash, "-", stdin, {out_acc, err_acc, code_acc, stdin_consumed}) do
+  defp read_and_accumulate(_bash, "-", stdin, {out_acc, err_acc, code_acc, stdin_consumed, fs}) do
     if stdin_consumed do
-      {out_acc, err_acc, code_acc, true}
+      {out_acc, err_acc, code_acc, true, fs}
     else
-      {out_acc <> stdin, err_acc, code_acc, true}
+      {out_acc <> stdin, err_acc, code_acc, true, fs}
     end
   end
 
-  defp read_and_accumulate(bash, path, _stdin, {out_acc, err_acc, code_acc, stdin_consumed}) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+  defp read_and_accumulate(bash, path, _stdin, {out_acc, err_acc, code_acc, stdin_consumed, fs}) do
+    resolved = FS.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} ->
-        {out_acc <> content, err_acc, code_acc, stdin_consumed}
+    case FS.read_file(fs, resolved) do
+      {:ok, content, fs} ->
+        {out_acc <> content, err_acc, code_acc, stdin_consumed, fs}
 
-      {:error, :enoent} ->
-        {out_acc, err_acc <> "cat: #{path}: No such file or directory\n", 1, stdin_consumed}
-
-      {:error, :eisdir} ->
-        {out_acc, err_acc <> "cat: #{path}: Is a directory\n", 1, stdin_consumed}
+      {:error, err} ->
+        {out_acc, err_acc <> "cat: #{path}: #{FS.strerror(err)}\n", 1, stdin_consumed, fs}
     end
   end
 end

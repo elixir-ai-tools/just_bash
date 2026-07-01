@@ -8,7 +8,7 @@ defmodule JustBash.Interpreter.Expansion.Glob do
   - Converting glob patterns to regex
   """
 
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @doc """
   Check if a string contains glob metacharacters.
@@ -75,8 +75,8 @@ defmodule JustBash.Interpreter.Expansion.Glob do
       next_path = join_path(current_path, segment)
       next_prefix = join_prefix(prefix, segment)
 
-      case InMemoryFs.stat(fs, next_path) do
-        {:ok, _} ->
+      case FS.stat(fs, next_path) do
+        {:ok, _, _} ->
           expand_segments(fs, next_path, next_prefix, rest, has_trailing_slash)
 
         {:error, _} ->
@@ -90,7 +90,7 @@ defmodule JustBash.Interpreter.Expansion.Glob do
     regex_pattern = glob_pattern_to_regex(segment)
 
     with {:ok, regex} <- Regex.compile("^" <> regex_pattern <> "$"),
-         {:ok, entries} <- InMemoryFs.readdir(fs, current_path) do
+         {:ok, entries, _fs} <- FS.readdir(fs, current_path) do
       matching = Enum.filter(entries, &matches_pattern?(&1, regex, segment))
 
       Enum.flat_map(matching, fn entry ->
@@ -113,9 +113,9 @@ defmodule JustBash.Interpreter.Expansion.Glob do
   end
 
   defp finalize_match(fs, path, prefix, has_trailing_slash) do
-    case InMemoryFs.stat(fs, path) do
-      {:ok, stat} ->
-        if has_trailing_slash and stat.is_directory,
+    case FS.stat(fs, path) do
+      {:ok, %VFS.Stat{type: type}, _fs} ->
+        if has_trailing_slash and type == :directory,
           do: [prefix <> "/"],
           else: [prefix]
 
@@ -125,8 +125,8 @@ defmodule JustBash.Interpreter.Expansion.Glob do
   end
 
   defp continue_expansion(fs, path, prefix, rest, has_trailing_slash) do
-    case InMemoryFs.stat(fs, path) do
-      {:ok, %{is_directory: true}} ->
+    case FS.stat(fs, path) do
+      {:ok, %VFS.Stat{type: :directory}, _fs} ->
         expand_segments(fs, path, prefix, rest, has_trailing_slash)
 
       _ ->

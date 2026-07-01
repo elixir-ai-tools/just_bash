@@ -4,7 +4,7 @@ defmodule JustBash.Commands.Sort do
 
   alias JustBash.Commands.Command
   alias JustBash.FlagParser
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @flag_spec %{
     boolean: [:r, :u, :n, :f],
@@ -19,7 +19,7 @@ defmodule JustBash.Commands.Sort do
   @impl true
   def execute(bash, args, stdin) do
     {flags, files} = FlagParser.parse(args, @flag_spec)
-    content = get_content(bash, files, stdin)
+    {content, fs} = get_content(bash, files, stdin)
     # Don't trim - preserve empty lines. Only remove trailing empty if content ends with \n
     lines = String.split(content, "\n", trim: false)
 
@@ -36,17 +36,17 @@ defmodule JustBash.Commands.Sort do
       |> maybe_uniq(flags.u)
 
     output = format_output(sorted)
-    {Command.ok(output), bash}
+    {Command.ok(output), %{bash | fs: fs}}
   end
 
-  defp get_content(_bash, [], stdin), do: stdin
+  defp get_content(bash, [], stdin), do: {stdin, bash.fs}
 
   defp get_content(bash, [file | _], _stdin) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, c} -> c
-      {:error, _} -> ""
+    case FS.read_file(bash.fs, resolved) do
+      {:ok, c, fs} -> {c, fs}
+      {:error, _} -> {"", bash.fs}
     end
   end
 

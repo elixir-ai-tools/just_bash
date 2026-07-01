@@ -4,7 +4,7 @@ defmodule JustBash.Commands.Tail do
 
   alias JustBash.Commands.Command
   alias JustBash.FlagParser
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @flag_spec %{
     boolean: [],
@@ -34,35 +34,35 @@ defmodule JustBash.Commands.Tail do
   end
 
   defp tail_multiple(bash, files, mode) do
-    {outputs, errors, exit_code} =
-      Enum.reduce(files, {[], [], 0}, fn file, {out_acc, err_acc, code} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    {outputs, errors, exit_code, fs} =
+      Enum.reduce(files, {[], [], 0, bash.fs}, fn file, {out_acc, err_acc, code, fs} ->
+        resolved = FS.resolve_path(bash.cwd, file)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
-          {:ok, content} ->
+        case FS.read_file(fs, resolved) do
+          {:ok, content, fs} ->
             header = "==> #{file} <==\n"
             body = take_content(content, mode)
-            {[header <> body | out_acc], err_acc, code}
+            {[header <> body | out_acc], err_acc, code, fs}
 
           {:error, _} ->
             err = "tail: cannot open '#{file}' for reading: No such file or directory\n"
-            {out_acc, [err | err_acc], 1}
+            {out_acc, [err | err_acc], 1, fs}
         end
       end)
 
     stdout = outputs |> Enum.reverse() |> Enum.join("\n")
     stderr = errors |> Enum.reverse() |> Enum.join()
 
-    {%{stdout: stdout, stderr: stderr, exit_code: exit_code}, bash}
+    {%{stdout: stdout, stderr: stderr, exit_code: exit_code}, %{bash | fs: fs}}
   end
 
   defp tail_file(bash, file, mode) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} ->
+    case FS.read_file(bash.fs, resolved) do
+      {:ok, content, fs} ->
         output = take_content(content, mode)
-        {Command.ok(output), bash}
+        {Command.ok(output), %{bash | fs: fs}}
 
       {:error, _} ->
         {Command.error("tail: cannot open '#{file}' for reading: No such file or directory\n"),

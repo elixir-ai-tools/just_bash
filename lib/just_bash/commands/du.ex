@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Du do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @short_flags %{
     ?a => :all_files,
@@ -45,7 +45,7 @@ defmodule JustBash.Commands.Du do
   end
 
   defp process_single_target(bash, target, opts, {acc_out, acc_err, acc_total}) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, target)
+    resolved = FS.resolve_path(bash.cwd, target)
 
     case calculate_size(bash.fs, resolved, target, opts, 0) do
       {:ok, out, size} -> {acc_out <> out, acc_err, acc_total + size}
@@ -100,12 +100,12 @@ defmodule JustBash.Commands.Du do
   end
 
   defp calculate_size(fs, path, display_path, opts, depth) do
-    case InMemoryFs.stat(fs, path) do
-      {:ok, %{is_directory: false, size: size}} ->
-        calculate_file_size(size, display_path, opts, depth)
-
-      {:ok, %{is_directory: true}} ->
+    case FS.stat(fs, path) do
+      {:ok, %VFS.Stat{type: :directory}, _fs} ->
         calculate_dir_size(fs, path, display_path, opts, depth)
+
+      {:ok, %VFS.Stat{size: size}, _fs} ->
+        calculate_file_size(size, display_path, opts, depth)
 
       {:error, _} ->
         {:error, "du: cannot access '#{display_path}': No such file or directory\n"}
@@ -124,8 +124,8 @@ defmodule JustBash.Commands.Du do
   end
 
   defp calculate_dir_size(fs, path, display_path, opts, depth) do
-    case InMemoryFs.readdir(fs, path) do
-      {:ok, entries} ->
+    case FS.readdir(fs, path) do
+      {:ok, entries, _fs} ->
         {output, dir_size} =
           Enum.reduce(entries, {"", 0}, fn entry, {acc_out, acc_size} ->
             process_dir_entry(fs, path, display_path, entry, opts, depth, acc_out, acc_size)
@@ -143,11 +143,11 @@ defmodule JustBash.Commands.Du do
     entry_path = if path == "/", do: "/#{entry}", else: "#{path}/#{entry}"
     entry_display = if display_path == ".", do: entry, else: "#{display_path}/#{entry}"
 
-    case InMemoryFs.stat(fs, entry_path) do
-      {:ok, %{is_directory: true}} ->
+    case FS.stat(fs, entry_path) do
+      {:ok, %VFS.Stat{type: :directory}, _fs} ->
         process_subdir(fs, entry_path, entry_display, opts, depth, acc_out, acc_size)
 
-      {:ok, %{is_file: true, size: size}} ->
+      {:ok, %VFS.Stat{type: :regular, size: size}, _fs} ->
         process_file_entry(size, entry_display, opts, acc_out, acc_size)
 
       _ ->

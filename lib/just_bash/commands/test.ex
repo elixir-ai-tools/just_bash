@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Test do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["test", "["]
@@ -90,46 +90,46 @@ defmodule JustBash.Commands.Test do
   end
 
   defp file_exists?(bash, path) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.stat(bash.fs, resolved) do
-      {:ok, _} -> true
+    case FS.stat(bash.fs, resolved) do
+      {:ok, _, _fs} -> true
       _ -> false
     end
   end
 
   defp file?(bash, path) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.stat(bash.fs, resolved) do
-      {:ok, %{is_file: true}} -> true
+    case FS.stat(bash.fs, resolved) do
+      {:ok, %{type: :regular}, _fs} -> true
       _ -> false
     end
   end
 
   defp directory?(bash, path) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.stat(bash.fs, resolved) do
-      {:ok, %{is_directory: true}} -> true
+    case FS.stat(bash.fs, resolved) do
+      {:ok, %{type: :directory}, _fs} -> true
       _ -> false
     end
   end
 
   defp symlink?(bash, path) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.lstat(bash.fs, resolved) do
-      {:ok, %{is_symbolic_link: true}} -> true
+    case FS.lstat(bash.fs, resolved) do
+      {:ok, %{type: :symlink}, _fs} -> true
       _ -> false
     end
   end
 
   defp file_has_size?(bash, path) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
 
-    case InMemoryFs.stat(bash.fs, resolved) do
-      {:ok, %{size: size}} when size > 0 -> true
+    case FS.stat(bash.fs, resolved) do
+      {:ok, %{size: size}, _fs} when size > 0 -> true
       _ -> false
     end
   end

@@ -24,7 +24,7 @@ defmodule JustBash.Commands.Jq do
 
   alias JustBash.Commands.Command
   alias JustBash.Commands.Jq.{Evaluator, Parser}
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["jq"]
@@ -54,7 +54,7 @@ defmodule JustBash.Commands.Jq do
       {:error, msg} ->
         {Command.error(msg), bash}
 
-      {:ok, json_input} ->
+      {:ok, json_input, bash} ->
         case process_jq(json_input, opts) do
           {:ok, results, output} ->
             if opts.exit_status and exit_status_falsy?(results) do
@@ -80,21 +80,21 @@ defmodule JustBash.Commands.Jq do
   defp get_input(bash, opts, stdin) do
     cond do
       opts.null_input ->
-        {:ok, nil}
+        {:ok, nil, bash}
 
       opts.file ->
         read_file_input(bash, opts.file)
 
       true ->
-        {:ok, stdin}
+        {:ok, stdin, bash}
     end
   end
 
   defp read_file_input(bash, file) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} -> {:ok, content}
+    case FS.read_file(bash.fs, resolved) do
+      {:ok, content, fs} -> {:ok, content, %{bash | fs: fs}}
       {:error, _} -> {:error, "jq: #{file}: No such file or directory\n"}
     end
   end

@@ -42,7 +42,8 @@ defmodule JustBash.MixProject do
 
   defp deps do
     [
-      {:telemetry, "~> 0.4 or ~> 1.0"},
+      {:telemetry, "~> 1.3"},
+      {:vfs, "~> 0.1.0"},
       {:nimble_parsec, "~> 1.4"},
       {:nimble_options, "~> 1.1"},
       {:req, "~> 0.5"},
@@ -80,7 +81,7 @@ defmodule JustBash.MixProject do
         Core: [JustBash],
         Parser: [JustBash.Parser, JustBash.Parser.Lexer, JustBash.Parser.WordParts],
         AST: [JustBash.AST],
-        Filesystem: [JustBash.Fs, JustBash.Fs.InMemoryFs],
+        Filesystem: [JustBash.FS, JustBash.FS.Memory, JustBash.FS.POSIX],
         Utilities: [JustBash.Arithmetic]
       ]
     ]

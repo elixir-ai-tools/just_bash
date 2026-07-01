@@ -99,8 +99,8 @@ defmodule JustBash.Eval.Tasks.TextProcessing do
          ]},
         {:custom, "correct_count",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/errors.txt") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/errors.txt") do
+             {:ok, content, _fs} ->
                first_line = content |> String.split("\n") |> hd() |> String.trim()
 
                if first_line == "3",
@@ -149,8 +149,8 @@ defmodule JustBash.Eval.Tasks.TextProcessing do
          ]},
         {:custom, "top_word_is_the",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/top_words.txt") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/top_words.txt") do
+             {:ok, content, _fs} ->
                first_line =
                  content |> String.trim() |> String.split("\n") |> hd() |> String.trim()
 
@@ -213,8 +213,8 @@ defmodule JustBash.Eval.Tasks.TextProcessing do
          ]},
         {:custom, "sorted_output",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/app.env") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/app.env") do
+             {:ok, content, _fs} ->
                lines =
                  content
                  |> String.trim()
@@ -294,8 +294,8 @@ defmodule JustBash.Eval.Tasks.TextProcessing do
          ]},
         {:custom, "correct_categorization",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/CHANGELOG.md") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/CHANGELOG.md") do
+             {:ok, content, _fs} ->
                # Verify features section has 3 items and fixes has 3
                features_section =
                  content

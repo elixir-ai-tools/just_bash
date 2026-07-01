@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Find do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["find"]
@@ -32,7 +32,7 @@ defmodule JustBash.Commands.Find do
   end
 
   defp find_in_path(bash, path, opts, {acc_results, acc_stderr, acc_code}) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
 
     case find_recursive(bash.fs, resolved, path, opts, 0) do
       {:ok, found} ->
@@ -145,8 +145,8 @@ defmodule JustBash.Commands.Find do
   defp exceeds_maxdepth?(opts, depth), do: opts.maxdepth != nil and depth > opts.maxdepth
 
   defp find_at_path(fs, full_path, display_path, opts, depth) do
-    case InMemoryFs.stat(fs, full_path) do
-      {:ok, stat} ->
+    case FS.stat(fs, full_path) do
+      {:ok, stat, _fs} ->
         current = collect_current_match(display_path, stat, opts, depth)
         children = find_children(fs, full_path, display_path, stat, opts, depth)
         {:ok, current ++ children}
@@ -164,7 +164,7 @@ defmodule JustBash.Commands.Find do
   end
 
   defp find_children(fs, full_path, display_path, stat, opts, depth) do
-    if stat.is_directory do
+    if stat.type == :directory do
       find_directory_children(fs, full_path, display_path, opts, depth)
     else
       []
@@ -172,8 +172,8 @@ defmodule JustBash.Commands.Find do
   end
 
   defp find_directory_children(fs, full_path, display_path, opts, depth) do
-    case InMemoryFs.readdir(fs, full_path) do
-      {:ok, entries} ->
+    case FS.readdir(fs, full_path) do
+      {:ok, entries, _fs} ->
         Enum.flat_map(entries, fn entry ->
           find_child_entry(fs, full_path, display_path, entry, opts, depth)
         end)
@@ -236,8 +236,8 @@ defmodule JustBash.Commands.Find do
 
   defp matches_type?(stat, opts) do
     case opts.type do
-      "f" -> stat.is_file
-      "d" -> stat.is_directory
+      "f" -> stat.type == :regular
+      "d" -> stat.type == :directory
       nil -> true
     end
   end
@@ -252,8 +252,8 @@ defmodule JustBash.Commands.Find do
 
   defp check_empty(stat) do
     cond do
-      stat.is_file -> stat.size == 0
-      stat.is_directory -> true
+      stat.type == :regular -> stat.size == 0
+      stat.type == :directory -> true
       true -> false
     end
   end

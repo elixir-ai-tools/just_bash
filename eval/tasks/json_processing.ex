@@ -204,8 +204,8 @@ defmodule JustBash.Eval.Tasks.JsonProcessing do
         {:file_contains, "/output/summary.txt", [{:regex, ~r/Valid:\s*2.*Invalid:\s*3/}]},
         {:custom, "valid_count",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/valid.jsonl") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/valid.jsonl") do
+             {:ok, content, _fs} ->
                lines =
                  content
                  |> String.trim()
@@ -222,8 +222,8 @@ defmodule JustBash.Eval.Tasks.JsonProcessing do
          end},
         {:custom, "invalid_count",
          fn %{bash: bash} ->
-           case JustBash.Fs.InMemoryFs.read_file(bash.fs, "/output/invalid.jsonl") do
-             {:ok, content} ->
+           case JustBash.FS.read_file(bash.fs, "/output/invalid.jsonl") do
+             {:ok, content, _fs} ->
                lines =
                  content
                  |> String.trim()

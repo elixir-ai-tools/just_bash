@@ -2,7 +2,7 @@ defmodule JustBash.Commands.Diff do
   @moduledoc "The `diff` command - compare files line by line."
   @behaviour JustBash.Commands.Command
 
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["diff"]
@@ -19,8 +19,8 @@ defmodule JustBash.Commands.Diff do
         else
           [file1, file2] = Enum.take(opts.files, 2)
 
-          with {:ok, content1} <- read_file(bash, file1, stdin),
-               {:ok, content2} <- read_file(bash, file2, stdin) do
+          with {:ok, content1, bash} <- read_file(bash, file1, stdin),
+               {:ok, content2, bash} <- read_file(bash, file2, stdin) do
             {result, _} = compare_contents(content1, content2, file1, file2, opts)
             {result, bash}
           else
@@ -84,13 +84,13 @@ defmodule JustBash.Commands.Diff do
     parse_args(rest, %{opts | files: opts.files ++ [file]})
   end
 
-  defp read_file(_bash, "-", stdin), do: {:ok, stdin}
+  defp read_file(bash, "-", stdin), do: {:ok, stdin, bash}
 
   defp read_file(bash, file, _stdin) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} -> {:ok, content}
+    case FS.read_file(bash.fs, resolved) do
+      {:ok, content, fs} -> {:ok, content, %{bash | fs: fs}}
       {:error, _} -> {:error, file}
     end
   end

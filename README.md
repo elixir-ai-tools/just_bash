@@ -361,6 +361,26 @@ When created without options, JustBash provides a Unix-like directory structure:
 - `/bin`, `/usr/bin` - Binary directories
 - `/tmp` - Temporary files
 
+## Virtual Filesystem and Mounts
+
+The filesystem is a [vfs](https://hexdocs.pm/vfs) mount table (`%VFS{}`) with
+JustBash's in-memory backend — symlinks, hard links, permissions — mounted at `/`.
+Any [`VFS.Mountable`](https://hexdocs.pm/vfs/VFS.Mountable.html) backend can be
+mounted alongside it, and every bash command sees it transparently:
+
+```elixir
+bash = JustBash.new()
+bash = JustBash.mount(bash, "/mnt", VFS.Memory.new(%{"/data.csv" => "a,b\n1,2\n"}))
+
+{result, bash} = JustBash.exec(bash, "cut -d, -f2 /mnt/data.csv")
+result.stdout  #=> "b\n2\n"
+```
+
+Mount resolution is longest-prefix. Backends that don't support an operation
+refuse it with a structured error — writing to a read-only mount fails with
+"Read-only file system", creating a symlink on a backend without symlinks fails
+with "Operation not supported" — and the script sees a normal nonzero exit code.
+
 ## API Reference
 
 ```elixir

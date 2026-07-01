@@ -62,7 +62,9 @@ defmodule JustBash.Shell.HeredocMultibyteTest do
         """)
 
       assert result.exit_code == 0
-      assert bash.fs.data["/home/user/myfile.txt"].content =~ "must not be silently dropped"
+
+      assert {:ok, content, _fs} = JustBash.FS.read_file(bash.fs, "/home/user/myfile.txt")
+      assert content =~ "must not be silently dropped"
     end
 
     test "multiple heredocs with emoji in single command" do

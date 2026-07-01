@@ -158,13 +158,20 @@ defmodule JustBash.Limit do
 
   # --- Pure check functions (no state mutation) ---
 
-  @doc "Check file data size before writing. Raises `ExceededError` if too large."
-  @spec check_file_size!(JustBash.t(), String.t()) :: :ok
+  @doc """
+  Check file data size before writing. Raises `ExceededError` if too large.
+
+  Accepts the data binary, or a byte count for append-style writes where
+  the resulting size is known without materializing the content.
+  """
+  @spec check_file_size!(JustBash.t(), String.t() | non_neg_integer()) :: :ok
   def check_file_size!(%{limits: nil}, _data), do: :ok
 
-  def check_file_size!(%{limits: limits}, data) do
-    size = byte_size(data)
+  def check_file_size!(bash, data) when is_binary(data) do
+    check_file_size!(bash, byte_size(data))
+  end
 
+  def check_file_size!(%{limits: limits}, size) when is_integer(size) do
     if size > limits.max_file_bytes do
       raise ExceededError,
         kind: :file_size_limit,

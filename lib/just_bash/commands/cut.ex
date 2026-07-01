@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Cut do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["cut"]
@@ -15,9 +15,9 @@ defmodule JustBash.Commands.Cut do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        content = get_content(bash, opts.files, stdin)
+        {content, fs} = get_content(bash, opts.files, stdin)
         output = process_content(content, opts)
-        {Command.ok(output), bash}
+        {Command.ok(output), %{bash | fs: fs}}
     end
   end
 
@@ -79,15 +79,15 @@ defmodule JustBash.Commands.Cut do
     parse_args(rest, %{opts | files: opts.files ++ [file]})
   end
 
-  defp get_content(_bash, [], stdin), do: stdin
+  defp get_content(bash, [], stdin), do: {stdin, bash.fs}
 
   defp get_content(bash, files, _stdin) do
-    Enum.map_join(files, "", fn file ->
-      resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    Enum.reduce(files, {"", bash.fs}, fn file, {acc, fs} ->
+      resolved = FS.resolve_path(bash.cwd, file)
 
-      case InMemoryFs.read_file(bash.fs, resolved) do
-        {:ok, content} -> content
-        {:error, _} -> ""
+      case FS.read_file(fs, resolved) do
+        {:ok, content, fs} -> {acc <> content, fs}
+        {:error, _} -> {acc, fs}
       end
     end)
   end

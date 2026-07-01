@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Touch do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["touch"]
@@ -19,9 +19,10 @@ defmodule JustBash.Commands.Touch do
   end
 
   defp touch_file(cwd, path, {fs_acc, err_acc, code_acc}) do
-    resolved = InMemoryFs.resolve_path(cwd, path)
+    resolved = FS.resolve_path(cwd, path)
+    {exists, fs_acc} = FS.exists?(fs_acc, resolved)
 
-    if InMemoryFs.exists?(fs_acc, resolved) do
+    if exists do
       {fs_acc, err_acc, code_acc}
     else
       create_empty_file(fs_acc, resolved, path, err_acc, code_acc)
@@ -29,7 +30,7 @@ defmodule JustBash.Commands.Touch do
   end
 
   defp create_empty_file(fs, resolved, path, err_acc, code_acc) do
-    case InMemoryFs.write_file(fs, resolved, "") do
+    case FS.write_file(fs, resolved, "") do
       {:ok, new_fs} -> {new_fs, err_acc, code_acc}
       {:error, _} -> {fs, err_acc <> "touch: cannot touch '#{path}'\n", 1}
     end

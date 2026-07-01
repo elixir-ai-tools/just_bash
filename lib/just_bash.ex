@@ -53,8 +53,7 @@ defmodule JustBash do
   """
 
   alias JustBash.Formatter
-  alias JustBash.Fs
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
   alias JustBash.Interpreter.Executor
   alias JustBash.Interpreter.State
   alias JustBash.Limit
@@ -119,7 +118,7 @@ defmodule JustBash do
         }
 
   @type t :: %__MODULE__{
-          fs: InMemoryFs.t(),
+          fs: FS.t(),
           env: map(),
           cwd: String.t(),
           functions: map(),
@@ -344,19 +343,16 @@ defmodule JustBash do
       "/tmp"
     ]
 
-    fs = InMemoryFs.new()
+    fs = FS.new()
 
     fs =
       Enum.reduce(default_dirs, fs, fn path, acc_fs ->
-        case InMemoryFs.mkdir(acc_fs, path, recursive: true) do
-          {:ok, new_fs} -> new_fs
-          {:error, :eexist} -> acc_fs
-          _ -> acc_fs
-        end
+        {:ok, new_fs} = FS.mkdir(acc_fs, path, parents: true)
+        new_fs
       end)
 
     Enum.reduce(files, fs, fn {path, content}, acc_fs ->
-      {:ok, new_fs} = InMemoryFs.write_file(acc_fs, path, content)
+      {:ok, new_fs} = FS.write_file(acc_fs, path, content)
       new_fs
     end)
   end
@@ -603,16 +599,52 @@ defmodule JustBash do
   """
   @spec exec_file(t(), String.t()) :: {exec_result(), t()}
   def exec_file(%JustBash{} = bash, path) do
-    resolved = Fs.resolve_path(bash.cwd, path)
+    resolved = FS.resolve_path(bash.cwd, path)
 
-    case Fs.read_file(bash.fs, resolved) do
-      {:ok, script} ->
-        exec(bash, script)
+    case FS.read_file(bash.fs, resolved) do
+      {:ok, script, fs} ->
+        exec(%{bash | fs: fs}, script)
 
       {:error, _reason} ->
         error_msg = "#{path}: No such file or directory\n"
         {%{stdout: "", stderr: error_msg, exit_code: 1, env: bash.env}, bash}
     end
+  end
+
+  @doc """
+  Mount an additional `VFS.Mountable` backend into the environment's
+  filesystem at `mountpoint`.
+
+  The default filesystem is a `%VFS{}` mount table with JustBash's
+  in-memory backend at `/`; additional backends (an exgit repository, a
+  `VFS.Memory` scratch space, any caller-provided `VFS.Mountable`) mount
+  alongside it and every bash command sees them transparently. Mount
+  resolution is longest-prefix, so a mount at `/repo` shadows the root
+  backend for paths under `/repo`.
+
+  Backends that don't support an operation refuse it with a structured
+  error (e.g. writing to a read-only mount fails with
+  "Read-only file system"; creating a symlink on a backend without
+  symlinks fails with "Operation not supported").
+
+  ## Examples
+
+      bash = JustBash.new()
+      bash = JustBash.mount(bash, "/mnt", VFS.Memory.new(%{"/data.csv" => "a,b\\n"}))
+      {result, _bash} = JustBash.exec(bash, "cat /mnt/data.csv")
+  """
+  @spec mount(t(), String.t(), VFS.Mountable.t()) :: t()
+  def mount(%JustBash{fs: fs} = bash, mountpoint, backend) do
+    %{bash | fs: VFS.mount(fs, mountpoint, backend)}
+  end
+
+  @doc """
+  Remove the mount at `mountpoint` from the environment's filesystem.
+  No-op if nothing is mounted there.
+  """
+  @spec umount(t(), String.t()) :: t()
+  def umount(%JustBash{fs: fs} = bash, mountpoint) do
+    %{bash | fs: VFS.umount(fs, mountpoint)}
   end
 
   @doc """

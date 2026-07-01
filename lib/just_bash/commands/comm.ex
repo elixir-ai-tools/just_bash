@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Comm do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["comm"]
@@ -21,12 +21,12 @@ defmodule JustBash.Commands.Comm do
         else
           [file1, file2] = opts.files
 
-          with {:ok, content1} <- read_file(bash, file1, stdin),
-               {:ok, content2} <- read_file(bash, file2, stdin) do
+          with {:ok, content1, fs} <- read_file(bash, bash.fs, file1, stdin),
+               {:ok, content2, fs} <- read_file(bash, fs, file2, stdin) do
             lines1 = split_lines(content1)
             lines2 = split_lines(content2)
             output = compare_files(lines1, lines2, opts)
-            {Command.ok(output), bash}
+            {Command.ok(output), %{bash | fs: fs}}
           else
             {:error, msg} -> {Command.error(msg), bash}
           end
@@ -88,13 +88,13 @@ defmodule JustBash.Commands.Comm do
     parse_args(rest, %{opts | files: opts.files ++ [file]})
   end
 
-  defp read_file(_bash, "-", stdin), do: {:ok, stdin}
+  defp read_file(_bash, fs, "-", stdin), do: {:ok, stdin, fs}
 
-  defp read_file(bash, file, _stdin) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+  defp read_file(bash, fs, file, _stdin) do
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, content} -> {:ok, content}
+    case FS.read_file(fs, resolved) do
+      {:ok, content, fs} -> {:ok, content, fs}
       {:error, _} -> {:error, "comm: #{file}: No such file or directory\n"}
     end
   end

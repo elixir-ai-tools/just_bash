@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Base64 do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["base64"]
@@ -15,8 +15,9 @@ defmodule JustBash.Commands.Base64 do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        opts
-        |> get_content(bash, stdin)
+        {content, bash} = get_content(opts, bash, stdin)
+
+        content
         |> process_content(opts)
         |> build_result(bash)
     end
@@ -24,7 +25,7 @@ defmodule JustBash.Commands.Base64 do
 
   defp get_content(opts, bash, stdin) do
     if opts.files == [] or opts.files == ["-"] do
-      {:ok, stdin}
+      {{:ok, stdin}, bash}
     else
       read_files(bash, opts.files)
     end
@@ -80,18 +81,24 @@ defmodule JustBash.Commands.Base64 do
   end
 
   defp read_files(bash, files) do
-    Enum.reduce_while(files, {:ok, ""}, fn file, {:ok, acc} ->
-      read_single_file(bash, file, acc)
-    end)
+    result =
+      Enum.reduce_while(files, {:ok, "", bash.fs}, fn file, {:ok, acc, fs} ->
+        read_single_file(bash, fs, file, acc)
+      end)
+
+    case result do
+      {:ok, acc, fs} -> {{:ok, acc}, %{bash | fs: fs}}
+      {:error, _} = err -> {err, bash}
+    end
   end
 
-  defp read_single_file(_bash, "-", acc), do: {:cont, {:ok, acc}}
+  defp read_single_file(_bash, fs, "-", acc), do: {:cont, {:ok, acc, fs}}
 
-  defp read_single_file(bash, file, acc) do
-    resolved = InMemoryFs.resolve_path(bash.cwd, file)
+  defp read_single_file(bash, fs, file, acc) do
+    resolved = FS.resolve_path(bash.cwd, file)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, data} -> {:cont, {:ok, acc <> data}}
+    case FS.read_file(fs, resolved) do
+      {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
       {:error, _} -> {:halt, {:error, "base64: #{file}: No such file or directory\n"}}
     end
   end

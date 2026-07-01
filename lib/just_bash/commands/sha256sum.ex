@@ -8,7 +8,7 @@ defmodule JustBash.Commands.Sha256sum do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["sha256sum"]
@@ -43,68 +43,75 @@ defmodule JustBash.Commands.Sha256sum do
   defp parse_args([file | rest], opts, files), do: parse_args(rest, opts, [file | files])
 
   defp hash_files(bash, files) do
-    {stdout, stderr, exit_code} =
-      Enum.reduce(files, {"", "", 0}, fn file, {out, err, code} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    {stdout, stderr, exit_code, fs} =
+      Enum.reduce(files, {"", "", 0, bash.fs}, fn file, {out, err, code, fs} ->
+        resolved = FS.resolve_path(bash.cwd, file)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
-          {:ok, content} ->
+        case FS.read_file(fs, resolved) do
+          {:ok, content, new_fs} ->
             hash = :crypto.hash(:sha256, content) |> Base.encode16(case: :lower)
-            {out <> "#{hash}  #{file}\n", err, code}
+            {out <> "#{hash}  #{file}\n", err, code, new_fs}
 
           {:error, _} ->
-            {out, err <> "sha256sum: #{file}: No such file or directory\n", 1}
+            {out, err <> "sha256sum: #{file}: No such file or directory\n", 1, fs}
         end
       end)
 
-    {Command.result(stdout, stderr, exit_code), bash}
+    {Command.result(stdout, stderr, exit_code), %{bash | fs: fs}}
   end
 
   defp check_checksums(bash, files) do
-    {stdout, stderr, exit_code} =
-      Enum.reduce(files, {"", "", 0}, fn file, {out, err, code} ->
-        resolved = InMemoryFs.resolve_path(bash.cwd, file)
+    {stdout, stderr, exit_code, fs} =
+      Enum.reduce(files, {"", "", 0, bash.fs}, fn file, {out, err, code, fs} ->
+        resolved = FS.resolve_path(bash.cwd, file)
 
-        case InMemoryFs.read_file(bash.fs, resolved) do
-          {:ok, content} ->
-            verify_checksum_file(bash, content, out, err, code)
+        case FS.read_file(fs, resolved) do
+          {:ok, content, new_fs} ->
+            verify_checksum_file(bash, content, out, err, code, new_fs)
 
           {:error, _} ->
-            {out, err <> "sha256sum: #{file}: No such file or directory\n", 1}
+            {out, err <> "sha256sum: #{file}: No such file or directory\n", 1, fs}
         end
       end)
 
-    {Command.result(stdout, stderr, exit_code), bash}
+    {Command.result(stdout, stderr, exit_code), %{bash | fs: fs}}
   end
 
-  defp verify_checksum_file(bash, content, out, err, code) do
+  defp verify_checksum_file(bash, content, out, err, code, fs) do
     content
     |> String.split("\n", trim: true)
-    |> Enum.reduce({out, err, code}, fn line, {o, e, c} ->
+    |> Enum.reduce({out, err, code, fs}, fn line, {o, e, c, f} ->
       case String.split(line, ~r/\s+/, parts: 2) do
         [expected_hash, file_path] ->
-          verify_single_checksum(bash, expected_hash, file_path, :sha256, "sha256sum", {o, e, c})
+          verify_single_checksum(
+            bash,
+            expected_hash,
+            file_path,
+            :sha256,
+            "sha256sum",
+            {o, e, c, f}
+          )
 
         _ ->
-          {o, e <> "sha256sum: invalid line in checksum file\n", 1}
+          {o, e <> "sha256sum: invalid line in checksum file\n", 1, f}
       end
     end)
   end
 
-  defp verify_single_checksum(bash, expected_hash, file_path, algorithm, cmd_name, {o, e, c}) do
+  defp verify_single_checksum(bash, expected_hash, file_path, algorithm, cmd_name, {o, e, c, f}) do
     trimmed = String.trim(file_path)
-    resolved = InMemoryFs.resolve_path(bash.cwd, trimmed)
+    resolved = FS.resolve_path(bash.cwd, trimmed)
 
-    case InMemoryFs.read_file(bash.fs, resolved) do
-      {:ok, file_content} ->
+    case FS.read_file(f, resolved) do
+      {:ok, file_content, new_fs} ->
         actual = :crypto.hash(algorithm, file_content) |> Base.encode16(case: :lower)
 
         if actual == String.downcase(expected_hash),
-          do: {o <> "#{trimmed}: OK\n", e, c},
-          else: {o <> "#{trimmed}: FAILED\n", e, 1}
+          do: {o <> "#{trimmed}: OK\n", e, c, new_fs},
+          else: {o <> "#{trimmed}: FAILED\n", e, 1, new_fs}
 
       {:error, _} ->
-        {o, e <> "#{cmd_name}: #{trimmed}: No such file or directory\n", 1}
+        {o, e <> "#{cmd_name}: #{trimmed}: No such file or directory\n", 1, f}
     end
   end
 end

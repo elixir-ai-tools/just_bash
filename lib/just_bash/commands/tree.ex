@@ -3,7 +3,7 @@ defmodule JustBash.Commands.Tree do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @impl true
   def names, do: ["tree"]
@@ -69,7 +69,7 @@ defmodule JustBash.Commands.Tree do
   end
 
   defp process_single_directory(ctx, cwd, dir, {acc_out, acc_err, acc_dirs, acc_files}) do
-    resolved = InMemoryFs.resolve_path(cwd, dir)
+    resolved = FS.resolve_path(cwd, dir)
 
     case build_tree(ctx, resolved, dir, 0) do
       {:ok, out, d, f} -> {acc_out <> out, acc_err, acc_dirs + d, acc_files + f}
@@ -78,10 +78,15 @@ defmodule JustBash.Commands.Tree do
   end
 
   defp build_tree(ctx, path, display_path, depth) do
-    case InMemoryFs.stat(ctx.fs, path) do
-      {:ok, %{is_directory: false}} -> {:ok, "#{display_path}\n", 0, 1}
-      {:ok, %{is_directory: true}} -> build_directory_tree(ctx, path, display_path, depth)
-      {:error, _} -> {:error, "tree: #{display_path}: No such file or directory\n"}
+    case FS.stat(ctx.fs, path) do
+      {:ok, %VFS.Stat{type: :directory}, _fs} ->
+        build_directory_tree(ctx, path, display_path, depth)
+
+      {:ok, _stat, _fs} ->
+        {:ok, "#{display_path}\n", 0, 1}
+
+      {:error, _} ->
+        {:error, "tree: #{display_path}: No such file or directory\n"}
     end
   end
 
@@ -98,8 +103,8 @@ defmodule JustBash.Commands.Tree do
   defp at_max_depth?(opts, depth), do: opts.max_depth != nil and depth >= opts.max_depth
 
   defp build_directory_contents(ctx, path, display_path, output, depth) do
-    case InMemoryFs.readdir(ctx.fs, path) do
-      {:ok, entries} ->
+    case FS.readdir(ctx.fs, path) do
+      {:ok, entries, _fs} ->
         filtered = filter_and_sort_entries(entries, ctx.opts)
         {tree_output, dir_count, file_count} = build_entries(ctx, path, filtered, "", depth)
         {:ok, output <> tree_output, dir_count, file_count}
@@ -138,9 +143,9 @@ defmodule JustBash.Commands.Tree do
   end
 
   defp build_single_entry(ctx, entry_ctx, depth, acc) do
-    case InMemoryFs.stat(ctx.fs, entry_ctx.entry_path) do
-      {:ok, %{is_directory: true}} -> build_dir_entry(ctx, entry_ctx, depth, acc)
-      {:ok, %{is_file: true}} -> build_file_entry(ctx, entry_ctx, acc)
+    case FS.stat(ctx.fs, entry_ctx.entry_path) do
+      {:ok, %VFS.Stat{type: :directory}, _fs} -> build_dir_entry(ctx, entry_ctx, depth, acc)
+      {:ok, %VFS.Stat{type: :regular}, _fs} -> build_file_entry(ctx, entry_ctx, acc)
       _ -> acc
     end
   end
@@ -162,8 +167,8 @@ defmodule JustBash.Commands.Tree do
   end
 
   defp build_subdirectory(ctx, entry_ctx, depth, acc_out, acc_dirs, acc_files, line) do
-    case InMemoryFs.readdir(ctx.fs, entry_ctx.entry_path) do
-      {:ok, sub_entries} ->
+    case FS.readdir(ctx.fs, entry_ctx.entry_path) do
+      {:ok, sub_entries, _fs} ->
         filtered = filter_and_sort_entries(sub_entries, ctx.opts)
 
         {sub_out, sub_dirs, sub_files} =

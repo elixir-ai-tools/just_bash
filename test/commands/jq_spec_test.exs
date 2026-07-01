@@ -100,7 +100,7 @@ defmodule JustBash.Commands.JqSpecTest do
   use ExUnit.Case, async: true
 
   alias JustBash.Commands.Jq.{Evaluator, Parser}
-  alias JustBash.Fs.InMemoryFs
+  alias JustBash.FS
 
   @moduletag :jq_spec
 
@@ -298,25 +298,21 @@ defmodule JustBash.Commands.JqSpecTest do
   # mounting them under virtual_root. Used to feed jq spec fixture modules
   # into the virtual FS so the evaluator never touches the real filesystem.
   defp load_modules_into_fs(real_dir, virtual_root) do
+    real_dir |> collect_module_files(virtual_root) |> FS.new()
+  end
+
+  defp collect_module_files(real_dir, virtual_root) do
     real_dir
     |> File.ls!()
-    |> Enum.reduce(InMemoryFs.new(), fn entry, fs ->
+    |> Enum.reduce(%{}, fn entry, acc ->
       real_path = Path.join(real_dir, entry)
       virtual_path = Path.join(virtual_root, entry)
 
       if File.dir?(real_path) do
-        load_modules_into_fs(real_path, virtual_path) |> merge_fs(fs)
+        Map.merge(acc, collect_module_files(real_path, virtual_path))
       else
-        {:ok, fs} = InMemoryFs.write_file(fs, virtual_path, File.read!(real_path))
-        fs
+        Map.put(acc, virtual_path, File.read!(real_path))
       end
-    end)
-  end
-
-  defp merge_fs(source_fs, target_fs) do
-    source_fs.data
-    |> Enum.reduce(target_fs, fn {path, entry}, fs ->
-      %{fs | data: Map.put(fs.data, path, entry)}
     end)
   end
 
