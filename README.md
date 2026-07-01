@@ -165,6 +165,52 @@ bash =
 result.stdout  #=> "41\n"
 ```
 
+#### Reading and writing the virtual filesystem
+
+Custom commands access the filesystem through `JustBash.FS`. Reads return
+the (possibly updated) filesystem as the last element — thread it forward
+and return it on the struct, so backends that cache on read keep their
+caches. Errors are `%VFS.Error{}` structs; `JustBash.FS.strerror/1` turns
+one into the conventional message text.
+
+```elixir
+defmodule MyApp.Commands.Upcase do
+  @behaviour JustBash.Commands.Command
+
+  alias JustBash.FS
+
+  @impl true
+  def names, do: ["upcase"]
+
+  @impl true
+  def execute(bash, [path], _stdin) do
+    resolved = FS.resolve_path(bash.cwd, path)
+
+    case FS.read_file(bash.fs, resolved) do
+      {:ok, content, fs} ->
+        {:ok, fs} = FS.write_file(fs, resolved, String.upcase(content))
+        {%{stdout: "", stderr: "", exit_code: 0}, %{bash | fs: fs}}
+
+      {:error, %VFS.Error{} = err} ->
+        msg = "upcase: #{path}: #{FS.strerror(err)}\n"
+        {%{stdout: "", stderr: msg, exit_code: 1}, bash}
+    end
+  end
+
+  def execute(bash, _args, _stdin) do
+    {%{stdout: "", stderr: "upcase: expected 1 argument\n", exit_code: 1}, bash}
+  end
+end
+
+bash = JustBash.new(files: %{"/note.txt" => "hello"}, commands: %{"upcase" => MyApp.Commands.Upcase})
+{_result, bash} = JustBash.exec(bash, "upcase /note.txt")
+{result, _bash} = JustBash.exec(bash, "cat /note.txt")
+result.stdout  #=> "HELLO"
+```
+
+Upgrading a 0.3 command that used `JustBash.Fs.InMemoryFs`? See
+[UPGRADING.md](UPGRADING.md) for the full old→new mapping.
+
 Important caveats:
 
 - Custom commands run arbitrary Elixir code in the host BEAM process

@@ -66,7 +66,7 @@ defmodule JustBash.MixProject do
         "Changelog" => "#{@source_url}/blob/main/CHANGELOG.md"
       },
       maintainers: ["Ivar Vong", "Chris Bell", "Dave Lucia"],
-      files: ~w(lib .formatter.exs mix.exs README.md LICENSE CHANGELOG.md)
+      files: ~w(lib .formatter.exs mix.exs README.md LICENSE CHANGELOG.md UPGRADING.md)
     ]
   end
 
@@ -76,7 +76,7 @@ defmodule JustBash.MixProject do
       name: "JustBash",
       source_ref: "v#{@version}",
       source_url: @source_url,
-      extras: ["README.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE"],
+      extras: ["README.md", "UPGRADING.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE"],
       groups_for_modules: [
         Core: [JustBash],
         Parser: [JustBash.Parser, JustBash.Parser.Lexer, JustBash.Parser.WordParts],
