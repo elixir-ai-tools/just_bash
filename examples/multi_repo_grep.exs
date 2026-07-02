@@ -10,9 +10,12 @@
 # handle still works host-side, where exgit's own streaming grep
 # searches the clone without any mount at all.
 #
+# There are no helpers here — every line is what a real caller writes.
 # The sandbox is a value: JustBash.exec/2 returns {result, bash} and
-# you thread the returned struct forward. Mount, exec, umount — all
-# pure transformations of that value.
+# you thread the returned struct forward. Each exec asserts
+# `%{exit_code: 0}`, so the deterministic transcript doubles as a
+# smoke test of the whole stack (a failure crashes with the full
+# Result in the MatchError).
 #
 # Run it:
 #
@@ -22,33 +25,6 @@ Mix.install([
   {:just_bash, github: "elixir-ai-tools/just_bash"},
   {:exgit, "~> 0.1.0"}
 ])
-
-defmodule Shell do
-  @doc """
-  Run one command, print a transcript, return the threaded sandbox.
-
-  Every command in this demo is expected to succeed, so a nonzero exit
-  raises — the transcript doubles as a smoke test of the whole stack.
-  """
-  def run(bash, command) do
-    IO.puts("$ #{command}")
-    {result, bash} = JustBash.exec(bash, command)
-
-    IO.write(indent(result.stdout))
-    if result.stderr != "", do: IO.write(indent(result.stderr))
-
-    if result.exit_code != 0 do
-      raise "command failed (exit #{result.exit_code}): #{command}"
-    end
-
-    bash
-  end
-
-  defp indent(""), do: ""
-
-  defp indent(out),
-    do: out |> String.trim_trailing() |> String.replace(~r/^/m, "  ") |> Kernel.<>("\n")
-end
 
 # Ordered so the match list grows one repo at a time.
 repos = [
@@ -77,24 +53,23 @@ grep = "grep -rln 'defimpl VFS.Mountable, for:' /repos/*/lib"
 # grep through the mount, or after Exgit.Repository.materialize/2.)
 {handles, bash} =
   Enum.map_reduce(repos, JustBash.new(), fn {name, url}, bash ->
-    IO.puts("\n== mount #{name} (#{url})")
+    IO.puts("\n== mount #{name} (#{url})\n$ #{grep}")
     {:ok, repo} = Exgit.clone(url)
+    bash = JustBash.mount(bash, "/repos/#{name}", Exgit.Workspace.open(repo))
 
-    bash =
-      bash
-      |> JustBash.mount("/repos/#{name}", Exgit.Workspace.open(repo))
-      |> Shell.run(grep)
+    {%{exit_code: 0} = result, bash} = JustBash.exec(bash, grep)
+    IO.write(result.stdout)
 
     {{name, repo}, bash}
   end)
 
 # Unmounting is just as programmatic: drop pyex from the table and the
 # same grep no longer sees it.
-IO.puts("\n== umount pyex")
+IO.puts("\n== umount pyex\n$ #{grep}")
+bash = JustBash.umount(bash, "/repos/pyex")
 
-bash
-|> JustBash.umount("/repos/pyex")
-|> Shell.run(grep)
+{%{exit_code: 0} = result, _bash} = JustBash.exec(bash, grep)
+IO.write(result.stdout)
 
 # The mount is gone, but the clone isn't: the repo handle still works
 # host-side. Exgit.FS.grep streams matches lazily straight off the
@@ -108,5 +83,5 @@ pyex
 |> Exgit.FS.grep("HEAD", "defimpl VFS.Mountable, for:", path: "lib/**")
 |> Enum.take(2)
 |> Enum.each(fn match ->
-  IO.puts("  #{match.path}:#{match.line_number}: #{String.trim(match.line)}")
+  IO.puts("#{match.path}:#{match.line_number}: #{String.trim(match.line)}")
 end)
