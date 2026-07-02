@@ -225,6 +225,42 @@ defmodule JustBash.FS do
     end
   end
 
+  @doc """
+  Read every regular file under `root` into a `%{path => content}` map —
+  the filesystem as a git-style tree of absolute paths to blobs. The
+  inverse of `new/1` up to what a tree can express: `FS.new(tree)`
+  rebuilds an equivalent filesystem, but modes, mtimes, empty
+  directories, and symlink identity are not captured (symlinks are
+  materialized as their target's content; dangling symlinks and cyclic
+  directory symlinks follow `VFS.walk/3` semantics and are omitted).
+
+  Walks the whole mount table, so mounted backends contribute their
+  files. Returns `{:ok, tree, fs}` per vfs read conventions — thread the
+  returned `fs` forward when the mount table contains lazy backends.
+
+  ## Examples
+
+      iex> fs = JustBash.FS.new(%{"/a.txt" => "alpha", "/notes/b.txt" => "beta"})
+      iex> {:ok, tree, _fs} = JustBash.FS.to_tree(fs)
+      iex> tree
+      %{"/a.txt" => "alpha", "/notes/b.txt" => "beta"}
+  """
+  @spec to_tree(t(), String.t()) :: {:ok, %{String.t() => binary()}, t()} | {:error, Error.t()}
+  def to_tree(fs, root \\ "/") do
+    fs
+    |> walk(normalize_path(root))
+    |> Enum.reduce_while({:ok, %{}, fs}, fn
+      {path, %VFS.Stat{type: :regular}}, {:ok, tree, fs} ->
+        case read_file(fs, path) do
+          {:ok, content, fs} -> {:cont, {:ok, Map.put(tree, path, content), fs}}
+          {:error, %Error{} = err} -> {:halt, {:error, err}}
+        end
+
+      {_path, %VFS.Stat{}}, acc ->
+        {:cont, acc}
+    end)
+  end
+
   # ── error formatting ─────────────────────────────────────────────────────
 
   @doc """
