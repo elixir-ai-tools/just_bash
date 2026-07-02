@@ -28,7 +28,7 @@ repos = [
 # /repos/*/lib globs across mount roots like ordinary directories.
 grep = "grep -rln 'defimpl VFS.Mountable, for:' /repos/*/lib"
 
-# ── Build the world: one more mount per iteration, same grep ────────
+# Mount one repo per iteration; the same grep sees each addition.
 session =
   Enum.reduce(repos, JustBash.new(), fn {name, url}, session ->
     IO.puts("\n== mount #{name}\n$ #{grep}")
@@ -40,12 +40,14 @@ session =
     session
   end)
 
-# ── State threads: one exec's writes are the next exec's world ──────
+# Writes persist across execs: one command's output is the next
+# command's input, carried by the returned session value.
 {%{exit_code: 0}, session} = JustBash.exec(session, "#{grep} > /work/matches.txt")
 {%{exit_code: 0} = result, session} = JustBash.exec(session, "wc -l < /work/matches.txt")
 IO.puts("\n== agent wrote /work/matches.txt: #{String.trim(result.stdout)} matches")
 
-# ── Fork and roll back: sessions are values ─────────────────────────
+# Checkpoint and rollback: a session is a value, so checkpointing is
+# a variable binding and rollback is using the old binding.
 checkpoint = session
 
 {%{exit_code: 0}, session} = JustBash.exec(session, "rm /work/matches.txt")
@@ -53,7 +55,7 @@ checkpoint = session
 {%{exit_code: 0}, _} = JustBash.exec(checkpoint, "cat /work/matches.txt")
 IO.puts("== rm'd in the live session; the checkpoint still has it")
 
-# ── Shrink the world ────────────────────────────────────────────────
+# Umount: the same grep no longer sees pyex.
 IO.puts("\n== umount pyex\n$ #{grep}")
 session = JustBash.umount(session, "/repos/pyex")
 
