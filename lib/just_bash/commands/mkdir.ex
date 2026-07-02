@@ -26,9 +26,9 @@ defmodule JustBash.Commands.Mkdir do
           {:error, %VFS.Error{kind: :eexist}} ->
             {err_acc <> "mkdir: cannot create directory '#{path}': File exists\n", 1, fs_acc}
 
-          {:error, %VFS.Error{kind: :enoent}} ->
-            {err_acc <> "mkdir: cannot create directory '#{path}': No such file or directory\n",
-             1, fs_acc}
+          {:error, %VFS.Error{} = error} ->
+            {err_acc <> "mkdir: cannot create directory '#{path}': #{FS.strerror(error)}\n", 1,
+             fs_acc}
         end
       end)
 

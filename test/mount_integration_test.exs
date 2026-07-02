@@ -1,6 +1,38 @@
 defmodule JustBash.MountIntegrationTest do
   use ExUnit.Case, async: true
 
+  alias JustBash.Test.NoEmptyDirsBackend
+
+  describe "mutations on restricted mounts" do
+    test "mkdir on a backend without directory support fails with exit 1, not a crash" do
+      bash = JustBash.new() |> JustBash.mount("/mnt", %NoEmptyDirsBackend{})
+
+      {result, _bash} = JustBash.exec(bash, "mkdir /mnt/newdir")
+      assert result.exit_code == 1
+      assert result.stderr =~ "mkdir: cannot create directory '/mnt/newdir'"
+      assert result.stderr =~ "Operation not supported"
+    end
+
+    test "mkdir -p on a backend without directory support fails with exit 1, not a crash" do
+      bash = JustBash.new() |> JustBash.mount("/mnt", %NoEmptyDirsBackend{})
+
+      {result, _bash} = JustBash.exec(bash, "mkdir -p /mnt/a/b")
+      assert result.exit_code == 1
+      assert result.stderr =~ "Operation not supported"
+    end
+
+    test "rm on a read-only backend fails with exit 1, not a crash" do
+      bash =
+        JustBash.new()
+        |> JustBash.mount("/mnt", %NoEmptyDirsBackend{files: %{"/f.txt" => "x"}, read_only: true})
+
+      {result, _bash} = JustBash.exec(bash, "rm /mnt/f.txt")
+      assert result.exit_code == 1
+      assert result.stderr =~ "rm: cannot remove '/mnt/f.txt'"
+      assert result.stderr =~ "Read-only file system"
+    end
+  end
+
   describe "JustBash.mount/3" do
     test "bash commands read a mounted VFS.Memory backend" do
       bash =
