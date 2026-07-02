@@ -305,7 +305,7 @@ defmodule JustBash.FS.Zip do
         {:halt, {:error, error}}
 
       true ->
-        {:cont, {:ok, files, MapSet.union(dirs, parent_dirs(path)) |> MapSet.put(path)}}
+        {:cont, {:ok, files, path |> parent_dirs() |> put_dirs(dirs) |> MapSet.put(path)}}
     end
   end
 
@@ -326,7 +326,7 @@ defmodule JustBash.FS.Zip do
         {:halt, {:error, error}}
 
       true ->
-        {:cont, {:ok, Map.put(files, path, content), MapSet.union(dirs, parent_dirs(path))}}
+        {:cont, {:ok, Map.put(files, path, content), put_dirs(parent_dirs(path), dirs)}}
     end
   end
 
@@ -371,19 +371,23 @@ defmodule JustBash.FS.Zip do
   defp parent_dirs(path) do
     path
     |> VPath.dirname()
-    |> do_parent_dirs(MapSet.new(["/"]))
+    |> do_parent_dirs(["/"])
   end
 
   defp do_parent_dirs("/", acc), do: acc
 
   defp do_parent_dirs(path, acc) do
-    do_parent_dirs(VPath.dirname(path), MapSet.put(acc, path))
+    do_parent_dirs(VPath.dirname(path), [path | acc])
+  end
+
+  defp put_dirs(paths, dirs) do
+    Enum.reduce(paths, dirs, &MapSet.put(&2, &1))
   end
 
   defp file_parent(path, files) do
     path
     |> parent_dirs()
-    |> MapSet.delete("/")
+    |> Enum.reject(&(&1 == "/"))
     |> Enum.find(&Map.has_key?(files, &1))
   end
 
