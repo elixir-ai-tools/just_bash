@@ -49,6 +49,26 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   end
 
   @doc """
+  Prepare output redirections before command execution.
+
+  Shells open redirection targets left-to-right before running the command. The
+  actual command output is still written by `apply_redirections/3` after command
+  execution, but this preflight step performs the observable open-time effects
+  that matter for correctness: truncating `>` targets, creating `>>` targets,
+  and failing before the command runs when a target is not writable.
+  """
+  @spec prepare_redirections(JustBash.t(), [AST.Redirection.t()]) ::
+          {:ok, JustBash.t()} | {:error, result(), JustBash.t()}
+  def prepare_redirections(bash, redirections) do
+    Enum.reduce_while(redirections, {:ok, bash}, fn redir, {:ok, current_bash} ->
+      case prepare_redirection(current_bash, redir) do
+        {:ok, next_bash} -> {:cont, {:ok, next_bash}}
+        {:error, result, next_bash} -> {:halt, {:error, result, next_bash}}
+      end
+    end)
+  end
+
+  @doc """
   Extract heredoc or here-string content as stdin.
   Returns `{stdin_content, non_heredoc_redirections}`.
   """
@@ -79,6 +99,13 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     resolved = FS.resolve_path(bash.cwd, target_path)
     redir_type = classify_redirection(fd, operator, target_path)
     apply_classified_redirection(redir_type, result, bash, resolved)
+  end
+
+  defp prepare_redirection(bash, %AST.Redirection{fd: fd, operator: operator, target: target}) do
+    target_path = Expansion.expand_redirect_target(bash, target)
+    resolved = FS.resolve_path(bash.cwd, target_path)
+    redir_type = classify_redirection(fd, operator, target_path)
+    prepare_classified_redirection(redir_type, bash, resolved)
   end
 
   @spec classify_redirection(non_neg_integer(), atom(), String.t()) :: redir_type()
@@ -162,6 +189,24 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     {result, bash}
   end
 
+  defp prepare_classified_redirection(type, bash, resolved)
+       when type in [:stdout_write, :stderr_write, :combined_write] do
+    case FS.write_file(bash.fs, resolved, "") do
+      {:ok, fs} -> {:ok, %{bash | fs: fs}}
+      {:error, error} -> {:error, redirection_error_result(resolved, error), bash}
+    end
+  end
+
+  defp prepare_classified_redirection(type, bash, resolved)
+       when type in [:stdout_append, :stderr_append, :combined_append] do
+    case FS.append_file(bash.fs, resolved, "") do
+      {:ok, fs} -> {:ok, %{bash | fs: fs}}
+      {:error, error} -> {:error, redirection_error_result(resolved, error), bash}
+    end
+  end
+
+  defp prepare_classified_redirection(_type, bash, _resolved), do: {:ok, bash}
+
   defp write_to_file(bash, path, content, result, stream) do
     Limit.check_file_size!(bash, content)
 
@@ -172,7 +217,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
       {:error, error} ->
         error_msg = format_redirection_error(path, error)
-        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, bash}
+        {%{result | stdout: "", stderr: error_msg, exit_code: 1}, bash}
     end
   end
 
@@ -186,7 +231,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
       {:error, error} ->
         error_msg = format_redirection_error(path, error)
-        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, bash}
+        {%{result | stdout: "", stderr: error_msg, exit_code: 1}, bash}
     end
   end
 
@@ -199,7 +244,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
       {:error, error} ->
         error_msg = format_redirection_error(path, error)
-        {%{result | stderr: error_msg, exit_code: 1}, bash}
+        {%{result | stdout: "", stderr: error_msg, exit_code: 1}, bash}
     end
   end
 
@@ -212,7 +257,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
       {:error, error} ->
         error_msg = format_redirection_error(path, error)
-        {%{result | stderr: error_msg, exit_code: 1}, bash}
+        {%{result | stdout: "", stderr: error_msg, exit_code: 1}, bash}
     end
   end
 
@@ -234,6 +279,10 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   defp format_redirection_error(path, error) do
     "bash: #{path}: #{FS.strerror(error)}\n"
+  end
+
+  defp redirection_error_result(path, error) do
+    %{stdout: "", stderr: format_redirection_error(path, error), exit_code: 1}
   end
 
   # --- Stdin Content Extraction ---

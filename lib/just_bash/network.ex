@@ -117,7 +117,9 @@ defmodule JustBash.Network do
       nil ->
         {:response, response}
 
-      redirect_url ->
+      redirect_location ->
+        redirect_url = resolve_redirect_url(request.url, redirect_location)
+
         case validate_access(bash, redirect_url, command_name) do
           {:error, msg} ->
             {:error, %{reason: msg}}
@@ -145,6 +147,12 @@ defmodule JustBash.Network do
 
   # Default on_redirect — returns the request unchanged (appropriate for GET-only commands).
   defp identity_redirect(_status, request), do: request
+
+  defp resolve_redirect_url(current_url, location) do
+    current_url
+    |> URI.merge(location)
+    |> URI.to_string()
+  end
 
   defp scheme_allowed?(url, allow_insecure) do
     case URI.parse(url).scheme do

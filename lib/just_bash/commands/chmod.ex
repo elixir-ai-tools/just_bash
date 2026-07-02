@@ -20,8 +20,8 @@ defmodule JustBash.Commands.Chmod do
     {opts, positional} = parse_args(args)
 
     case positional do
-      [_mode | paths] when paths != [] ->
-        check_paths(bash, paths, opts.recursive)
+      [mode | paths] when paths != [] ->
+        check_paths(bash, mode, paths, opts.recursive)
 
       _ ->
         {Command.error("chmod: missing operand\n"), bash}
@@ -41,14 +41,21 @@ defmodule JustBash.Commands.Chmod do
 
   defp parse_args([arg | rest], opts, pos), do: parse_args(rest, opts, [arg | pos])
 
-  defp check_paths(bash, paths, _recursive) do
+  defp check_paths(bash, _mode, paths, _recursive) do
     {stderr, exit_code, fs} =
       Enum.reduce(paths, {"", 0, bash.fs}, fn path, {err, code, fs} ->
         resolved = FS.resolve_path(bash.cwd, path)
 
         case FS.stat(fs, resolved) do
-          {:ok, _, new_fs} ->
-            {err, code, new_fs}
+          {:ok, stat, new_fs} ->
+            case FS.chmod(new_fs, resolved, stat.mode || 0) do
+              {:ok, newer_fs} ->
+                {err, code, newer_fs}
+
+              {:error, error} ->
+                {err <> "chmod: changing permissions of '#{path}': #{FS.strerror(error)}\n", 1,
+                 new_fs}
+            end
 
           {:error, _} ->
             {err <> "chmod: cannot access '#{path}': No such file or directory\n", 1, fs}
