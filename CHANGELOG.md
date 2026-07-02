@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0](https://github.com/elixir-ai-tools/just_bash/compare/v0.3.0...v1.0.0) (2026-07-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* JustBash.Fs and JustBash.Fs.InMemoryFs are replaced by JustBash.FS / JustBash.FS.Memory with vfs-shaped returns ({:ok, payload, fs} on reads, %VFS.Error{} on failure, %VFS.Stat{} from stat). Bash-level script behavior is unchanged.
+
+### Features
+
+* add JustBash.CLI for namespaced subcommand tools ([#39](https://github.com/elixir-ai-tools/just_bash/issues/39)) ([2761adf](https://github.com/elixir-ai-tools/just_bash/commit/2761adf6ba25a46b4c294f5cc75b663de45bb5b4))
+* add put_context/3 and get_context/3 accessors ([#41](https://github.com/elixir-ai-tools/just_bash/issues/41)) ([2c6e6b7](https://github.com/elixir-ai-tools/just_bash/commit/2c6e6b70ea914b66f3f620ed25d69abb7887c4ec))
+* **cli:** address consumer feedback from issue [#38](https://github.com/elixir-ai-tools/just_bash/issues/38) ([#43](https://github.com/elixir-ai-tools/just_bash/issues/43)) ([7d84244](https://github.com/elixir-ai-tools/just_bash/commit/7d84244af91435d0b3a9c1419ae68d55019222fc))
+* replace the filesystem layer with the vfs library ([#44](https://github.com/elixir-ai-tools/just_bash/issues/44)) ([1da1db8](https://github.com/elixir-ai-tools/just_bash/commit/1da1db8a99491e9d0b7810fc9f84570be4e71c2f))
+
 ## [0.3.0](https://github.com/elixir-ai-tools/just_bash/compare/v0.2.0...v0.3.0) (2026-04-14)
 
 
