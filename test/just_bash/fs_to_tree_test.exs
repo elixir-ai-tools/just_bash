@@ -67,14 +67,19 @@ defmodule JustBash.FSToTreeTest do
     end
 
     test "captures files from every mount in the table" do
-      fs = VFS.mount(FS.new(%{"/local.txt" => "local"}), "/mnt", FS.Memory.new(%{"/x.txt" => "mounted"}))
+      fs =
+        VFS.mount(
+          FS.new(%{"/local.txt" => "local"}),
+          "/mnt",
+          FS.Memory.new(%{"/x.txt" => "mounted"})
+        )
 
       assert {:ok, tree, _fs} = FS.to_tree(fs)
       assert tree == %{"/local.txt" => "local", "/mnt/x.txt" => "mounted"}
     end
 
     property "any conflict-free file map round-trips exactly" do
-      check all files <- file_map() do
+      check all(files <- file_map()) do
         assert {:ok, tree, _fs} = FS.to_tree(FS.new(files))
         assert tree == files
       end
