@@ -138,6 +138,32 @@ defmodule JustBash.FSTest do
       {:ok, stat, _fs} = FS.stat(fs, "/script.sh")
       assert stat.mode == 0o755
     end
+
+    test "writes through a symlink to the target, keeping the link" do
+      fs = FS.new(%{"/target.txt" => "old content"})
+      {:ok, fs} = FS.symlink(fs, "/target.txt", "/link")
+      {:ok, fs} = FS.write_file(fs, "/link", "new")
+
+      assert {:ok, "new", fs} = FS.read_file(fs, "/target.txt")
+      assert {:ok, %VFS.Stat{type: :symlink}, _fs} = FS.lstat(fs, "/link")
+    end
+
+    test "writing to a dangling symlink creates the target" do
+      fs = FS.new()
+      {:ok, fs} = FS.symlink(fs, "/missing.txt", "/link")
+      {:ok, fs} = FS.write_file(fs, "/link", "created")
+
+      assert {:ok, "created", fs} = FS.read_file(fs, "/missing.txt")
+      assert {:ok, %VFS.Stat{type: :symlink}, _fs} = FS.lstat(fs, "/link")
+    end
+
+    test "writing through a symlink loop fails with :eloop" do
+      fs = FS.new()
+      {:ok, fs} = FS.symlink(fs, "/l2", "/l1")
+      {:ok, fs} = FS.symlink(fs, "/l1", "/l2")
+
+      assert {:error, %VFS.Error{kind: :eloop}} = FS.write_file(fs, "/l1", "x")
+    end
   end
 
   describe "append_file/3" do
@@ -309,6 +335,15 @@ defmodule JustBash.FSTest do
       assert stat.mtime == mtime
     end
 
+    test "writes through a destination symlink (unlike mv, which replaces it)" do
+      fs = FS.new(%{"/src.txt" => "SRC", "/target.txt" => "TARGET"})
+      {:ok, fs} = FS.symlink(fs, "/target.txt", "/link")
+      {:ok, fs} = FS.cp(fs, "/src.txt", "/link")
+
+      assert {:ok, "SRC", fs} = FS.read_file(fs, "/target.txt")
+      assert {:ok, %VFS.Stat{type: :symlink}, _fs} = FS.lstat(fs, "/link")
+    end
+
     test "copies symlinks as symlinks" do
       fs = FS.new(%{"/target.txt" => "content"})
       {:ok, fs} = FS.symlink(fs, "/target.txt", "/link")
@@ -353,6 +388,19 @@ defmodule JustBash.FSTest do
       {:ok, fs} = FS.mv(fs, "/srcdir", "/destdir")
       assert {:ok, "content", fs} = FS.read_file(fs, "/destdir/file.txt")
       assert {false, _fs} = FS.exists?(fs, "/srcdir")
+    end
+
+    test "replaces a destination symlink instead of writing through it" do
+      fs = FS.new(%{"/src.txt" => "SRC", "/target.txt" => "TARGET"})
+      {:ok, fs} = FS.symlink(fs, "/target.txt", "/link")
+      {:ok, fs} = FS.mv(fs, "/src.txt", "/link")
+
+      # rename(2) semantics: the destination name itself is replaced...
+      assert {:ok, %VFS.Stat{type: :regular}, fs} = FS.lstat(fs, "/link")
+      assert {:ok, "SRC", fs} = FS.read_file(fs, "/link")
+      # ...and the old target is untouched
+      assert {:ok, "TARGET", fs} = FS.read_file(fs, "/target.txt")
+      assert {false, _fs} = FS.exists?(fs, "/src.txt")
     end
 
     test "moving onto itself is a no-op" do
@@ -418,6 +466,33 @@ defmodule JustBash.FSTest do
     test "returns error for nonexistent" do
       fs = FS.new()
       assert {:error, %VFS.Error{kind: :enoent}} = FS.chmod(fs, "/nonexistent", 0o755)
+    end
+
+    test "follows symlinks to the target" do
+      fs = FS.new(%{"/target.txt" => "content"})
+      {:ok, fs} = FS.symlink(fs, "/target.txt", "/link")
+      {:ok, fs} = FS.chmod(fs, "/link", 0o755)
+
+      {:ok, stat, fs} = FS.stat(fs, "/target.txt")
+      assert stat.mode == 0o755
+
+      # the link entry itself keeps its conventional 0o777
+      {:ok, link_stat, _fs} = FS.lstat(fs, "/link")
+      assert link_stat.mode == 0o777
+    end
+
+    test "returns error for a dangling symlink" do
+      fs = FS.new()
+      {:ok, fs} = FS.symlink(fs, "/missing", "/link")
+      assert {:error, %VFS.Error{kind: :enoent}} = FS.chmod(fs, "/link", 0o755)
+    end
+
+    test "fails with :eloop on a symlink loop" do
+      fs = FS.new()
+      {:ok, fs} = FS.symlink(fs, "/l2", "/l1")
+      {:ok, fs} = FS.symlink(fs, "/l1", "/l2")
+
+      assert {:error, %VFS.Error{kind: :eloop}} = FS.chmod(fs, "/l1", 0o755)
     end
   end
 
@@ -603,6 +678,14 @@ defmodule JustBash.FSTest do
 
       assert {:error, %VFS.Error{kind: :exdev}} =
                FS.link(fs, "/home/user/f.txt", "/scratch/hard")
+    end
+
+    test "link reports the new path when it resolves to no mount" do
+      # a sparse table: only /a is mounted, so /b/g resolves to no mount
+      fs = VFS.new() |> VFS.mount("/a", JustBash.FS.Memory.new(%{"/f.txt" => "x"}))
+
+      assert {:error, %VFS.Error{kind: :enoent, path: "/b/g"}} =
+               FS.link(fs, "/a/f.txt", "/b/g")
     end
   end
 end

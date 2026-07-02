@@ -10,15 +10,19 @@ for the exact deltas below.
 
 Every difference a script can observe, verified against the 0.3 sources:
 
-1. **`>>`, `&>>`, and `tee -a` now append through symlinks** (POSIX
-   `O_APPEND` semantics): the target file receives the bytes and the link
-   survives; appending through a dangling symlink creates the target. In
-   0.3, `>> link` replaced the link with a regular file holding target
-   content plus the appended bytes, and `tee -a link` replaced it with
-   *only* the appended bytes (dropping the target's content). Appending
-   through a symlink loop now fails with "Too many levels of symbolic
-   links". (`> link` still replaces the link with a regular file — a
-   pre-existing 0.3 divergence from bash, unchanged in this release.)
+1. **`>`, `>>`, `&>>`, `tee`, and `tee -a` now write through symlinks**
+   (POSIX `O_TRUNC`/`O_APPEND` semantics): the target file receives the
+   bytes and the link survives; writing through a dangling symlink
+   creates the target. In 0.3, every one of these replaced the link
+   itself with a regular file (`>> link` with target content plus the
+   appended bytes, `tee -a link` with *only* the appended bytes,
+   dropping the target's content). Writing or appending through a
+   symlink loop now fails with "Too many levels of symbolic links". The
+   same applies to any command that opens its output file (`mktemp`,
+   `curl -o`, `wget`, ...), including `cp` onto a symlink. Rename-based
+   writers keep their POSIX behavior of replacing the link itself: `mv`
+   (rename semantics) and `sed -i` (GNU sed's documented "breaks
+   symbolic links"), both matching bash and 0.3.
 2. **`>>` preserves the target's mode.** 0.3 reset it to `0o644` on every
    append.
 3. **`cat` on a symlink loop** prints
@@ -90,6 +94,14 @@ blobs on demand) keep their caches:
 
 Mutations (`write_file`, `mkdir`, `rm`, `symlink`, `link`, `chmod`,
 `append_file`, `cp`, `mv`) still return `{:ok, fs}`.
+
+Two mutation semantics changed on the default backend: `FS.write_file/4`
+and `FS.chmod/3` now follow symlinks to the final target, as
+`append_file/3` always should have — 0.3's `Fs.write_file` replaced the
+link with a regular file, and `Fs.chmod` set the mode on the link entry
+itself. Note that `FS.link/3` creates a link-time copy, not a shared
+inode: a later write through one name does not update the other (same
+as 0.3).
 
 ### Stat fields
 

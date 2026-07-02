@@ -477,6 +477,24 @@ defmodule JustBash.Commands.TextProcessingTest do
       assert result.stdout == "hi world\n"
     end
 
+    test "sed -i on a symlink replaces the link and leaves the target untouched" do
+      # GNU sed -i renames a temp file over the operand, so it "breaks
+      # symbolic links": the link becomes a regular file holding the
+      # edited content, and the target keeps its original content.
+      bash = JustBash.new(files: %{"/target.txt" => "aaa\n"})
+
+      {result, _bash} =
+        JustBash.exec(bash, """
+        ln -s /target.txt /link
+        sed -i 's/a/b/g' /link
+        echo "target: $(cat /target.txt)"
+        [[ -L /link ]] && echo still-a-link || echo "link: $(cat /link)"
+        """)
+
+      assert result.exit_code == 0
+      assert result.stdout == "target: aaa\nlink: bbb\n"
+    end
+
     test "sed shows help with --help" do
       bash = JustBash.new()
       {result, _} = JustBash.exec(bash, "sed --help")

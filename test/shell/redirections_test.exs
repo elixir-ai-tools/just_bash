@@ -20,6 +20,21 @@ defmodule JustBash.Shell.RedirectionsTest do
       assert result2.stdout == "first\nsecond\n"
     end
 
+    test "> through a symlink truncates the target and keeps the link" do
+      bash = JustBash.new(files: %{"/target.txt" => "old content\n"})
+
+      {result, _bash} =
+        JustBash.exec(bash, """
+        ln -s /target.txt /link
+        echo replaced > /link
+        cat /target.txt
+        [[ -L /link ]] && echo still-a-link
+        """)
+
+      assert result.exit_code == 0
+      assert result.stdout == "replaced\nstill-a-link\n"
+    end
+
     test ">> through a symlink appends to the target and keeps the link" do
       bash = JustBash.new(files: %{"/target.txt" => "first\n"})
 

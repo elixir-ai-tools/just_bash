@@ -206,6 +206,9 @@ defmodule JustBash.FS do
   Move/rename a file, symlink, or directory tree. Composed as a
   recursive copy followed by a recursive remove, so it works across
   mounts.
+
+  A destination symlink is replaced, not followed (POSIX `rename/2`
+  semantics) — the opposite of `cp/4`, which writes through it.
   """
   @spec mv(t(), String.t(), String.t()) :: {:ok, t()} | {:error, Error.t()}
   def mv(fs, src, dest) do
@@ -215,7 +218,8 @@ defmodule JustBash.FS do
     if src_norm == dest_norm do
       {:ok, fs}
     else
-      with {:ok, fs} <- cp(fs, src_norm, dest_norm, recursive: true) do
+      with {:ok, fs} <- unlink_dest_symlink(fs, dest_norm),
+           {:ok, fs} <- cp(fs, src_norm, dest_norm, recursive: true) do
         rm(fs, src_norm, recursive: true)
       end
     end
@@ -244,6 +248,18 @@ defmodule JustBash.FS do
   def strerror(kind) when is_atom(kind), do: to_string(kind)
 
   # ── private ──────────────────────────────────────────────────────────────
+
+  # rename(2) replaces a destination symlink rather than writing through
+  # it (unlike cp, whose write_file follows the link). Remove the link
+  # first so the copy lands at the destination name itself.
+  defp unlink_dest_symlink(fs, dest_norm) do
+    case lstat(fs, dest_norm) do
+      {:ok, %VFS.Stat{type: :symlink}, fs} -> rm(fs, dest_norm)
+      {:ok, %VFS.Stat{}, fs} -> {:ok, fs}
+      {:error, %Error{kind: :enoent}} -> {:ok, fs}
+      {:error, %Error{} = err} -> {:error, err}
+    end
+  end
 
   defp cp_regular(fs, src_norm, dest_norm, %VFS.Stat{} = stat) do
     with {:ok, content, fs} <- read_file(fs, src_norm) do

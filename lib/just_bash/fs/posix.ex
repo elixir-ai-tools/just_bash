@@ -77,18 +77,31 @@ defimpl JustBash.FS.POSIX, for: VFS do
     route_mutation(vfs, link_path, &POSIX.symlink(&1, target, &2))
   end
 
+  # Both paths must resolve, and to the same mount; each failure names
+  # the path that caused it. `:exdev` and the new-path errors carry the
+  # new path, matching how ln reports "failed to create hard link NEW".
   def link(%VFS{} = vfs, existing_path, new_path) do
     p_existing = VFS.Path.normalize(existing_path)
+    p_new = VFS.Path.normalize(new_path)
 
-    with {:ok, mp, sub_existing, _backend} <- resolve(vfs, p_existing),
-         {:ok, ^mp, _sub_new, _backend} <- resolve(vfs, VFS.Path.normalize(new_path)) do
-      route_mutation(vfs, new_path, &POSIX.link(&1, sub_existing, &2))
-    else
-      {:ok, _other_mp, _sub, _backend} ->
-        {:error, Error.new(:exdev, path: p_existing)}
+    case {resolve(vfs, p_existing), resolve(vfs, p_new)} do
+      {{:ok, mp, sub_existing, _}, {:ok, mp, sub_new, backend}} ->
+        case POSIX.link(backend, sub_existing, sub_new) do
+          {:ok, new_backend} ->
+            {:ok, VFS.__put_mount__(vfs, mp, new_backend)}
 
-      :no_mount ->
+          {:error, %Error{} = err} ->
+            {:error, err |> Error.put_path(p_new) |> Error.put_mount(mp)}
+        end
+
+      {{:ok, _, _, _}, {:ok, _, _, _}} ->
+        {:error, Error.new(:exdev, path: p_new)}
+
+      {:no_mount, _} ->
         {:error, Error.new(:enoent, path: p_existing)}
+
+      {_, :no_mount} ->
+        {:error, Error.new(:enoent, path: p_new)}
     end
   end
 

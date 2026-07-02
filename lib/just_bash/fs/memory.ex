@@ -9,8 +9,9 @@ defmodule JustBash.FS.Memory do
   is a ten-operation protocol shaped to virtual-FS semantics (git blobs,
   S3 objects, DB rows); vfs 0.1 intentionally cut `lstat`, `symlink`,
   `readlink`, `link`, `chmod`, and `append_file` from it, and its stock
-  `VFS.Memory` backend stores bare `path => binary` pairs with no entry
-  metadata. Bash needs exactly what was cut: `ln`/`ln -s`, `readlink`,
+  `VFS.Memory` backend stores bare `path => binary` pairs with no mode
+  or symlink metadata (mtimes only, and not settable through write
+  opts). Bash needs exactly what was cut: `ln`/`ln -s`, `readlink`,
   `chmod`, `test -L`, `ls -l` modes, and mtime-honoring writes. Those
   features require a richer entry model (file/directory/symlink entries
   carrying mode + mtime, with link resolution), which cannot be layered
@@ -112,23 +113,33 @@ defmodule JustBash.FS.Memory do
 
   Parent directories are created automatically. Accepts `:mode` and
   `:mtime` options; these also flow through `VFS.write_file/4` opts.
+
+  Follows symlinks to the final target (POSIX `O_TRUNC` semantics,
+  matching `append_file/3`): the link survives and the target is
+  replaced; writing to a dangling symlink creates the target.
   """
   @spec write_file(t(), String.t(), binary(), write_opts()) ::
           {:ok, t()} | {:error, Error.t()}
   def write_file(%__MODULE__{} = fs, path, content, opts \\ []) do
     normalized = normalize(path)
 
-    case Map.get(fs.data, normalized) do
-      %{type: :directory} ->
-        {:error, Error.new(:eisdir, path: normalized)}
+    case resolve_final_path(fs, normalized, MapSet.new()) do
+      {:error, :eloop} ->
+        {:error, Error.new(:eloop, path: normalized)}
 
-      _ ->
-        mode = Keyword.get(opts, :mode, 0o644)
-        mtime = Keyword.get(opts, :mtime, DateTime.utc_now())
+      {:ok, target_path} ->
+        case Map.get(fs.data, target_path) do
+          %{type: :directory} ->
+            {:error, Error.new(:eisdir, path: normalized)}
 
-        fs = ensure_parent_dirs(fs, normalized)
-        entry = %{type: :file, content: content, mode: mode, mtime: mtime}
-        {:ok, %{fs | data: Map.put(fs.data, normalized, entry)}}
+          _ ->
+            mode = Keyword.get(opts, :mode, 0o644)
+            mtime = Keyword.get(opts, :mtime, DateTime.utc_now())
+
+            fs = ensure_parent_dirs(fs, target_path)
+            entry = %{type: :file, content: content, mode: mode, mtime: mtime}
+            {:ok, %{fs | data: Map.put(fs.data, target_path, entry)}}
+        end
     end
   end
 
@@ -190,6 +201,11 @@ defmodule JustBash.FS.Memory do
 
   @doc """
   Create a hard link. Only regular files can be hard-linked.
+
+  Entries are immutable values, not shared inodes: the two names hold
+  the same content at link time, but a later write or append through
+  one name does not update the other. True hard-link aliasing would
+  need inode indirection in the entry model.
   """
   @spec link(t(), String.t(), String.t()) :: {:ok, t()} | {:error, Error.t()}
   def link(%__MODULE__{data: data} = fs, existing_path, new_path) do
@@ -215,18 +231,28 @@ defmodule JustBash.FS.Memory do
 
   @doc """
   Change file/directory permissions.
+
+  Follows symlinks to the final target (POSIX `chmod` semantics — there
+  is no `lchmod` on Linux): the target's mode changes, the link entry
+  keeps its conventional `0o777`.
   """
   @spec chmod(t(), String.t(), non_neg_integer()) :: {:ok, t()} | {:error, Error.t()}
-  def chmod(%__MODULE__{data: data} = fs, path, mode) do
+  def chmod(%__MODULE__{} = fs, path, mode) do
     normalized = normalize(path)
 
-    case Map.get(data, normalized) do
-      nil ->
-        {:error, Error.new(:enoent, path: normalized)}
+    case resolve_final_path(fs, normalized, MapSet.new()) do
+      {:error, :eloop} ->
+        {:error, Error.new(:eloop, path: normalized)}
 
-      entry ->
-        updated = %{entry | mode: mode}
-        {:ok, %{fs | data: Map.put(data, normalized, updated)}}
+      {:ok, target_path} ->
+        case Map.get(fs.data, target_path) do
+          nil ->
+            {:error, Error.new(:enoent, path: normalized)}
+
+          entry ->
+            updated = %{entry | mode: mode}
+            {:ok, %{fs | data: Map.put(fs.data, target_path, updated)}}
+        end
     end
   end
 
