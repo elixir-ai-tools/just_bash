@@ -35,7 +35,11 @@ defmodule JustBash.Commands.Echo do
 
   defp parse_flags(rest, flags), do: {flags, rest}
 
-  defp interpret_escapes(str) do
+  # Also used by printf's %b directive, which shares echo -e's escape
+  # dialect (\0NNN octals, unlike $'...' ANSI-C quoting's \NNN).
+  @doc false
+  @spec interpret_escapes(String.t()) :: binary()
+  def interpret_escapes(str) do
     do_interpret_escapes(str, "")
   end
 

@@ -3,8 +3,9 @@ defmodule JustBash.Commands.Printf do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.Echo
 
-  @format_regex ~r/%(-)?(0)?(\d+)?(?:\.(\d+))?([sdxXofec%])/
+  @format_regex ~r/%(-)?(0)?(\d+)?(?:\.(\d+))?([sdxXofecb%])/
 
   @impl true
   def names, do: ["printf"]
@@ -42,7 +43,14 @@ defmodule JustBash.Commands.Printf do
 
   defp recycle_format(format, args, acc) do
     {result, remaining} = apply_formats_with_remaining(format, args)
-    recycle_format(format, remaining, [result | acc])
+
+    if length(remaining) < length(args) do
+      recycle_format(format, remaining, [result | acc])
+    else
+      # A pass that consumed no arguments (an unrecognized directive) must
+      # not recycle the format forever.
+      recycle_format(format, [], [result | acc])
+    end
   end
 
   defp apply_formats_with_remaining(format, args) do
@@ -95,6 +103,10 @@ defmodule JustBash.Commands.Printf do
     formatted = do_format(spec, "", precision)
     padded = apply_width(formatted, left_align, zero_pad, width)
     {padded, []}
+  end
+
+  defp do_format("b", arg, _precision) do
+    Echo.interpret_escapes(arg)
   end
 
   defp do_format("s", arg, precision) do

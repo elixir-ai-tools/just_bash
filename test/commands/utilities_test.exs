@@ -136,6 +136,36 @@ defmodule JustBash.Commands.UtilitiesTest do
       assert result.stdout == "a\tb"
     end
 
+    test "printf %b expands escape sequences in the argument" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, ~S[printf "%b" "A\tB\n"])
+      assert result.stdout == "A\tB\n"
+      assert result.exit_code == 0
+    end
+
+    @tag timeout: 5_000
+    test "printf %b with hex escapes emits raw bytes and terminates" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, ~S[printf "%b" "A\xffB\n"])
+      assert result.stdout == <<?A, 0xFF, ?B, ?\n>>
+    end
+
+    test "printf %b recycles the format across arguments" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, ~S[printf "%b\n" "a\tb" "c"])
+      assert result.stdout == "a\tb\nc\n"
+    end
+
+    # Bash errors on unknown directives; we pass them through literally.
+    # Either way, a directive that consumes no argument must not recycle
+    # the format forever.
+    @tag timeout: 5_000
+    test "printf with an unrecognized directive terminates instead of looping" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, ~S[printf "%v\n" x])
+      assert result.stdout == "%v\n"
+    end
+
     test "printf with %x hex format" do
       bash = JustBash.new()
       {result, _} = JustBash.exec(bash, "printf '%x' 255")
