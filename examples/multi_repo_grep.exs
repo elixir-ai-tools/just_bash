@@ -24,14 +24,22 @@ Mix.install([
 ])
 
 defmodule Shell do
-  @doc "Run one command, print a transcript, return the threaded sandbox."
+  @doc """
+  Run one command, print a transcript, return the threaded sandbox.
+
+  Every command in this demo is expected to succeed, so a nonzero exit
+  raises — the transcript doubles as a smoke test of the whole stack.
+  """
   def run(bash, command) do
     IO.puts("$ #{command}")
     {result, bash} = JustBash.exec(bash, command)
 
     IO.write(indent(result.stdout))
     if result.stderr != "", do: IO.write(indent(result.stderr))
-    if result.exit_code != 0, do: IO.puts("  [exit code: #{result.exit_code}]")
+
+    if result.exit_code != 0 do
+      raise "command failed (exit #{result.exit_code}): #{command}"
+    end
 
     bash
   end
@@ -64,7 +72,9 @@ grep = "grep -rln 'defimpl VFS.Mountable, for:' /repos/*/lib"
 # every later read is local — right for grep-the-whole-tree workloads.
 # For reading a handful of files from a large repo, clone with
 # `filter: {:blob, :none}` instead: blobs then fetch lazily on first
-# read, and the mount table threads that cache forward.
+# read, and the mount table threads that cache forward. (Note the
+# trade: Exgit.FS.grep below requires an eager clone — lazy repos
+# grep through the mount, or after Exgit.Repository.materialize/2.)
 {handles, bash} =
   Enum.map_reduce(repos, JustBash.new(), fn {name, url}, bash ->
     IO.puts("\n== mount #{name} (#{url})")
