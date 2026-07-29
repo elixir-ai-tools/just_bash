@@ -232,7 +232,8 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   # cannot open means the command produces nothing at all. Clearing the
   # redirected stream is how far that goes here: the command has already run,
   # but its output was bound for the file and must not surface as the
-  # caller's stdout.
+  # caller's stdout. Not running the command at all needs the target expanded
+  # and opened before the body — see issue #59.
   defp redirect_failed(result, stream, path, error) do
     cleared = clear_stream(result, stream)
     error_msg = "bash: #{path}: #{FS.strerror(error)}\n"
