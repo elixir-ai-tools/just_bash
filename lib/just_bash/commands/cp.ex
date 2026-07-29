@@ -37,6 +37,13 @@ defmodule JustBash.Commands.Cp do
       {:ok, new_fs} ->
         {Command.ok(), %{bash | fs: new_fs}}
 
+      # GNU stats the destination before opening it, so a path component that
+      # is a regular file surfaces as `cannot stat`. `cannot create regular
+      # file` stays the wording for a destination whose parent is merely
+      # missing.
+      {:error, %VFS.Error{kind: :enotdir} = error} ->
+        {Command.error("cp: cannot stat '#{dest}': #{FS.strerror(error)}\n"), bash}
+
       {:error, %VFS.Error{} = error} ->
         {Command.error("cp: cannot create regular file '#{dest}': #{FS.strerror(error)}\n"), bash}
     end

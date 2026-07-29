@@ -171,8 +171,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
         {updated_result, %{bash | fs: new_fs}}
 
       {:error, error} ->
-        error_msg = format_redirection_error(path, error)
-        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, bash}
+        {redirect_failed(result, stream, path, error), bash}
     end
   end
 
@@ -185,8 +184,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
         {updated_result, %{bash | fs: new_fs}}
 
       {:error, error} ->
-        error_msg = format_redirection_error(path, error)
-        {%{result | stderr: result.stderr <> error_msg, exit_code: 1}, bash}
+        {redirect_failed(result, stream, path, error), bash}
     end
   end
 
@@ -198,8 +196,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
         {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
 
       {:error, error} ->
-        error_msg = format_redirection_error(path, error)
-        {%{result | stderr: error_msg, exit_code: 1}, bash}
+        {result |> clear_stream(:stdout) |> redirect_failed(:stderr, path, error), bash}
     end
   end
 
@@ -211,8 +208,7 @@ defmodule JustBash.Interpreter.Executor.Redirection do
         {%{result | stdout: "", stderr: ""}, %{bash | fs: new_fs}}
 
       {:error, error} ->
-        error_msg = format_redirection_error(path, error)
-        {%{result | stderr: error_msg, exit_code: 1}, bash}
+        {result |> clear_stream(:stdout) |> redirect_failed(:stderr, path, error), bash}
     end
   end
 
@@ -232,8 +228,15 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   defp clear_stream(result, :stdout), do: %{result | stdout: ""}
   defp clear_stream(result, :stderr), do: %{result | stderr: ""}
 
-  defp format_redirection_error(path, error) do
-    "bash: #{path}: #{FS.strerror(error)}\n"
+  # bash opens the redirect target before running the command, so a target it
+  # cannot open means the command produces nothing at all. Clearing the
+  # redirected stream is how far that goes here: the command has already run,
+  # but its output was bound for the file and must not surface as the
+  # caller's stdout.
+  defp redirect_failed(result, stream, path, error) do
+    cleared = clear_stream(result, stream)
+    error_msg = "bash: #{path}: #{FS.strerror(error)}\n"
+    %{cleared | stderr: cleared.stderr <> error_msg, exit_code: 1}
   end
 
   # --- Stdin Content Extraction ---

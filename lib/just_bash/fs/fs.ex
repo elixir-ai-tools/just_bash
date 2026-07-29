@@ -40,7 +40,9 @@ defmodule JustBash.FS do
   backend (seeded with `initial_files`) mounted at `/`.
 
   Raises `ArgumentError` when `initial_files` is not realizable as a
-  filesystem — see `validate_initial_files!/1`.
+  filesystem: either one entry's path runs through another (see
+  `validate_initial_files!/1`), or an entry collides with a directory the
+  backend already holds, as `%{"/" => "x"}` does.
   """
   @spec new(map()) :: t()
   def new(initial_files \\ %{}) do
