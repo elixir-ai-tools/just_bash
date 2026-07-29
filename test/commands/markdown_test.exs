@@ -118,5 +118,54 @@ defmodule JustBash.Commands.MarkdownTest do
       assert result.exit_code == 1
       assert result.stderr =~ "cannot read"
     end
+
+    test "--smartypants converts straight quotes and dashes to smart punctuation" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(bash, ~s(echo '"Hello" -- world...' | markdown --smartypants))
+
+      assert result.exit_code == 0
+      assert result.stdout =~ "“Hello”"
+      assert result.stdout =~ "–"
+      assert result.stdout =~ "…"
+    end
+
+    test "without --smartypants punctuation is left untouched" do
+      bash = JustBash.new()
+
+      {result, _} = JustBash.exec(bash, ~s(echo '"Hello" -- world...' | markdown))
+
+      assert result.exit_code == 0
+      assert result.stdout =~ "&quot;Hello&quot;"
+    end
+
+    test "--breaks converts single newlines to <br>" do
+      bash = JustBash.new()
+
+      {result, _} = JustBash.exec(bash, "printf 'line one\\nline two' | markdown --breaks")
+
+      assert result.exit_code == 0
+      assert result.stdout =~ "<br"
+    end
+
+    test "without --breaks single newlines do not become <br>" do
+      bash = JustBash.new()
+
+      {result, _} = JustBash.exec(bash, "printf 'line one\\nline two' | markdown")
+
+      assert result.exit_code == 0
+      refute result.stdout =~ "<br"
+    end
+
+    test "--no-gfm disables table rendering" do
+      bash = JustBash.new()
+
+      md = "| a | b |\\n|---|---|\\n| 1 | 2 |"
+      {result, _} = JustBash.exec(bash, "echo -e '#{md}' | markdown --no-gfm")
+
+      assert result.exit_code == 0
+      refute result.stdout =~ "<table>"
+    end
   end
 end

@@ -2,7 +2,7 @@ defmodule JustBash.Commands.Markdown do
   @moduledoc """
   The `markdown` (or `md`) command - convert Markdown to HTML.
 
-  Uses Earmark for Markdown parsing and HTML generation.
+  Uses MDEx for Markdown parsing and HTML generation.
 
   ## Examples
 
@@ -83,23 +83,26 @@ defmodule JustBash.Commands.Markdown do
   end
 
   defp render(content, opts) do
-    earmark_opts = build_earmark_opts(opts)
+    mdex_opts = build_mdex_opts(opts)
 
-    case Earmark.as_html(content, earmark_opts) do
-      {:ok, html, _warnings} ->
-        {:ok, html}
-
-      {:error, _html, errors} ->
-        {:error, "parse error: #{inspect(errors)}"}
+    case MDEx.to_html(content, mdex_opts) do
+      {:ok, html} -> {:ok, html}
+      {:error, error} -> {:error, "parse error: #{inspect(error)}"}
     end
   end
 
-  defp build_earmark_opts(opts) do
-    %Earmark.Options{
-      gfm: opts.gfm,
-      breaks: opts.breaks,
-      smartypants: opts.smartypants
-    }
+  defp build_mdex_opts(opts) do
+    [
+      extension: [
+        table: opts.gfm,
+        strikethrough: opts.gfm,
+        autolink: opts.gfm,
+        tasklist: opts.gfm,
+        tagfilter: opts.gfm
+      ],
+      parse: [smart: opts.smartypants],
+      render: [hardbreaks: opts.breaks]
+    ]
   end
 
   defp parse_args(args) do
