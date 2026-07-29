@@ -41,6 +41,13 @@
       "name": "mv comparison: moves a symlink without dereferencing it",
       "stderr": "",
       "stdout": "target\nhi\n"
+    },
+    {
+      "content_hash": "ded339f40627ef2d",
+      "exit_code": 0,
+      "name": "mv comparison: refuses to move a directory into a subdirectory of itself",
+      "stderr": "mv: cannot move 'a' to a subdirectory of itself, 'a/b/a'\n",
+      "stdout": "rc=1\nC\n"
     }
   ],
   "suite": "mv"

@@ -30,6 +30,11 @@
       "name": "mv comparison: moves a symlink without dereferencing it",
       "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir $D; cd $D; echo hi > target; ln -s target link; mv link moved; readlink moved; cat moved; rm -rf $D",
       "content_hash": "265f43784862815d"
+    },
+    {
+      "name": "mv comparison: refuses to move a directory into a subdirectory of itself",
+      "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir $D; cd $D; mkdir -p a/b; echo C > a/b/c.md; mv a a/b; echo rc=$?; cat a/b/c.md; rm -rf $D",
+      "content_hash": "ded339f40627ef2d"
     }
   ]
 }

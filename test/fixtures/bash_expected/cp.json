@@ -139,6 +139,167 @@
       "name": "cp comparison: a failing source does not stop the remaining copies",
       "stderr": "cp: cannot stat 'nope.md': No such file or directory\n",
       "stdout": "rc=1\nA\n"
+    },
+    {
+      "content_hash": "8636fb7b9a2a2c90",
+      "exit_code": 0,
+      "name": "cp comparison: --recursive copies a directory into an existing directory",
+      "stderr": "",
+      "stdout": "rc=0\nX\n"
+    },
+    {
+      "content_hash": "eb20e4dc7aed830a",
+      "exit_code": 0,
+      "name": "cp comparison: -a copies a directory into an existing directory",
+      "stderr": "",
+      "stdout": "rc=0\nX\n"
+    },
+    {
+      "content_hash": "87aca532d7b6d88f",
+      "exit_code": 0,
+      "name": "cp comparison: operands after -- are paths",
+      "stderr": "",
+      "stdout": "rc=0\nA\n"
+    },
+    {
+      "content_hash": "a4488492292f4be0",
+      "exit_code": 0,
+      "name": "cp comparison: -r of a directory onto itself reports the same file",
+      "stderr": "cp: 'a/b' and 'a/b' are the same file\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e83bd2078dedfdd4",
+      "exit_code": 0,
+      "name": "cp comparison: -r refuses to copy a directory onto itself",
+      "stderr": "cp: cannot copy a directory, 'a', into itself, 'a/a'\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6b9fd2f91ff5af6e",
+      "exit_code": 0,
+      "name": "cp comparison: a symlink to a directory needs -r",
+      "stderr": "cp: -r not specified; omitting directory 'sdlink'\n",
+      "stdout": "rc=1\nsd\nsdlink\n"
+    },
+    {
+      "content_hash": "814d5ebddd8cf337",
+      "exit_code": 0,
+      "name": "cp comparison: -r of a symlink to a directory copies the link",
+      "stderr": "",
+      "stdout": "rc=0\nsd\n"
+    },
+    {
+      "content_hash": "a8e4a133aefc3761",
+      "exit_code": 0,
+      "name": "cp comparison: -r of a symlink to a file copies the link",
+      "stderr": "",
+      "stdout": "rc=0\nt.md\n"
+    },
+    {
+      "content_hash": "cb44f9a84d5bd01d",
+      "exit_code": 0,
+      "name": "cp comparison: -a of a symlink copies the link",
+      "stderr": "",
+      "stdout": "rc=0\nt.md\n"
+    },
+    {
+      "content_hash": "20771d976df0636f",
+      "exit_code": 0,
+      "name": "cp comparison: -P copies the link instead of dereferencing it",
+      "stderr": "",
+      "stdout": "rc=0\nt.md\n"
+    },
+    {
+      "content_hash": "c5f5c96f4d3ffaa5",
+      "exit_code": 0,
+      "name": "cp comparison: -d copies the link instead of dereferencing it",
+      "stderr": "",
+      "stdout": "rc=0\nt.md\n"
+    },
+    {
+      "content_hash": "593c9db343cebb63",
+      "exit_code": 0,
+      "name": "cp comparison: a shallow copy dereferences a symlink",
+      "stderr": "",
+      "stdout": "rc=0\nT\nexec\n"
+    },
+    {
+      "content_hash": "2db3651ccd4e6465",
+      "exit_code": 0,
+      "name": "cp comparison: -L dereferences a symlink to a directory even with -r",
+      "stderr": "",
+      "stdout": "rc=0\nX\n"
+    },
+    {
+      "content_hash": "dcdf61c375db5941",
+      "exit_code": 0,
+      "name": "cp comparison: -r of a dangling symlink copies the link",
+      "stderr": "",
+      "stdout": "rc=0\nnope.md\n"
+    },
+    {
+      "content_hash": "ce2c6d6af1a57bad",
+      "exit_code": 0,
+      "name": "cp comparison: a dangling symlink cannot be dereferenced",
+      "stderr": "cp: cannot stat 'dangling': No such file or directory\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "274e2b02b47009bc",
+      "exit_code": 0,
+      "name": "cp comparison: -v reports the copy it made",
+      "stderr": "",
+      "stdout": "'a.md' -> 'd/a.md'\nrc=0\n"
+    },
+    {
+      "content_hash": "26c5955727277d52",
+      "exit_code": 0,
+      "name": "cp comparison: -v reports every copied entry, parents first",
+      "stderr": "",
+      "stdout": "'s' -> 'd/s'\n's/n' -> 'd/s/n'\n's/n/n.md' -> 'd/s/n/n.md'\n's/y.md' -> 'd/s/y.md'\nrc=0\n"
+    },
+    {
+      "content_hash": "5228b297a9a35c79",
+      "exit_code": 0,
+      "name": "cp comparison: -v reports each source copied into a directory",
+      "stderr": "",
+      "stdout": "'a.md' -> 'd/a.md'\n'b.md' -> 'd/b.md'\nrc=0\n"
+    },
+    {
+      "content_hash": "2ab44a3b656a69c0",
+      "exit_code": 0,
+      "name": "cp comparison: -n keeps an existing destination",
+      "stderr": "cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead\n",
+      "stdout": "rc=0\nOLD\n"
+    },
+    {
+      "content_hash": "dec4a50969f3c547",
+      "exit_code": 0,
+      "name": "cp comparison: -n copies a destination that does not exist",
+      "stderr": "cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead\n",
+      "stdout": "rc=0\nA\n"
+    },
+    {
+      "content_hash": "5a91d6dec88a59df",
+      "exit_code": 0,
+      "name": "cp comparison: an empty destination operand is rejected",
+      "stderr": "cp: cannot create regular file '': No such file or directory\n",
+      "stdout": "rc=1\na.md\n"
+    },
+    {
+      "content_hash": "002e797cba953065",
+      "exit_code": 0,
+      "name": "cp comparison: an empty source operand is rejected",
+      "stderr": "cp: cannot stat '': No such file or directory\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f0c084fd0dbbb24c",
+      "exit_code": 0,
+      "name": "cp comparison: an empty target operand is rejected",
+      "stderr": "cp: target '': No such file or directory\n",
+      "stdout": "rc=1\n"
     }
   ],
   "suite": "cp"

@@ -15,16 +15,22 @@ defmodule JustBash.Commands.Mv do
         src_resolved = FS.resolve_path(bash.cwd, src)
         dest_resolved = FS.resolve_path(bash.cwd, dest)
 
-        {dest_final, fs} =
+        # `dest_final` is where the move lands; `dest_shown` is the same place
+        # spelled the way the operand was, which is how bash names it in
+        # messages ("a/b/a", not "/tmp/x/a/b/a").
+        {dest_final, dest_shown, fs} =
           case FS.stat(bash.fs, dest_resolved) do
             {:ok, %VFS.Stat{type: :directory}, fs} ->
-              {FS.normalize_path(dest_resolved <> "/" <> FS.basename(src_resolved)), fs}
+              basename = FS.basename(src_resolved)
+
+              {FS.normalize_path(dest_resolved <> "/" <> basename),
+               String.trim_trailing(dest, "/") <> "/" <> basename, fs}
 
             {:ok, _stat, fs} ->
-              {dest_resolved, fs}
+              {dest_resolved, dest, fs}
 
             {:error, _} ->
-              {dest_resolved, bash.fs}
+              {dest_resolved, dest, bash.fs}
           end
 
         bash = %{bash | fs: fs}
@@ -46,7 +52,7 @@ defmodule JustBash.Commands.Mv do
 
             {:error, %VFS.Error{kind: :einval}} ->
               {Command.error(
-                 "mv: cannot move '#{src}' to a subdirectory of itself, '#{dest_final}'\n"
+                 "mv: cannot move '#{src}' to a subdirectory of itself, '#{dest_shown}'\n"
                ), bash}
 
             # :enotdir needs no clause of its own — the catch-all below already

@@ -100,6 +100,123 @@
       "name": "cp comparison: a failing source does not stop the remaining copies",
       "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; cp nope.md a.md d; echo rc=$?; cat d/a.md; rm -rf $D",
       "content_hash": "3e83a61f0368f75d"
+    },
+    {
+      "name": "cp comparison: --recursive copies a directory into an existing directory",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir s d; echo X > s/x.md; cp --recursive s d; echo rc=$?; cat d/s/x.md; rm -rf $D",
+      "content_hash": "8636fb7b9a2a2c90"
+    },
+    {
+      "name": "cp comparison: -a copies a directory into an existing directory",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir s d; echo X > s/x.md; cp -a s d; echo rc=$?; cat d/s/x.md; rm -rf $D",
+      "content_hash": "eb20e4dc7aed830a"
+    },
+    {
+      "name": "cp comparison: operands after -- are paths",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; cp -- a.md d; echo rc=$?; cat d/a.md; rm -rf $D",
+      "content_hash": "87aca532d7b6d88f"
+    },
+    {
+      "name": "cp comparison: -r of a directory onto itself reports the same file",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir -p a/b; echo C > a/b/c.md; cp -r a/b a; echo rc=$?; rm -rf $D",
+      "content_hash": "a4488492292f4be0"
+    },
+    {
+      "name": "cp comparison: -r refuses to copy a directory onto itself",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir -p a/b; echo C > a/b/c.md; cp -r a a; echo rc=$?; rm -rf $D",
+      "content_hash": "e83bd2078dedfdd4"
+    },
+    {
+      "name": "cp comparison: a symlink to a directory needs -r",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir sd; echo X > sd/x.md; ln -s sd sdlink; cp sdlink outdir; echo rc=$?; ls; rm -rf $D",
+      "content_hash": "6b9fd2f91ff5af6e"
+    },
+    {
+      "name": "cp comparison: -r of a symlink to a directory copies the link",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir sd; echo X > sd/x.md; ln -s sd sdlink; cp -r sdlink outdir; echo rc=$?; readlink outdir; rm -rf $D",
+      "content_hash": "814d5ebddd8cf337"
+    },
+    {
+      "name": "cp comparison: -r of a symlink to a file copies the link",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo T > t.md; ln -s t.md alink; cp -r alink rcopy; echo rc=$?; readlink rcopy; rm -rf $D",
+      "content_hash": "a8e4a133aefc3761"
+    },
+    {
+      "name": "cp comparison: -a of a symlink copies the link",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo T > t.md; ln -s t.md alink; cp -a alink acopy; echo rc=$?; readlink acopy; rm -rf $D",
+      "content_hash": "cb44f9a84d5bd01d"
+    },
+    {
+      "name": "cp comparison: -P copies the link instead of dereferencing it",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo T > t.md; ln -s t.md alink; cp -P alink pcopy; echo rc=$?; readlink pcopy; rm -rf $D",
+      "content_hash": "20771d976df0636f"
+    },
+    {
+      "name": "cp comparison: -d copies the link instead of dereferencing it",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo T > t.md; ln -s t.md alink; cp -d alink dcopy; echo rc=$?; readlink dcopy; rm -rf $D",
+      "content_hash": "c5f5c96f4d3ffaa5"
+    },
+    {
+      "name": "cp comparison: a shallow copy dereferences a symlink",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo T > t.md; chmod 755 t.md; ln -s t.md alink; cp alink acopy; echo rc=$?; cat acopy; test -x acopy && echo exec; readlink acopy; rm -rf $D",
+      "content_hash": "593c9db343cebb63"
+    },
+    {
+      "name": "cp comparison: -L dereferences a symlink to a directory even with -r",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir sd; echo X > sd/x.md; ln -s sd sdlink; cp -rL sdlink ldir; echo rc=$?; cat ldir/x.md; readlink ldir; rm -rf $D",
+      "content_hash": "2db3651ccd4e6465"
+    },
+    {
+      "name": "cp comparison: -r of a dangling symlink copies the link",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; ln -s nope.md dangling; cp -r dangling dcopy; echo rc=$?; readlink dcopy; rm -rf $D",
+      "content_hash": "dcdf61c375db5941"
+    },
+    {
+      "name": "cp comparison: a dangling symlink cannot be dereferenced",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; ln -s nope.md dangling; cp dangling out.md; echo rc=$?; rm -rf $D",
+      "content_hash": "ce2c6d6af1a57bad"
+    },
+    {
+      "name": "cp comparison: -v reports the copy it made",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; cp -v a.md d; echo rc=$?; rm -rf $D",
+      "content_hash": "274e2b02b47009bc"
+    },
+    {
+      "name": "cp comparison: -v reports every copied entry, parents first",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir -p s/n d; echo N > s/n/n.md; echo Y > s/y.md; cp -rv s d; echo rc=$?; rm -rf $D",
+      "content_hash": "26c5955727277d52"
+    },
+    {
+      "name": "cp comparison: -v reports each source copied into a directory",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; echo B > b.md; cp -v a.md b.md d; echo rc=$?; rm -rf $D",
+      "content_hash": "5228b297a9a35c79"
+    },
+    {
+      "name": "cp comparison: -n keeps an existing destination",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; echo OLD > d/a.md; cp -n a.md d; echo rc=$?; cat d/a.md; rm -rf $D",
+      "opts": {"ignore_stderr": true},
+      "content_hash": "2ab44a3b656a69c0"
+    },
+    {
+      "name": "cp comparison: -n copies a destination that does not exist",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; cp -n a.md d; echo rc=$?; cat d/a.md; rm -rf $D",
+      "opts": {"ignore_stderr": true},
+      "content_hash": "dec4a50969f3c547"
+    },
+    {
+      "name": "cp comparison: an empty destination operand is rejected",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo A > a.md; cp a.md ''; echo rc=$?; ls; rm -rf $D",
+      "content_hash": "5a91d6dec88a59df"
+    },
+    {
+      "name": "cp comparison: an empty source operand is rejected",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; cp '' d; echo rc=$?; rm -rf $D",
+      "content_hash": "002e797cba953065"
+    },
+    {
+      "name": "cp comparison: an empty target operand is rejected",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo A > a.md; echo B > b.md; cp a.md b.md ''; echo rc=$?; rm -rf $D",
+      "content_hash": "f0c084fd0dbbb24c"
     }
   ]
 }

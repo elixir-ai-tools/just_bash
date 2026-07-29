@@ -487,6 +487,222 @@ defmodule JustBash.Commands.FileOperationsTest do
       {cat, _} = JustBash.exec(bash, "cat /d/a.md")
       assert cat.stdout == "A\n"
     end
+
+    test "cp of a symlink to a directory needs -r, like a directory" do
+      bash = JustBash.new(files: %{"/sd/x.md" => "X\n"})
+      {_, bash} = JustBash.exec(bash, "ln -s /sd /sdlink")
+
+      {result, bash} = JustBash.exec(bash, "cp /sdlink /outdir")
+      assert result.exit_code == 1
+      assert result.stderr == "cp: -r not specified; omitting directory '/sdlink'\n"
+
+      {test_result, _} = JustBash.exec(bash, "[ -e /outdir ] || echo absent")
+      assert test_result.stdout == "absent\n"
+    end
+
+    test "cp -r of a symlink to a directory copies the link" do
+      bash = JustBash.new(files: %{"/sd/x.md" => "X\n"})
+      {_, bash} = JustBash.exec(bash, "ln -s /sd /sdlink")
+
+      {result, bash} = JustBash.exec(bash, "cp -r /sdlink /outdir")
+      assert result.exit_code == 0
+      assert result.stderr == ""
+
+      # The link itself is what gets copied, so the copy points at the same
+      # directory. (Reading *through* a directory symlink is a separate
+      # filesystem limitation: `cat /sdlink/x.md` does not resolve either.)
+      {readlink, bash} = JustBash.exec(bash, "readlink /outdir")
+      assert readlink.stdout == "/sd\n"
+
+      {test_result, _} = JustBash.exec(bash, "[ -L /outdir ] && echo link")
+      assert test_result.stdout == "link\n"
+    end
+
+    test "cp -r of a symlink to a file copies the link" do
+      bash = JustBash.new(files: %{"/target.md" => "T\n"})
+      {_, bash} = JustBash.exec(bash, "ln -s /target.md /alink")
+
+      {result, bash} = JustBash.exec(bash, "cp -r /alink /rcopy")
+      assert result.exit_code == 0
+
+      {readlink, _} = JustBash.exec(bash, "readlink /rcopy")
+      assert readlink.stdout == "/target.md\n"
+    end
+
+    test "cp -a of a symlink copies the link" do
+      bash = JustBash.new(files: %{"/target.md" => "T\n"})
+      {_, bash} = JustBash.exec(bash, "ln -s /target.md /alink")
+
+      {result, bash} = JustBash.exec(bash, "cp -a /alink /acopy")
+      assert result.exit_code == 0
+
+      {readlink, _} = JustBash.exec(bash, "readlink /acopy")
+      assert readlink.stdout == "/target.md\n"
+    end
+
+    test "cp -P copies the link instead of dereferencing it" do
+      bash = JustBash.new(files: %{"/target.md" => "T\n"})
+      {_, bash} = JustBash.exec(bash, "ln -s /target.md /alink")
+
+      {result, bash} = JustBash.exec(bash, "cp -P /alink /pcopy")
+      assert result.exit_code == 0
+
+      {readlink, _} = JustBash.exec(bash, "readlink /pcopy")
+      assert readlink.stdout == "/target.md\n"
+    end
+
+    test "cp -d copies the link instead of dereferencing it" do
+      bash = JustBash.new(files: %{"/target.md" => "T\n"})
+      {_, bash} = JustBash.exec(bash, "ln -s /target.md /alink")
+
+      {result, bash} = JustBash.exec(bash, "cp -d /alink /dcopy")
+      assert result.exit_code == 0
+
+      {readlink, _} = JustBash.exec(bash, "readlink /dcopy")
+      assert readlink.stdout == "/target.md\n"
+    end
+
+    test "cp -L dereferences the link even with -r" do
+      bash = JustBash.new(files: %{"/sd/x.md" => "X\n"})
+      {_, bash} = JustBash.exec(bash, "ln -s /sd /sdlink")
+
+      {result, bash} = JustBash.exec(bash, "cp -rL /sdlink /ldir")
+      assert result.exit_code == 0
+
+      {readlink, bash} = JustBash.exec(bash, "readlink /ldir")
+      assert readlink.exit_code == 1
+
+      {cat, _} = JustBash.exec(bash, "cat /ldir/x.md")
+      assert cat.stdout == "X\n"
+    end
+
+    test "cp -r of a dangling symlink copies the link" do
+      bash = JustBash.new()
+      {_, bash} = JustBash.exec(bash, "ln -s /nope.md /dangling")
+
+      {result, bash} = JustBash.exec(bash, "cp -r /dangling /dcopy")
+      assert result.exit_code == 0
+      assert result.stderr == ""
+
+      {readlink, _} = JustBash.exec(bash, "readlink /dcopy")
+      assert readlink.stdout == "/nope.md\n"
+    end
+
+    test "cp through a symlink keeps the target's mode" do
+      bash = JustBash.new()
+      {:ok, fs} = FS.write_file(bash.fs, "/src.sh", "echo hi\n", mode: 0o755)
+      bash = %{bash | fs: fs}
+      {_, bash} = JustBash.exec(bash, "ln -s /src.sh /mlink")
+
+      {result, bash} = JustBash.exec(bash, "cp /mlink /mcopy")
+      assert result.exit_code == 0
+
+      {:ok, stat, _fs} = FS.stat(bash.fs, "/mcopy")
+      assert stat.mode == 0o755
+    end
+
+    test "cp rejects an empty destination operand" do
+      bash = JustBash.new(files: %{"/x/a.md" => "A\n"})
+
+      {result, bash} = JustBash.exec(bash, "mkdir -p /work && cd /work && cp /x/a.md ''")
+      assert result.exit_code == 1
+
+      assert result.stderr ==
+               "cp: cannot create regular file '': No such file or directory\n"
+
+      {test_result, _} = JustBash.exec(bash, "[ -e /a.md ] || echo absent")
+      assert test_result.stdout == "absent\n"
+    end
+
+    test "cp rejects an empty source operand" do
+      bash = JustBash.new(files: %{"/d/k.md" => "K\n"})
+
+      {result, _} = JustBash.exec(bash, "cp '' /d")
+      assert result.exit_code == 1
+      assert result.stderr == "cp: cannot stat '': No such file or directory\n"
+    end
+
+    test "cp rejects an empty target operand with several sources" do
+      bash = JustBash.new(files: %{"/a.md" => "A\n", "/b.md" => "B\n"})
+
+      {result, _} = JustBash.exec(bash, "cp /a.md /b.md ''")
+      assert result.exit_code == 1
+      assert result.stderr == "cp: target '': No such file or directory\n"
+    end
+
+    # Divergence from bash, which exits 0 and copies nothing here.
+    test "cp -r rejects an empty destination operand" do
+      bash = JustBash.new(files: %{"/s/x.md" => "X\n"})
+
+      {result, _} = JustBash.exec(bash, "cp -r /s ''")
+      assert result.exit_code == 1
+      assert result.stderr == "cp: cannot create directory '': No such file or directory\n"
+    end
+
+    test "cp -v reports the copy it made" do
+      bash = JustBash.new(files: %{"/a.md" => "A\n", "/d/k.md" => "K\n"})
+
+      {result, _} = JustBash.exec(bash, "cp -v /a.md /d")
+      assert result.exit_code == 0
+      assert result.stdout == "'/a.md' -> '/d/a.md'\n"
+      assert result.stderr == ""
+    end
+
+    test "cp -rv reports every copied entry, parents first" do
+      bash =
+        JustBash.new(files: %{"/s/n/n.md" => "N\n", "/s/y.md" => "Y\n", "/d/k.md" => "K\n"})
+
+      {result, _} = JustBash.exec(bash, "cp -rv /s /d")
+      assert result.exit_code == 0
+
+      assert result.stdout == """
+             '/s' -> '/d/s'
+             '/s/n' -> '/d/s/n'
+             '/s/n/n.md' -> '/d/s/n/n.md'
+             '/s/y.md' -> '/d/s/y.md'
+             """
+    end
+
+    test "cp -v reports each source copied into a directory" do
+      bash = JustBash.new(files: %{"/a.md" => "A\n", "/b.md" => "B\n", "/d/k.md" => "K\n"})
+
+      {result, _} = JustBash.exec(bash, "cp -v /a.md /b.md /d")
+      assert result.exit_code == 0
+      assert result.stdout == "'/a.md' -> '/d/a.md'\n'/b.md' -> '/d/b.md'\n"
+    end
+
+    test "cp -n keeps an existing destination" do
+      bash = JustBash.new(files: %{"/a.md" => "A\n", "/d/a.md" => "OLD\n"})
+
+      {result, bash} = JustBash.exec(bash, "cp -n /a.md /d")
+      assert result.exit_code == 0
+      assert result.stderr == ""
+
+      {cat, _} = JustBash.exec(bash, "cat /d/a.md")
+      assert cat.stdout == "OLD\n"
+    end
+
+    test "cp -n still copies a destination that does not exist" do
+      bash = JustBash.new(files: %{"/a.md" => "A\n", "/d/k.md" => "K\n"})
+
+      {result, bash} = JustBash.exec(bash, "cp -n /a.md /d")
+      assert result.exit_code == 0
+
+      {cat, _} = JustBash.exec(bash, "cat /d/a.md")
+      assert cat.stdout == "A\n"
+    end
+
+    # A sandbox has no terminal to prompt on, so `-i` proceeds as if the prompt
+    # were answered yes. Bash with no stdin refuses the overwrite and exits 1.
+    test "cp -i overwrites without prompting" do
+      bash = JustBash.new(files: %{"/a.md" => "A\n", "/b.md" => "B\n"})
+
+      {result, bash} = JustBash.exec(bash, "cp -i /a.md /b.md")
+      assert result.exit_code == 0
+
+      {cat, _} = JustBash.exec(bash, "cat /b.md")
+      assert cat.stdout == "A\n"
+    end
   end
 
   describe "mv command" do
