@@ -141,7 +141,10 @@ defmodule JustBash do
 
   ## Options
 
-  - `:files` - Initial files as a map of path => content
+  - `:files` - Initial files as a map of path => content. Raises `ArgumentError` if the map
+    cannot exist as a filesystem — one path running through another (`%{"/m/j" => "x",
+    "/m/j/a.md" => "y"}`, where `/m/j` would have to be both a file and a directory), or a
+    path colliding with one of the default directories.
   - `:env` - Initial environment variables
   - `:cwd` - Starting working directory (default: "/home/user")
   - `:commands` - Custom commands as a map of name => module implementing `JustBash.Commands.Command`.
@@ -334,6 +337,8 @@ defmodule JustBash do
   end
 
   defp init_filesystem(files) do
+    FS.validate_initial_files!(files)
+
     default_dirs = [
       "/home",
       "/home/user",
@@ -352,8 +357,15 @@ defmodule JustBash do
       end)
 
     Enum.reduce(files, fs, fn {path, content}, acc_fs ->
-      {:ok, new_fs} = FS.write_file(acc_fs, path, content)
-      new_fs
+      case FS.write_file(acc_fs, path, content) do
+        {:ok, new_fs} ->
+          new_fs
+
+        {:error, %VFS.Error{} = error} ->
+          raise ArgumentError,
+                "invalid initial files: cannot create #{inspect(path)}: " <>
+                  "#{FS.strerror(error)}"
+      end
     end)
   end
 

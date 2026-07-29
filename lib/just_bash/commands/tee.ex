@@ -64,6 +64,9 @@ defmodule JustBash.Commands.Tee do
     end)
   end
 
+  # tee does not create missing parent directories, so an absent parent is
+  # reported instead of being conjured up; a parent that exists but is not
+  # a directory is ENOTDIR, as the kernel would report it.
   defp write_single_file(fs, resolved, file, content, append, acc_stderr, acc_code) do
     parent = Path.dirname(resolved)
 
@@ -72,19 +75,20 @@ defmodule JustBash.Commands.Tee do
         do_write_file(new_fs, resolved, file, content, append, acc_stderr, acc_code)
 
       {:ok, _, new_fs} ->
-        {new_fs, acc_stderr <> "tee: #{file}: No such file or directory\n", 1}
+        {new_fs, acc_stderr <> "tee: #{file}: Not a directory\n", 1}
 
-      {:error, _} ->
-        {fs, acc_stderr <> "tee: #{file}: No such file or directory\n", 1}
+      {:error, %VFS.Error{} = error} ->
+        {fs, acc_stderr <> "tee: #{file}: #{FS.strerror(error)}\n", 1}
     end
   end
 
   defp do_write_file(fs, resolved, file, content, append, acc_stderr, acc_code) do
-    result = write_or_append(fs, resolved, content, append)
+    case write_or_append(fs, resolved, content, append) do
+      {:ok, new_fs} ->
+        {new_fs, acc_stderr, acc_code}
 
-    case result do
-      {:ok, new_fs} -> {new_fs, acc_stderr, acc_code}
-      {:error, _} -> {fs, acc_stderr <> "tee: #{file}: Is a directory\n", 1}
+      {:error, %VFS.Error{} = error} ->
+        {fs, acc_stderr <> "tee: #{file}: #{FS.strerror(error)}\n", 1}
     end
   end
 

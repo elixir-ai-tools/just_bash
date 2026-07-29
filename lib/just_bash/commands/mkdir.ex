@@ -21,10 +21,7 @@ defmodule JustBash.Commands.Mkdir do
             {err_acc, code_acc, new_fs}
 
           {:error, %VFS.Error{kind: :eexist}} when flags.p ->
-            {err_acc, code_acc, fs_acc}
-
-          {:error, %VFS.Error{kind: :eexist}} ->
-            {err_acc <> "mkdir: cannot create directory '#{path}': File exists\n", 1, fs_acc}
+            handle_existing_path(fs_acc, resolved, path, err_acc, code_acc)
 
           {:error, %VFS.Error{} = error} ->
             {err_acc <> "mkdir: cannot create directory '#{path}': #{FS.strerror(error)}\n", 1,
@@ -33,6 +30,22 @@ defmodule JustBash.Commands.Mkdir do
       end)
 
     {Command.result("", stderr, exit_code), %{bash | fs: new_fs}}
+  end
+
+  # `mkdir -p` is only satisfied by an existing *directory*. A regular file
+  # at the path is still an error (bash: "mkdir: PATH: File exists"), and
+  # swallowing it would report success for a directory that does not exist.
+  defp handle_existing_path(fs, resolved, path, err_acc, code_acc) do
+    case FS.stat(fs, resolved) do
+      {:ok, %VFS.Stat{type: :directory}, new_fs} ->
+        {err_acc, code_acc, new_fs}
+
+      {:ok, _stat, new_fs} ->
+        {err_acc <> "mkdir: cannot create directory '#{path}': File exists\n", 1, new_fs}
+
+      {:error, %VFS.Error{} = error} ->
+        {err_acc <> "mkdir: cannot create directory '#{path}': #{FS.strerror(error)}\n", 1, fs}
+    end
   end
 
   defp parse_flags(args), do: parse_flags(args, %{p: false}, [])

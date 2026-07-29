@@ -39,7 +39,23 @@ Every difference a script can observe, verified against the 0.3 sources:
    situation — mounts didn't exist in 0.3; on the default backend, `ln`
    output is byte-identical to 0.3, including the directory-hard-link
    message).
-7. **With additional mounts only** (a 0.4 capability): the parents of a
+7. **Writing through a regular file is now "Not a directory"** (exit 1),
+   as POSIX path resolution requires. 0.3 stored the entry anyway —
+   `echo hi > /m/j/2026/a.md` with `/m/j` a regular file exited 0, and the
+   file was readable by path but absent from `ls`, globs, `find`, and
+   `JustBash.FS.walk/3`. Every path-creating operation now refuses:
+   `>`, `>>`, `&>`, `2>`, `touch`, `cp`, `mv`, `tee`, `ln`, `mkdir`,
+   `mkdir -p`, and anything else that opens an output file. Writes
+   *through a symlinked directory* now resolve to the target directory
+   instead of storing an unreachable literal path. `mkdir -p` on a path
+   that already exists as a *regular file* also fails now
+   (`mkdir: cannot create directory 'PATH': File exists`, exit 1) instead
+   of reporting success for a directory that does not exist. Relatedly,
+   `JustBash.new(files: ...)` (and `JustBash.FS.new/1`) raise
+   `ArgumentError` for a map that describes this impossible shape, such as
+   `%{"/m/j" => "x", "/m/j/a.md" => "y"}`; 0.3 accepted it and which entry
+   survived depended on map iteration order.
+8. **With additional mounts only** (a 0.4 capability): the parents of a
    mountpoint appear as synthetic directories, and foreign backends keep
    their own semantics — e.g. a plain `VFS.Memory` mount treats
    directories implicitly and refuses `rm` of an empty directory with

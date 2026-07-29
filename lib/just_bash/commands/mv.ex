@@ -44,8 +44,9 @@ defmodule JustBash.Commands.Mv do
               {Command.error("mv: cannot overwrite directory '#{dest}' with non-directory\n"),
                bash}
 
-            {:error, %VFS.Error{kind: :enotdir}} ->
-              {Command.error("mv: cannot move '#{src}' to '#{dest}': Not a directory\n"), bash}
+            {:error, %VFS.Error{} = error} ->
+              {Command.error("mv: cannot move '#{src}' to '#{dest}': #{FS.strerror(error)}\n"),
+               bash}
           end
         end
 

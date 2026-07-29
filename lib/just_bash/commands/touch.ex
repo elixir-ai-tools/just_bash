@@ -31,8 +31,11 @@ defmodule JustBash.Commands.Touch do
 
   defp create_empty_file(fs, resolved, path, err_acc, code_acc) do
     case FS.write_file(fs, resolved, "") do
-      {:ok, new_fs} -> {new_fs, err_acc, code_acc}
-      {:error, _} -> {fs, err_acc <> "touch: cannot touch '#{path}'\n", 1}
+      {:ok, new_fs} ->
+        {new_fs, err_acc, code_acc}
+
+      {:error, %VFS.Error{} = error} ->
+        {fs, err_acc <> "touch: cannot touch '#{path}': #{FS.strerror(error)}\n", 1}
     end
   end
 end

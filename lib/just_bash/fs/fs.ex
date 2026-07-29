@@ -38,11 +38,25 @@ defmodule JustBash.FS do
   @doc """
   Create a new filesystem: a `%VFS{}` with a `JustBash.FS.Memory`
   backend (seeded with `initial_files`) mounted at `/`.
+
+  Raises `ArgumentError` when `initial_files` is not realizable as a
+  filesystem — see `validate_initial_files!/1`.
   """
   @spec new(map()) :: t()
   def new(initial_files \\ %{}) do
     VFS.new() |> VFS.mount("/", Memory.new(initial_files))
   end
+
+  @doc """
+  Validate a `path => content` map before seeding a filesystem with it.
+
+  Raises `ArgumentError` when one entry's path runs *through* another
+  entry — `%{"/m/j" => "x", "/m/j/a.md" => "y"}` asks for a file inside a
+  regular file, which no filesystem can hold. See
+  `JustBash.FS.Memory.validate_initial_files!/1`.
+  """
+  @spec validate_initial_files!(map()) :: :ok
+  defdelegate validate_initial_files!(initial_files), to: Memory
 
   # ── path helpers (pure) ──────────────────────────────────────────────────
   #
