@@ -1,0 +1,105 @@
+{
+  "suite": "cp",
+  "cases": [
+    {
+      "name": "cp comparison: copies a file into an existing directory",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; cp a.md d; echo rc=$?; cat d/a.md; rm -rf $D",
+      "content_hash": "c43f4c0f18de8b91"
+    },
+    {
+      "name": "cp comparison: copies a file into an existing directory with a trailing slash",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; cp a.md d/; echo rc=$?; cat d/a.md; rm -rf $D",
+      "content_hash": "d7521956cf2ccd49"
+    },
+    {
+      "name": "cp comparison: -r copies a directory into an existing directory",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir s d; echo X > s/x.md; cp -r s d; echo rc=$?; cat d/s/x.md; rm -rf $D",
+      "content_hash": "fa707f67298ced09"
+    },
+    {
+      "name": "cp comparison: -R copies a directory into an existing directory",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir s d; echo X > s/x.md; cp -R s d; echo rc=$?; cat d/s/x.md; rm -rf $D",
+      "content_hash": "6c83b15e06d40bd1"
+    },
+    {
+      "name": "cp comparison: -r copies a directory as the destination when it does not exist",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir s; echo X > s/x.md; cp -r s newdir; echo rc=$?; cat newdir/x.md; ls newdir; rm -rf $D",
+      "content_hash": "f92d3843c2634dad"
+    },
+    {
+      "name": "cp comparison: -r with a trailing slash on the source",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir s d; echo X > s/x.md; cp -r s/ d; echo rc=$?; cat d/s/x.md; rm -rf $D",
+      "content_hash": "53da879bc497619f"
+    },
+    {
+      "name": "cp comparison: -r with a trailing slash on the destination",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir s d; echo X > s/x.md; cp -r s d/; echo rc=$?; cat d/s/x.md; rm -rf $D",
+      "content_hash": "4921949d6f04d391"
+    },
+    {
+      "name": "cp comparison: -r merges into an existing destination subtree",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir -p s d/s; echo X > s/x.md; echo K > d/s/k.md; cp -r s d; echo rc=$?; cat d/s/k.md d/s/x.md; rm -rf $D",
+      "content_hash": "3875e9273e551a48"
+    },
+    {
+      "name": "cp comparison: -r copies nested directories",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir -p s/n; echo X > s/n/x.md; echo Y > s/y.md; cp -r s d; echo rc=$?; cat d/n/x.md d/y.md; rm -rf $D",
+      "content_hash": "913bd9b8c1a697a9"
+    },
+    {
+      "name": "cp comparison: copies several files into a directory",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; echo B > b.md; cp a.md b.md d; echo rc=$?; cat d/a.md d/b.md; rm -rf $D",
+      "content_hash": "3d9728c3e2c3479b"
+    },
+    {
+      "name": "cp comparison: preserves the source file mode",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo A > a.md; chmod 755 a.md; cp a.md b.md; echo rc=$?; test -x b.md && echo exec; rm -rf $D",
+      "content_hash": "3856f344e6a3f5c8"
+    },
+    {
+      "name": "cp comparison: a directory source without -r is omitted",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir s; echo X > s/x.md; cp s d; echo rc=$?; ls; rm -rf $D",
+      "content_hash": "1988380eca030677"
+    },
+    {
+      "name": "cp comparison: missing destination operand",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo A > a.md; cp a.md; echo rc=$?; rm -rf $D",
+      "content_hash": "e4cfb3414a0ecbd9"
+    },
+    {
+      "name": "cp comparison: missing file operand",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; cp; echo rc=$?; rm -rf $D",
+      "content_hash": "c3b6e0799b4dbd1f"
+    },
+    {
+      "name": "cp comparison: nonexistent source",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; cp nope.md d.md; echo rc=$?; rm -rf $D",
+      "content_hash": "4049b8b12fcaf6f7"
+    },
+    {
+      "name": "cp comparison: several operands need a directory target",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo A > a.md; echo B > b.md; echo C > c.md; cp a.md b.md c.md; echo rc=$?; rm -rf $D",
+      "content_hash": "73722303c03c8c04"
+    },
+    {
+      "name": "cp comparison: several operands need an existing target",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo A > a.md; echo B > b.md; cp a.md b.md nodir; echo rc=$?; rm -rf $D",
+      "content_hash": "a2548785d4a66b49"
+    },
+    {
+      "name": "cp comparison: -r refuses to copy a directory into itself",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir -p a/b; echo C > a/b/c.md; cp -r a a/b; echo rc=$?; rm -rf $D",
+      "content_hash": "f8b50f95ee8b854a"
+    },
+    {
+      "name": "cp comparison: -r cannot overwrite a non-directory with a directory",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir s; echo X > s/x.md; echo F > f; cp -r s f; echo rc=$?; cat f; rm -rf $D",
+      "content_hash": "b5ba0d91ead4090c"
+    },
+    {
+      "name": "cp comparison: a failing source does not stop the remaining copies",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; cp nope.md a.md d; echo rc=$?; cat d/a.md; rm -rf $D",
+      "content_hash": "3e83a61f0368f75d"
+    }
+  ]
+}

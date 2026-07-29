@@ -44,6 +44,14 @@ defmodule JustBash.Commands.Mv do
               {Command.error("mv: cannot overwrite directory '#{dest}' with non-directory\n"),
                bash}
 
+            {:error, %VFS.Error{kind: :einval}} ->
+              {Command.error(
+                 "mv: cannot move '#{src}' to a subdirectory of itself, '#{dest_final}'\n"
+               ), bash}
+
+            # :enotdir needs no clause of its own — the catch-all below already
+            # spells it "cannot move 'src' to 'dest': Not a directory", which is
+            # why #56 removed the explicit one.
             {:error, %VFS.Error{} = error} ->
               {Command.error("mv: cannot move '#{src}' to '#{dest}': #{FS.strerror(error)}\n"),
                bash}

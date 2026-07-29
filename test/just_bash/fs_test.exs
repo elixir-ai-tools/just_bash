@@ -373,6 +373,34 @@ defmodule JustBash.FSTest do
       assert {:ok, "a", fs} = FS.read_file(fs, "/destdir/file.txt")
       assert {:ok, "b", _fs} = FS.read_file(fs, "/destdir/subdir/nested.txt")
     end
+
+    test "merges into an existing destination directory" do
+      fs = FS.new(%{"/srcdir/new.txt" => "new", "/destdir/kept.txt" => "kept"})
+
+      {:ok, fs} = FS.cp(fs, "/srcdir", "/destdir", recursive: true)
+      assert {:ok, "new", fs} = FS.read_file(fs, "/destdir/new.txt")
+      assert {:ok, "kept", _fs} = FS.read_file(fs, "/destdir/kept.txt")
+    end
+
+    test "refuses to copy a directory into itself instead of recursing forever" do
+      fs = FS.new(%{"/a/b/c.txt" => "c"})
+
+      assert {:error, %VFS.Error{kind: :einval}} = FS.cp(fs, "/a", "/a/b/a", recursive: true)
+      assert {:error, %VFS.Error{kind: :einval}} = FS.cp(fs, "/a", "/a", recursive: true)
+    end
+
+    test "refuses to copy the root directory into a subdirectory of itself" do
+      fs = FS.new(%{"/a/b/c.txt" => "c"})
+
+      assert {:error, %VFS.Error{kind: :einval}} = FS.cp(fs, "/", "/copy", recursive: true)
+    end
+
+    test "copies a sibling directory whose path shares a prefix with the source" do
+      fs = FS.new(%{"/ab/x.txt" => "x"})
+
+      {:ok, fs} = FS.cp(fs, "/ab", "/abc", recursive: true)
+      assert {:ok, "x", _fs} = FS.read_file(fs, "/abc/x.txt")
+    end
   end
 
   describe "mv/3" do
@@ -407,6 +435,13 @@ defmodule JustBash.FSTest do
       fs = FS.new(%{"/file.txt" => "content"})
       {:ok, fs} = FS.mv(fs, "/file.txt", "/file.txt")
       assert {:ok, "content", _fs} = FS.read_file(fs, "/file.txt")
+    end
+
+    test "refuses to move a directory into a subdirectory of itself" do
+      fs = FS.new(%{"/a/b/c.txt" => "c"})
+
+      assert {:error, %VFS.Error{kind: :einval}} = FS.mv(fs, "/a", "/a/b/a")
+      assert {:ok, "c", _fs} = FS.read_file(fs, "/a/b/c.txt")
     end
   end
 

@@ -193,6 +193,10 @@ defmodule JustBash.FS do
   works across mounts: regular files copy content, mode, and mtime;
   symlinks copy the link itself when the destination backend supports
   symlinks.
+
+  A recursive copy whose destination lies inside the source fails with
+  `:einval` instead of recursing forever — every pass would add new
+  children under the source it is still walking.
   """
   @spec cp(t(), String.t(), String.t(), cp_opts()) :: {:ok, t()} | {:error, Error.t()}
   def cp(fs, src, dest, opts \\ []) do
@@ -205,7 +209,11 @@ defmodule JustBash.FS do
         {:error, Error.new(:eisdir, path: src_norm)}
 
       {:ok, %VFS.Stat{type: :directory}, fs} ->
-        cp_directory(fs, src_norm, dest_norm, opts)
+        if within?(dest_norm, src_norm) do
+          {:error, Error.new(:einval, path: dest_norm)}
+        else
+          cp_directory(fs, src_norm, dest_norm, opts)
+        end
 
       {:ok, %VFS.Stat{type: :symlink}, fs} ->
         cp_symlink(fs, src_norm, dest_norm)
@@ -225,6 +233,9 @@ defmodule JustBash.FS do
 
   A destination symlink is replaced, not followed (POSIX `rename/2`
   semantics) — the opposite of `cp/4`, which writes through it.
+
+  Moving a directory into its own subtree fails with `:einval` (see
+  `cp/4`) rather than looping.
   """
   @spec mv(t(), String.t(), String.t()) :: {:ok, t()} | {:error, Error.t()}
   def mv(fs, src, dest) do
@@ -264,6 +275,11 @@ defmodule JustBash.FS do
   def strerror(kind) when is_atom(kind), do: to_string(kind)
 
   # ── private ──────────────────────────────────────────────────────────────
+
+  # Is `dest` the same path as `src`, or nested inside it? Everything is
+  # inside the root, so a recursive copy of "/" never has a safe destination.
+  defp within?(_dest, "/"), do: true
+  defp within?(dest, src), do: dest == src or String.starts_with?(dest, src <> "/")
 
   # rename(2) replaces a destination symlink rather than writing through
   # it (unlike cp, whose write_file follows the link). Remove the link

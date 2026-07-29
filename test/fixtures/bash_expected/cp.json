@@ -1,0 +1,145 @@
+{
+  "results": [
+    {
+      "content_hash": "c43f4c0f18de8b91",
+      "exit_code": 0,
+      "name": "cp comparison: copies a file into an existing directory",
+      "stderr": "",
+      "stdout": "rc=0\nA\n"
+    },
+    {
+      "content_hash": "d7521956cf2ccd49",
+      "exit_code": 0,
+      "name": "cp comparison: copies a file into an existing directory with a trailing slash",
+      "stderr": "",
+      "stdout": "rc=0\nA\n"
+    },
+    {
+      "content_hash": "fa707f67298ced09",
+      "exit_code": 0,
+      "name": "cp comparison: -r copies a directory into an existing directory",
+      "stderr": "",
+      "stdout": "rc=0\nX\n"
+    },
+    {
+      "content_hash": "6c83b15e06d40bd1",
+      "exit_code": 0,
+      "name": "cp comparison: -R copies a directory into an existing directory",
+      "stderr": "",
+      "stdout": "rc=0\nX\n"
+    },
+    {
+      "content_hash": "f92d3843c2634dad",
+      "exit_code": 0,
+      "name": "cp comparison: -r copies a directory as the destination when it does not exist",
+      "stderr": "",
+      "stdout": "rc=0\nX\nx.md\n"
+    },
+    {
+      "content_hash": "53da879bc497619f",
+      "exit_code": 0,
+      "name": "cp comparison: -r with a trailing slash on the source",
+      "stderr": "",
+      "stdout": "rc=0\nX\n"
+    },
+    {
+      "content_hash": "4921949d6f04d391",
+      "exit_code": 0,
+      "name": "cp comparison: -r with a trailing slash on the destination",
+      "stderr": "",
+      "stdout": "rc=0\nX\n"
+    },
+    {
+      "content_hash": "3875e9273e551a48",
+      "exit_code": 0,
+      "name": "cp comparison: -r merges into an existing destination subtree",
+      "stderr": "",
+      "stdout": "rc=0\nK\nX\n"
+    },
+    {
+      "content_hash": "913bd9b8c1a697a9",
+      "exit_code": 0,
+      "name": "cp comparison: -r copies nested directories",
+      "stderr": "",
+      "stdout": "rc=0\nX\nY\n"
+    },
+    {
+      "content_hash": "3d9728c3e2c3479b",
+      "exit_code": 0,
+      "name": "cp comparison: copies several files into a directory",
+      "stderr": "",
+      "stdout": "rc=0\nA\nB\n"
+    },
+    {
+      "content_hash": "3856f344e6a3f5c8",
+      "exit_code": 0,
+      "name": "cp comparison: preserves the source file mode",
+      "stderr": "",
+      "stdout": "rc=0\nexec\n"
+    },
+    {
+      "content_hash": "1988380eca030677",
+      "exit_code": 0,
+      "name": "cp comparison: a directory source without -r is omitted",
+      "stderr": "cp: -r not specified; omitting directory 's'\n",
+      "stdout": "rc=1\ns\n"
+    },
+    {
+      "content_hash": "e4cfb3414a0ecbd9",
+      "exit_code": 0,
+      "name": "cp comparison: missing destination operand",
+      "stderr": "cp: missing destination file operand after 'a.md'\nTry 'cp --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "c3b6e0799b4dbd1f",
+      "exit_code": 0,
+      "name": "cp comparison: missing file operand",
+      "stderr": "cp: missing file operand\nTry 'cp --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "4049b8b12fcaf6f7",
+      "exit_code": 0,
+      "name": "cp comparison: nonexistent source",
+      "stderr": "cp: cannot stat 'nope.md': No such file or directory\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "73722303c03c8c04",
+      "exit_code": 0,
+      "name": "cp comparison: several operands need a directory target",
+      "stderr": "cp: target 'c.md': Not a directory\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a2548785d4a66b49",
+      "exit_code": 0,
+      "name": "cp comparison: several operands need an existing target",
+      "stderr": "cp: target 'nodir': No such file or directory\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f8b50f95ee8b854a",
+      "exit_code": 0,
+      "name": "cp comparison: -r refuses to copy a directory into itself",
+      "stderr": "cp: cannot copy a directory, 'a', into itself, 'a/b/a'\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b5ba0d91ead4090c",
+      "exit_code": 0,
+      "name": "cp comparison: -r cannot overwrite a non-directory with a directory",
+      "stderr": "cp: cannot overwrite non-directory 'f' with directory 's'\n",
+      "stdout": "rc=1\nF\n"
+    },
+    {
+      "content_hash": "3e83a61f0368f75d",
+      "exit_code": 0,
+      "name": "cp comparison: a failing source does not stop the remaining copies",
+      "stderr": "cp: cannot stat 'nope.md': No such file or directory\n",
+      "stdout": "rc=1\nA\n"
+    }
+  ],
+  "suite": "cp"
+}
