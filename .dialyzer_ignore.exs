@@ -1,10 +1,7 @@
 [
-  # AWK parser/evaluator type specs use internal types
-  {"lib/just_bash/commands/awk/evaluator.ex", :unknown_type},
   # file_outputs key is always present in initial state (line 52) but dialyzer
   # can't infer it through all execute_statement clause paths
   {"lib/just_bash/commands/awk/evaluator.ex", :map_update},
-  {"lib/just_bash/commands/awk/parser.ex", :unknown_type},
   # jq AST node types: parser produces :module_directives and :def tuples that
   # dialyzer can't infer from its analysis of the parser return type
   {"lib/just_bash/commands/jq/evaluator.ex", :pattern_match},
@@ -13,11 +10,10 @@
   {"lib/just_bash/commands/jq/evaluator/functions.ex", :pattern_match},
   # vfs 0.1 does not include :enotempty in VFS.Error's kind union, but POSIX
   # rm of a non-empty directory needs it (rmdir(2) ENOTEMPTY). We construct
-  # and match it anyway — VFS.Error.new/2 doesn't validate kinds at runtime —
-  # and have proposed adding :enotempty to the union in vfs 0.2. Remove both
-  # skips when vfs ships it.
+  # it anyway — VFS.Error.new/2 doesn't validate kinds at runtime — and have
+  # proposed adding :enotempty to the union in vfs 0.2. Remove this skip when
+  # vfs ships it.
   {"lib/just_bash/fs/memory.ex", :call},
-  {"lib/just_bash/commands/rm.ex", :pattern_match},
   # format_array_key catch-all handles any type defensively, but dialyzer infers
   # callers only pass float/integer/binary values covered by earlier clauses
   {"lib/just_bash/commands/awk/evaluator.ex", :pattern_match_cov},

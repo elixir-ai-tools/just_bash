@@ -5,6 +5,114 @@ defmodule JustBash.Commands.Awk.AST do
   Produces AST in the format expected by the evaluator.
   """
 
+  @typedoc """
+  An AWK expression AST node.
+
+  Produced by `JustBash.Commands.Awk.Parser` expression parsing and consumed by
+  `JustBash.Commands.Awk.Evaluator.evaluate_expression/2`.
+  """
+  @type expr ::
+          {:literal, String.t()}
+          | {:number, number()}
+          | {:field, integer()}
+          | {:field_var, String.t()}
+          | {:field_expr, expr()}
+          | {:variable, String.t()}
+          | {:regex, String.t()}
+          | {:array_access, String.t(), expr()}
+          | {:add, expr(), expr()}
+          | {:sub, expr(), expr()}
+          | {:mul, expr(), expr()}
+          | {:div, expr(), expr()}
+          | {:mod, expr(), expr()}
+          | {:pow, expr(), expr()}
+          | {:==, expr(), expr()}
+          | {:!=, expr(), expr()}
+          | {:<, expr(), expr()}
+          | {:>, expr(), expr()}
+          | {:<=, expr(), expr()}
+          | {:>=, expr(), expr()}
+          | {:match, expr(), expr()}
+          | {:not_match, expr(), expr()}
+          | {:and, expr(), expr()}
+          | {:or, expr(), expr()}
+          | {:concat, expr(), expr()}
+          | {:not, expr()}
+          | {:negate, expr()}
+          | {:ternary, expr(), expr(), expr()}
+          | {:assign, String.t(), expr()}
+          | {:array_assign, String.t(), expr(), expr()}
+          | {:field_assign, expr(), expr()}
+          | {:add_assign, String.t(), expr()}
+          | {:array_add_assign, String.t(), expr(), expr()}
+          | {:sub_assign, String.t(), expr()}
+          | {:mul_assign, String.t(), expr()}
+          | {:div_assign, String.t(), expr()}
+          | {:mod_assign, String.t(), expr()}
+          | {:pow_assign, String.t(), expr()}
+          | {:pre_increment, String.t()}
+          | {:array_pre_increment, String.t(), expr()}
+          | {:increment, String.t()}
+          | {:array_increment, String.t(), expr()}
+          | {:pre_decrement, String.t()}
+          | {:array_pre_decrement, String.t(), expr()}
+          | {:decrement, String.t()}
+          | {:array_decrement, String.t(), expr()}
+          | {:call, String.t(), [expr()]}
+          | {:in, expr(), String.t()}
+          | {:getline, String.t() | nil, expr() | nil, term()}
+
+  @typedoc "A parsed `{ ... }` block: a list of statements."
+  @type block :: %{statements: [stmt()]}
+
+  @typedoc "The argument list to a `print`/`printf` statement."
+  @type print_args :: {:comma_sep, [expr()]} | {:concat, [expr()]} | [expr()]
+
+  @typedoc """
+  An AWK statement AST node.
+
+  Produced by `JustBash.Commands.Awk.Parser` statement parsing and consumed by
+  the (private) statement executor in `JustBash.Commands.Awk.Evaluator`.
+  """
+  @type stmt ::
+          block()
+          | {:print, print_args()}
+          | {:print_redirect, print_args(), expr()}
+          | {:print_append, print_args(), expr()}
+          | {:printf, {String.t(), [expr()]}}
+          | {:printf_redirect, {String.t(), [expr()]}, expr()}
+          | {:printf_append, {String.t(), [expr()]}, expr()}
+          | {:if, expr(), stmt(), stmt() | nil}
+          | {:while, expr(), [stmt()]}
+          | {:do_while, [stmt()], expr()}
+          | {:for, expr() | nil, expr() | nil, expr() | nil, [stmt()]}
+          | {:for_in, String.t(), String.t(), [stmt()]}
+          | {:break}
+          | {:continue}
+          | {:next}
+          | {:exit, expr() | non_neg_integer()}
+          | {:return, expr() | nil}
+          | {:delete_element, String.t(), expr()}
+          | {:delete_array, String.t()}
+          | expr()
+
+  @typedoc """
+  A rule pattern: unconditional (`nil`), a bare regex matched against `$0`,
+  a boolean condition expression, or a range between two patterns.
+  """
+  @type pattern ::
+          nil | {:regex, String.t()} | {:condition, expr()} | {:range, pattern(), pattern()}
+
+  @typedoc """
+  A parsed AWK program, as produced by `JustBash.Commands.Awk.Parser.parse/1`
+  and consumed by `JustBash.Commands.Awk.Evaluator.execute/2`.
+  """
+  @type program :: %{
+          begin_blocks: [[stmt()]],
+          end_blocks: [[stmt()]],
+          main_rules: [{pattern(), [stmt()]}]
+        }
+
   # ─── Program Structure ────────────────────────────────────────────
   # Evaluator expects: %{begin_blocks: [[stmt]], end_blocks: [[stmt]], main_rules: [{pattern, [stmt]}]}
 

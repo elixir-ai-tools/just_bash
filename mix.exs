@@ -77,12 +77,82 @@ defmodule JustBash.MixProject do
       source_ref: "v#{@version}",
       source_url: @source_url,
       extras: ["README.md", "UPGRADING.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE"],
+      groups_for_extras: [
+        Guides: ["README.md", "UPGRADING.md"],
+        Project: ["CHANGELOG.md", "CONTRIBUTING.md", "LICENSE"]
+      ],
+      # The eval harness lives in `eval/` and is compiled for dev/test only — it is
+      # not part of the published Hex package (see `package/0`), so it must not be
+      # documented on HexDocs.
+      filter_modules: fn module, _metadata ->
+        not String.starts_with?(inspect(module), "JustBash.Eval.")
+      end,
+      # Groups are rendered in the order listed, so this sequence is the sidebar
+      # itself: consumer-facing API first, implementation long tails last.
+      # Patterns may be module atoms or regexes matched against the module name;
+      # the first matching group wins, so narrower patterns come first.
       groups_for_modules: [
-        Core: [JustBash],
-        Parser: [JustBash.Parser, JustBash.Parser.Lexer, JustBash.Parser.WordParts],
-        AST: [JustBash.AST],
-        Filesystem: [JustBash.FS, JustBash.FS.Memory, JustBash.FS.POSIX],
-        Utilities: [JustBash.Arithmetic]
+        Core: [
+          JustBash,
+          JustBash.Result,
+          JustBash.Sigil,
+          JustBash.Limit,
+          JustBash.Telemetry
+        ],
+        Exceptions: [
+          JustBash.Limit.ExceededError,
+          JustBash.Parser.ParseError,
+          JustBash.Parser.Lexer.Error,
+          JustBash.Interpreter.Expansion.UnsetVariableError
+        ],
+        Filesystem: [
+          JustBash.FS,
+          JustBash.FS.Memory,
+          JustBash.FS.POSIX
+        ],
+        "HTTP & Network": [
+          JustBash.Network,
+          JustBash.HttpClient,
+          JustBash.HttpClient.Default
+        ],
+        "Custom Commands": [
+          JustBash.Commands.Command,
+          JustBash.Commands.Registry,
+          JustBash.Commands.ArgParser,
+          JustBash.FlagParser
+        ],
+        "Declarative CLIs": [~r/^JustBash\.CLI($|\.)/],
+        "Parsing & Formatting": [
+          JustBash.Parser,
+          JustBash.Formatter
+        ],
+        "Command Internals": [~r/^JustBash\.Commands\.(Awk|Jq|Sed)\./],
+        "Built-in Commands": [~r/^JustBash\.Commands\./],
+        "Parser & Lexer": [~r/^JustBash\.Parser\./],
+        Interpreter: [~r/^JustBash\.Interpreter($|\.)/],
+        Arithmetic: [~r/^JustBash\.Arithmetic($|\.)/],
+        AST: [~r/^JustBash\.AST($|\.)/],
+        "Security Auditing": [JustBash.BannedCallTracer],
+        "Spec Test Harness": [~r/^JustBash\.SpecTest($|\.)/],
+        "Mix Tasks": [~r/^Mix\.Tasks\./]
+      ],
+      nest_modules_by_prefix: [
+        JustBash.Arithmetic,
+        JustBash.AST,
+        JustBash.CLI,
+        JustBash.Commands,
+        JustBash.Commands.Awk,
+        JustBash.Commands.Jq,
+        JustBash.Commands.Sed,
+        JustBash.FS,
+        JustBash.HttpClient,
+        JustBash.Interpreter,
+        JustBash.Interpreter.Executor,
+        JustBash.Interpreter.Expansion,
+        JustBash.Parser,
+        JustBash.Parser.Lexer,
+        JustBash.Parser.WordParts,
+        JustBash.SpecTest
       ]
     ]
   end

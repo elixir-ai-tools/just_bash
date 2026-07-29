@@ -6,7 +6,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   and producing output.
   """
 
-  alias JustBash.Commands.Awk.{Formatter, Parser}
+  alias JustBash.Commands.Awk.{AST, Formatter}
   alias JustBash.FS
   alias JustBash.Limit
 
@@ -31,7 +31,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
 
   Returns {output, exit_code, file_outputs, bash}.
   """
-  @spec execute(Parser.program(), map()) ::
+  @spec execute(AST.program(), map()) ::
           {String.t(), non_neg_integer(), map(), JustBash.t() | nil}
   def execute(program, opts) do
     file_data = Map.get(opts, :files, [{"", ""}])
@@ -73,7 +73,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   # Legacy 3-arity entry point for backward compatibility
-  @spec execute(String.t(), Parser.program(), map()) ::
+  @spec execute(String.t(), AST.program(), map()) ::
           {String.t(), non_neg_integer(), map(), JustBash.t() | nil}
   def execute(content, program, opts) do
     execute(program, Map.put(opts, :files, [{"", content}]))
@@ -1013,7 +1013,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   @doc """
   Evaluate an expression in the given state context.
   """
-  @spec evaluate_expression(Parser.expr(), state()) :: String.t() | number()
+  @spec evaluate_expression(AST.expr(), state()) :: String.t() | number()
   def evaluate_expression({:literal, value}, _state), do: value
   def evaluate_expression({:number, value}, _state), do: value
   def evaluate_expression({:field, n}, state), do: get_field(state, n)
