@@ -109,6 +109,10 @@ defmodule JustBash.Commands.Grep do
     end)
   end
 
+  # `-r` follows symlinks only when they are named on the command line, so
+  # the descent uses `lstat` and skips every link it meets along the way.
+  # (`stat` would resolve them, and a link pointing back into the tree being
+  # searched would make the recursion re-enter it — twice over, forever.)
   defp find_files_recursive(fs, full_path, display_path) do
     case FS.readdir(fs, full_path) do
       {:ok, entries, _fs} ->
@@ -116,9 +120,12 @@ defmodule JustBash.Commands.Grep do
           child_full = join_path(full_path, entry)
           child_display = join_path(display_path, entry)
 
-          case FS.stat(fs, child_full) do
+          case FS.lstat(fs, child_full) do
             {:ok, %VFS.Stat{type: :directory}, _fs} ->
               find_files_recursive(fs, child_full, child_display)
+
+            {:ok, %VFS.Stat{type: :symlink}, _fs} ->
+              []
 
             {:ok, _, _fs} ->
               [child_display]

@@ -26,6 +26,23 @@ defmodule JustBash.NotADirectoryTest do
     fs |> FS.walk(root, include_dirs: true) |> Enum.map(&elem(&1, 0)) |> Enum.sort()
   end
 
+  # A traversal that diverges must fail the test, not hang the suite — and
+  # must not take the VM down with it. `:brutal_kill` reclaims whatever the
+  # runaway traversal allocated along with the process that allocated it.
+  defp within(fun, timeout \\ 5_000) do
+    task = Task.async(fun)
+
+    case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
+      {:ok, value} -> value
+      _ -> flunk("did not terminate within #{timeout}ms")
+    end
+  end
+
+  defp exec_within(bash, script) do
+    {result, _bash} = within(fn -> JustBash.exec(bash, script) end)
+    result
+  end
+
   describe "FS.write_file/4 through a regular file" do
     test "returns :enotdir when the parent component is a regular file" do
       assert {:error, %VFS.Error{kind: :enotdir}} =
@@ -340,6 +357,214 @@ defmodule JustBash.NotADirectoryTest do
         refute path in reachable
         assert {:error, %VFS.Error{}} = FS.read_file(bash.fs, path)
       end
+    end
+
+    # The companion invariant to "walk reaches everything": it also has to
+    # stop. A `stat`-driven walk re-enters the tree through a symlinked
+    # directory, so one self-link inflates the result and two make it
+    # diverge — the store's keys are finite, the traversal over them was not.
+    test "walk/3 terminates over a tree that contains a symlink cycle" do
+      {_result, bash} =
+        JustBash.exec(JustBash.new(), """
+        mkdir -p /real/sub
+        echo hi > /real/a.txt
+        ln -s /real /real/s1
+        ln -s /real /real/s2
+        ln -s /real/sub /real/sub/back
+        """)
+
+      assert within(fn -> walked(bash.fs, "/real") end) ==
+               [
+                 "/real",
+                 "/real/a.txt",
+                 "/real/s1",
+                 "/real/s2",
+                 "/real/sub",
+                 "/real/sub/back"
+               ]
+    end
+
+    test "walk/3 yields each stored entry exactly once" do
+      {_result, bash} =
+        JustBash.exec(
+          JustBash.new(),
+          "mkdir -p /real; echo hi > /real/a.txt; ln -s /real /real/self"
+        )
+
+      walked =
+        within(fn -> Enum.map(FS.walk(bash.fs, "/real", include_dirs: true), &elem(&1, 0)) end)
+
+      assert Enum.sort(walked) == Enum.uniq(Enum.sort(walked))
+    end
+
+    test "walk/3 reports a symlink as a symlink rather than as its target" do
+      {_result, bash} = JustBash.exec(JustBash.new(), "mkdir -p /real; ln -s /real /real/self")
+
+      assert [{"/real/self", %VFS.Stat{type: :symlink}}] =
+               within(fn -> Enum.to_list(FS.walk(bash.fs, "/real")) end)
+    end
+
+    test "walk/3 through a symlinked root reports paths under the root as asked" do
+      {_result, bash} =
+        JustBash.exec(
+          JustBash.new(),
+          "mkdir -p /real/sub; echo hi > /real/sub/a.txt; ln -s /real /link"
+        )
+
+      assert within(fn -> walked(bash.fs, "/link") end) ==
+               ["/link", "/link/sub", "/link/sub/a.txt"]
+    end
+
+    test "walk/3 honors :max_depth relative to the root" do
+      {_result, bash} =
+        JustBash.exec(JustBash.new(), "mkdir -p /real/sub/deeper; echo hi > /real/sub/a.txt")
+
+      assert within(fn ->
+               bash.fs
+               |> FS.walk("/real", include_dirs: true, max_depth: 1)
+               |> Enum.map(&elem(&1, 0))
+               |> Enum.sort()
+             end) == ["/real", "/real/sub"]
+    end
+  end
+
+  # `FS.stat/2` resolves symlinks, so a traversal that asks it "is this a
+  # directory?" descends *through* a symlinked directory and back into the
+  # tree it came from. One self-link inflates the output; two make the
+  # traversal diverge (2^40 paths, bounded only by SYMLOOP_MAX), which
+  # wedges the whole exec. GNU's default `-P` never descends into a
+  # symlink, so the descent decision belongs to `FS.lstat/2`.
+  describe "recursive commands do not descend into symlinked directories" do
+    defp bash_with_self_link do
+      {_result, bash} =
+        JustBash.exec(JustBash.new(cwd: "/w"), """
+        mkdir -p /w/real
+        echo hi > /w/real/a.txt
+        ln -s /w/real /w/real/self
+        """)
+
+      bash
+    end
+
+    defp bash_with_two_self_links do
+      {_result, bash} =
+        JustBash.exec(bash_with_self_link(), "ln -s /w/real /w/real/s2")
+
+      bash
+    end
+
+    # Two real files, so grep prefixes its matches with filenames and a
+    # match reached through a link is distinguishable from one that is not.
+    defp bash_with_linked_subtree do
+      {_result, bash} =
+        JustBash.exec(JustBash.new(cwd: "/w"), """
+        mkdir -p /w/real/sub
+        echo hi > /w/real/a.txt
+        echo hi > /w/real/sub/b.txt
+        ln -s /w/real /w/real/self
+        ln -s /w/real /w/real/s2
+        """)
+
+      bash
+    end
+
+    test "find lists the symlink and stops there" do
+      assert exec_within(bash_with_self_link(), "find /w/real").stdout ==
+               "/w/real\n/w/real/a.txt\n/w/real/self\n"
+    end
+
+    test "find terminates with two links back into the tree" do
+      result = exec_within(bash_with_two_self_links(), "find /w/real")
+
+      assert result.stdout == "/w/real\n/w/real/a.txt\n/w/real/s2\n/w/real/self\n"
+    end
+
+    test "find -type d does not match a symlink to a directory" do
+      assert exec_within(bash_with_self_link(), "find /w/real -type d").stdout == "/w/real\n"
+    end
+
+    test "find -type f does not match a symlink to a file" do
+      {_result, bash} = JustBash.exec(bash_with_self_link(), "ln -s /w/real/a.txt /w/real/lf")
+
+      assert exec_within(bash, "find /w/real -type f").stdout == "/w/real/a.txt\n"
+    end
+
+    test "find -type l matches the symlinks and nothing else" do
+      {_result, bash} = JustBash.exec(bash_with_self_link(), "ln -s /w/real/a.txt /w/real/lf")
+
+      assert exec_within(bash, "find /w/real -type l").stdout == "/w/real/lf\n/w/real/self\n"
+    end
+
+    test "find on a symlink operand reports the link without descending" do
+      {_result, bash} = JustBash.exec(bash_with_self_link(), "ln -s /w/real /w/link")
+
+      assert exec_within(bash, "find /w/link").stdout == "/w/link\n"
+    end
+
+    test "du -s terminates and counts the tree once" do
+      result = exec_within(bash_with_two_self_links(), "du -s /w/real")
+
+      assert result.exit_code == 0
+      assert [_line] = String.split(result.stdout, "\n", trim: true)
+    end
+
+    test "grep -r does not read files through a symlinked directory" do
+      assert exec_within(bash_with_linked_subtree(), "grep -r hi /w/real").stdout ==
+               "/w/real/a.txt:hi\n/w/real/sub/b.txt:hi\n"
+    end
+
+    # GNU grep follows a symlink named on the command line and skips the ones
+    # it meets while recursing, so the operand link keeps working.
+    test "grep -r still follows a symlink named on the command line" do
+      {_result, bash} = JustBash.exec(bash_with_linked_subtree(), "ln -s /w/real /w/link")
+
+      assert exec_within(bash, "grep -r hi /w/link").stdout ==
+               "/w/link/a.txt:hi\n/w/link/sub/b.txt:hi\n"
+    end
+
+    test "tree terminates and lists the symlink once" do
+      result = exec_within(bash_with_two_self_links(), "tree /w/real")
+
+      assert result.exit_code == 0
+      refute result.stdout =~ "self/"
+      assert length(String.split(result.stdout, "self", trim: false)) == 2
+    end
+  end
+
+  describe "cd reports resolution errors instead of raising" do
+    test "cd through a regular file is ENOTDIR, matching bash" do
+      before = bash_with_file_parent()
+      {result, bash} = JustBash.exec(before, "cd /m/j/sub")
+
+      assert result.exit_code == 1
+      assert result.stderr == "bash: cd: /m/j/sub: Not a directory\n"
+      assert bash.cwd == before.cwd
+    end
+
+    test "cd into a symlink loop is ELOOP, matching bash" do
+      before = JustBash.new()
+      {result, bash} = JustBash.exec(before, "ln -s /b /a; ln -s /a /b; cd /a")
+
+      assert result.exit_code == 1
+      assert result.stderr == "bash: cd: /a: Too many levels of symbolic links\n"
+      assert bash.cwd == before.cwd
+    end
+  end
+
+  describe "ls reports resolution errors instead of raising" do
+    test "ls on a symlink loop is ELOOP" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "ln -s /b /a; ln -s /a /b; ls /a")
+
+      assert result.exit_code == 1
+      assert result.stderr == "ls: cannot access '/a': Too many levels of symbolic links\n"
+      assert result.stdout == ""
+    end
+
+    test "ls through a regular file is ENOTDIR" do
+      {result, _bash} = JustBash.exec(bash_with_file_parent(), "ls /m/j/sub")
+
+      assert result.exit_code == 1
+      assert result.stderr == "ls: cannot access '/m/j/sub': Not a directory\n"
     end
   end
 

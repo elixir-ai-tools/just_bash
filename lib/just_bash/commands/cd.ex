@@ -32,8 +32,12 @@ defmodule JustBash.Commands.Cd do
       {:ok, _, fs} ->
         {Command.error("bash: cd: #{target}: Not a directory\n"), %{bash | fs: fs}}
 
-      {:error, %VFS.Error{kind: :enoent}} ->
-        {Command.error("bash: cd: #{target}: No such file or directory\n"), bash}
+      # Every other resolution failure renders the same way bash does, from
+      # the kernel's error name: ENOTDIR for a component that is a regular
+      # file, ELOOP for a symlink cycle, and so on. Enumerating only ENOENT
+      # here raised a CaseClauseError out of `JustBash.exec/2` instead.
+      {:error, %VFS.Error{} = error} ->
+        {Command.error("bash: cd: #{target}: #{FS.strerror(error)}\n"), bash}
     end
   end
 end

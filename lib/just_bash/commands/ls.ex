@@ -37,11 +37,16 @@ defmodule JustBash.Commands.Ls do
         formatted = format_entries(fs, resolved, entries, flags)
         {out_acc <> formatted, err_acc, code_acc, fs}
 
-      {:error, %VFS.Error{kind: :enoent}} ->
-        {out_acc, err_acc <> "ls: cannot access '#{path}': No such file or directory\n", 1, fs}
-
+      # ENOTDIR is not necessarily an error: `ls file` lists the file itself.
+      # It only becomes one when the name cannot be resolved at all.
       {:error, %VFS.Error{kind: :enotdir}} ->
         handle_not_dir(fs, resolved, path, {out_acc, err_acc, code_acc})
+
+      # Any other resolution failure — ENOENT, or ELOOP from a symlink cycle
+      # — is reported with the kernel's wording. Enumerating just those two
+      # kinds raised a CaseClauseError out of `JustBash.exec/2`.
+      {:error, %VFS.Error{} = error} ->
+        {out_acc, err_acc <> "ls: cannot access '#{path}': #{FS.strerror(error)}\n", 1, fs}
     end
   end
 

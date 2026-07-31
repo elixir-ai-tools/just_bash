@@ -77,8 +77,11 @@ defmodule JustBash.Commands.Tree do
     end
   end
 
+  # `lstat`, not `stat`: `tree` does not follow symlinks without `-l`, so a
+  # link is a leaf. Resolving it instead re-enters the tree through any link
+  # that points back into it, and two such links never finish.
   defp build_tree(ctx, path, display_path, depth) do
-    case FS.stat(ctx.fs, path) do
+    case FS.lstat(ctx.fs, path) do
       {:ok, %VFS.Stat{type: :directory}, _fs} ->
         build_directory_tree(ctx, path, display_path, depth)
 
@@ -143,10 +146,18 @@ defmodule JustBash.Commands.Tree do
   end
 
   defp build_single_entry(ctx, entry_ctx, depth, acc) do
-    case FS.stat(ctx.fs, entry_ctx.entry_path) do
-      {:ok, %VFS.Stat{type: :directory}, _fs} -> build_dir_entry(ctx, entry_ctx, depth, acc)
-      {:ok, %VFS.Stat{type: :regular}, _fs} -> build_file_entry(ctx, entry_ctx, acc)
-      _ -> acc
+    case FS.lstat(ctx.fs, entry_ctx.entry_path) do
+      {:ok, %VFS.Stat{type: :directory}, _fs} ->
+        build_dir_entry(ctx, entry_ctx, depth, acc)
+
+      # A symlink is listed as a leaf and counted with the files. Real `tree`
+      # also renders it as `name -> target`; that arrow is a separate gap,
+      # not something this traversal fix should invent.
+      {:ok, %VFS.Stat{type: type}, _fs} when type in [:regular, :symlink] ->
+        build_file_entry(ctx, entry_ctx, acc)
+
+      _ ->
+        acc
     end
   end
 

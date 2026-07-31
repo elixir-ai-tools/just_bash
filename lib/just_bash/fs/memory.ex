@@ -198,11 +198,6 @@ defmodule JustBash.FS.Memory do
         nil ->
           {:error, Error.new(:enoent, path: normalized)}
 
-        %{type: :symlink, target: target} = entry ->
-          {:ok,
-           %Stat{type: :symlink, size: byte_size(target), mtime: entry.mtime, mode: entry.mode},
-           fs}
-
         entry ->
           {:ok, entry_stat(entry), fs}
       end
@@ -384,6 +379,10 @@ defmodule JustBash.FS.Memory do
     %Stat{type: :directory, size: 0, mtime: entry.mtime, mode: entry.mode}
   end
 
+  defp entry_stat(%{type: :symlink, target: target} = entry) do
+    %Stat{type: :symlink, size: byte_size(target), mtime: entry.mtime, mode: entry.mode}
+  end
+
   defp ensure_parent_dirs(%__MODULE__{} = fs, path) do
     dir = VPath.dirname(path)
 
@@ -538,6 +537,36 @@ defimpl VFS.Mountable, for: JustBash.FS.Memory do
     end
   end
 
+  # Native walk, replacing the `VFS.Default` one composed from stat/readdir.
+  # Two reasons, and the first is correctness, not speed: the default walk
+  # asks `stat/2` whether each entry is a directory, and `stat/2` resolves
+  # symlinks — so it descends *through* a symlinked directory and back into
+  # the tree it came from. One self-link inflates the result, two make it
+  # diverge. Walking the store's own keys instead cannot: a symlink is an
+  # entry, never an edge, so the traversal visits each stored path once and
+  # stops (POSIX `-P`, and what GNU's traversal utilities do by default).
+  #
+  # The second reason is that it is exact and O(n). With ENOTDIR enforced at
+  # every write, `data`'s keys *are* the reachable tree, so a prefix scan
+  # sees precisely what a stat/readdir descent would have — no re-resolution
+  # per level.
+  def walk(%Memory{} = fs, root, opts) do
+    requested = Memory.__normalize__(root)
+    max_depth = Keyword.get(opts, :max_depth, :infinity)
+    include_dirs = Keyword.get(opts, :include_dirs, false)
+
+    # The root operand is followed, like `stat/2` — `walk("/link")` walks the
+    # target's tree. Emitted paths keep the caller's spelling of the root,
+    # which is what a stat/readdir descent from "/link" produced.
+    case Memory.__resolve_for_read__(fs, requested) do
+      {:ok, resolved} ->
+        walk_root(fs, resolved, requested, max_depth, include_dirs)
+
+      {:error, %Error{}} ->
+        []
+    end
+  end
+
   def readdir(%Memory{data: data} = fs, path) do
     with {:ok, normalized} <- Memory.__resolve_for_read__(fs, path) do
       case Map.get(data, normalized) do
@@ -618,6 +647,81 @@ defimpl VFS.Mountable, for: JustBash.FS.Memory do
   def capabilities(_), do: MapSet.new([:read, :write, :mkdir])
 
   # ── helpers ──
+
+  defp walk_root(%Memory{} = fs, resolved, requested, max_depth, include_dirs) do
+    case Memory.__entry__(fs, resolved) do
+      # A dangling symlink root resolves to a path that holds nothing, which
+      # the default walk also reported as an empty traversal.
+      nil ->
+        []
+
+      %{type: :directory} = entry ->
+        self = if include_dirs, do: [{requested, Memory.__entry_stat__(entry)}], else: []
+
+        opts = %{
+          index: child_index(fs, resolved),
+          max_depth: max_depth,
+          include_dirs: include_dirs
+        }
+
+        Stream.concat(self, descend(opts, resolved, requested, 0))
+
+      entry ->
+        [{requested, Memory.__entry_stat__(entry)}]
+    end
+  end
+
+  # One pass over the store builds `storage dir => sorted [{name, entry}]`,
+  # so the depth-first traversal below is a map lookup per directory rather
+  # than a prefix scan per directory. Sorting matches `readdir/2`'s order,
+  # which is the order the composed walk yielded.
+  defp child_index(%Memory{data: data}, resolved) do
+    prefix = if resolved == "/", do: "/", else: resolved <> "/"
+
+    data
+    |> Enum.filter(fn {path, _entry} ->
+      path != resolved and String.starts_with?(path, prefix)
+    end)
+    |> Enum.group_by(fn {path, _entry} -> VFS.Path.dirname(path) end, fn {path, entry} ->
+      {Path.basename(path), entry}
+    end)
+    |> Map.new(fn {dir, children} -> {dir, Enum.sort(children)} end)
+  end
+
+  # `storage` addresses the store, `display` is the caller's spelling of the
+  # same directory — they differ only when the walk root was a symlink.
+  # Depth is counted from the root, as `:max_depth` is documented.
+  #
+  # Every stage is a `Stream`, so the laziness the `VFS.Mountable` walk
+  # contract asks for survives: `walk |> Stream.take(n)` realizes only the
+  # subtrees it needs.
+  defp descend(%{max_depth: max_depth}, _storage, _display, depth)
+       when is_integer(max_depth) and depth >= max_depth do
+    []
+  end
+
+  defp descend(opts, storage, display, depth) do
+    opts.index
+    |> Map.get(storage, [])
+    |> Stream.flat_map(fn {name, entry} ->
+      emit(opts, join(storage, name), join(display, name), entry, depth + 1)
+    end)
+  end
+
+  defp emit(opts, storage, display, %{type: :directory} = entry, depth) do
+    self = if opts.include_dirs, do: [{display, Memory.__entry_stat__(entry)}], else: []
+
+    Stream.concat(self, descend(opts, storage, display, depth))
+  end
+
+  # A symlink lands here too: it is an entry in the store, never an edge to
+  # follow, which is exactly what keeps the traversal finite.
+  defp emit(_opts, _storage, display, entry, _depth) do
+    [{display, Memory.__entry_stat__(entry)}]
+  end
+
+  defp join("/", name), do: "/" <> name
+  defp join(dir, name), do: dir <> "/" <> name
 
   defp do_mkdir_resolved(%Memory{data: data} = fs, normalized, parents?) do
     case Map.get(data, normalized) do

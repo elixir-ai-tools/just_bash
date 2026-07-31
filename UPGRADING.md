@@ -79,6 +79,19 @@ Every difference a script can observe, verified against the 0.3 sources:
    directory (`:eisdir`). bash produces no output at all here because it
    opens the target before running the command.
 
+   Because resolution now follows symlinks in every component, `stat/2`
+   reports a symlinked directory *as* a directory — so **recursive commands
+   decide descent with `lstat` instead**, which is what GNU's default `-P`
+   does. `find`, `du`, `tree`, and `grep -r` list a symlink and stop there
+   rather than walking through it; in 0.3 `find /d` with `/d/self -> /d`
+   printed the subtree once per hop, and two such links never terminated.
+   Consequences worth knowing: `find -type f` and `-type d` no longer match
+   symlinks (`-type l` is now accepted and does), `grep -r` skips symlinks
+   met while recursing but still follows one named as an operand, and
+   `JustBash.FS.walk/3` yields a symlink with `type: :symlink` instead of
+   its target's type. A symlink named directly on the command line is still
+   followed, as it is under `-P`.
+
    Relatedly, `JustBash.new(files: ...)`, `JustBash.FS.new/1`, and
    `JustBash.FS.Memory.new/1` raise `ArgumentError` for a map that
    describes an impossible shape, such as

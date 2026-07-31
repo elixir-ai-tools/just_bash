@@ -67,7 +67,7 @@ defmodule JustBash.Commands.Find do
     parse_args(rest, %{opts | iname: pattern})
   end
 
-  defp parse_args(["-type", type | rest], opts) when type in ["f", "d"] do
+  defp parse_args(["-type", type | rest], opts) when type in ["f", "d", "l"] do
     parse_args(rest, %{opts | type: type})
   end
 
@@ -144,8 +144,12 @@ defmodule JustBash.Commands.Find do
 
   defp exceeds_maxdepth?(opts, depth), do: opts.maxdepth != nil and depth > opts.maxdepth
 
+  # `lstat`, not `stat`: GNU find's default `-P` never follows a symlink, so
+  # a link to a directory is reported as the link and not descended into.
+  # With `stat` — which resolves the link — a link back into the tree makes
+  # the traversal re-enter it, and two of them make it diverge.
   defp find_at_path(fs, full_path, display_path, opts, depth) do
-    case FS.stat(fs, full_path) do
+    case FS.lstat(fs, full_path) do
       {:ok, stat, _fs} ->
         current = collect_current_match(display_path, stat, opts, depth)
         children = find_children(fs, full_path, display_path, stat, opts, depth)
@@ -234,10 +238,13 @@ defmodule JustBash.Commands.Find do
     end
   end
 
+  # Types are compared against the `lstat` of the entry, so a symlink is
+  # `l` and matches neither `f` nor `d`, whatever it points at (`-P`).
   defp matches_type?(stat, opts) do
     case opts.type do
       "f" -> stat.type == :regular
       "d" -> stat.type == :directory
+      "l" -> stat.type == :symlink
       nil -> true
     end
   end

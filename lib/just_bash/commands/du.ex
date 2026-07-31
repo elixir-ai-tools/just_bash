@@ -99,8 +99,11 @@ defmodule JustBash.Commands.Du do
     end)
   end
 
+  # `lstat`, not `stat`: GNU du's default is `-P`, which counts a symlink's
+  # own size and does not descend through it. `stat` resolves the link, so a
+  # link back into the tree double-counts it and two of them never finish.
   defp calculate_size(fs, path, display_path, opts, depth) do
-    case FS.stat(fs, path) do
+    case FS.lstat(fs, path) do
       {:ok, %VFS.Stat{type: :directory}, _fs} ->
         calculate_dir_size(fs, path, display_path, opts, depth)
 
@@ -143,11 +146,13 @@ defmodule JustBash.Commands.Du do
     entry_path = if path == "/", do: "/#{entry}", else: "#{path}/#{entry}"
     entry_display = if display_path == ".", do: entry, else: "#{display_path}/#{entry}"
 
-    case FS.stat(fs, entry_path) do
+    case FS.lstat(fs, entry_path) do
       {:ok, %VFS.Stat{type: :directory}, _fs} ->
         process_subdir(fs, entry_path, entry_display, opts, depth, acc_out, acc_size)
 
-      {:ok, %VFS.Stat{type: :regular, size: size}, _fs} ->
+      # A symlink contributes its own size and nothing of its target's, which
+      # is what `-P` means for the entries a directory holds.
+      {:ok, %VFS.Stat{type: type, size: size}, _fs} when type in [:regular, :symlink] ->
         process_file_entry(size, entry_display, opts, acc_out, acc_size)
 
       _ ->
