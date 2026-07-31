@@ -18,6 +18,18 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   alias JustBash.Limit
 
   @type result :: %{stdout: String.t(), stderr: String.t(), exit_code: non_neg_integer()}
+
+  @typedoc """
+  A redirection whose target has already been expanded, resolved, and opened
+  by `preflight/2`.
+
+  The path is `nil` for redirections that touch no file (`/dev/null`, stream
+  duplication, `<`). Carrying the resolved path forward is what keeps a
+  target containing a command substitution from being expanded a second
+  time when the output is finally written.
+  """
+  @type prepared :: {redir_type(), String.t() | nil}
+
   @type redir_type ::
           :stdout_dev_null
           | :stderr_dev_null
@@ -35,16 +47,40 @@ defmodule JustBash.Interpreter.Executor.Redirection do
           | :noop
 
   @doc """
-  Apply a list of redirections to the result.
+  Expand, resolve, and open every redirection target, left to right, *before*
+  the command body runs.
+
+  bash opens redirect targets before forking the command, so a target it
+  cannot open means the command never runs — none of its side effects happen.
+  On `{:error, result, bash}` the caller must return `result` without
+  executing the body; on `{:ok, prepared, bash}` it runs the body and hands
+  `prepared` to `apply_redirections/3`.
+
+  Opening follows the `open/2` flags bash uses: `>`, `2>` and `&>` create or
+  truncate (`O_CREAT | O_TRUNC`), `>>` and `&>>` create only if missing
+  (`O_CREAT | O_APPEND`). Redirections that touch no file — `/dev/null`,
+  `>&`, `<` — are classified and passed through untouched.
+
+  Targets to the left of a failing one are still created or truncated, and
+  targets to its right are never expanded, so a command substitution in one
+  of them does not run. Both match bash.
   """
-  @spec apply_redirections(result(), JustBash.t(), [AST.Redirection.t()]) ::
+  @spec preflight(JustBash.t(), [AST.Redirection.t()]) ::
+          {:ok, [prepared()], JustBash.t()} | {:error, result(), JustBash.t()}
+  def preflight(bash, redirections), do: do_preflight(bash, redirections, [])
+
+  @doc """
+  Apply preflighted redirections to the result, writing each stream to the
+  target `preflight/2` already opened.
+  """
+  @spec apply_redirections(result(), JustBash.t(), [prepared()]) ::
           {result(), JustBash.t()}
   def apply_redirections(result, bash, []) do
     {result, bash}
   end
 
-  def apply_redirections(result, bash, [redir | rest]) do
-    {result, bash} = apply_redirection(result, bash, redir)
+  def apply_redirections(result, bash, [{redir_type, resolved} | rest]) do
+    {result, bash} = apply_classified_redirection(redir_type, result, bash, resolved)
     apply_redirections(result, bash, rest)
   end
 
@@ -70,15 +106,72 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   # --- Private Functions ---
 
-  defp apply_redirection(result, bash, %AST.Redirection{
-         fd: fd,
-         operator: operator,
-         target: target
-       }) do
+  defp do_preflight(bash, [], prepared), do: {:ok, Enum.reverse(prepared), bash}
+
+  defp do_preflight(bash, [redirection | rest], prepared) do
+    %AST.Redirection{fd: fd, operator: operator, target: target} = redirection
+
     target_path = Expansion.expand_redirect_target(bash, target)
-    resolved = FS.resolve_path(bash.cwd, target_path)
     redir_type = classify_redirection(fd, operator, target_path)
-    apply_classified_redirection(redir_type, result, bash, resolved)
+    resolved = FS.resolve_path(bash.cwd, target_path)
+
+    case open_target(bash, redir_type, resolved) do
+      {:ok, bash} ->
+        do_preflight(bash, rest, [{redir_type, resolved} | prepared])
+
+      {:error, error, bash} ->
+        {:error, open_failed(resolved, error), bash}
+    end
+  end
+
+  # The shell reports the failure itself and the command produces nothing:
+  # its stdout and stderr were bound for a file that was never opened.
+  defp open_failed(path, error) do
+    %{stdout: "", stderr: "bash: #{path}: #{FS.strerror(error)}\n", exit_code: 1}
+  end
+
+  defp open_target(bash, redir_type, path) do
+    case open_mode(redir_type) do
+      :truncate -> create_or_truncate(bash, path)
+      :append -> open_for_append(bash, path)
+      :none -> {:ok, bash}
+    end
+  end
+
+  @spec open_mode(redir_type()) :: :truncate | :append | :none
+  defp open_mode(:stdout_write), do: :truncate
+  defp open_mode(:stderr_write), do: :truncate
+  defp open_mode(:combined_write), do: :truncate
+  defp open_mode(:stdout_append), do: :append
+  defp open_mode(:stderr_append), do: :append
+  defp open_mode(:combined_append), do: :append
+  defp open_mode(_redir_type), do: :none
+
+  defp create_or_truncate(bash, path) do
+    case FS.write_file(bash.fs, path, "") do
+      {:ok, fs} -> {:ok, %{bash | fs: fs}}
+      {:error, %VFS.Error{} = error} -> {:error, error, bash}
+    end
+  end
+
+  # `O_APPEND` keeps what is already there, so an existing target is left
+  # alone — writing it back would bump its mtime for nothing. Everything a
+  # later append would reject still has to be rejected here: a directory, or
+  # a path running through a regular file.
+  defp open_for_append(bash, path) do
+    case FS.stat(bash.fs, path) do
+      {:ok, %VFS.Stat{type: :directory}, fs} ->
+        {:error, VFS.Error.new(:eisdir, path: path), %{bash | fs: fs}}
+
+      {:ok, %VFS.Stat{}, fs} ->
+        {:ok, %{bash | fs: fs}}
+
+      {:error, %VFS.Error{kind: :enoent}} ->
+        create_or_truncate(bash, path)
+
+      {:error, %VFS.Error{} = error} ->
+        {:error, error, bash}
+    end
   end
 
   @spec classify_redirection(non_neg_integer(), atom(), String.t()) :: redir_type()
@@ -162,6 +255,13 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     {result, bash}
   end
 
+  # A command that produced nothing leaves the target exactly as `preflight/2`
+  # opened it — truncated for `>`, untouched for `>>` — so the four clauses
+  # below have nothing to write. Skipping the write is not just an
+  # optimization: appending zero bytes is not a write at all, and bash leaves
+  # the target's mtime alone after `true >> file`.
+  defp write_to_file(bash, _path, "", result, stream), do: {clear_stream(result, stream), bash}
+
   defp write_to_file(bash, path, content, result, stream) do
     Limit.check_file_size!(bash, content)
 
@@ -174,6 +274,8 @@ defmodule JustBash.Interpreter.Executor.Redirection do
         {redirect_failed(result, stream, path, error), bash}
     end
   end
+
+  defp append_to_file(bash, _path, "", result, stream), do: {clear_stream(result, stream), bash}
 
   defp append_to_file(bash, path, content, result, stream) do
     bash = check_append_size!(bash, path, content)
@@ -188,6 +290,10 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     end
   end
 
+  defp write_combined_to_file(bash, _path, "", result) do
+    {%{result | stdout: "", stderr: ""}, bash}
+  end
+
   defp write_combined_to_file(bash, path, content, result) do
     Limit.check_file_size!(bash, content)
 
@@ -198,6 +304,10 @@ defmodule JustBash.Interpreter.Executor.Redirection do
       {:error, error} ->
         {result |> clear_stream(:stdout) |> redirect_failed(:stderr, path, error), bash}
     end
+  end
+
+  defp append_combined_to_file(bash, _path, "", result) do
+    {%{result | stdout: "", stderr: ""}, bash}
   end
 
   defp append_combined_to_file(bash, path, content, result) do
@@ -228,12 +338,11 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   defp clear_stream(result, :stdout), do: %{result | stdout: ""}
   defp clear_stream(result, :stderr), do: %{result | stderr: ""}
 
-  # bash opens the redirect target before running the command, so a target it
-  # cannot open means the command produces nothing at all. Clearing the
-  # redirected stream is how far that goes here: the command has already run,
-  # but its output was bound for the file and must not surface as the
-  # caller's stdout. Not running the command at all needs the target expanded
-  # and opened before the body — see issue #59.
+  # Failures the open in `preflight/2` cannot predict, because they depend on
+  # what the command produced — a write past `Limit`'s file-size cap, or a
+  # target that stopped being writable while the body ran. The command has
+  # already run, so all that is left is to suppress the stream that was bound
+  # for the file and report the failure the way bash does.
   defp redirect_failed(result, stream, path, error) do
     cleared = clear_stream(result, stream)
     error_msg = "bash: #{path}: #{FS.strerror(error)}\n"

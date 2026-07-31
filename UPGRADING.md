@@ -72,12 +72,16 @@ Every difference a script can observe, verified against the 0.3 sources:
    through the directory it lands in; this does not admit unreachable
    state, so it stayed out of scope.
 
-   A **failed redirect no longer leaks the command's output.** The bytes
-   were bound for the file, so `echo hi > /m/j/a.md` now yields empty
-   stdout with the error on stderr; previously `result.stdout` still held
-   `"hi\n"`. Same for `2>`, `>>`, and `&>`, and for a redirect onto a
-   directory (`:eisdir`). bash produces no output at all here because it
-   opens the target before running the command.
+   A **command whose redirect cannot be opened no longer runs at all.**
+   bash opens every redirect target before it forks the command, so
+   `mkdir /made > /m/j/x` reports `bash: /m/j/x: Not a directory`, exits
+   1, and leaves no `/made` behind — the side effects never happen, not
+   just the output. 0.3 ran the command and applied the redirection to
+   its result, so `result.stdout` still held `"hi\n"` for
+   `echo hi > /m/j/a.md` and `/made` was created. This covers `>`, `>>`,
+   `2>`, `&>`, `&>>`, a target that is a directory (`:eisdir`), and every
+   construct a redirect can attach to: simple commands, functions,
+   `for`/`while`/`until`, subshells, and groups.
 
    Because resolution now follows symlinks in every component, `stat/2`
    reports a symlinked directory *as* a directory — so **recursive commands
@@ -98,7 +102,19 @@ Every difference a script can observe, verified against the 0.3 sources:
    `%{"/m/j" => "x", "/m/j/a.md" => "y"}` (0.3 accepted it and which entry
    survived depended on map iteration order) or one that collides with a
    directory the backend already holds, such as `%{"/" => "x"}`.
-8. **With additional mounts only** (a 0.4 capability): the parents of a
+8. **A redirect target is created and truncated before the command runs**,
+   as `open(2)` with `O_CREAT | O_TRUNC` does, so a command can no longer
+   read the file it is redirecting into: `cat f > f` leaves `f` empty
+   (0.3 rewrote `f` with its own contents), and so does any
+   read-then-overwrite of the same path. `>>` opens with `O_APPEND`
+   instead — an existing target keeps its contents *and* its mtime, so
+   `true >> f` no longer touches `f` at all. A redirect target is also
+   expanded exactly once now: `> $(gen-name)` runs `gen-name` once,
+   before the command, rather than after it. When several redirections
+   are listed and one cannot be opened, the ones to its left are still
+   created or truncated and the ones to its right are never expanded —
+   `echo hi > /bad > $(gen-name)` does not run `gen-name`.
+9. **With additional mounts only** (a 0.4 capability): the parents of a
    mountpoint appear as synthetic directories, and foreign backends keep
    their own semantics — e.g. a plain `VFS.Memory` mount treats
    directories implicitly and refuses `rm` of an empty directory with

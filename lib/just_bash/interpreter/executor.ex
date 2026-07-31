@@ -286,8 +286,10 @@ defmodule JustBash.Interpreter.Executor do
         _stdin
       ) do
     {_redir_stdin, non_stdin_redirs} = Redirection.extract_heredoc_stdin(bash, redirs)
-    {result, new_bash} = Loop.execute_for(bash, variable, words, body, &execute_body/2)
-    Redirection.apply_redirections(result, new_bash, non_stdin_redirs)
+
+    with_redirections(bash, non_stdin_redirs, fn bash ->
+      Loop.execute_for(bash, variable, words, body, &execute_body/2)
+    end)
   end
 
   def execute_command(
@@ -298,10 +300,9 @@ defmodule JustBash.Interpreter.Executor do
     {redir_stdin, non_stdin_redirs} = Redirection.extract_heredoc_stdin(bash, redirs)
     effective_stdin = redir_stdin || stdin
 
-    {result, new_bash} =
+    with_redirections(bash, non_stdin_redirs, fn bash ->
       Loop.execute_while(bash, condition, body, effective_stdin, &execute_body/2)
-
-    Redirection.apply_redirections(result, new_bash, non_stdin_redirs)
+    end)
   end
 
   def execute_command(
@@ -312,10 +313,9 @@ defmodule JustBash.Interpreter.Executor do
     {redir_stdin, non_stdin_redirs} = Redirection.extract_heredoc_stdin(bash, redirs)
     effective_stdin = redir_stdin || stdin
 
-    {result, new_bash} =
+    with_redirections(bash, non_stdin_redirs, fn bash ->
       Loop.execute_until(bash, condition, body, effective_stdin, &execute_body/2)
-
-    Redirection.apply_redirections(result, new_bash, non_stdin_redirs)
+    end)
   end
 
   def execute_command(bash, %AST.Case{word: word, items: items}, _stdin) do
@@ -324,16 +324,19 @@ defmodule JustBash.Interpreter.Executor do
   end
 
   def execute_command(bash, %AST.Subshell{body: body, redirections: redirs}, _stdin) do
-    {result, _subshell_bash} = execute_body(bash, body)
-    # Apply any redirections attached to the subshell
-    {result, bash} = Redirection.apply_redirections(result, bash, redirs)
-    {result, bash}
+    # The subshell's own state is discarded, so the redirections are applied to
+    # the outer shell — but to the outer shell as the preflight left it, since
+    # opening the target creates or truncates it.
+    with_redirections(bash, redirs, fn bash ->
+      {result, _subshell_bash} = execute_body(bash, body)
+      {result, bash}
+    end)
   end
 
   def execute_command(bash, %AST.Group{body: body, redirections: redirs}, stdin) do
-    {result, new_bash} = execute_body_with_stdin(bash, body, stdin)
-    # Apply any redirections attached to the group
-    Redirection.apply_redirections(result, new_bash, redirs)
+    with_redirections(bash, redirs, fn bash ->
+      execute_body_with_stdin(bash, body, stdin)
+    end)
   end
 
   def execute_command(bash, %AST.FunctionDef{name: name, body: body}, _stdin) do
@@ -389,54 +392,70 @@ defmodule JustBash.Interpreter.Executor do
     {heredoc_stdin, non_heredoc_redirs} = Redirection.extract_heredoc_stdin(temp_bash, redirs)
     effective_stdin = heredoc_stdin || stdin
 
-    {result, exec_bash} =
-      case Map.get(temp_bash.functions, cmd_name) do
-        nil ->
-          JustBash.Telemetry.command_span(cmd_name, expanded_args, fn ->
-            {result, new_bash} =
-              case Map.get(temp_bash.commands, cmd_name) do
-                nil ->
-                  execute_builtin(temp_bash, cmd_name, expanded_args, effective_stdin)
-
-                module ->
-                  execute_custom_command(
-                    temp_bash,
-                    cmd_name,
-                    module,
-                    expanded_args,
-                    effective_stdin
-                  )
-              end
-
-            # A JustBash.CLI router stashes the resolved subcommand path here; surface it
-            # in telemetry and strip it before the result reaches the shell.
-            {subcommand, result} = Map.pop(result, :__subcommand__)
-
-            stop_metadata = %{
-              exit_code: result.exit_code,
-              bytes_in: byte_size(effective_stdin),
-              bytes_out: byte_size(result.stdout) + byte_size(result.stderr)
-            }
-
-            stop_metadata =
-              if subcommand,
-                do: Map.put(stop_metadata, :subcommand, subcommand),
-                else: stop_metadata
-
-            {{result, new_bash}, stop_metadata}
-          end)
-
-        func_body ->
-          execute_function(temp_bash, func_body, expanded_args)
-      end
-
-    Redirection.apply_redirections(result, exec_bash, non_heredoc_redirs)
+    with_redirections(temp_bash, non_heredoc_redirs, fn temp_bash ->
+      invoke_command(temp_bash, cmd_name, expanded_args, effective_stdin)
+    end)
   rescue
     e in Expansion.UnsetVariableError ->
       {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
 
     e in ArithmeticError ->
       {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
+  end
+
+  defp invoke_command(bash, cmd_name, args, stdin) do
+    case Map.get(bash.functions, cmd_name) do
+      nil ->
+        JustBash.Telemetry.command_span(cmd_name, args, fn ->
+          {result, new_bash} =
+            case Map.get(bash.commands, cmd_name) do
+              nil -> execute_builtin(bash, cmd_name, args, stdin)
+              module -> execute_custom_command(bash, cmd_name, module, args, stdin)
+            end
+
+          # A JustBash.CLI router stashes the resolved subcommand path here; surface it
+          # in telemetry and strip it before the result reaches the shell.
+          {subcommand, result} = Map.pop(result, :__subcommand__)
+
+          stop_metadata = %{
+            exit_code: result.exit_code,
+            bytes_in: byte_size(stdin),
+            bytes_out: byte_size(result.stdout) + byte_size(result.stderr)
+          }
+
+          stop_metadata =
+            if subcommand,
+              do: Map.put(stop_metadata, :subcommand, subcommand),
+              else: stop_metadata
+
+          {{result, new_bash}, stop_metadata}
+        end)
+
+      func_body ->
+        execute_function(bash, func_body, args)
+    end
+  end
+
+  # --- Redirections ---
+
+  # bash opens every redirect target before it forks the command, so a target
+  # it cannot open means the body never runs and its side effects never
+  # happen. Opening also creates or truncates the target, which is why `fun`
+  # receives the preflighted shell rather than the one passed in.
+  @spec with_redirections(
+          JustBash.t(),
+          [AST.Redirection.t()],
+          (JustBash.t() -> {result(), JustBash.t()})
+        ) :: {result(), JustBash.t()}
+  defp with_redirections(bash, redirections, fun) do
+    case Redirection.preflight(bash, redirections) do
+      {:ok, prepared, bash} ->
+        {result, bash} = fun.(bash)
+        Redirection.apply_redirections(result, bash, prepared)
+
+      {:error, result, bash} ->
+        {result, bash}
+    end
   end
 
   # --- If/Case Execution ---
