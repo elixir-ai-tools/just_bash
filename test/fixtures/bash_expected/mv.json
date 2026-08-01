@@ -48,6 +48,20 @@
       "name": "mv comparison: refuses to move a directory into a subdirectory of itself",
       "stderr": "mv: cannot move 'a' to a subdirectory of itself, 'a/b/a'\n",
       "stdout": "rc=1\nC\n"
+    },
+    {
+      "content_hash": "62b26859204b5de7",
+      "exit_code": 0,
+      "name": "mv comparison: refuses to move into a symlink pointing at itself",
+      "stderr": "mv: cannot move 'a' to a subdirectory of itself, 'l/a'\n",
+      "stdout": "rc=1\nF\n"
+    },
+    {
+      "content_hash": "849325d826f72e28",
+      "exit_code": 0,
+      "name": "mv comparison: refuses to move beneath a symlink pointing at itself",
+      "stderr": "mv: cannot move 'a' to a subdirectory of itself, 'l/x'\n",
+      "stdout": "rc=1\nF\n"
     }
   ],
   "suite": "mv"

@@ -97,6 +97,84 @@ defmodule JustBash.Commands.FileOperationsTest do
     end
   end
 
+  describe "cp/mv self-copy through a symlink" do
+    # A symlinked destination used to walk around the subtree guard, which
+    # compares path spellings: with `l -> /w/a`, "/w/l/x" is inside "/w/a" but
+    # shares no prefix with it, so each pass created children under the tree it
+    # was still walking. These four hung; `mv /w/a /w/l` destroyed the source.
+    # Wording checked against GNU coreutils 9.11.
+    setup do
+      bash =
+        JustBash.new(files: %{"/w/a/f" => "hi\n"}, cwd: "/w")
+        |> then(&elem(JustBash.exec(&1, "ln -s /w/a /w/l"), 1))
+
+      {:ok, bash: bash}
+    end
+
+    @tag timeout: 10_000
+    test "cp -r into a symlink to the source reports copying into itself", %{bash: bash} do
+      {result, bash} = JustBash.exec(bash, "cp -r a l")
+
+      assert result.exit_code == 1
+      assert result.stderr == "cp: cannot copy a directory, 'a', into itself, 'l/a'\n"
+
+      {cat, _} = JustBash.exec(bash, "cat /w/a/f")
+      assert cat.stdout == "hi\n"
+    end
+
+    @tag timeout: 10_000
+    test "cp -r beneath a symlink to the source is refused", %{bash: bash} do
+      {result, bash} = JustBash.exec(bash, "cp -r a l/x")
+
+      # GNU reaches this through its inode-based self-detection mid-walk and
+      # words it "will not create hard link 'l/x/x' to directory 'l/x'". The
+      # upfront path check gets here first, so the wording differs; exit code
+      # and the untouched source match. Deliberately not fixtured.
+      assert result.exit_code == 1
+      assert result.stderr == "cp: cannot copy a directory, 'a', into itself, 'l/x'\n"
+
+      {cat, _} = JustBash.exec(bash, "cat /w/a/f")
+      assert cat.stdout == "hi\n"
+    end
+
+    @tag timeout: 10_000
+    test "mv into a symlink to the source leaves the source intact", %{bash: bash} do
+      {result, bash} = JustBash.exec(bash, "mv a l")
+
+      assert result.exit_code == 1
+      assert result.stderr == "mv: cannot move 'a' to a subdirectory of itself, 'l/a'\n"
+
+      # The regression this guards: the copy silently did nothing and the
+      # recursive remove then deleted the original.
+      {cat, _} = JustBash.exec(bash, "cat /w/a/f")
+      assert cat.stdout == "hi\n"
+    end
+
+    @tag timeout: 10_000
+    test "mv beneath a symlink to the source leaves the source intact", %{bash: bash} do
+      {result, bash} = JustBash.exec(bash, "mv a l/x")
+
+      assert result.exit_code == 1
+      assert result.stderr == "mv: cannot move 'a' to a subdirectory of itself, 'l/x'\n"
+
+      {cat, _} = JustBash.exec(bash, "cat /w/a/f")
+      assert cat.stdout == "hi\n"
+    end
+
+    @tag timeout: 10_000
+    test "a symlinked destination outside the source still copies", %{bash: bash} do
+      {mk, bash} = JustBash.exec(bash, "mkdir /other && ln -s /other /w/out")
+      assert mk.exit_code == 0
+
+      {result, bash} = JustBash.exec(bash, "cp -r a out/copy")
+      assert result.exit_code == 0
+      assert result.stderr == ""
+
+      {cat, _} = JustBash.exec(bash, "cat /other/copy/f")
+      assert cat.stdout == "hi\n"
+    end
+  end
+
   describe "cp command" do
     test "cp copies file" do
       bash = JustBash.new(files: %{"/src.txt" => "content"})

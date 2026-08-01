@@ -21,6 +21,14 @@ defmodule JustBash.Commands.Cp do
   As in bash, a destination that is an existing directory receives the source
   under its own basename, and any number of sources may be copied into a
   trailing directory operand.
+
+  A recursive copy refuses a destination inside the source, including one that
+  only reaches it through a symlink (`FS.cp/4` resolves both operands first).
+  One wording diverges there: for a destination that does not exist yet, such
+  as `cp -r a l/x` with `l -> a`, bash reaches the case through its
+  inode-based self-detection mid-walk and reports `will not create hard link`,
+  while the path check here gets there first and reports `cannot copy a
+  directory, 'a', into itself`. Same exit code, same untouched source.
   """
   @behaviour JustBash.Commands.Command
 
@@ -262,14 +270,21 @@ defmodule JustBash.Commands.Cp do
       {:error, %VFS.Error{kind: :einval}} ->
         {Command.error("cp: cannot copy a directory, '#{src}', into itself, '#{dest}'\n"), bash}
 
-      # Verified against bash for a destination that already exists as a regular
-      # file. A destination whose *ancestor* is a regular file surfaces the same
-      # kind, and bash words that one "cannot stat '<dest>': Not a directory" —
-      # telling the two apart needs an lstat of the destination first, so read
-      # this wording as unverified for that case.
+      # Two different failures arrive as :enotdir, and bash words them
+      # differently, so an lstat of the destination tells them apart: a
+      # destination that exists is one we would be overwriting, while one that
+      # does not resolve means an ancestor component is a regular file — which
+      # bash reports as a failed stat. Both verified against GNU coreutils 9.11.
       {:error, %VFS.Error{kind: :enotdir}} ->
-        {Command.error("cp: cannot overwrite non-directory '#{dest}' with directory '#{src}'\n"),
-         bash}
+        case FS.lstat(bash.fs, dest_path) do
+          {:ok, %VFS.Stat{}, fs} ->
+            {Command.error(
+               "cp: cannot overwrite non-directory '#{dest}' with directory '#{src}'\n"
+             ), %{bash | fs: fs}}
+
+          {:error, %VFS.Error{}} ->
+            {Command.error("cp: cannot stat '#{dest}': #{FS.strerror(:enotdir)}\n"), bash}
+        end
 
       {:error, %VFS.Error{} = error} ->
         {Command.error("cp: cannot create directory '#{dest}': #{FS.strerror(error)}\n"), bash}
@@ -282,10 +297,9 @@ defmodule JustBash.Commands.Cp do
   defp file_result({:error, %VFS.Error{kind: :eisdir}}, bash, _src, dest, _opts),
     do: {Command.error("cp: cannot overwrite directory '#{dest}' with non-directory\n"), bash}
 
-  # GNU stats the destination before opening it, so a path component that is a
-  # regular file surfaces as `cannot stat`. `cannot create regular file` stays
-  # the wording for a destination whose parent is merely missing. See also the
-  # `:enotdir` note in copy_dir/4, where the two cases are not separable.
+  # Unambiguous here, unlike in copy_dir/4: a destination that exists as a
+  # regular file is a plain overwrite, so :enotdir can only mean an ancestor
+  # component is one — which bash words as a failed stat of the destination.
   defp file_result({:error, %VFS.Error{kind: :enotdir} = error}, bash, _src, dest, _opts),
     do: {Command.error("cp: cannot stat '#{dest}': #{FS.strerror(error)}\n"), bash}
 

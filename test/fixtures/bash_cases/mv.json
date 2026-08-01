@@ -35,6 +35,16 @@
       "name": "mv comparison: refuses to move a directory into a subdirectory of itself",
       "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir $D; cd $D; mkdir -p a/b; echo C > a/b/c.md; mv a a/b; echo rc=$?; cat a/b/c.md; rm -rf $D",
       "content_hash": "ded339f40627ef2d"
+    },
+    {
+      "name": "mv comparison: refuses to move into a symlink pointing at itself",
+      "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir a; echo F > a/f.md; ln -s $D/a l; mv a l; echo rc=$?; cat a/f.md; rm -rf $D",
+      "content_hash": "62b26859204b5de7"
+    },
+    {
+      "name": "mv comparison: refuses to move beneath a symlink pointing at itself",
+      "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir a; echo F > a/f.md; ln -s $D/a l; mv a l/x; echo rc=$?; cat a/f.md; rm -rf $D",
+      "content_hash": "849325d826f72e28"
     }
   ]
 }

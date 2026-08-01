@@ -401,6 +401,63 @@ defmodule JustBash.FSTest do
       {:ok, fs} = FS.cp(fs, "/ab", "/abc", recursive: true)
       assert {:ok, "x", _fs} = FS.read_file(fs, "/abc/x.txt")
     end
+
+    # The guard compares paths, so a symlink can make the spelling lie: with
+    # `/l -> /a`, "/l/x" shares no prefix with "/a" yet lands inside it. Before
+    # both operands were resolved these recursed until the VM died.
+    @tag timeout: 10_000
+    test "refuses a destination that reaches the source through a symlink" do
+      fs = FS.new(%{"/a/b/c.txt" => "c"})
+      {:ok, fs} = FS.symlink(fs, "/a", "/l")
+
+      assert {:error, %VFS.Error{kind: :einval}} = FS.cp(fs, "/a", "/l/x", recursive: true)
+      assert {:error, %VFS.Error{kind: :einval}} = FS.cp(fs, "/a", "/l", recursive: true)
+      assert {:error, %VFS.Error{kind: :einval}} = FS.cp(fs, "/a", "/l/b/deep", recursive: true)
+      assert {:ok, "c", _fs} = FS.read_file(fs, "/a/b/c.txt")
+    end
+
+    @tag timeout: 10_000
+    test "refuses a source spelled through a symlinked component" do
+      fs = FS.new(%{"/a/b/c.txt" => "c"})
+      {:ok, fs} = FS.symlink(fs, "/a", "/l")
+
+      # The link is a non-final component of the source: "/l/b" resolves to
+      # "/a/b", so "/a/b/x" is inside it. GNU 9.11 agrees —
+      # "cannot copy a directory, 'l/b', into itself, 'a/b/x'".
+      assert {:error, %VFS.Error{kind: :einval}} = FS.cp(fs, "/l/b", "/a/b/x", recursive: true)
+      assert {:ok, "c", _fs} = FS.read_file(fs, "/a/b/c.txt")
+    end
+
+    @tag timeout: 10_000
+    test "copies the link itself when the source is a symlink to the destination's parent" do
+      fs = FS.new(%{"/a/b/c.txt" => "c"})
+      {:ok, fs} = FS.symlink(fs, "/a", "/l")
+
+      # Not a self-copy: a symlink source copies the link, so there is nothing
+      # to recurse into. GNU 9.11 exits 0 here and writes a link too.
+      {:ok, fs} = FS.cp(fs, "/l", "/a/x", recursive: true)
+      assert {:ok, %VFS.Stat{type: :symlink}, fs} = FS.lstat(fs, "/a/x")
+      assert {:ok, "/a", _fs} = FS.readlink(fs, "/a/x")
+    end
+
+    @tag timeout: 10_000
+    test "still copies when a symlinked destination resolves outside the source" do
+      fs = FS.new(%{"/a/x.txt" => "x", "/other/keep.txt" => "keep"})
+      {:ok, fs} = FS.symlink(fs, "/other", "/out")
+
+      # Resolving the destination must not over-reject: /out is not inside /a.
+      {:ok, fs} = FS.cp(fs, "/a", "/out/copy", recursive: true)
+      assert {:ok, "x", fs} = FS.read_file(fs, "/other/copy/x.txt")
+      assert {:ok, "keep", _fs} = FS.read_file(fs, "/other/keep.txt")
+    end
+
+    @tag timeout: 10_000
+    test "reports rather than spins when a destination component is a symlink loop" do
+      fs = FS.new(%{"/a/x.txt" => "x"})
+      {:ok, fs} = FS.symlink(fs, "/loop", "/loop")
+
+      assert {:error, %VFS.Error{}} = FS.cp(fs, "/a", "/loop/x", recursive: true)
+    end
   end
 
   describe "mv/3" do
@@ -442,6 +499,21 @@ defmodule JustBash.FSTest do
 
       assert {:error, %VFS.Error{kind: :einval}} = FS.mv(fs, "/a", "/a/b/a")
       assert {:ok, "c", _fs} = FS.read_file(fs, "/a/b/c.txt")
+    end
+
+    # `mv` composes on `cp/4`, so it inherits the resolved guard. This is the
+    # case that used to destroy the source: the copy silently did nothing and
+    # the recursive remove then deleted the original.
+    @tag timeout: 10_000
+    test "refuses to move into its own subtree reached through a symlink" do
+      fs = FS.new(%{"/a/f.txt" => "hi"})
+      {:ok, fs} = FS.symlink(fs, "/a", "/l")
+
+      assert {:error, %VFS.Error{kind: :einval}} = FS.mv(fs, "/a", "/l/x")
+      assert {:ok, "hi", fs} = FS.read_file(fs, "/a/f.txt")
+
+      assert {:error, %VFS.Error{kind: :einval}} = FS.mv(fs, "/a", "/l/deep/x")
+      assert {:ok, "hi", _fs} = FS.read_file(fs, "/a/f.txt")
     end
   end
 

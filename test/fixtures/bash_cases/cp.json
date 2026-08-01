@@ -194,13 +194,17 @@
     {
       "name": "cp comparison: -n keeps an existing destination",
       "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; echo OLD > d/a.md; cp -n a.md d; echo rc=$?; cat d/a.md; rm -rf $D",
-      "opts": {"ignore_stderr": true},
+      "opts": {
+        "ignore_stderr": true
+      },
       "content_hash": "2ab44a3b656a69c0"
     },
     {
       "name": "cp comparison: -n copies a destination that does not exist",
       "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir d; echo A > a.md; cp -n a.md d; echo rc=$?; cat d/a.md; rm -rf $D",
-      "opts": {"ignore_stderr": true},
+      "opts": {
+        "ignore_stderr": true
+      },
       "content_hash": "dec4a50969f3c547"
     },
     {
@@ -217,6 +221,26 @@
       "name": "cp comparison: an empty target operand is rejected",
       "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo A > a.md; echo B > b.md; cp a.md b.md ''; echo rc=$?; rm -rf $D",
       "content_hash": "f0c084fd0dbbb24c"
+    },
+    {
+      "name": "cp comparison: -r into a symlink pointing at the source is refused",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir a; echo F > a/f.md; ln -s $D/a l; cp -r a l; echo rc=$?; cat a/f.md; rm -rf $D",
+      "content_hash": "e9450712650bb4a0"
+    },
+    {
+      "name": "cp comparison: a destination whose ancestor is a regular file cannot be stat'd",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; echo A > a.md; echo X > f; cp a.md f/sub.md; echo rc=$?; rm -rf $D",
+      "content_hash": "77d202dbbde3dd3b"
+    },
+    {
+      "name": "cp comparison: -r onto a destination whose ancestor is a regular file cannot be stat'd",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir s; echo N > s/n.md; echo X > f; cp -r s f/sub; echo rc=$?; rm -rf $D",
+      "content_hash": "52a761acc5075034"
+    },
+    {
+      "name": "cp comparison: -r onto an existing regular file cannot overwrite a non-directory",
+      "script": "D=/tmp/jb_cp_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir s; echo N > s/n.md; echo X > f; cp -r s f; echo rc=$?; rm -rf $D",
+      "content_hash": "3ee5b4e3ffbbc648"
     }
   ]
 }

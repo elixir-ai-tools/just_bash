@@ -293,6 +293,30 @@ defmodule JustBash.NotADirectoryTest do
       assert {:error, %VFS.Error{}} = FS.read_file(bash.fs, "/m/j/a.md")
     end
 
+    test "cp -r reports Not a directory when an ancestor of the destination is a file" do
+      bash = bash_with_file_parent(%{"/s/n.md" => "n\n"})
+      {result, bash} = JustBash.exec(bash, "cp -r /s /m/j/sub")
+
+      assert result.exit_code == 1
+
+      # Same rule as the regular-file copy above: an ancestor that is a file is
+      # a failed stat of the destination, not a failed overwrite. Verified
+      # against GNU coreutils 9.11.
+      assert result.stderr == "cp: cannot stat '/m/j/sub': Not a directory\n"
+
+      assert {:error, %VFS.Error{}} = FS.read_file(bash.fs, "/m/j/sub/n.md")
+    end
+
+    test "cp -r keeps 'cannot overwrite non-directory' when the destination is the file" do
+      bash = bash_with_file_parent(%{"/s/n.md" => "n\n"})
+      {result, _bash} = JustBash.exec(bash, "cp -r /s /m/j")
+
+      # The destination itself exists as a regular file — a different failure
+      # from an ancestor being one, and GNU words it differently.
+      assert result.exit_code == 1
+      assert result.stderr == "cp: cannot overwrite non-directory '/m/j' with directory '/s'\n"
+    end
+
     test "cp keeps 'cannot create regular file' for a non-ENOTDIR failure" do
       bash = JustBash.new(files: %{"/src.txt" => "x\n"})
       {result, _bash} = JustBash.exec(bash, "mkdir -p /d && cp /src.txt /d")

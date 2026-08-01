@@ -196,7 +196,10 @@ defmodule JustBash.FS do
 
   A recursive copy whose destination lies inside the source fails with
   `:einval` instead of recursing forever — every pass would add new
-  children under the source it is still walking.
+  children under the source it is still walking. Both operands are
+  resolved through any symlinked components before that test, so a
+  destination that only *reaches* the source through a link is caught
+  too.
   """
   @spec cp(t(), String.t(), String.t(), cp_opts()) :: {:ok, t()} | {:error, Error.t()}
   def cp(fs, src, dest, opts \\ []) do
@@ -209,7 +212,10 @@ defmodule JustBash.FS do
         {:error, Error.new(:eisdir, path: src_norm)}
 
       {:ok, %VFS.Stat{type: :directory}, fs} ->
-        if within?(dest_norm, src_norm) do
+        {src_real, fs} = resolve_links(fs, src_norm)
+        {dest_real, fs} = resolve_links(fs, dest_norm)
+
+        if within?(dest_real, src_real) do
           {:error, Error.new(:einval, path: dest_norm)}
         else
           cp_directory(fs, src_norm, dest_norm, opts)
@@ -278,8 +284,69 @@ defmodule JustBash.FS do
 
   # Is `dest` the same path as `src`, or nested inside it? Everything is
   # inside the root, so a recursive copy of "/" never has a safe destination.
+  #
+  # Callers pass paths already resolved by `resolve_links/2`: this is a prefix
+  # test on spellings, and a symlink makes a spelling lie.
   defp within?(_dest, "/"), do: true
   defp within?(dest, src), do: dest == src or String.starts_with?(dest, src <> "/")
+
+  # How many links a single path may traverse before we stop resolving it.
+  @symlink_hops 32
+
+  # Resolve a path one component at a time, following symlinks as they are
+  # met, so `within?/2` compares where paths land rather than how they are
+  # spelled. With `/l -> /a`, "/l/x" names a place inside "/a" while sharing
+  # no prefix with it; without this the recursive copy created children under
+  # the tree it was still walking and never terminated, and `mv` — which
+  # composes copy-then-remove — deleted the source after copying nothing.
+  #
+  # Best effort on purpose. A path that cannot be resolved (a link cycle, a
+  # component that is a regular file) falls back to its lexical form: the
+  # guard stays conservative and the copy that follows reports the real error
+  # in its own words, rather than this helper inventing one.
+  defp resolve_links(fs, path) do
+    resolve_components(fs, split_path(path), "/", 0, path)
+  end
+
+  defp resolve_components(fs, [], resolved, _hops, _lexical), do: {resolved, fs}
+
+  defp resolve_components(fs, _rest, _resolved, hops, lexical) when hops >= @symlink_hops,
+    do: {lexical, fs}
+
+  defp resolve_components(fs, [component | rest], parent, hops, lexical) do
+    candidate = join_component(parent, component)
+
+    case lstat(fs, candidate) do
+      # A link replaces everything resolved so far: its target is re-resolved
+      # from the root, with the components after it still to walk. A relative
+      # target resolves against the directory holding the link.
+      {:ok, %VFS.Stat{type: :symlink}, fs} ->
+        case readlink(fs, candidate) do
+          {:ok, target, fs} ->
+            target_components = parent |> resolve_path(target) |> split_path()
+            resolve_components(fs, target_components ++ rest, "/", hops + 1, lexical)
+
+          {:error, %Error{}} ->
+            {lexical, fs}
+        end
+
+      {:ok, %VFS.Stat{}, fs} ->
+        resolve_components(fs, rest, candidate, hops, lexical)
+
+      # Nothing here yet — a copy destination usually does not exist. Nothing
+      # missing can be a symlink, so the rest of the path joins on literally.
+      {:error, %Error{kind: :enoent}} ->
+        {Enum.reduce(rest, candidate, &join_component(&2, &1)), fs}
+
+      {:error, %Error{}} ->
+        {lexical, fs}
+    end
+  end
+
+  defp split_path(path), do: String.split(path, "/", trim: true)
+
+  defp join_component("/", component), do: "/" <> component
+  defp join_component(parent, component), do: parent <> "/" <> component
 
   # rename(2) replaces a destination symlink rather than writing through
   # it (unlike cp, whose write_file follows the link). Remove the link
