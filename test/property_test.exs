@@ -411,6 +411,55 @@ defmodule JustBash.PropertyTest do
         assert result.stdout == expected <> "\n"
       end
     end
+
+    # The failure mode this guards is worse than a missing flag: an option that
+    # gets dropped prints the current date at exit 0, so the caller reads a
+    # wrong answer as a real one. Exit 0 is only ever allowed for an option we
+    # actually implement.
+    @implemented ~w(-u -j -I -d -f -r -v)
+
+    property "an option date does not implement never exits 0" do
+      check all(
+              flag <- string([?a..?z, ?A..?Z, ?0..?9, ?-, ?=, ?+], min_length: 1, max_length: 6),
+              not Enum.any?(@implemented, &String.starts_with?("-" <> flag, &1))
+            ) do
+        bash = JustBash.new()
+        {result, _} = JustBash.exec(bash, "date -#{flag} '+%Y-%m-%d'")
+
+        assert result.exit_code == 1, "date -#{flag} exited 0 with #{inspect(result.stdout)}"
+        assert result.stdout == ""
+        assert result.stderr =~ "date:"
+      end
+    end
+
+    # An adjustment we cannot apply must be rejected, never silently skipped.
+    @base "2024-06-15 12:00:00"
+
+    property "a -v adjustment is either applied or rejected, never ignored" do
+      check all(
+              spec <- string([?a..?z, ?A..?Z, ?0..?9, ?+, ?-, ?.], min_length: 1, max_length: 5)
+            ) do
+        bash = JustBash.new()
+        {result, _} = JustBash.exec(bash, "date -d '#{@base}' -v#{spec} '+%F %T'")
+        parsed = Regex.run(~r/^([+-])(\d+)([ymwdHMS])$/, spec)
+
+        case {result.exit_code, parsed} do
+          # Rejected: unparseable, or a result outside the ISO calendar.
+          {1, _} ->
+            assert result.stdout == ""
+            assert result.stderr =~ "date:"
+
+          # Applied: every unit strictly moves the clock, so only a zero
+          # adjustment may leave the base date untouched.
+          {0, [_, sign, value, _unit]} ->
+            moved = result.stdout != "#{@base}\n"
+            assert moved == (String.to_integer(sign <> value) != 0)
+
+          {0, nil} ->
+            flunk("date -v#{spec} was ignored: exit 0 with #{inspect(result.stdout)}")
+        end
+      end
+    end
   end
 
   describe "file operations properties" do

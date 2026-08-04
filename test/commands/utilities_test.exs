@@ -482,6 +482,274 @@ defmodule JustBash.Commands.UtilitiesTest do
     end
   end
 
+  # An unimplemented flag must not be dropped: silently ignoring it returns the
+  # current date at exit 0, which the caller cannot tell from a real answer.
+  describe "unrecognized arguments" do
+    test "an unknown long option is an error, not a silently ignored flag" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date --definitely-not-a-flag '+%Y-%m-%d'")
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr =~ "illegal option -- --definitely-not-a-flag"
+    end
+
+    test "an unknown short option is an error" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -X '+%Y'")
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr =~ "illegal option -- -X"
+    end
+
+    test "the error names the supported flags" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -X")
+      assert result.stderr =~ "usage: date"
+      assert result.stderr =~ "-v[+|-]val[y|m|w|d|H|M|S]"
+    end
+
+    test "a bare operand cannot set the clock" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date 1432")
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr =~ "Operation not permitted"
+    end
+
+    test "an operand that is not even a settable time is a format error" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date notadate")
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr =~ "illegal time format"
+    end
+
+    # -j means "display, don't set", so the operand is a time we cannot parse
+    # rather than a clock we failed to set.
+    test "an operand under -j is a format error" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -j 0900")
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr =~ "illegal time format"
+    end
+
+    test "-u is still accepted, since output is always UTC" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -u -d '2024-06-15 10:30:00' '+%F %T'")
+      assert result.exit_code == 0
+      assert result.stdout == "2024-06-15 10:30:00\n"
+    end
+
+    test "a flag whose argument is missing is an error" do
+      bash = JustBash.new()
+
+      for flag <- ["-d", "-f", "-r", "-v"] do
+        {result, _} = JustBash.exec(bash, "date #{flag}")
+        assert result.exit_code == 1, "expected #{flag} with no argument to fail"
+        assert result.stderr =~ "option requires an argument -- #{flag}"
+      end
+    end
+  end
+
+  describe "-v adjustments" do
+    test "+6m moves six months forward" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -d '2026-08-04' -v+6m '+%Y-%m-%d'")
+      assert result.exit_code == 0
+      assert result.stdout == "2027-02-04\n"
+    end
+
+    test "-1y moves a year back" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -d '2026-08-04' -v-1y '+%Y-%m-%d'")
+      assert result.stdout == "2025-08-04\n"
+    end
+
+    test "the adjustment applies to the current date when there is no -d" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -v+1d '+%Y-%m-%d'")
+      expected = Date.utc_today() |> Date.add(1) |> Date.to_iso8601()
+      assert result.stdout == expected <> "\n"
+    end
+
+    test "the value may be a separate argument, as getopt allows" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -d '2026-08-04' -v +6m '+%Y-%m-%d'")
+      assert result.stdout == "2027-02-04\n"
+    end
+
+    # BSD: "date tries to preserve the day of the month. If it is impossible
+    # because the target month is shorter [...] the last day of the target
+    # month will be the result."
+    test "a month adjustment clamps to the last day of a shorter target month" do
+      bash = JustBash.new()
+      {r1, _} = JustBash.exec(bash, "date -d '2026-01-31' -v+1m '+%Y-%m-%d'")
+      {r2, _} = JustBash.exec(bash, "date -d '2026-03-31' -v-1m '+%Y-%m-%d'")
+      {r3, _} = JustBash.exec(bash, "date -d '2024-01-31' -v+1m '+%Y-%m-%d'")
+      assert r1.stdout == "2026-02-28\n"
+      assert r2.stdout == "2026-02-28\n"
+      assert r3.stdout == "2024-02-29\n"
+    end
+
+    # A year adjustment moves the year field and lets an impossible result
+    # normalize forward, where a month adjustment clamps. BSD really does treat
+    # the two differently: +1y off Feb 29 is Mar 1, +12m off Feb 29 is Feb 28.
+    test "a year adjustment rolls February 29 forward onto a non-leap year" do
+      bash = JustBash.new()
+      {r1, _} = JustBash.exec(bash, "date -d '2024-02-29' -v+1y '+%Y-%m-%d'")
+      {r2, _} = JustBash.exec(bash, "date -d '2024-02-29' -v-1y '+%Y-%m-%d'")
+      {r3, _} = JustBash.exec(bash, "date -d '2024-02-29' -v+12m '+%Y-%m-%d'")
+      {r4, _} = JustBash.exec(bash, "date -d '2024-02-29' -v+4y '+%Y-%m-%d'")
+      assert r1.stdout == "2025-03-01\n"
+      assert r2.stdout == "2023-03-01\n"
+      assert r3.stdout == "2025-02-28\n"
+      assert r4.stdout == "2028-02-29\n"
+    end
+
+    test "months roll across the year boundary in both directions" do
+      bash = JustBash.new()
+      {r1, _} = JustBash.exec(bash, "date -d '2026-11-15' -v+3m '+%Y-%m-%d'")
+      {r2, _} = JustBash.exec(bash, "date -d '2026-02-15' -v-3m '+%Y-%m-%d'")
+      assert r1.stdout == "2027-02-15\n"
+      assert r2.stdout == "2025-11-15\n"
+    end
+
+    test "weeks, days, hours, minutes and seconds each adjust their own field" do
+      bash = JustBash.new()
+      base = "date -d '2026-08-04 12:30:45'"
+      {w, _} = JustBash.exec(bash, "#{base} -v+2w '+%F %T'")
+      {d, _} = JustBash.exec(bash, "#{base} -v-3d '+%F %T'")
+      {h, _} = JustBash.exec(bash, "#{base} -v+12H '+%F %T'")
+      {m, _} = JustBash.exec(bash, "#{base} -v-45M '+%F %T'")
+      {s, _} = JustBash.exec(bash, "#{base} -v+20S '+%F %T'")
+      assert w.stdout == "2026-08-18 12:30:45\n"
+      assert d.stdout == "2026-08-01 12:30:45\n"
+      assert h.stdout == "2026-08-05 00:30:45\n"
+      assert m.stdout == "2026-08-04 11:45:45\n"
+      assert s.stdout == "2026-08-04 12:31:05\n"
+    end
+
+    # BSD: "Flags are processed in the order given."
+    test "several adjustments compose left to right" do
+      bash = JustBash.new()
+      {r1, _} = JustBash.exec(bash, "date -d '2026-08-04' -v+1m -v-1d '+%Y-%m-%d'")
+      {r2, _} = JustBash.exec(bash, "date -d '2026-08-04' -v-1d -v+1m '+%Y-%m-%d'")
+      assert r1.stdout == "2026-09-03\n"
+      assert r2.stdout == "2026-09-03\n"
+    end
+
+    test "an unsigned adjustment sets rather than adjusts, and is not supported" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -v1d '+%Y-%m-%d'")
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr =~ "1d: Cannot apply date adjustment"
+    end
+
+    # `%Y` is four digits and -d only parses ISO dates, so the representable
+    # range is the ISO calendar's. Leaving it must be an error, not a year like
+    # -97973 printed at exit 0.
+    test "an adjustment that leaves the representable range is an error" do
+      bash = JustBash.new()
+
+      for spec <- ["-99999y", "+99999y", "+9999999999m", "+9999999999999d", "-3000y"] do
+        {result, _} = JustBash.exec(bash, "date -v#{spec} '+%Y-%m-%d'")
+        assert result.exit_code == 1, "expected -v#{spec} to fail"
+        assert result.stdout == ""
+        assert result.stderr =~ "#{spec}: Cannot apply date adjustment"
+      end
+    end
+
+    test "an intermediate adjustment out of range fails even if the total is in range" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -d '2024-06-15' -v+9000y -v-9000y '+%Y-%m-%d'")
+      assert result.exit_code == 1
+      assert result.stderr =~ "+9000y: Cannot apply date adjustment"
+    end
+
+    test "an adjustment at the edge of the range still works" do
+      bash = JustBash.new()
+      {r1, _} = JustBash.exec(bash, "date -d '2024-06-15' -v+7975y '+%Y-%m-%d'")
+      {r2, _} = JustBash.exec(bash, "date -d '2024-06-15' -v-2024y '+%Y-%m-%d'")
+      assert r1.stdout == "9999-06-15\n"
+      assert r2.stdout == "0000-06-15\n"
+    end
+
+    test "an unparseable adjustment is an error" do
+      bash = JustBash.new()
+
+      for spec <- ["bogus", "+fri", "+1x", "+m", "+1.5d"] do
+        {result, _} = JustBash.exec(bash, "date -v#{spec} '+%Y-%m-%d'")
+        assert result.exit_code == 1, "expected -v#{spec} to fail"
+        assert result.stderr =~ "#{spec}: Cannot apply date adjustment"
+      end
+    end
+  end
+
+  describe "-r seconds" do
+    test "-r 0 is the epoch" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -r 0 '+%Y-%m-%d %H:%M:%S'")
+      assert result.exit_code == 0
+      assert result.stdout == "1970-01-01 00:00:00\n"
+    end
+
+    test "-r takes the value attached too" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -r1718409600 '+%Y-%m-%d'")
+      assert result.stdout == "2024-06-15\n"
+    end
+
+    test "-r accepts a negative timestamp" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -r -1 '+%Y-%m-%d %H:%M:%S'")
+      assert result.stdout == "1969-12-31 23:59:59\n"
+    end
+
+    test "-r composes with -v" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -r 0 -v+1y '+%Y-%m-%d'")
+      assert result.stdout == "1971-01-01\n"
+    end
+
+    test "a timestamp outside the representable range is an error, not a crash" do
+      bash = JustBash.new()
+
+      for secs <- ["99999999999999999999", "-99999999999999999999"] do
+        {result, _} = JustBash.exec(bash, "date -r #{secs} '+%Y-%m-%d'")
+        assert result.exit_code == 1, "expected -r #{secs} to fail"
+        assert result.stdout == ""
+        assert result.stderr =~ "invalid time"
+      end
+    end
+
+    # Real date also accepts a filename here; we do not, and say so rather than
+    # falling back to the current time.
+    test "a non-numeric -r argument is an error" do
+      bash = JustBash.new(files: %{"/tmp/f.txt" => "hi"})
+      {result, _} = JustBash.exec(bash, "date -r /tmp/f.txt '+%Y-%m-%d'")
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr =~ "illegal time value -- /tmp/f.txt"
+    end
+  end
+
+  describe "-d attached value" do
+    test "-d takes the date attached, as GNU date allows" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -d2024-06-15 '+%Y-%m-%d'")
+      assert result.stdout == "2024-06-15\n"
+    end
+
+    test "an attached -d value is still validated" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -dnonsense")
+      assert result.exit_code == 1
+      assert result.stderr =~ "invalid date 'nonsense'"
+    end
+  end
+
   describe "seq command" do
     test "seq generates sequence" do
       bash = JustBash.new()
