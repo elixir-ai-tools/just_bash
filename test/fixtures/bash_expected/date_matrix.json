@@ -1233,6 +1233,27 @@
       "stdout": "2024-06-15 17:30:00\nrc=0\n"
     },
     {
+      "content_hash": "2c43bd0c3657225e",
+      "exit_code": 0,
+      "name": "date matrix: reference -r on a missing file",
+      "stderr": "date: /jb_definitely_missing: No such file or directory\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f1fe3a5838214f60",
+      "exit_code": 0,
+      "name": "date matrix: reference -r with no argument",
+      "stderr": "date: option requires an argument -- 'r'\nTry 'date --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "1310757f10875d1c",
+      "exit_code": 0,
+      "name": "date matrix: date -d with no argument",
+      "stderr": "date: option requires an argument -- 'd'\nTry 'date --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
       "content_hash": "078461a27e682c98",
       "exit_code": 0,
       "name": "date matrix: utc flag -u",

@@ -25,11 +25,18 @@ defmodule JustBash.Commands.Date do
   that from a legitimate literal. `test/fixtures/bash_cases/date_matrix.json`
   enumerates the whole conversion alphabet against real GNU date to keep it so.
 
-  Flags: `-d` / `--date=`, `-I[FMT]` / `--iso-8601[=FMT]`, `-R` / `--rfc-email`,
-  `-u` / `--utc` / `--universal`, `-r SECONDS`, the BSD `-v` adjustments, and the
-  BSD `-j` / `-f` pair. Values may be attached or separate (`-d2024-06-15`),
-  no-argument flags may cluster (`-ju`), and `--` ends option parsing — the
-  getopt conventions real date inherits.
+  Flags: `-d` / `--date=`, `-r SECONDS|FILE` / `--reference=FILE`, `-I[FMT]` /
+  `--iso-8601[=FMT]`, `-R` / `--rfc-email`, `-u` / `--utc` / `--universal`, the
+  BSD `-v` adjustments, and the BSD `-j` / `-f` pair. Values may be attached or
+  separate (`-d2024-06-15`), no-argument flags may cluster (`-ju`), and `--` ends
+  option parsing — the getopt conventions real date inherits.
+
+  `-r` reads both spellings the flag has in the wild, as FreeBSD's date does: a
+  numeric value is epoch seconds, and anything else names a file whose
+  modification time to report. GNU's `--reference=FILE` is always a file. The VFS
+  records mtimes, so the file's time comes from the sandbox rather than the host
+  clock, and a failure to read it reports the real error kind — descending
+  through a regular file is ENOTDIR, not "no such file".
 
   Everything else is an error. An unimplemented flag must not be dropped:
   ignoring it would print the current date at exit 0, which a caller cannot
@@ -40,13 +47,14 @@ defmodule JustBash.Commands.Date do
   (`illegal option -- X`), since BSD names a long option by its second `-` and
   so identifies nothing.
 
-  Two BSD features are deliberately partial, and say so rather than guessing:
+  One BSD feature is deliberately partial, and says so rather than guessing:
   `-v` implements only the relative form (`[+-]val[ymwdHMS]`), not the
-  set-a-field form (`-v1d`, `-vfri`); `-r` takes epoch seconds, not a filename.
+  set-a-field form (`-v1d`, `-vfri`).
   """
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.FS
 
   @default_format "%a %b %d %H:%M:%S UTC %Y"
   @rfc_format "%a, %d %b %Y %H:%M:%S %z"
@@ -87,12 +95,33 @@ defmodule JustBash.Commands.Date do
 
   @impl true
   def execute(bash, args, _stdin) do
-    with {:ok, opts} <- parse_args(args),
-         {:ok, datetime} <- adjust(opts.datetime || DateTime.utc_now(), opts.adjustments) do
-      format = opts.format || opts.iso_format || opts.rfc_format || @default_format
-      {Command.ok(format_datetime(datetime, format) <> "\n"), bash}
-    else
+    case parse_args(args) do
+      {:ok, opts} -> emit(bash, opts)
       {:error, msg} -> {Command.error(msg), bash}
+    end
+  end
+
+  defp emit(bash, %{reference: nil} = opts) do
+    render_at(bash, opts, opts.datetime || DateTime.utc_now())
+  end
+
+  # A reference file's modification time. The VFS records mtimes, so this reads
+  # from the sandbox rather than the host clock.
+  defp emit(bash, %{reference: path} = opts) do
+    case FS.stat(bash.fs, FS.resolve_path(bash.cwd, path)) do
+      {:ok, %{mtime: mtime}, fs} -> render_at(%{bash | fs: fs}, opts, mtime)
+      {:error, error} -> {Command.error("date: #{path}: #{FS.strerror(error)}\n"), bash}
+    end
+  end
+
+  defp render_at(bash, opts, datetime) do
+    case adjust(datetime, opts.adjustments) do
+      {:ok, adjusted} ->
+        format = opts.format || opts.iso_format || opts.rfc_format || @default_format
+        {Command.ok(format_datetime(adjusted, format) <> "\n"), bash}
+
+      {:error, msg} ->
+        {Command.error(msg), bash}
     end
   end
 
@@ -102,6 +131,7 @@ defmodule JustBash.Commands.Date do
       iso_format: nil,
       rfc_format: nil,
       datetime: nil,
+      reference: nil,
       input_format: nil,
       adjustments: [],
       no_set: false
@@ -124,10 +154,14 @@ defmodule JustBash.Commands.Date do
   defp parse_args(["-d" <> date_str | rest], opts), do: put_datetime(date_str, rest, opts)
   defp parse_args(["--date=" <> date_str | rest], opts), do: put_datetime(date_str, rest, opts)
 
-  # BSD date: -r takes the time from an epoch timestamp.
+  # -r takes an epoch timestamp or a file to read a modification time from.
   defp parse_args(["-r"], _opts), do: {:error, missing_argument("-r")}
-  defp parse_args(["-r", secs | rest], opts), do: put_epoch(secs, rest, opts)
-  defp parse_args(["-r" <> secs | rest], opts), do: put_epoch(secs, rest, opts)
+  defp parse_args(["-r", value | rest], opts), do: put_epoch_or_reference(value, rest, opts)
+  defp parse_args(["-r" <> value | rest], opts), do: put_epoch_or_reference(value, rest, opts)
+
+  # GNU's spelling of the same flag names a file and only a file, so a numeric
+  # value here is a file called "0" rather than the epoch.
+  defp parse_args(["--reference=" <> path | rest], opts), do: put_reference(path, rest, opts)
 
   # BSD date: -v adjusts a field of the date, as many times as given.
   defp parse_args(["-v"], _opts), do: {:error, missing_argument("-v")}
@@ -249,15 +283,25 @@ defmodule JustBash.Commands.Date do
     end
   end
 
-  defp put_epoch(secs, rest, opts) do
-    with {seconds, ""} <- Integer.parse(secs),
-         {:ok, datetime} <- DateTime.from_unix(seconds) do
-      parse_args(rest, %{opts | datetime: datetime})
-    else
-      {:error, :invalid_unix_time} -> {:error, "date: invalid time\n"}
-      _not_a_number -> {:error, "date: illegal time value -- #{secs}\n" <> usage()}
+  # `-r` reads both spellings the flag has in the wild, the way FreeBSD's date
+  # does: a number is epoch seconds, and anything else names a file. Falling back
+  # to the file is what makes an unparseable value an error about that file
+  # rather than a "not a number" the caller cannot act on.
+  defp put_epoch_or_reference(value, rest, opts) do
+    case Integer.parse(value) do
+      {seconds, ""} -> put_epoch(seconds, rest, opts)
+      _not_a_number -> put_reference(value, rest, opts)
     end
   end
+
+  defp put_epoch(seconds, rest, opts) do
+    case DateTime.from_unix(seconds) do
+      {:ok, datetime} -> parse_args(rest, %{opts | datetime: datetime})
+      {:error, :invalid_unix_time} -> {:error, "date: invalid time\n"}
+    end
+  end
+
+  defp put_reference(path, rest, opts), do: parse_args(rest, %{opts | reference: path})
 
   defp put_adjustment(spec, rest, opts) do
     case parse_adjustment(spec) do
@@ -292,7 +336,7 @@ defmodule JustBash.Commands.Date do
 
   defp usage do
     """
-    usage: date [-u] [-d datestr | -r seconds] [-j] [-f input_fmt]
+    usage: date [-u] [-d datestr | -r seconds|file] [-j] [-f input_fmt]
                 [-I[date|hours|minutes|seconds|ns]] [-v[+|-]val[y|m|w|d|H|M|S]]
                 [+output_fmt]
     """

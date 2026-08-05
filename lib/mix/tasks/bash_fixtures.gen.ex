@@ -254,6 +254,24 @@ defmodule Mix.Tasks.BashFixtures.Gen do
         )
       end,
       [
+        # -r reads a file's mtime, which differs between the two engines' clocks,
+        # so only its deterministic paths are enumerated here. The success path is
+        # covered by a unit test against a seeded mtime.
+        one_case(
+          "reference -r on a missing file",
+          "TZ=UTC LC_ALL=C date -r /jb_definitely_missing '+%F'; echo rc=$?"
+        ),
+        # Both shells refuse the flag; only the wording of the refusal differs.
+        one_case(
+          "reference -r with no argument",
+          "TZ=UTC LC_ALL=C date -r; echo rc=$?",
+          @bsd_usage_gap
+        ),
+        one_case(
+          "date -d with no argument",
+          "TZ=UTC LC_ALL=C date -d; echo rc=$?",
+          @bsd_usage_gap
+        ),
         one_case("utc flag -u", "TZ=UTC LC_ALL=C date -u -d '#{@base}' '+%F %T %Z'; echo rc=$?"),
         one_case("rfc flag -R", "TZ=UTC LC_ALL=C date -R -d '#{@base}'; echo rc=$?"),
         one_case(

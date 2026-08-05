@@ -227,6 +227,52 @@ defmodule JustBash.Commands.UtilitiesTest do
     end
   end
 
+  describe "date -r" do
+    # The date matrix covers -r's error paths against real bash, but not its
+    # success path: the mtime of a file created during recording is the recording
+    # clock's, so the two engines cannot agree on it by construction. Seeding a
+    # known mtime is the only way to assert the value.
+    setup do
+      bash = JustBash.new()
+      {_result, bash} = JustBash.exec(bash, "echo hi > /ref.txt")
+
+      mtime = ~U[2021-03-04 05:06:07Z]
+      {:ok, fs} = JustBash.FS.write_file(bash.fs, "/ref.txt", "hi\n", mtime: mtime)
+
+      %{bash: %{bash | fs: fs}, mtime: mtime}
+    end
+
+    test "reports the reference file's modification time", %{bash: bash} do
+      {result, _} = JustBash.exec(bash, "date -r /ref.txt '+%F %T'")
+
+      assert result.exit_code == 0
+      assert result.stdout == "2021-03-04 05:06:07\n"
+    end
+
+    test "accepts the long spelling", %{bash: bash} do
+      {result, _} = JustBash.exec(bash, "date --reference=/ref.txt '+%F'")
+
+      assert result.exit_code == 0
+      assert result.stdout == "2021-03-04\n"
+    end
+
+    test "resolves a relative path against the working directory", %{bash: bash} do
+      {result, _} = JustBash.exec(bash, "cd / && date -r ref.txt '+%F'")
+
+      assert result.exit_code == 0
+      assert result.stdout == "2021-03-04\n"
+    end
+
+    test "reports the real error kind, not a hardcoded one", %{bash: bash} do
+      {result, _} = JustBash.exec(bash, "date -r /ref.txt/nope '+%F'")
+
+      assert result.exit_code == 1
+      # /ref.txt is a regular file, so descending through it is ENOTDIR — the
+      # message must not claim the file is merely absent.
+      assert result.stderr == "date: /ref.txt/nope: Not a directory\n"
+    end
+  end
+
   describe "date command" do
     test "date outputs current date" do
       bash = JustBash.new()
@@ -867,14 +913,22 @@ defmodule JustBash.Commands.UtilitiesTest do
       end
     end
 
-    # Real date also accepts a filename here; we do not, and say so rather than
-    # falling back to the current time.
-    test "a non-numeric -r argument is an error" do
+    # A non-numeric value is the other spelling of the same flag — a file to read
+    # a modification time from — so it is answered or refused as a file, never as
+    # a number that failed to parse.
+    test "a non-numeric -r argument names a file, not a malformed timestamp" do
       bash = JustBash.new(files: %{"/tmp/f.txt" => "hi"})
       {result, _} = JustBash.exec(bash, "date -r /tmp/f.txt '+%Y-%m-%d'")
+      assert result.exit_code == 0, result.stderr
+      refute result.stderr =~ "illegal time value"
+    end
+
+    test "a non-numeric -r argument that names nothing is an error, not the current date" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -r /tmp/absent.txt '+%Y-%m-%d'")
       assert result.exit_code == 1
       assert result.stdout == ""
-      assert result.stderr =~ "illegal time value -- /tmp/f.txt"
+      assert result.stderr == "date: /tmp/absent.txt: No such file or directory\n"
     end
   end
 

@@ -935,6 +935,27 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00 -3 hours' '+%Y-%m-%d %H:%M:%S'; echo rc=$?"
     },
     {
+      "content_hash": "2c43bd0c3657225e",
+      "name": "date matrix: reference -r on a missing file",
+      "script": "TZ=UTC LC_ALL=C date -r /jb_definitely_missing '+%F'; echo rc=$?"
+    },
+    {
+      "content_hash": "f1fe3a5838214f60",
+      "name": "date matrix: reference -r with no argument",
+      "opts": {
+        "known_gap": "the refusal is BSD-worded (illegal option, usage) where GNU says invalid option"
+      },
+      "script": "TZ=UTC LC_ALL=C date -r; echo rc=$?"
+    },
+    {
+      "content_hash": "1310757f10875d1c",
+      "name": "date matrix: date -d with no argument",
+      "opts": {
+        "known_gap": "the refusal is BSD-worded (illegal option, usage) where GNU says invalid option"
+      },
+      "script": "TZ=UTC LC_ALL=C date -d; echo rc=$?"
+    },
+    {
       "content_hash": "078461a27e682c98",
       "name": "date matrix: utc flag -u",
       "script": "TZ=UTC LC_ALL=C date -u -d '2024-06-15 13:30:00' '+%F %T %Z'; echo rc=$?"
