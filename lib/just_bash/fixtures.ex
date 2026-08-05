@@ -76,6 +76,14 @@ defmodule JustBash.Fixtures do
     content_hash(script, test_case["files"] || %{})
   end
 
+  # A case with no script cannot be hashed, run or recorded. Saying so beats a
+  # FunctionClauseError raised from inside `validate/2`, which reads as a bug in
+  # the checker rather than a malformed case file.
+  def hash_case(test_case) do
+    raise ArgumentError,
+          "fixture case has no \"script\" key: #{inspect(test_case, limit: 5)}"
+  end
+
   @doc """
   The exact bytes `content_hash/2` digests.
 

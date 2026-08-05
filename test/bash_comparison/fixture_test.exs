@@ -15,6 +15,13 @@ defmodule JustBash.FixtureTest do
 
   See `mix bash_fixtures.verify` for the same checks as a friendly offline
   report, and `mix bash_fixtures.rehash` to adopt edited scripts.
+
+  A case carrying `opts.known_gap` is one JustBash is known not to match yet. It
+  still runs, tagged `:known_gap`, with the assertion inverted: it fails when the
+  output *matches* the recording. A gap that is skipped instead can only report
+  the divergence someone wrote down and can never notice the divergence is gone,
+  so a gap closed by an unrelated fix would stay marked forever — and a count of
+  known gaps that includes closed ones is not a count of anything.
   """
 
   use ExUnit.Case, async: true
@@ -62,15 +69,11 @@ defmodule JustBash.FixtureTest do
           content_hash = Fixtures.hash_case(test_case)
           expected_result = expected_by_hash[content_hash]
 
-          # A recorded case JustBash is known not to match yet. The expectation
-          # stays recorded and the reason stays in the corpus, so the gap is
-          # visible and countable rather than absent — an unwritten case looks
-          # exactly like a passing one.
-          if gap = opts["known_gap"] do
-            @tag skip: "known gap: #{gap}"
-          end
+          known_gap = opts["known_gap"]
 
           @tag suite: suite
+          if known_gap, do: @tag(:known_gap)
+
           if expected_result do
             expected_stdout = expected_result["stdout"]
             expected_stderr = expected_result["stderr"]
@@ -80,42 +83,75 @@ defmodule JustBash.FixtureTest do
             ignore_exit = opts["ignore_exit"] == true
             ignore_stderr = opts["ignore_stderr"] == true
 
-            test "#{suite}: #{name}" do
-              bash =
-                if unquote(has_files) do
-                  JustBash.new(files: unquote(Macro.escape(files)))
-                else
-                  JustBash.new()
+            # A recorded case JustBash is known not to match yet. The expectation
+            # stays recorded and the reason stays in the corpus, so the gap is
+            # visible and countable rather than absent — an unwritten case looks
+            # exactly like a passing one.
+            #
+            # The assertion is inverted rather than skipped. A skipped gap can
+            # only ever report the divergence someone wrote down; it cannot
+            # notice that the divergence is gone, so a gap closed by an unrelated
+            # fix stays marked forever and the count stops meaning anything.
+            if known_gap do
+              test "#{suite}: #{name}" do
+                {result, _bash} =
+                  JustBash.exec(
+                    JustBash.new(files: unquote(Macro.escape(files || %{}))),
+                    unquote(script)
+                  )
+
+                actual = {result.exit_code, result.stdout, result.stderr}
+
+                recorded =
+                  {unquote(expected_exit), unquote(expected_stdout), unquote(expected_stderr)}
+
+                refute actual == recorded, """
+                Known gap has closed: #{unquote(name)}
+
+                  #{unquote(known_gap)}
+
+                JustBash now matches real bash here. Drop the `known_gap` opt from
+                the case so the match is asserted rather than assumed absent.
+                """
+              end
+            else
+              test "#{suite}: #{name}" do
+                bash =
+                  if unquote(has_files) do
+                    JustBash.new(files: unquote(Macro.escape(files)))
+                  else
+                    JustBash.new()
+                  end
+
+                {result, _bash} = JustBash.exec(bash, unquote(script))
+
+                unless unquote(ignore_exit) do
+                  assert result.exit_code == unquote(expected_exit),
+                         fixture_failure_message(
+                           unquote(script),
+                           "exit_code",
+                           unquote(expected_exit),
+                           result.exit_code
+                         )
                 end
 
-              {result, _bash} = JustBash.exec(bash, unquote(script))
-
-              unless unquote(ignore_exit) do
-                assert result.exit_code == unquote(expected_exit),
+                assert result.stdout == unquote(expected_stdout),
                        fixture_failure_message(
                          unquote(script),
-                         "exit_code",
-                         unquote(expected_exit),
-                         result.exit_code
+                         "stdout",
+                         unquote(expected_stdout),
+                         result.stdout
                        )
-              end
 
-              assert result.stdout == unquote(expected_stdout),
-                     fixture_failure_message(
-                       unquote(script),
-                       "stdout",
-                       unquote(expected_stdout),
-                       result.stdout
-                     )
-
-              unless unquote(ignore_stderr) do
-                assert result.stderr == unquote(expected_stderr),
-                       fixture_failure_message(
-                         unquote(script),
-                         "stderr",
-                         unquote(expected_stderr),
-                         result.stderr
-                       )
+                unless unquote(ignore_stderr) do
+                  assert result.stderr == unquote(expected_stderr),
+                         fixture_failure_message(
+                           unquote(script),
+                           "stderr",
+                           unquote(expected_stderr),
+                           result.stderr
+                         )
+                end
               end
             end
           else

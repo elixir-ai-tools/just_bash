@@ -62,14 +62,29 @@ defmodule Mix.Tasks.BashFixtures do
       case_files ->
         File.mkdir_p!(@expected_dir)
 
-        Enum.each(case_files, fn case_file ->
+        case_files
+        |> Enum.flat_map(fn case_file ->
           suite = Path.basename(case_file, ".json")
           Mix.shell().info("Recording: #{suite}")
           record_suite(case_file, Path.join(@expected_dir, "#{suite}.json"))
         end)
-
-        Mix.shell().info("Done. Expected outputs in #{@expected_dir}")
+        |> finish()
     end
+  end
+
+  # A suite that failed to record leaves the corpus in a state the test suite
+  # cannot detect on its own — the expectation file it would have replaced is
+  # still there and still passing. Reporting it on stderr and exiting 0 makes a
+  # failed recording look like a successful one to everything downstream.
+  defp finish([]), do: Mix.shell().info("Done. Expected outputs in #{@expected_dir}")
+
+  defp finish(failures) do
+    Mix.raise("""
+
+    #{length(failures)} suite(s) were not recorded:
+
+    #{Enum.map_join(failures, "\n", &"  - #{&1}")}
+    """)
   end
 
   defp parse_args(args) do
@@ -129,13 +144,14 @@ defmodule Mix.Tasks.BashFixtures do
     File.mkdir_p!(out_dir)
 
     try do
-      case run_container(case_file, out_dir) do
-        {:ok, recorded} ->
-          verify_recorded!(case_file, recorded)
-          write_json!(expected_file, recorded)
-
+      with {:ok, recorded} <- run_container(case_file, out_dir),
+           :ok <- verify_recorded(case_file, recorded) do
+        write_json!(expected_file, recorded)
+        []
+      else
         {:error, message} ->
           Mix.shell().error("#{Path.basename(case_file)}: #{message}")
+          [Path.basename(case_file, ".json")]
       end
     after
       File.rm_rf!(out_dir)
@@ -174,8 +190,10 @@ defmodule Mix.Tasks.BashFixtures do
 
   # A recording is only usable if every live case can find it. Checking here
   # means a hash mismatch surfaces at record time, against the container we just
-  # ran, rather than as a puzzling compile error in the test suite later.
-  defp verify_recorded!(case_file, recorded) do
+  # ran, rather than as a puzzling compile error in the test suite later — and
+  # the unusable recording is not written, because a corpus that fails to record
+  # and a corpus that recorded cleanly must not look the same afterwards.
+  defp verify_recorded(case_file, recorded) do
     cases = case_file |> read_json!() |> Map.fetch!("cases")
 
     case Fixtures.validate(cases, Map.get(recorded, "results", [])) do
@@ -183,10 +201,10 @@ defmodule Mix.Tasks.BashFixtures do
         :ok
 
       problems ->
-        Mix.shell().error(
-          "#{Path.basename(case_file)}: recorded output does not cover every case:\n" <>
-            Enum.map_join(problems, "\n", &"  - #{Fixtures.describe(&1)}")
-        )
+        {:error,
+         "recorded output does not cover every case, so it was not written:\n" <>
+           Enum.map_join(problems, "\n", &"  - #{Fixtures.describe(&1)}") <>
+           "\n  Run `mix bash_fixtures.rehash #{Path.basename(case_file, ".json")}` first."}
     end
   end
 
