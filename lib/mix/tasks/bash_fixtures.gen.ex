@@ -23,8 +23,15 @@ defmodule Mix.Tasks.BashFixtures.Gen do
 
   ## Matrices
 
-    * `date` — every strftime directive alone and adjacently paired, `-I`
+    * `date` — every strftime conversion alone, adjacently paired, and crossed
+      with every field flag, locale modifier, width and compound form, plus `-I`
       granularities, `-d` input forms, and flags GNU date does not have
+
+  A list of conversions and a list of flags are each easy to write down. The
+  cross of the two is where the bugs live and is what nobody enumerates by hand:
+  the first version of this matrix listed both alphabets and still missed that
+  `%-T` rendered "9:05:03", because it never asked a flag and a conversion in the
+  same breath. Cross what you enumerate.
 
   ## Usage
 
@@ -47,7 +54,85 @@ defmodule Mix.Tasks.BashFixtures.Gen do
     a A b B c C d D e F g G h H I j k l m M n N p P q r R s S t T u U V w W x X y Y z Z
   )
 
+  # The five GNU field flags. Crossed with every conversion below rather than
+  # sampled: which conversions a flag reaches is exactly the fact no one writes
+  # down, and `%-T` rendered "9:05:03" for want of a case that asked.
+  @date_flags ["-", "_", "0", "^", "#"]
+
+  # POSIX's locale modifiers. GNU accepts them for some conversions and rejects
+  # them for others, and which is which is not guessable — enumerated so the
+  # recording decides.
+  @date_locale_modifiers ["E", "O"]
+
   @date_modifiers [":z", "::z", ":::z", "-d", "_d", "0d", "^a", "#a"]
+
+  # The timezone conversions are the only ones whose directive contains colons,
+  # so a flag run reaches them through a different path than every other
+  # conversion. GNU splits the field width across the sign, hours and minutes.
+  @date_zone_forms [
+    "%-:z",
+    "%_:z",
+    "%0:z",
+    "%3:z",
+    "%8:z",
+    "%-::z",
+    "%_::z",
+    "%-:::z",
+    "%^:z",
+    "%-z",
+    "%_z",
+    "%0z",
+    "%1z",
+    "%5z",
+    "%8z",
+    "%^z",
+    "%#z"
+  ]
+
+  # A width applies to text and compound conversions too, where no padding flag
+  # does. Both facts are only visible when the two are asked separately.
+  @date_string_widths [
+    "%5a",
+    "%_5a",
+    "%05a",
+    "%-5a",
+    "%^5a",
+    "%2a",
+    "%12D",
+    "%12T",
+    "%_12F",
+    "%012F",
+    "%20c",
+    "%6p",
+    "%6Z"
+  ]
+
+  # Modifier crossed with flags and widths. GNU drops the padding flag when a
+  # modifier is present and right-aligns the default rendering instead.
+  @date_modifier_forms [
+    "%-Od",
+    "%_5Od",
+    "%3Od",
+    "%05Ed",
+    "%0Ey",
+    "%5EY",
+    "%-Ey",
+    "%_5Ey",
+    "%-Oe",
+    "%_OH",
+    "%^Ec",
+    "%#Ec",
+    "%^Ea",
+    "%^Oa",
+    "%E",
+    "%O",
+    "%EJ",
+    "%OJ",
+    "%O%d",
+    "%E%d",
+    "%EOd",
+    "%OEd"
+  ]
 
   # Adjacent pairs catch a formatter that rescans its own output. A chain of
   # String.replace/3 ending in %% -> % turned %%Y into %2024, and no single
@@ -78,7 +163,19 @@ defmodule Mix.Tasks.BashFixtures.Gen do
     "%_",
     "%0",
     "%^",
-    "%^!"
+    "%^!",
+    # Passthrough is not inert: `^` upper-cases the reconstruction it emits, so
+    # `%^Ea` is "%^EA". Every flag is asked against an unknown conversion.
+    "%^J",
+    "%#J",
+    "%-J",
+    "%_J",
+    "%0J",
+    "%_3J",
+    "%0!",
+    "%^!x",
+    "%0d%-d",
+    "%_H:%-M"
   ]
 
   # Field width crossed with padding flags. Only meaningful at the single-digit
@@ -102,26 +199,43 @@ defmodule Mix.Tasks.BashFixtures.Gen do
     "%_e",
     "%0e",
     "%-I",
-    "%-j"
+    "%-j",
+    # A width narrower than the field is not a floor: GNU replaces the
+    # conversion's own width outright, so `%1d` is "5" and not "05".
+    "%1d",
+    "%1e",
+    "%1H",
+    "%0d",
+    "%5e",
+    "%5k",
+    "%5l",
+    "%5Y",
+    "%_5Y",
+    "%5s",
+    "%_5j",
+    "%_1j",
+    "%2j"
   ]
 
-  # %N is a fractional-seconds field: a width truncates its nine digits rather
-  # than padding them. GNU's handling of the space and no-pad flags here is
-  # stranger — `%_N` right-pads with spaces, which no other conversion does — so
-  # those combinations are recorded as gaps rather than imitated.
+  # %N is a fractional-seconds field: a width sets how many of its nine digits
+  # are printed, extending with zeros past nine rather than stopping. GNU's
+  # handling of the space and no-pad flags here is stranger — `%_N` right-pads
+  # with spaces, which no other conversion does — so those combinations are
+  # recorded as gaps rather than imitated.
   @nanosecond_gap "GNU pads %N with trailing spaces under _ and -, unlike every other conversion"
 
-  @date_nanoseconds [
-    {"%N", nil},
-    {"%-N", nil},
-    {"%0N", nil},
-    {"%^N", nil},
-    {"%3N", nil},
-    {"%6N", nil},
-    {"%_N", @nanosecond_gap},
-    {"%-3N", @nanosecond_gap},
-    {"%_6N", @nanosecond_gap}
-  ]
+  @date_nanoseconds ~w(%N %-N %0N %^N %#N %1N %3N %6N %9N %12N %_N %-3N %_6N %-12N)
+
+  # Gaps keyed by the format that provokes them, because the same format arrives
+  # through several enumerations — `%_N` is both a nanosecond case and a cell in
+  # the flag cross, and a gap marked in one place and not the other is a failure
+  # nobody can act on.
+  @format_gaps %{
+    "%_N" => @nanosecond_gap,
+    "%-3N" => @nanosecond_gap,
+    "%_6N" => @nanosecond_gap,
+    "%-12N" => @nanosecond_gap
+  }
 
   @date_iso ["-I", "-Idate", "-Ihours", "-Iminutes", "-Iseconds", "-Ins", "--iso-8601=date"]
 
@@ -135,6 +249,13 @@ defmodule Mix.Tasks.BashFixtures.Gen do
     {"2024-06-15 13:30:00", nil},
     {"2024-06-15T13:30:00", nil},
     {"@1718458200", nil},
+    {"@0", nil},
+    {"@-1", nil},
+    # Shape-checking `@N` with a regexp says nothing about whether the number is
+    # a representable instant. GNU refuses; a converter that trusts the shape
+    # raises out of the command instead.
+    {"@99999999999999999999", nil},
+    {"@-99999999999999999999", nil},
     {"2024-06-15 13:30:00 +1 day", @relative_gap},
     {"2024-06-15 13:30:00 1 day ago", @relative_gap},
     {"2024-06-15 13:30:00 +6 months", @relative_gap},
@@ -165,19 +286,47 @@ defmodule Mix.Tasks.BashFixtures.Gen do
     {"-v +6m", @bsd_adjust_gap},
     {"-v-1d", @bsd_adjust_gap},
     {"-j", @bsd_gap},
-    {"-jf %Y", @bsd_gap},
+    {"-j -f %Y", @bsd_gap},
+    # Not the `-j -f` pair above: a clustered `-jf` is one token. Both engines
+    # refuse it, but for different reasons and so in different words — GNU has
+    # no `-j` at all, where this one splits the cluster and then finds `-f` with
+    # nothing to parse.
+    {"-jf %Y", @bsd_usage_gap},
     {"--not-a-flag", @bsd_usage_gap},
     {"-Z", @bsd_usage_gap}
   ]
 
-  # Two base instants, because one cannot distinguish padding. At day 15 and hour
-  # 13, `%-d`, `%_d` and `%0d` all render "15" and every padding bug hides; at day
-  # 5 and hour 9 they render "5", " 5" and "05". The single-digit base also puts
-  # the hour before noon, so %I/%p/%P/%l/%k differ from the afternoon base.
+  # An operand that is not a `+FORMAT` is how BSD spells "set the system clock"
+  # and how GNU spells "extra operand". Both engines refuse it and neither runs;
+  # the recorded difference is only which of the two refusals is printed.
+  @operand_gap "an operand is refused as a BSD settable time, not as a GNU extra operand"
+
+  # Three base instants, because one cannot distinguish padding. At day 15 and
+  # hour 13, `%-d`, `%_d` and `%0d` all render "15" and every padding bug hides;
+  # at day 5 and hour 9 they render "5", " 5" and "05". The single-digit base also
+  # puts the hour before noon, so %I/%p/%P/%l/%k differ from the afternoon base.
+  #
+  # June cannot expose the year-relative fields: `%j`, `%U`, `%V` and `%W` are all
+  # three- or two-digit there whatever the flag. The January base is where their
+  # padding becomes visible.
   @base "2024-06-15 13:30:00"
   @base_single "2024-06-05 09:05:03"
+  @base_january "2005-01-05 09:05:03"
 
-  @bases [{"pm", @base}, {"am", @base_single}]
+  # A fourth, used only for the fields whose padding needs a year below 1000:
+  # `%Y`, `%G` and `%C` are already at their full width in any modern year.
+  @base_low_year "0005-01-05 09:05:03"
+
+  @low_year_forms ["%Y", "%-Y", "%_Y", "%0Y", "%5Y", "%G", "%-G", "%C", "%-C", "%y", "%-y", "%-g"]
+
+  # A compound conversion is a sub-format, and a padding flag reaches some of its
+  # fields and not others: `%-D` is "01/05/5" — the year loses its padding while
+  # the month and day keep theirs — but `%-x`, the same "%m/%d/%y", is untouched.
+  # Which compounds forward the flag is not derivable, so all of them are asked,
+  # at the one base where a four-digit year can lose padding.
+  @date_compounds ~w(F D T R c r x X)
+
+  @bases [{"pm", @base}, {"am", @base_single}, {"jan", @base_january}]
 
   @impl Mix.Task
   def run(args) do
@@ -216,25 +365,75 @@ defmodule Mix.Tasks.BashFixtures.Gen do
 
   defp date_cases do
     Enum.concat([
+      conversion_cases(),
+      cross_cases(),
+      shape_cases(),
+      argument_cases()
+    ])
+  end
+
+  # Each conversion on its own, at every base instant.
+  defp conversion_cases do
+    Enum.concat([
       for d <- @date_directives, {label, base} <- @bases do
         date_case("directive %#{d} (#{label})", "'+%#{d}'", base)
       end,
       for m <- @date_modifiers, {label, base} <- @bases do
         date_case("modifier %#{m} (#{label})", "'+%#{m}'", base)
       end,
+      for f <- @low_year_forms do
+        date_case("low year #{f}", "'+#{f}'", @base_low_year)
+      end,
+      for f <- @date_nanoseconds do
+        format_case("nanoseconds", f, @base_single)
+      end
+    ])
+  end
+
+  # The crosses. A flag list and a conversion list are each finite and each easy
+  # to write down; which pairs of them mean anything is neither, so every pair is
+  # asked rather than the interesting-looking ones.
+  defp cross_cases do
+    Enum.concat([
+      for flag <- @date_flags, d <- @date_directives do
+        format_case("flag", "%#{flag}#{d}", @base_january)
+      end,
+      # E and O are accepted for some conversions and refused for others, and the
+      # refusal is a verbatim passthrough at exit 0 — the failure this whole
+      # matrix exists to make impossible to ship unnoticed.
+      for mod <- @date_locale_modifiers, d <- @date_directives do
+        date_case("locale modifier %#{mod}#{d}", "'+%#{mod}#{d}'", @base_january)
+      end,
+      for flag <- @date_flags, c <- @date_compounds do
+        date_case("compound %#{flag}#{c}", "'+%#{flag}#{c}'", @base_low_year)
+      end
+    ])
+  end
+
+  # Directive shapes that are not a plain conversion: colons, widths, adjacency.
+  defp shape_cases do
+    Enum.concat([
+      for f <- @date_zone_forms do
+        date_case("zone #{f}", "'+#{f}'", @base_january)
+      end,
+      for f <- @date_string_widths do
+        date_case("string width #{f}", "'+#{f}'", @base_january)
+      end,
+      for f <- @date_modifier_forms do
+        date_case("modifier form #{f}", "'+#{f}'", @base_january)
+      end,
       for f <- @date_pairs do
         date_case("sequence #{f}", "'+#{f}'")
       end,
       for f <- @date_widths do
         date_case("width #{f}", "'+#{f}'", @base_single)
-      end,
-      for {f, gap} <- @date_nanoseconds do
-        one_case(
-          "nanoseconds #{f}",
-          "TZ=UTC LC_ALL=C date -d '#{@base_single}' '+#{f}'; echo rc=$?",
-          gap
-        )
-      end,
+      end
+    ])
+  end
+
+  # Everything before the format string: flags, their arguments, and operands.
+  defp argument_cases do
+    Enum.concat([
       for flag <- @date_iso do
         date_case("iso #{flag}", flag)
       end,
@@ -261,7 +460,8 @@ defmodule Mix.Tasks.BashFixtures.Gen do
           "reference -r on a missing file",
           "TZ=UTC LC_ALL=C date -r /jb_definitely_missing '+%F'; echo rc=$?"
         ),
-        # Both shells refuse the flag; only the wording of the refusal differs.
+        # Both engines refuse each of these; only the wording of the refusal
+        # differs, so the exit code is the assertion and the message is the gap.
         one_case(
           "reference -r with no argument",
           "TZ=UTC LC_ALL=C date -r; echo rc=$?",
@@ -271,6 +471,51 @@ defmodule Mix.Tasks.BashFixtures.Gen do
           "date -d with no argument",
           "TZ=UTC LC_ALL=C date -d; echo rc=$?",
           @bsd_usage_gap
+        ),
+        one_case(
+          "long --date with no argument",
+          "TZ=UTC LC_ALL=C date --date; echo rc=$?",
+          @bsd_usage_gap
+        ),
+        one_case(
+          "long --reference with no argument",
+          "TZ=UTC LC_ALL=C date --reference; echo rc=$?",
+          @bsd_usage_gap
+        ),
+        # -d and -r each name the instant to print, so asking for both is a
+        # question with two answers. Silently preferring one reports success.
+        one_case(
+          "reference -r and -d together",
+          "touch /tmp/jb_r_$$; TZ=UTC LC_ALL=C date -r /tmp/jb_r_$$ -d '#{@base}' '+%F'; echo rc=$?; rm -f /tmp/jb_r_$$",
+          @bsd_usage_gap
+        ),
+        # Refusing unknown flags must not also refuse the spellings GNU accepts.
+        one_case(
+          "end of options --",
+          "TZ=UTC LC_ALL=C date -d '#{@base}' -- '+%F'; echo rc=$?"
+        ),
+        one_case(
+          "long --date with a separate argument",
+          "TZ=UTC LC_ALL=C date --date '#{@base}' '+%F'; echo rc=$?"
+        ),
+        one_case(
+          "long --reference with a separate argument",
+          "touch /tmp/jb_l_$$; TZ=UTC LC_ALL=C date --reference /tmp/jb_l_$$ '+%Y' > /dev/null; echo rc=$?; rm -f /tmp/jb_l_$$"
+        ),
+        one_case(
+          "long --iso-8601 with a separate argument",
+          "TZ=UTC LC_ALL=C date -d '#{@base}' --iso-8601 hours; echo rc=$?",
+          @operand_gap
+        ),
+        one_case(
+          "bare - operand",
+          "TZ=UTC LC_ALL=C date -d '#{@base}' - '+%F'; echo rc=$?",
+          @operand_gap
+        ),
+        one_case(
+          "extra operand",
+          "TZ=UTC LC_ALL=C date -d '#{@base}' extra '+%F'; echo rc=$?",
+          @operand_gap
         ),
         one_case("utc flag -u", "TZ=UTC LC_ALL=C date -u -d '#{@base}' '+%F %T %Z'; echo rc=$?"),
         one_case("rfc flag -R", "TZ=UTC LC_ALL=C date -R -d '#{@base}'; echo rc=$?"),
@@ -285,6 +530,16 @@ defmodule Mix.Tasks.BashFixtures.Gen do
 
   defp date_case(name, arg, base \\ @base) do
     one_case(name, "TZ=UTC LC_ALL=C date -d '#{base}' #{arg}; echo rc=$?")
+  end
+
+  # A format case names itself, so the same format enumerated twice carries the
+  # same gap marker both times.
+  defp format_case(group, format, base) do
+    one_case(
+      "#{group} #{format}",
+      "TZ=UTC LC_ALL=C date -d '#{base}' '+#{format}'; echo rc=$?",
+      Map.get(@format_gaps, format)
+    )
   end
 
   # Every case ends in `echo rc=$?` so a wrong exit code shows up as a stdout

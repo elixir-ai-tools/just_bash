@@ -12,31 +12,46 @@ defmodule JustBash.Commands.Date do
     * zone offset — `%z` (`+0000`), `%:z`, `%::z`, `%:::z`
     * literal — `%%`, `%n`, `%t`
 
-  Directives accept GNU's field flags between the `%` and the conversion:
-  `-` (no padding), `_` (space padding), `0` (zero padding), `^` (upper case) and
-  `#` (also upper case, for conversions whose default is mixed case). A numeric
-  field width may follow the flags, as in `%03d`.
+  A directive is `%`, then field flags, then an optional width, then an optional
+  locale modifier, then the conversion — `%_5Od` is all four at once. The flags
+  are `-` (no padding), `_` (space padding), `0` (zero padding), `^` (upper case)
+  and `#` (swap the conversion's default case). The modifiers are `E` and `O`,
+  which select nothing in the C locale but are accepted only for the conversions
+  GNU accepts them for; the rest pass through verbatim.
+
+  None of that composes the way it reads. A flag reaches a numeric field and not
+  a compound one, so `%-T` is "09:05:03" and only `%-D` loses its year padding;
+  the last padding flag wins outright, so `%-0d` is "05"; a width *replaces* a
+  conversion's own width rather than raising it, so `%1d` is "5"; and a modifier
+  drops the padding flag entirely, so `%-Od` is "05". Every one of those rules is
+  recorded in `test/fixtures/bash_cases/date_matrix.json` against real GNU date
+  rather than reasoned about here — this paragraph describes the recording, it
+  does not define it.
 
   An unrecognized directive is emitted verbatim (`%J` → `%J`), as GNU date does,
   so a caller can tell the difference between "not supported" and a real value.
   That passthrough is only safe because the supported set is complete enough that
   reaching it means the directive really does not exist: a directive that *is*
   real but unimplemented would print itself at exit 0, and a caller cannot tell
-  that from a legitimate literal. `test/fixtures/bash_cases/date_matrix.json`
-  enumerates the whole conversion alphabet against real GNU date to keep it so.
+  that from a legitimate literal. The matrix enumerates the whole conversion
+  alphabet — crossed with every flag, width and modifier — to keep it so.
 
-  Flags: `-d` / `--date=`, `-r SECONDS|FILE` / `--reference=FILE`, `-I[FMT]` /
+  Flags: `-d` / `--date`, `-r SECONDS|FILE` / `--reference FILE`, `-I[FMT]` /
   `--iso-8601[=FMT]`, `-R` / `--rfc-email`, `-u` / `--utc` / `--universal`, the
-  BSD `-v` adjustments, and the BSD `-j` / `-f` pair. Values may be attached or
-  separate (`-d2024-06-15`), no-argument flags may cluster (`-ju`), and `--` ends
-  option parsing — the getopt conventions real date inherits.
+  BSD `-v` adjustments, and the BSD `-j` / `-f` pair. A value may be attached or
+  separate (`-d2024-06-15`, `--date=2024-06-15`), no-argument flags may cluster
+  (`-ju`), and `--` ends option parsing — the getopt conventions real date
+  inherits.
 
   `-r` reads both spellings the flag has in the wild, as FreeBSD's date does: a
   numeric value is epoch seconds, and anything else names a file whose
-  modification time to report. GNU's `--reference=FILE` is always a file. The VFS
+  modification time to report. GNU's `--reference` is always a file. The VFS
   records mtimes, so the file's time comes from the sandbox rather than the host
   clock, and a failure to read it reports the real error kind — descending
   through a regular file is ENOTDIR, not "no such file".
+
+  `-d` and `-r` each name the instant to print, so giving both is an error rather
+  than a silent choice between two answers.
 
   Everything else is an error. An unimplemented flag must not be dropped:
   ignoring it would print the current date at exit 0, which a caller cannot
@@ -62,6 +77,10 @@ defmodule JustBash.Commands.Date do
   # The flags that each name an output format. They compete rather than compose,
   # so setting one when another is already set is an error however it arrived.
   @format_keys [:format, :iso_format, :rfc_format]
+
+  # `-d` and `-r` each name the instant to print. Accepting both would answer one
+  # question with two answers and report success doing it.
+  @exclusive "date: the options to specify dates for printing are mutually exclusive\n"
 
   # `-v[+-]val[unit]`. The sign is what distinguishes an adjustment from BSD's
   # set-this-field form, which we do not implement.
@@ -96,18 +115,18 @@ defmodule JustBash.Commands.Date do
   @impl true
   def execute(bash, args, _stdin) do
     case parse_args(args) do
-      {:ok, opts} -> emit(bash, opts)
+      {:ok, opts} -> report(bash, opts)
       {:error, msg} -> {Command.error(msg), bash}
     end
   end
 
-  defp emit(bash, %{reference: nil} = opts) do
+  defp report(bash, %{reference: nil} = opts) do
     render_at(bash, opts, opts.datetime || DateTime.utc_now())
   end
 
-  # A reference file's modification time. The VFS records mtimes, so this reads
-  # from the sandbox rather than the host clock.
-  defp emit(bash, %{reference: path} = opts) do
+  # `-r FILE` reports the file's modification time. The VFS records mtimes, so
+  # this reads from the sandbox rather than the host clock.
+  defp report(bash, %{reference: path} = opts) do
     case FS.stat(bash.fs, FS.resolve_path(bash.cwd, path)) do
       {:ok, %{mtime: mtime}, fs} -> render_at(%{bash | fs: fs}, opts, mtime)
       {:error, error} -> {Command.error("date: #{path}: #{FS.strerror(error)}\n"), bash}
@@ -153,6 +172,7 @@ defmodule JustBash.Commands.Date do
   defp parse_args(["-d", date_str | rest], opts), do: put_datetime(date_str, rest, opts)
   defp parse_args(["-d" <> date_str | rest], opts), do: put_datetime(date_str, rest, opts)
   defp parse_args(["--date=" <> date_str | rest], opts), do: put_datetime(date_str, rest, opts)
+  defp parse_args(["--date", date_str | rest], opts), do: put_datetime(date_str, rest, opts)
 
   # -r takes an epoch timestamp or a file to read a modification time from.
   defp parse_args(["-r"], _opts), do: {:error, missing_argument("-r")}
@@ -162,6 +182,7 @@ defmodule JustBash.Commands.Date do
   # GNU's spelling of the same flag names a file and only a file, so a numeric
   # value here is a file called "0" rather than the epoch.
   defp parse_args(["--reference=" <> path | rest], opts), do: put_reference(path, rest, opts)
+  defp parse_args(["--reference", path | rest], opts), do: put_reference(path, rest, opts)
 
   # BSD date: -v adjusts a field of the date, as many times as given.
   defp parse_args(["-v"], _opts), do: {:error, missing_argument("-v")}
@@ -202,6 +223,14 @@ defmodule JustBash.Commands.Date do
   defp parse_args([<<?-, flag, rest::binary>> | args], opts)
        when flag in @no_argument_flags and rest != "" do
     parse_args([<<?-, flag>>, "-" <> rest | args], opts)
+  end
+
+  # A long option is named in full, as GNU words it, where a short one is named
+  # by its character. Either way "needs an argument" is a distinct error from
+  # "no such flag" — the point of refusing a flag is that the message says what
+  # to do differently.
+  defp parse_args([flag], _opts) when flag in ["--date", "--reference"] do
+    {:error, "date: option '#{flag}' requires an argument\n" <> usage()}
   end
 
   # When we have an input_format set (BSD -f flag) and encounter a non-option arg
@@ -276,6 +305,13 @@ defmodule JustBash.Commands.Date do
     end
   end
 
+  # A reference file and a spelled-out instant each answer "which instant", so
+  # giving both is an error rather than a silent choice between two answers. Two
+  # spellings of the *same* kind still compose the way real date lets them: the
+  # last one wins.
+  defp put_datetime(_date_str, _rest, %{reference: reference}) when reference != nil,
+    do: {:error, exclusive()}
+
   defp put_datetime(date_str, rest, opts) do
     case parse_date_string(date_str) do
       {:ok, datetime} -> parse_args(rest, %{opts | datetime: datetime})
@@ -294,6 +330,9 @@ defmodule JustBash.Commands.Date do
     end
   end
 
+  defp put_epoch(_seconds, _rest, %{reference: reference}) when reference != nil,
+    do: {:error, exclusive()}
+
   defp put_epoch(seconds, rest, opts) do
     case DateTime.from_unix(seconds) do
       {:ok, datetime} -> parse_args(rest, %{opts | datetime: datetime})
@@ -301,7 +340,12 @@ defmodule JustBash.Commands.Date do
     end
   end
 
+  defp put_reference(_path, _rest, %{datetime: datetime}) when datetime != nil,
+    do: {:error, exclusive()}
+
   defp put_reference(path, rest, opts), do: parse_args(rest, %{opts | reference: path})
+
+  defp exclusive, do: @exclusive <> usage()
 
   defp put_adjustment(spec, rest, opts) do
     case parse_adjustment(spec) do
@@ -423,8 +467,13 @@ defmodule JustBash.Commands.Date do
   end
 
   # `@N` is seconds since the epoch, the one -d form that is not a calendar date.
+  # Matching its shape says nothing about whether the number is a representable
+  # instant, so the conversion has to be allowed to refuse it.
   defp parse_epoch("@" <> seconds) do
-    {:ok, seconds |> String.to_integer() |> DateTime.from_unix!()}
+    case seconds |> String.to_integer() |> DateTime.from_unix() do
+      {:ok, datetime} -> {:ok, datetime}
+      {:error, _reason} -> {:error, :invalid_format}
+    end
   end
 
   defp parse_date_only(str) do
@@ -476,49 +525,50 @@ defmodule JustBash.Commands.Date do
   # GNU date. The scan is byte-wise, not codepoint-wise: format strings are raw
   # binaries and need not be valid UTF-8; every known directive is ASCII, and
   # passthrough reconstructs other bytes verbatim either way.
-  defp format_datetime(datetime, format), do: scan(format, datetime, [])
+  #
+  # `yr_spec` is the padding flag a compound conversion forwards to the year
+  # fields of its sub-format, and nil at the top level. See `yearish/3`.
+  defp format_datetime(datetime, format), do: scan(format, datetime, nil, [])
 
-  defp scan(<<>>, _datetime, acc), do: acc |> Enum.reverse() |> IO.iodata_to_binary()
+  defp scan(<<>>, _datetime, _yr_spec, acc), do: acc |> Enum.reverse() |> IO.iodata_to_binary()
 
   # A trailing bare `%` is literal, as in real date.
-  defp scan(<<?%>>, datetime, acc), do: scan(<<>>, datetime, ["%" | acc])
+  defp scan(<<?%>>, datetime, yr_spec, acc), do: scan(<<>>, datetime, yr_spec, ["%" | acc])
 
-  # GNU allows field flags and a width between the `%` and the conversion, so the
-  # conversion character is not at a fixed offset. The modifier run is collected
-  # first, then applied to whatever the conversion rendered.
-  defp scan(<<?%, rest::binary>>, datetime, acc) do
-    {emitted, rest} = conversion(rest, datetime)
-    scan(rest, datetime, [emitted | acc])
+  defp scan(<<?%, rest::binary>>, datetime, yr_spec, acc) do
+    {emitted, rest} = conversion(rest, datetime, yr_spec)
+    scan(rest, datetime, yr_spec, [emitted | acc])
   end
 
-  defp scan(<<char, rest::binary>>, datetime, acc) do
-    scan(rest, datetime, [<<char>> | acc])
+  defp scan(<<char, rest::binary>>, datetime, yr_spec, acc) do
+    scan(rest, datetime, yr_spec, [<<char>> | acc])
   end
 
-  # `%:z`, `%::z` and `%:::z` are the only conversions where colons are part of
-  # the directive rather than a modifier, so they are matched before flag parsing.
-  defp conversion(<<":::z", rest::binary>>, dt), do: {zone_offset(dt, :hours), rest}
-  defp conversion(<<"::z", rest::binary>>, dt), do: {zone_offset(dt, :seconds), rest}
-  defp conversion(<<":z", rest::binary>>, dt), do: {zone_offset(dt, :minutes), rest}
+  # A directive is `%`, field flags, an optional width, an optional locale
+  # modifier, then the conversion — so the conversion character is not at a fixed
+  # offset and the whole run has to be collected before anything can be rendered.
+  defp conversion(input, datetime, yr_spec) do
+    {flags, rest} = take_flags(input, [])
+    {width, rest} = take_width(rest, [])
+    {modifier, rest} = take_modifier(rest)
+    decorated? = flags != [] or width != [] or modifier != nil
 
-  defp conversion(input, dt) do
-    {flags, input} = take_flags(input, [])
-    {width, input} = take_width(input, [])
-    modified? = flags != [] or width != []
+    ctx = %{
+      flags: flags,
+      width: width,
+      modifier: modifier,
+      yr_spec: yr_spec,
+      prefix: [?%, flags, width, modifier || []]
+    }
 
-    case input do
-      # A flag run cannot take `%` as its conversion. GNU emits the flags
+    case rest do
+      # A decorated run cannot take `%` as its conversion. GNU emits the run
       # literally and begins a fresh directive at the `%`, so `%-%d` is `%-`
       # followed by `%d`, not a modified `%%`. The `%` is left unconsumed.
-      <<?%, _::binary>> when modified? ->
-        {IO.iodata_to_binary([?%, flags, width]), input}
-
-      # A trailing `%` — with any modifiers that followed it — is literal.
-      <<>> ->
-        {IO.iodata_to_binary([?%, flags, width]), <<>>}
-
-      <<char, rest::binary>> ->
-        {render(char, dt, flags, width), rest}
+      <<?%, _::binary>> when decorated? -> {IO.iodata_to_binary(ctx.prefix), rest}
+      # A run with no conversion at all is literal.
+      <<>> -> {IO.iodata_to_binary(ctx.prefix), <<>>}
+      _ -> render(rest, datetime, ctx)
     end
   end
 
@@ -534,137 +584,239 @@ defmodule JustBash.Commands.Date do
 
   defp take_width(input, acc), do: {Enum.reverse(acc), input}
 
-  # `%N` is a fractional-seconds field rather than a padded number, so a width
-  # truncates its nine digits instead of padding them (`%3N` is "000", not "000"
-  # widened) and the padding flags do not apply. GNU's handling of `_` and `-`
-  # here is stranger still — `%_N` right-pads with spaces — and is recorded as a
-  # known gap in the date matrix rather than guessed at.
-  defp render(?N, dt, _flags, []), do: nanoseconds(dt)
-  defp render(?N, dt, _flags, width), do: String.slice(nanoseconds(dt), 0, to_int(width))
+  # POSIX's alternate-representation modifiers. In the C locale they select
+  # nothing, but GNU still accepts them for some conversions and refuses them for
+  # others, and a refusal is a verbatim passthrough — see `accepts_modifier?/2`.
+  defp take_modifier(<<char, rest::binary>>) when char in [?E, ?O], do: {<<char>>, rest}
+  defp take_modifier(input), do: {nil, input}
 
-  # An unknown conversion is reconstructed verbatim, modifiers included, so the
-  # passthrough is byte-exact rather than approximately right.
-  defp render(char, dt, flags, width) do
-    case directive(char, dt) do
-      {:unknown, verbatim} -> IO.iodata_to_binary([?%, flags, width, verbatim])
-      rendered -> rendered |> pad(flags, width) |> upcase(flags)
+  # The colons of `%:z` belong to the directive rather than the flag run, and
+  # `%z` is the only conversion that takes them.
+  defp render(<<":::z", rest::binary>>, _dt, %{modifier: nil} = ctx),
+    do: {emit({:zone, "0", 3}, ?z, ctx), rest}
+
+  defp render(<<"::z", rest::binary>>, _dt, %{modifier: nil} = ctx),
+    do: {emit({:zone, "0:00:00", 9}, ?z, ctx), rest}
+
+  defp render(<<":z", rest::binary>>, _dt, %{modifier: nil} = ctx),
+    do: {emit({:zone, "0:00", 6}, ?z, ctx), rest}
+
+  defp render(<<char, rest::binary>>, dt, ctx), do: {convert(char, dt, ctx), rest}
+
+  defp convert(char, dt, ctx) do
+    case {field(char, dt, ctx), ctx.modifier} do
+      {:unknown, _modifier} ->
+        passthrough(char, ctx)
+
+      {spec, nil} ->
+        emit(spec, char, ctx)
+
+      {spec, modifier} ->
+        if accepts_modifier?(char, modifier) do
+          # A modifier makes the conversion render its default form: the padding
+          # flags are dropped and the width right-aligns whatever came out.
+          spec
+          |> emit(char, %{ctx | flags: Enum.reject(ctx.flags, &(&1 in [?-, ?_, ?0])), width: []})
+          |> pad_string(ctx.width, ?\s)
+        else
+          passthrough(char, ctx)
+        end
     end
   end
 
-  # Padding is decided once from the whole flag run rather than folded flag by
-  # flag. `-` strips the field's padding, so applying `0` afterwards would have
-  # nothing left to measure against — yet GNU renders `%-0d` as "05", because the
-  # last padding flag wins outright.
-  defp pad(rendered, flags, width) do
-    case padding_flag(flags) do
-      # `-` suppresses padding, and a width alongside it is ignored.
-      ?- -> unpadded(rendered)
-      ?_ -> String.pad_leading(unpadded(rendered), field_width(rendered, width), " ")
-      ?0 -> String.pad_leading(unpadded(rendered), field_width(rendered, width), "0")
-      # No padding flag: an explicit width still pads, with zeros. Without one the
-      # conversion's own padding stands, which is how `%e`, `%k` and `%l` keep the
-      # spaces that distinguish them from `%d`, `%H` and `%I`.
-      nil when width != [] -> String.pad_leading(unpadded(rendered), to_int(width), "0")
-      nil -> rendered
-    end
+  # An unknown conversion is reconstructed verbatim, every part of the run
+  # included, so the passthrough is byte-exact rather than approximately right.
+  # `^` still reaches it: GNU renders `%^Ea` as "%^EA".
+  defp passthrough(char, ctx) do
+    ctx.prefix |> IO.iodata_to_binary() |> Kernel.<>(<<char>>) |> upcase_if(?^ in ctx.flags)
   end
 
-  defp padding_flag(flags), do: flags |> Enum.filter(&(&1 in [?-, ?_, ?0])) |> List.last()
+  defp emit({:num, value, digits, pad}, char, ctx) do
+    value
+    |> pad_number(width_or(ctx.width, digits), padding_flag(ctx.flags) || pad)
+    |> apply_case(char, ctx.flags)
+  end
 
-  defp field_width(rendered, []), do: String.length(rendered)
-  defp field_width(_rendered, width), do: to_int(width)
+  defp emit({:zone, buf, digits}, char, ctx) do
+    buf
+    |> pad_zone(width_or(ctx.width, digits), padding_flag(ctx.flags) || ?0)
+    |> apply_case(char, ctx.flags)
+  end
+
+  defp emit({:text, string}, char, ctx) do
+    string
+    |> apply_case(char, ctx.flags)
+    |> pad_string(ctx.width, padding_flag(ctx.flags) || ?\s)
+  end
+
+  # A compound conversion is a sub-format, and its own padding flag reaches the
+  # year fields inside it and nothing else: `%-D` is "01/05/5", where the month
+  # and day keep the padding the year just lost.
+  defp emit({:sub, subformat, dt}, char, ctx) do
+    subformat
+    |> scan(dt, padding_flag(ctx.flags), [])
+    |> apply_case(char, ctx.flags)
+    |> pad_string(ctx.width, padding_flag(ctx.flags) || ?\s)
+  end
+
+  # `%N` is a fractional-seconds field rather than a padded number: a width says
+  # how many of its nine digits to print, extending with zeros past nine rather
+  # than stopping, and the padding flags do not apply. GNU's handling of `_` and
+  # `-` here is stranger still — `%_N` right-pads with spaces — and is recorded
+  # as a known gap in the date matrix rather than guessed at.
+  defp emit({:nanoseconds, dt}, _char, ctx), do: nanoseconds(dt, width_or(ctx.width, 9))
+
+  defp width_or([], digits), do: digits
+  defp width_or(width, _digits), do: to_int(width)
 
   defp to_int(width), do: width |> IO.iodata_to_binary() |> String.to_integer()
 
-  # The conversion's own padding, removed so a flag can restate it. A field that
-  # is all padding ("00" for midnight) still has to print one digit.
-  defp unpadded(rendered) do
-    case rendered |> String.trim_leading("0") |> String.trim_leading(" ") do
-      "" -> "0"
-      trimmed -> trimmed
+  # The last padding flag wins outright rather than folding one at a time: `-`
+  # strips a field's padding, so applying `0` afterwards would have nothing left
+  # to measure against — yet GNU renders `%-0d` as "05".
+  defp padding_flag(flags), do: flags |> Enum.filter(&(&1 in [?-, ?_, ?0])) |> List.last()
+
+  defp pad_number(value, digits, pad) do
+    {sign, magnitude} =
+      if value < 0,
+        do: {"-", Integer.to_string(-value)},
+        else: {"", Integer.to_string(value)}
+
+    case pad do
+      ?- -> sign <> magnitude
+      ?_ -> String.pad_leading(sign <> magnitude, digits, " ")
+      ?0 -> sign <> String.pad_leading(magnitude, max(digits - byte_size(sign), 0), "0")
     end
   end
 
-  # Both `^` and `#` upper-case here. GNU documents `#` as case-swapping, but
-  # every conversion whose default is mixed case (`%a`, `%A`, `%b`, `%B`, `%p`)
-  # swaps to upper, and the rest have no case to swap.
-  defp upcase(value, flags) do
-    if Enum.any?(flags, &(&1 in [?^, ?#])), do: String.upcase(value), else: value
+  # The zone offset carries a sign that is always printed, and the width covers
+  # it: `%_z` is "   +0" but `%0z` is "+0000", the same five columns filled from
+  # opposite sides of the sign.
+  defp pad_zone(buf, _digits, ?-), do: "+" <> buf
+  defp pad_zone(buf, digits, ?_), do: String.pad_leading("+" <> buf, digits, " ")
+  defp pad_zone(buf, digits, ?0), do: "+" <> String.pad_leading(buf, max(digits - 1, 0), "0")
+
+  # A width pads text and compound conversions too, where no padding flag does —
+  # except `-`, which suppresses padding here as everywhere.
+  defp pad_string(string, [], _pad), do: string
+  defp pad_string(string, _width, ?-), do: string
+  defp pad_string(string, width, ?0), do: String.pad_leading(string, to_int(width), "0")
+  defp pad_string(string, width, _pad), do: String.pad_leading(string, to_int(width), " ")
+
+  # `^` upper-cases; `#` swaps whatever case the conversion's default has, which
+  # is upper for the day and month names and lower for `%p` and `%Z`. `%P` is the
+  # deliberately-lowercase spelling of `%p` and neither flag disturbs it, and `#`
+  # does not reach `%c` though `^` does.
+  defp apply_case(value, char, flags) do
+    cond do
+      ?# in flags and char in ~c"pPZ" -> String.downcase(value)
+      ?# in flags and char in ~c"aAbBh" -> String.upcase(value)
+      ?^ in flags and char != ?P -> String.upcase(value)
+      true -> value
+    end
   end
 
-  # Compound directives are composed from their single-field parts so the two
-  # can't drift.
-  defp directive(?F, dt), do: "#{directive(?Y, dt)}-#{directive(?m, dt)}-#{directive(?d, dt)}"
-  defp directive(?T, dt), do: "#{directive(?H, dt)}:#{directive(?M, dt)}:#{directive(?S, dt)}"
-  defp directive(?R, dt), do: "#{directive(?H, dt)}:#{directive(?M, dt)}"
-  defp directive(?D, dt), do: "#{directive(?m, dt)}/#{directive(?d, dt)}/#{directive(?y, dt)}"
-  defp directive(?x, dt), do: directive(?D, dt)
-  defp directive(?X, dt), do: directive(?T, dt)
+  defp upcase_if(value, true), do: String.upcase(value)
+  defp upcase_if(value, false), do: value
 
-  defp directive(?r, dt),
-    do: "#{directive(?I, dt)}:#{directive(?M, dt)}:#{directive(?S, dt)} #{directive(?p, dt)}"
+  # Conversions GNU accepts each modifier for. Enumerated from real date in
+  # `test/fixtures/bash_cases/date_matrix.json` rather than derived: the two sets
+  # overlap without containing each other (`%Eq` renders, `%Oq` does not), and a
+  # wrong guess shows up as a directive printing itself at exit 0.
+  @e_conversions ~c"cCnpPqrRstTuxXyYzZ"
+  @o_conversions ~c"bBCdegGhHIjklmMnNpPrRsStTuUVwWyzZ"
 
-  defp directive(?c, dt) do
-    "#{directive(?a, dt)} #{directive(?b, dt)} #{directive(?e, dt)} #{directive(?T, dt)} #{directive(?Y, dt)}"
+  defp accepts_modifier?(char, "E"), do: char in @e_conversions
+  defp accepts_modifier?(char, "O"), do: char in @o_conversions
+
+  # Compound conversions built from a sub-format, so the two can't drift and so
+  # a forwarded padding flag reaches the same fields GNU's does.
+  defp field(?F, dt, _ctx), do: {:sub, "%Y-%m-%d", dt}
+  defp field(?D, dt, _ctx), do: {:sub, "%m/%d/%y", dt}
+  defp field(?T, dt, _ctx), do: {:sub, "%H:%M:%S", dt}
+  defp field(?R, dt, _ctx), do: {:sub, "%H:%M", dt}
+
+  # `%c`, `%x`, `%X` and `%r` come from the locale rather than a GNU sub-format,
+  # and no padding flag reaches them — `%-x` keeps the padding `%-D` drops, for
+  # the same "%m/%d/%y". The year in `%c` has no four-digit minimum either.
+  defp field(?c, dt, _ctx) do
+    {:text,
+     "#{short_day_name(dt)} #{short_month_name(dt)} #{space_pad2(dt.day)} " <>
+       "#{pad2(dt.hour)}:#{pad2(dt.minute)}:#{pad2(dt.second)} #{dt.year}"}
   end
 
-  defp directive(?Y, dt), do: dt.year |> Integer.to_string() |> String.pad_leading(4, "0")
-  defp directive(?m, dt), do: pad2(dt.month)
-  defp directive(?d, dt), do: pad2(dt.day)
-  defp directive(?H, dt), do: pad2(dt.hour)
-  defp directive(?M, dt), do: pad2(dt.minute)
-  defp directive(?S, dt), do: pad2(dt.second)
-  defp directive(?y, dt), do: dt.year |> rem(100) |> pad2()
-  defp directive(?C, dt), do: dt.year |> div(100) |> pad2()
-  # `%e` is space-padded rather than zero-padded — the one directive where the
-  # difference is visible in column-aligned output.
-  defp directive(?e, dt), do: dt.day |> Integer.to_string() |> String.pad_leading(2, " ")
-  defp directive(?I, dt), do: dt.hour |> twelve_hour() |> pad2()
-  defp directive(?p, dt), do: if(dt.hour < 12, do: "AM", else: "PM")
-  defp directive(?P, dt), do: ?p |> directive(dt) |> String.downcase()
-  defp directive(?Z, dt), do: dt.zone_abbr
+  defp field(?x, dt, _ctx),
+    do: {:text, "#{pad2(dt.month)}/#{pad2(dt.day)}/#{pad2(rem(dt.year, 100))}"}
 
-  defp directive(?N, dt), do: nanoseconds(dt)
+  defp field(?X, dt, _ctx), do: {:text, "#{pad2(dt.hour)}:#{pad2(dt.minute)}:#{pad2(dt.second)}"}
 
-  defp directive(?s, dt), do: Integer.to_string(DateTime.to_unix(dt))
-  defp directive(?a, dt), do: short_day_name(dt)
-  defp directive(?A, dt), do: full_day_name(dt)
-  defp directive(?b, dt), do: short_month_name(dt)
-  defp directive(?h, dt), do: short_month_name(dt)
-  defp directive(?B, dt), do: full_month_name(dt)
-  defp directive(?j, dt), do: day_of_year(dt)
-  defp directive(?u, dt), do: Integer.to_string(Date.day_of_week(dt))
-  defp directive(?w, dt), do: Integer.to_string(rem(Date.day_of_week(dt), 7))
-  defp directive(?q, dt), do: dt.month |> then(&(div(&1 - 1, 3) + 1)) |> Integer.to_string()
+  defp field(?r, dt, _ctx) do
+    {:text, "#{pad2(twelve_hour(dt.hour))}:#{pad2(dt.minute)}:#{pad2(dt.second)} #{meridiem(dt)}"}
+  end
 
-  # `%k` and `%l` are the space-padded counterparts of `%H` and `%I`.
-  defp directive(?k, dt), do: dt.hour |> Integer.to_string() |> String.pad_leading(2, " ")
+  defp field(?Y, dt, ctx), do: yearish(dt.year, 4, ctx)
+  defp field(?G, dt, ctx), do: dt |> iso_week() |> elem(0) |> yearish(4, ctx)
+  defp field(?y, dt, ctx), do: dt.year |> rem(100) |> yearish(2, ctx)
+  defp field(?g, dt, ctx), do: dt |> iso_week() |> elem(0) |> rem(100) |> yearish(2, ctx)
+  defp field(?C, dt, ctx), do: dt.year |> div(100) |> yearish(2, ctx)
 
-  defp directive(?l, dt),
-    do: dt.hour |> twelve_hour() |> Integer.to_string() |> String.pad_leading(2, " ")
+  defp field(?m, dt, _ctx), do: {:num, dt.month, 2, ?0}
+  defp field(?d, dt, _ctx), do: {:num, dt.day, 2, ?0}
+  defp field(?H, dt, _ctx), do: {:num, dt.hour, 2, ?0}
+  defp field(?M, dt, _ctx), do: {:num, dt.minute, 2, ?0}
+  defp field(?S, dt, _ctx), do: {:num, dt.second, 2, ?0}
+  defp field(?I, dt, _ctx), do: {:num, twelve_hour(dt.hour), 2, ?0}
+  defp field(?j, dt, _ctx), do: {:num, Date.day_of_year(dt), 3, ?0}
+  defp field(?u, dt, _ctx), do: {:num, Date.day_of_week(dt), 1, ?0}
+  defp field(?w, dt, _ctx), do: {:num, rem(Date.day_of_week(dt), 7), 1, ?0}
+  defp field(?q, dt, _ctx), do: {:num, div(dt.month - 1, 3) + 1, 1, ?0}
+  defp field(?s, dt, _ctx), do: {:num, DateTime.to_unix(dt), 1, ?0}
+  defp field(?V, dt, _ctx), do: {:num, dt |> iso_week() |> elem(1), 2, ?0}
+  defp field(?U, dt, _ctx), do: {:num, week_of_year(dt, :sunday), 2, ?0}
+  defp field(?W, dt, _ctx), do: {:num, week_of_year(dt, :monday), 2, ?0}
 
-  # ISO week numbering runs on its own year: 2019-12-30 is week 1 of 2020. Erlang
-  # already implements the rule, so %G/%V defer to it rather than restating it.
-  defp directive(?G, dt), do: dt |> iso_week() |> elem(0) |> Integer.to_string()
-  defp directive(?g, dt), do: dt |> iso_week() |> elem(0) |> rem(100) |> pad2()
-  defp directive(?V, dt), do: dt |> iso_week() |> elem(1) |> pad2()
+  # `%e`, `%k` and `%l` are the space-padded counterparts of `%d`, `%H` and `%I`.
+  # The difference is a default pad character, not a different rendering.
+  defp field(?e, dt, _ctx), do: {:num, dt.day, 2, ?_}
+  defp field(?k, dt, _ctx), do: {:num, dt.hour, 2, ?_}
+  defp field(?l, dt, _ctx), do: {:num, twelve_hour(dt.hour), 2, ?_}
 
-  # %U counts weeks from the first Sunday, %W from the first Monday. Both are
-  # plain division of the elapsed days, unlike the ISO rule above.
-  defp directive(?U, dt), do: dt |> week_of_year(:sunday) |> pad2()
-  defp directive(?W, dt), do: dt |> week_of_year(:monday) |> pad2()
+  defp field(?z, _dt, _ctx), do: {:zone, "0", 5}
 
-  defp directive(?z, dt), do: zone_offset(dt, :compact)
-  defp directive(?n, _dt), do: "\n"
-  defp directive(?t, _dt), do: "\t"
-  defp directive(?%, _dt), do: "%"
-  defp directive(other, _dt), do: {:unknown, <<other>>}
+  defp field(?a, dt, _ctx), do: {:text, short_day_name(dt)}
+  defp field(?A, dt, _ctx), do: {:text, full_day_name(dt)}
+  defp field(?b, dt, _ctx), do: {:text, short_month_name(dt)}
+  defp field(?h, dt, _ctx), do: {:text, short_month_name(dt)}
+  defp field(?B, dt, _ctx), do: {:text, full_month_name(dt)}
+  defp field(?p, dt, _ctx), do: {:text, meridiem(dt)}
+  defp field(?P, dt, _ctx), do: {:text, dt |> meridiem() |> String.downcase()}
+  defp field(?Z, dt, _ctx), do: {:text, dt.zone_abbr}
+  defp field(?N, dt, _ctx), do: {:nanoseconds, dt}
+  defp field(?n, _dt, _ctx), do: {:text, "\n"}
+  defp field(?t, _dt, _ctx), do: {:text, "\t"}
+  defp field(?%, _dt, _ctx), do: {:text, "%"}
+  defp field(_other, _dt, _ctx), do: :unknown
+
+  # A compound forwards its padding flag to the year fields of its sub-format,
+  # and `%Y` loses its four-digit minimum there as well: `%-F` is "5-01-05" and
+  # `%_F` is too, while `%_Y` on its own is "   5".
+  defp yearish(value, digits, %{yr_spec: nil}), do: {:num, value, digits, ?0}
+  defp yearish(value, 4, %{yr_spec: spec}), do: {:num, value, 0, spec}
+  defp yearish(value, digits, %{yr_spec: spec}), do: {:num, value, digits, spec}
 
   defp pad2(n), do: n |> Integer.to_string() |> String.pad_leading(2, "0")
+  defp space_pad2(n), do: n |> Integer.to_string() |> String.pad_leading(2, " ")
 
-  defp nanoseconds(dt) do
+  defp meridiem(dt), do: if(dt.hour < 12, do: "AM", else: "PM")
+
+  defp nanoseconds(dt, digits) do
     {microsecond, _precision} = dt.microsecond
-    (microsecond * 1_000) |> Integer.to_string() |> String.pad_leading(9, "0")
+
+    (microsecond * 1_000)
+    |> Integer.to_string()
+    |> String.pad_leading(9, "0")
+    |> String.pad_trailing(digits, "0")
+    |> binary_part(0, digits)
   end
 
   defp iso_week(dt), do: :calendar.iso_week_number({dt.year, dt.month, dt.day})
@@ -675,12 +827,6 @@ defmodule JustBash.Commands.Date do
     weekday = Date.day_of_week(dt, first_day) - 1
     div(Date.day_of_year(dt) - 1 + 7 - weekday, 7)
   end
-
-  # Output is always UTC, so the offset is fixed; only its spelling varies.
-  defp zone_offset(_dt, :compact), do: "+0000"
-  defp zone_offset(_dt, :minutes), do: "+00:00"
-  defp zone_offset(_dt, :seconds), do: "+00:00:00"
-  defp zone_offset(_dt, :hours), do: "+00"
 
   defp twelve_hour(0), do: 12
   defp twelve_hour(hour) when hour > 12, do: hour - 12
@@ -722,9 +868,5 @@ defmodule JustBash.Commands.Date do
       ~w(January February March April May June July August September October November December),
       dt.month - 1
     )
-  end
-
-  defp day_of_year(dt) do
-    Date.day_of_year(dt) |> Integer.to_string() |> String.pad_leading(3, "0")
   end
 end

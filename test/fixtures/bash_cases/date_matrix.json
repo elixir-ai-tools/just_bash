@@ -11,6 +11,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%a'; echo rc=$?"
     },
     {
+      "content_hash": "009b15f92d736cda",
+      "name": "date matrix: directive %a (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%a'; echo rc=$?"
+    },
+    {
       "content_hash": "bd952c3ad83363ea",
       "name": "date matrix: directive %A (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%A'; echo rc=$?"
@@ -19,6 +24,11 @@
       "content_hash": "58ac9d25be86ee02",
       "name": "date matrix: directive %A (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%A'; echo rc=$?"
+    },
+    {
+      "content_hash": "f8f1bb8bb93c1b45",
+      "name": "date matrix: directive %A (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%A'; echo rc=$?"
     },
     {
       "content_hash": "3bccf3cb091a0df4",
@@ -31,6 +41,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%b'; echo rc=$?"
     },
     {
+      "content_hash": "0200a368463c1af1",
+      "name": "date matrix: directive %b (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%b'; echo rc=$?"
+    },
+    {
       "content_hash": "b42f00344ba38511",
       "name": "date matrix: directive %B (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%B'; echo rc=$?"
@@ -39,6 +54,11 @@
       "content_hash": "27ea602ff75dbb76",
       "name": "date matrix: directive %B (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%B'; echo rc=$?"
+    },
+    {
+      "content_hash": "235ce2e7fa904ac0",
+      "name": "date matrix: directive %B (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%B'; echo rc=$?"
     },
     {
       "content_hash": "e148e5d7269cc6f7",
@@ -51,6 +71,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%c'; echo rc=$?"
     },
     {
+      "content_hash": "b033a283a9d93525",
+      "name": "date matrix: directive %c (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%c'; echo rc=$?"
+    },
+    {
       "content_hash": "609c417d9eb36be8",
       "name": "date matrix: directive %C (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%C'; echo rc=$?"
@@ -59,6 +84,11 @@
       "content_hash": "8ed42a3fc85ee04b",
       "name": "date matrix: directive %C (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%C'; echo rc=$?"
+    },
+    {
+      "content_hash": "10f2c562c739e06a",
+      "name": "date matrix: directive %C (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%C'; echo rc=$?"
     },
     {
       "content_hash": "9a0b9535ba5de345",
@@ -71,6 +101,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%d'; echo rc=$?"
     },
     {
+      "content_hash": "58c8570753b70c7c",
+      "name": "date matrix: directive %d (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%d'; echo rc=$?"
+    },
+    {
       "content_hash": "4d092b7823d5509a",
       "name": "date matrix: directive %D (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%D'; echo rc=$?"
@@ -79,6 +114,11 @@
       "content_hash": "572da704437b15c6",
       "name": "date matrix: directive %D (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%D'; echo rc=$?"
+    },
+    {
+      "content_hash": "49c7f768f32942be",
+      "name": "date matrix: directive %D (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%D'; echo rc=$?"
     },
     {
       "content_hash": "2e652974ea03e3b6",
@@ -91,6 +131,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%e'; echo rc=$?"
     },
     {
+      "content_hash": "48b7add7083a0ebb",
+      "name": "date matrix: directive %e (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%e'; echo rc=$?"
+    },
+    {
       "content_hash": "bdc3ff2379f61837",
       "name": "date matrix: directive %F (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%F'; echo rc=$?"
@@ -99,6 +144,11 @@
       "content_hash": "6fa6074d14e7b962",
       "name": "date matrix: directive %F (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%F'; echo rc=$?"
+    },
+    {
+      "content_hash": "4ca946135a859e71",
+      "name": "date matrix: directive %F (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%F'; echo rc=$?"
     },
     {
       "content_hash": "0eecc350b1f35b97",
@@ -111,6 +161,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%g'; echo rc=$?"
     },
     {
+      "content_hash": "919890df47a4a207",
+      "name": "date matrix: directive %g (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%g'; echo rc=$?"
+    },
+    {
       "content_hash": "47ac3d2e0f9d2716",
       "name": "date matrix: directive %G (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%G'; echo rc=$?"
@@ -119,6 +174,11 @@
       "content_hash": "0e188f1f98b57670",
       "name": "date matrix: directive %G (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%G'; echo rc=$?"
+    },
+    {
+      "content_hash": "3b7ae88587f17193",
+      "name": "date matrix: directive %G (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%G'; echo rc=$?"
     },
     {
       "content_hash": "84f1b7701869bcde",
@@ -131,6 +191,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%h'; echo rc=$?"
     },
     {
+      "content_hash": "c3b6e82930ead236",
+      "name": "date matrix: directive %h (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%h'; echo rc=$?"
+    },
+    {
       "content_hash": "fadeb047a08c49a9",
       "name": "date matrix: directive %H (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%H'; echo rc=$?"
@@ -139,6 +204,11 @@
       "content_hash": "c7965c3eb24b29df",
       "name": "date matrix: directive %H (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%H'; echo rc=$?"
+    },
+    {
+      "content_hash": "a0aa94d5a20b804f",
+      "name": "date matrix: directive %H (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%H'; echo rc=$?"
     },
     {
       "content_hash": "7b48191fb1a5b6e1",
@@ -151,6 +221,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%I'; echo rc=$?"
     },
     {
+      "content_hash": "f28cf6b977400f90",
+      "name": "date matrix: directive %I (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%I'; echo rc=$?"
+    },
+    {
       "content_hash": "5f76f4e8a7710411",
       "name": "date matrix: directive %j (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%j'; echo rc=$?"
@@ -159,6 +234,11 @@
       "content_hash": "e58beffeef851e1f",
       "name": "date matrix: directive %j (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%j'; echo rc=$?"
+    },
+    {
+      "content_hash": "f7139320e275a293",
+      "name": "date matrix: directive %j (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%j'; echo rc=$?"
     },
     {
       "content_hash": "660eaf3387141170",
@@ -171,6 +251,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%k'; echo rc=$?"
     },
     {
+      "content_hash": "f225cb3b89e22fcc",
+      "name": "date matrix: directive %k (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%k'; echo rc=$?"
+    },
+    {
       "content_hash": "da9e91385bcd9b4b",
       "name": "date matrix: directive %l (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%l'; echo rc=$?"
@@ -179,6 +264,11 @@
       "content_hash": "9d316b249d037cba",
       "name": "date matrix: directive %l (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%l'; echo rc=$?"
+    },
+    {
+      "content_hash": "1f65aadb83e97823",
+      "name": "date matrix: directive %l (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%l'; echo rc=$?"
     },
     {
       "content_hash": "daf96127b6418ff3",
@@ -191,6 +281,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%m'; echo rc=$?"
     },
     {
+      "content_hash": "6147afc349405983",
+      "name": "date matrix: directive %m (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%m'; echo rc=$?"
+    },
+    {
       "content_hash": "c3ec8615e5a118d0",
       "name": "date matrix: directive %M (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%M'; echo rc=$?"
@@ -199,6 +294,11 @@
       "content_hash": "0767e07ab78c1866",
       "name": "date matrix: directive %M (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%M'; echo rc=$?"
+    },
+    {
+      "content_hash": "4f94a1a3ccb01d45",
+      "name": "date matrix: directive %M (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%M'; echo rc=$?"
     },
     {
       "content_hash": "719c85d03b940f5e",
@@ -211,6 +311,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%n'; echo rc=$?"
     },
     {
+      "content_hash": "c1ab52f62211882f",
+      "name": "date matrix: directive %n (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%n'; echo rc=$?"
+    },
+    {
       "content_hash": "a3a907a330f4067e",
       "name": "date matrix: directive %N (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%N'; echo rc=$?"
@@ -219,6 +324,11 @@
       "content_hash": "3eae86bc7a2e37d4",
       "name": "date matrix: directive %N (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%N'; echo rc=$?"
+    },
+    {
+      "content_hash": "15cbc5c09fc4a632",
+      "name": "date matrix: directive %N (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%N'; echo rc=$?"
     },
     {
       "content_hash": "79424f8605970eb7",
@@ -231,6 +341,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%p'; echo rc=$?"
     },
     {
+      "content_hash": "1cab4a212f001661",
+      "name": "date matrix: directive %p (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%p'; echo rc=$?"
+    },
+    {
       "content_hash": "71ad8effb369c9c1",
       "name": "date matrix: directive %P (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%P'; echo rc=$?"
@@ -239,6 +354,11 @@
       "content_hash": "6b6b3a6c5184cdb3",
       "name": "date matrix: directive %P (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%P'; echo rc=$?"
+    },
+    {
+      "content_hash": "3a815456752dad0e",
+      "name": "date matrix: directive %P (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%P'; echo rc=$?"
     },
     {
       "content_hash": "791f14466df2dfba",
@@ -251,6 +371,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%q'; echo rc=$?"
     },
     {
+      "content_hash": "fcbe58d915f81614",
+      "name": "date matrix: directive %q (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%q'; echo rc=$?"
+    },
+    {
       "content_hash": "e6ef1b48a0f443a7",
       "name": "date matrix: directive %r (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%r'; echo rc=$?"
@@ -259,6 +384,11 @@
       "content_hash": "9ba578beaeb9caaa",
       "name": "date matrix: directive %r (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%r'; echo rc=$?"
+    },
+    {
+      "content_hash": "622bbecc8ca92fc0",
+      "name": "date matrix: directive %r (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%r'; echo rc=$?"
     },
     {
       "content_hash": "cc32452e4893127c",
@@ -271,6 +401,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%R'; echo rc=$?"
     },
     {
+      "content_hash": "aa0170fb95a1ad5b",
+      "name": "date matrix: directive %R (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%R'; echo rc=$?"
+    },
+    {
       "content_hash": "271379063d131a1b",
       "name": "date matrix: directive %s (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%s'; echo rc=$?"
@@ -279,6 +414,11 @@
       "content_hash": "e219273c7021b090",
       "name": "date matrix: directive %s (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%s'; echo rc=$?"
+    },
+    {
+      "content_hash": "94dc76ac6d785605",
+      "name": "date matrix: directive %s (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%s'; echo rc=$?"
     },
     {
       "content_hash": "e1da279f3096227e",
@@ -291,6 +431,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%S'; echo rc=$?"
     },
     {
+      "content_hash": "5265d621f2a9feb2",
+      "name": "date matrix: directive %S (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%S'; echo rc=$?"
+    },
+    {
       "content_hash": "fc362ca8a86a8cb2",
       "name": "date matrix: directive %t (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%t'; echo rc=$?"
@@ -299,6 +444,11 @@
       "content_hash": "5a2df75753a2fbcd",
       "name": "date matrix: directive %t (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%t'; echo rc=$?"
+    },
+    {
+      "content_hash": "348cfd17be46455a",
+      "name": "date matrix: directive %t (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%t'; echo rc=$?"
     },
     {
       "content_hash": "b56ecdd6fca6eed8",
@@ -311,6 +461,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%T'; echo rc=$?"
     },
     {
+      "content_hash": "51ff3cfae1b5538c",
+      "name": "date matrix: directive %T (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%T'; echo rc=$?"
+    },
+    {
       "content_hash": "3675bace1c8ec962",
       "name": "date matrix: directive %u (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%u'; echo rc=$?"
@@ -319,6 +474,11 @@
       "content_hash": "1b1e5222a3b78309",
       "name": "date matrix: directive %u (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%u'; echo rc=$?"
+    },
+    {
+      "content_hash": "25a928e9032d9fdb",
+      "name": "date matrix: directive %u (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%u'; echo rc=$?"
     },
     {
       "content_hash": "e58e8b6022b29444",
@@ -331,6 +491,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%U'; echo rc=$?"
     },
     {
+      "content_hash": "6b0c00f87ce57fa4",
+      "name": "date matrix: directive %U (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%U'; echo rc=$?"
+    },
+    {
       "content_hash": "826a2a38c18df58d",
       "name": "date matrix: directive %V (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%V'; echo rc=$?"
@@ -339,6 +504,11 @@
       "content_hash": "7b98ed3a2a17a83a",
       "name": "date matrix: directive %V (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%V'; echo rc=$?"
+    },
+    {
+      "content_hash": "d732d9bd8afaff20",
+      "name": "date matrix: directive %V (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%V'; echo rc=$?"
     },
     {
       "content_hash": "2ca3916a701a047a",
@@ -351,6 +521,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%w'; echo rc=$?"
     },
     {
+      "content_hash": "859f83f2ed5b61d2",
+      "name": "date matrix: directive %w (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%w'; echo rc=$?"
+    },
+    {
       "content_hash": "75a718845d827205",
       "name": "date matrix: directive %W (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%W'; echo rc=$?"
@@ -359,6 +534,11 @@
       "content_hash": "a878077f0a57eb7d",
       "name": "date matrix: directive %W (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%W'; echo rc=$?"
+    },
+    {
+      "content_hash": "02eee39ab4c8ef65",
+      "name": "date matrix: directive %W (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%W'; echo rc=$?"
     },
     {
       "content_hash": "5954a7be901a6c4c",
@@ -371,6 +551,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%x'; echo rc=$?"
     },
     {
+      "content_hash": "3e2b1820f9e49182",
+      "name": "date matrix: directive %x (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%x'; echo rc=$?"
+    },
+    {
       "content_hash": "152b36fbeb49a36f",
       "name": "date matrix: directive %X (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%X'; echo rc=$?"
@@ -379,6 +564,11 @@
       "content_hash": "f43c67c955e7269a",
       "name": "date matrix: directive %X (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%X'; echo rc=$?"
+    },
+    {
+      "content_hash": "ce37d75b00230db3",
+      "name": "date matrix: directive %X (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%X'; echo rc=$?"
     },
     {
       "content_hash": "08afc71636bf9f82",
@@ -391,6 +581,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%y'; echo rc=$?"
     },
     {
+      "content_hash": "89328ec85a736033",
+      "name": "date matrix: directive %y (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%y'; echo rc=$?"
+    },
+    {
       "content_hash": "229b0f4f8cc45377",
       "name": "date matrix: directive %Y (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%Y'; echo rc=$?"
@@ -399,6 +594,11 @@
       "content_hash": "5f3de776c7224721",
       "name": "date matrix: directive %Y (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "cd4c7f6bb55416a4",
+      "name": "date matrix: directive %Y (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Y'; echo rc=$?"
     },
     {
       "content_hash": "5afc4f2c3e44ff0e",
@@ -411,6 +611,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%z'; echo rc=$?"
     },
     {
+      "content_hash": "428c38f348c4e874",
+      "name": "date matrix: directive %z (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%z'; echo rc=$?"
+    },
+    {
       "content_hash": "9dd7a235eb4e5d94",
       "name": "date matrix: directive %Z (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%Z'; echo rc=$?"
@@ -419,6 +624,11 @@
       "content_hash": "dace2b94dc0a864c",
       "name": "date matrix: directive %Z (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%Z'; echo rc=$?"
+    },
+    {
+      "content_hash": "79af09e54ce01c09",
+      "name": "date matrix: directive %Z (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Z'; echo rc=$?"
     },
     {
       "content_hash": "f3240fae37076edc",
@@ -431,6 +641,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%:z'; echo rc=$?"
     },
     {
+      "content_hash": "dba9981e73ebfa03",
+      "name": "date matrix: modifier %:z (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%:z'; echo rc=$?"
+    },
+    {
       "content_hash": "ed6b7ad13ec47e70",
       "name": "date matrix: modifier %::z (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%::z'; echo rc=$?"
@@ -439,6 +654,11 @@
       "content_hash": "b2b0f809d217affc",
       "name": "date matrix: modifier %::z (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%::z'; echo rc=$?"
+    },
+    {
+      "content_hash": "e71a4b739bc77383",
+      "name": "date matrix: modifier %::z (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%::z'; echo rc=$?"
     },
     {
       "content_hash": "075e142ce0fa9942",
@@ -451,6 +671,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%:::z'; echo rc=$?"
     },
     {
+      "content_hash": "089736083bd619cb",
+      "name": "date matrix: modifier %:::z (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%:::z'; echo rc=$?"
+    },
+    {
       "content_hash": "7cd1652285503484",
       "name": "date matrix: modifier %-d (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%-d'; echo rc=$?"
@@ -459,6 +684,11 @@
       "content_hash": "91179ae7c00a3af6",
       "name": "date matrix: modifier %-d (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%-d'; echo rc=$?"
+    },
+    {
+      "content_hash": "2288dbd043a7cc42",
+      "name": "date matrix: modifier %-d (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-d'; echo rc=$?"
     },
     {
       "content_hash": "f89ee1d2976a8689",
@@ -471,6 +701,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%_d'; echo rc=$?"
     },
     {
+      "content_hash": "aa9be789eaa9e28d",
+      "name": "date matrix: modifier %_d (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_d'; echo rc=$?"
+    },
+    {
       "content_hash": "c4dda1e428c67866",
       "name": "date matrix: modifier %0d (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%0d'; echo rc=$?"
@@ -479,6 +714,11 @@
       "content_hash": "94346ff6dfbe13e0",
       "name": "date matrix: modifier %0d (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%0d'; echo rc=$?"
+    },
+    {
+      "content_hash": "7bd1275f5b2bc632",
+      "name": "date matrix: modifier %0d (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0d'; echo rc=$?"
     },
     {
       "content_hash": "5a6fe0fcac6631f1",
@@ -491,6 +731,11 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%^a'; echo rc=$?"
     },
     {
+      "content_hash": "ab405901da827a16",
+      "name": "date matrix: modifier %^a (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^a'; echo rc=$?"
+    },
+    {
       "content_hash": "e693440e54e2530e",
       "name": "date matrix: modifier %#a (pm)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%#a'; echo rc=$?"
@@ -499,6 +744,2086 @@
       "content_hash": "c4829e5b13f00357",
       "name": "date matrix: modifier %#a (am)",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%#a'; echo rc=$?"
+    },
+    {
+      "content_hash": "1a878fb99c2ff0cc",
+      "name": "date matrix: modifier %#a (jan)",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#a'; echo rc=$?"
+    },
+    {
+      "content_hash": "fe0dc4a145e5c0f6",
+      "name": "date matrix: low year %Y",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "7d287df9df7bec35",
+      "name": "date matrix: low year %-Y",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "7a36b7ba8a413067",
+      "name": "date matrix: low year %_Y",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%_Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "8fa5887a17c4cc97",
+      "name": "date matrix: low year %0Y",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%0Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "458c281a89c022ae",
+      "name": "date matrix: low year %5Y",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%5Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "2add3beecd78041f",
+      "name": "date matrix: low year %G",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%G'; echo rc=$?"
+    },
+    {
+      "content_hash": "d5026db82f56dc1f",
+      "name": "date matrix: low year %-G",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-G'; echo rc=$?"
+    },
+    {
+      "content_hash": "f4ef770ffe3e7da9",
+      "name": "date matrix: low year %C",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%C'; echo rc=$?"
+    },
+    {
+      "content_hash": "260bb979c9d41260",
+      "name": "date matrix: low year %-C",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-C'; echo rc=$?"
+    },
+    {
+      "content_hash": "7d5e5b35181ecf6c",
+      "name": "date matrix: low year %y",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%y'; echo rc=$?"
+    },
+    {
+      "content_hash": "5167af142dd16803",
+      "name": "date matrix: low year %-y",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-y'; echo rc=$?"
+    },
+    {
+      "content_hash": "7d8ea52883bcd59f",
+      "name": "date matrix: low year %-g",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-g'; echo rc=$?"
+    },
+    {
+      "content_hash": "3eae86bc7a2e37d4",
+      "name": "date matrix: nanoseconds %N",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%N'; echo rc=$?"
+    },
+    {
+      "content_hash": "4ed5c032daf57339",
+      "name": "date matrix: nanoseconds %-N",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%-N'; echo rc=$?"
+    },
+    {
+      "content_hash": "ddd7406e16565600",
+      "name": "date matrix: nanoseconds %0N",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%0N'; echo rc=$?"
+    },
+    {
+      "content_hash": "c571c2da89e6886e",
+      "name": "date matrix: nanoseconds %^N",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%^N'; echo rc=$?"
+    },
+    {
+      "content_hash": "d58966d545232386",
+      "name": "date matrix: nanoseconds %#N",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%#N'; echo rc=$?"
+    },
+    {
+      "content_hash": "123a38c093d374be",
+      "name": "date matrix: nanoseconds %1N",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%1N'; echo rc=$?"
+    },
+    {
+      "content_hash": "75c7156a1bf629a7",
+      "name": "date matrix: nanoseconds %3N",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%3N'; echo rc=$?"
+    },
+    {
+      "content_hash": "513512382567a1d8",
+      "name": "date matrix: nanoseconds %6N",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%6N'; echo rc=$?"
+    },
+    {
+      "content_hash": "61fb5ef5307d5619",
+      "name": "date matrix: nanoseconds %9N",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%9N'; echo rc=$?"
+    },
+    {
+      "content_hash": "c2015cf4e56d746c",
+      "name": "date matrix: nanoseconds %12N",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%12N'; echo rc=$?"
+    },
+    {
+      "content_hash": "1e836116dc5c3c11",
+      "name": "date matrix: nanoseconds %_N",
+      "opts": {
+        "known_gap": "GNU pads %N with trailing spaces under _ and -, unlike every other conversion"
+      },
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%_N'; echo rc=$?"
+    },
+    {
+      "content_hash": "0514b760a2820297",
+      "name": "date matrix: nanoseconds %-3N",
+      "opts": {
+        "known_gap": "GNU pads %N with trailing spaces under _ and -, unlike every other conversion"
+      },
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%-3N'; echo rc=$?"
+    },
+    {
+      "content_hash": "fc387fb480e5d687",
+      "name": "date matrix: nanoseconds %_6N",
+      "opts": {
+        "known_gap": "GNU pads %N with trailing spaces under _ and -, unlike every other conversion"
+      },
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%_6N'; echo rc=$?"
+    },
+    {
+      "content_hash": "6585315fe69eb54f",
+      "name": "date matrix: nanoseconds %-12N",
+      "opts": {
+        "known_gap": "GNU pads %N with trailing spaces under _ and -, unlike every other conversion"
+      },
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%-12N'; echo rc=$?"
+    },
+    {
+      "content_hash": "3532eff93c52798c",
+      "name": "date matrix: flag %-a",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-a'; echo rc=$?"
+    },
+    {
+      "content_hash": "d00c44042e0cd839",
+      "name": "date matrix: flag %-A",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-A'; echo rc=$?"
+    },
+    {
+      "content_hash": "828ed1e9d1d72fd1",
+      "name": "date matrix: flag %-b",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-b'; echo rc=$?"
+    },
+    {
+      "content_hash": "4f7d52da2b79747b",
+      "name": "date matrix: flag %-B",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-B'; echo rc=$?"
+    },
+    {
+      "content_hash": "addbd4e7122372e7",
+      "name": "date matrix: flag %-c",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-c'; echo rc=$?"
+    },
+    {
+      "content_hash": "3345a60bed7e577f",
+      "name": "date matrix: flag %-C",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-C'; echo rc=$?"
+    },
+    {
+      "content_hash": "2288dbd043a7cc42",
+      "name": "date matrix: flag %-d",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-d'; echo rc=$?"
+    },
+    {
+      "content_hash": "c851e87066e99c90",
+      "name": "date matrix: flag %-D",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-D'; echo rc=$?"
+    },
+    {
+      "content_hash": "8563f4dc04e9aa85",
+      "name": "date matrix: flag %-e",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-e'; echo rc=$?"
+    },
+    {
+      "content_hash": "8c21f9fba092b63d",
+      "name": "date matrix: flag %-F",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-F'; echo rc=$?"
+    },
+    {
+      "content_hash": "91c9cecd444c68c2",
+      "name": "date matrix: flag %-g",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-g'; echo rc=$?"
+    },
+    {
+      "content_hash": "44e02fae323c9b33",
+      "name": "date matrix: flag %-G",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-G'; echo rc=$?"
+    },
+    {
+      "content_hash": "2e0b5b18a5eae89d",
+      "name": "date matrix: flag %-h",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-h'; echo rc=$?"
+    },
+    {
+      "content_hash": "78ab64141b80ab1b",
+      "name": "date matrix: flag %-H",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-H'; echo rc=$?"
+    },
+    {
+      "content_hash": "e7ab7e6d8f32aef4",
+      "name": "date matrix: flag %-I",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-I'; echo rc=$?"
+    },
+    {
+      "content_hash": "1d8a21095d858bf4",
+      "name": "date matrix: flag %-j",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-j'; echo rc=$?"
+    },
+    {
+      "content_hash": "b5e554a47e88cf58",
+      "name": "date matrix: flag %-k",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-k'; echo rc=$?"
+    },
+    {
+      "content_hash": "d155f10002729bed",
+      "name": "date matrix: flag %-l",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-l'; echo rc=$?"
+    },
+    {
+      "content_hash": "82de8109798f18e8",
+      "name": "date matrix: flag %-m",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-m'; echo rc=$?"
+    },
+    {
+      "content_hash": "806527d60f3af552",
+      "name": "date matrix: flag %-M",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-M'; echo rc=$?"
+    },
+    {
+      "content_hash": "c88982f0dce7501b",
+      "name": "date matrix: flag %-n",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-n'; echo rc=$?"
+    },
+    {
+      "content_hash": "5ccc1ff0726f52b5",
+      "name": "date matrix: flag %-N",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-N'; echo rc=$?"
+    },
+    {
+      "content_hash": "1dfc244fc1cb97be",
+      "name": "date matrix: flag %-p",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-p'; echo rc=$?"
+    },
+    {
+      "content_hash": "31b00e82db8201f4",
+      "name": "date matrix: flag %-P",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-P'; echo rc=$?"
+    },
+    {
+      "content_hash": "ac93edb8db4574a1",
+      "name": "date matrix: flag %-q",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-q'; echo rc=$?"
+    },
+    {
+      "content_hash": "fdec330651ac4368",
+      "name": "date matrix: flag %-r",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-r'; echo rc=$?"
+    },
+    {
+      "content_hash": "0f1e376900ba2ee4",
+      "name": "date matrix: flag %-R",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-R'; echo rc=$?"
+    },
+    {
+      "content_hash": "e05cf032cdca2b4e",
+      "name": "date matrix: flag %-s",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-s'; echo rc=$?"
+    },
+    {
+      "content_hash": "6e66865ae970e310",
+      "name": "date matrix: flag %-S",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-S'; echo rc=$?"
+    },
+    {
+      "content_hash": "e5f74caed3d7b49b",
+      "name": "date matrix: flag %-t",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-t'; echo rc=$?"
+    },
+    {
+      "content_hash": "4186456babea731f",
+      "name": "date matrix: flag %-T",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-T'; echo rc=$?"
+    },
+    {
+      "content_hash": "869877428d1556c0",
+      "name": "date matrix: flag %-u",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-u'; echo rc=$?"
+    },
+    {
+      "content_hash": "2e3ef1f5b21bebaa",
+      "name": "date matrix: flag %-U",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-U'; echo rc=$?"
+    },
+    {
+      "content_hash": "99f86434332c068e",
+      "name": "date matrix: flag %-V",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-V'; echo rc=$?"
+    },
+    {
+      "content_hash": "c1a4b03aa85b06bf",
+      "name": "date matrix: flag %-w",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-w'; echo rc=$?"
+    },
+    {
+      "content_hash": "dab37917eb8be403",
+      "name": "date matrix: flag %-W",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-W'; echo rc=$?"
+    },
+    {
+      "content_hash": "d293d0cfa4d11053",
+      "name": "date matrix: flag %-x",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-x'; echo rc=$?"
+    },
+    {
+      "content_hash": "04620cd4885772ad",
+      "name": "date matrix: flag %-X",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-X'; echo rc=$?"
+    },
+    {
+      "content_hash": "94390869d90ddbb4",
+      "name": "date matrix: flag %-y",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-y'; echo rc=$?"
+    },
+    {
+      "content_hash": "4ccd5cbc9c906edc",
+      "name": "date matrix: flag %-Y",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "16d879078262ca6d",
+      "name": "date matrix: flag %-z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-z'; echo rc=$?"
+    },
+    {
+      "content_hash": "a39916c58216299c",
+      "name": "date matrix: flag %-Z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-Z'; echo rc=$?"
+    },
+    {
+      "content_hash": "f578a474f5d791e2",
+      "name": "date matrix: flag %_a",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_a'; echo rc=$?"
+    },
+    {
+      "content_hash": "1c080331493df33a",
+      "name": "date matrix: flag %_A",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_A'; echo rc=$?"
+    },
+    {
+      "content_hash": "84cd614e2c88dc13",
+      "name": "date matrix: flag %_b",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_b'; echo rc=$?"
+    },
+    {
+      "content_hash": "9d686eb0419a8031",
+      "name": "date matrix: flag %_B",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_B'; echo rc=$?"
+    },
+    {
+      "content_hash": "bc5e16e2ba7e1a82",
+      "name": "date matrix: flag %_c",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_c'; echo rc=$?"
+    },
+    {
+      "content_hash": "d8aea7d34d6cd8c5",
+      "name": "date matrix: flag %_C",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_C'; echo rc=$?"
+    },
+    {
+      "content_hash": "aa9be789eaa9e28d",
+      "name": "date matrix: flag %_d",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_d'; echo rc=$?"
+    },
+    {
+      "content_hash": "7d1cd74a814b1b88",
+      "name": "date matrix: flag %_D",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_D'; echo rc=$?"
+    },
+    {
+      "content_hash": "3f49ad8b9a1e599d",
+      "name": "date matrix: flag %_e",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_e'; echo rc=$?"
+    },
+    {
+      "content_hash": "8f861bbe1777efe7",
+      "name": "date matrix: flag %_F",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_F'; echo rc=$?"
+    },
+    {
+      "content_hash": "cd448c43f3aa6467",
+      "name": "date matrix: flag %_g",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_g'; echo rc=$?"
+    },
+    {
+      "content_hash": "985ddf80545fcbe4",
+      "name": "date matrix: flag %_G",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_G'; echo rc=$?"
+    },
+    {
+      "content_hash": "658df1ec0e12e62e",
+      "name": "date matrix: flag %_h",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_h'; echo rc=$?"
+    },
+    {
+      "content_hash": "25dd2f60e2b7421f",
+      "name": "date matrix: flag %_H",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_H'; echo rc=$?"
+    },
+    {
+      "content_hash": "4c40fbb38cdb711e",
+      "name": "date matrix: flag %_I",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_I'; echo rc=$?"
+    },
+    {
+      "content_hash": "bf088004ff76a6d2",
+      "name": "date matrix: flag %_j",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_j'; echo rc=$?"
+    },
+    {
+      "content_hash": "88451b9021e6d9a2",
+      "name": "date matrix: flag %_k",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_k'; echo rc=$?"
+    },
+    {
+      "content_hash": "2703fa89b1394a5c",
+      "name": "date matrix: flag %_l",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_l'; echo rc=$?"
+    },
+    {
+      "content_hash": "b64aced5be4d3a0b",
+      "name": "date matrix: flag %_m",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_m'; echo rc=$?"
+    },
+    {
+      "content_hash": "784cefaf729fec93",
+      "name": "date matrix: flag %_M",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_M'; echo rc=$?"
+    },
+    {
+      "content_hash": "065f251bad081f7f",
+      "name": "date matrix: flag %_n",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_n'; echo rc=$?"
+    },
+    {
+      "content_hash": "6480c1c8fb07829a",
+      "name": "date matrix: flag %_N",
+      "opts": {
+        "known_gap": "GNU pads %N with trailing spaces under _ and -, unlike every other conversion"
+      },
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_N'; echo rc=$?"
+    },
+    {
+      "content_hash": "2b6d2304e88b99ff",
+      "name": "date matrix: flag %_p",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_p'; echo rc=$?"
+    },
+    {
+      "content_hash": "e943bb7ab5df165f",
+      "name": "date matrix: flag %_P",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_P'; echo rc=$?"
+    },
+    {
+      "content_hash": "d9b0ead4b1dfcc07",
+      "name": "date matrix: flag %_q",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_q'; echo rc=$?"
+    },
+    {
+      "content_hash": "8a30a4d55273a6ba",
+      "name": "date matrix: flag %_r",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_r'; echo rc=$?"
+    },
+    {
+      "content_hash": "74ae5cae568edbcb",
+      "name": "date matrix: flag %_R",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_R'; echo rc=$?"
+    },
+    {
+      "content_hash": "8d0ef708ab80b85e",
+      "name": "date matrix: flag %_s",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_s'; echo rc=$?"
+    },
+    {
+      "content_hash": "bdeffc511a33e104",
+      "name": "date matrix: flag %_S",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_S'; echo rc=$?"
+    },
+    {
+      "content_hash": "84a18384f1d66d71",
+      "name": "date matrix: flag %_t",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_t'; echo rc=$?"
+    },
+    {
+      "content_hash": "dc49d03daf139269",
+      "name": "date matrix: flag %_T",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_T'; echo rc=$?"
+    },
+    {
+      "content_hash": "f6ab09376ecc9473",
+      "name": "date matrix: flag %_u",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_u'; echo rc=$?"
+    },
+    {
+      "content_hash": "48fd2ed7478d55b3",
+      "name": "date matrix: flag %_U",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_U'; echo rc=$?"
+    },
+    {
+      "content_hash": "4be90851e07de7c4",
+      "name": "date matrix: flag %_V",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_V'; echo rc=$?"
+    },
+    {
+      "content_hash": "f420d890ea17ba7c",
+      "name": "date matrix: flag %_w",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_w'; echo rc=$?"
+    },
+    {
+      "content_hash": "ed75e80c3aa0ac2b",
+      "name": "date matrix: flag %_W",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_W'; echo rc=$?"
+    },
+    {
+      "content_hash": "38be8d2c377e6cb9",
+      "name": "date matrix: flag %_x",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_x'; echo rc=$?"
+    },
+    {
+      "content_hash": "085fc9e18119a966",
+      "name": "date matrix: flag %_X",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_X'; echo rc=$?"
+    },
+    {
+      "content_hash": "764199cb5c01f8c8",
+      "name": "date matrix: flag %_y",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_y'; echo rc=$?"
+    },
+    {
+      "content_hash": "8508e7843cce687d",
+      "name": "date matrix: flag %_Y",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "24e3e30259f9c4fd",
+      "name": "date matrix: flag %_z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_z'; echo rc=$?"
+    },
+    {
+      "content_hash": "28e37456d986601c",
+      "name": "date matrix: flag %_Z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_Z'; echo rc=$?"
+    },
+    {
+      "content_hash": "dffce02abe9f536f",
+      "name": "date matrix: flag %0a",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0a'; echo rc=$?"
+    },
+    {
+      "content_hash": "130551ea8be4d359",
+      "name": "date matrix: flag %0A",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0A'; echo rc=$?"
+    },
+    {
+      "content_hash": "99495c24519babb2",
+      "name": "date matrix: flag %0b",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0b'; echo rc=$?"
+    },
+    {
+      "content_hash": "f5ef9045b24fde63",
+      "name": "date matrix: flag %0B",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0B'; echo rc=$?"
+    },
+    {
+      "content_hash": "6128e08445bc6794",
+      "name": "date matrix: flag %0c",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0c'; echo rc=$?"
+    },
+    {
+      "content_hash": "a82c9956f12663ba",
+      "name": "date matrix: flag %0C",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0C'; echo rc=$?"
+    },
+    {
+      "content_hash": "7bd1275f5b2bc632",
+      "name": "date matrix: flag %0d",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0d'; echo rc=$?"
+    },
+    {
+      "content_hash": "b60da9f87b22d21e",
+      "name": "date matrix: flag %0D",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0D'; echo rc=$?"
+    },
+    {
+      "content_hash": "6a6071ebb1b2091a",
+      "name": "date matrix: flag %0e",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0e'; echo rc=$?"
+    },
+    {
+      "content_hash": "579e503ec3508427",
+      "name": "date matrix: flag %0F",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0F'; echo rc=$?"
+    },
+    {
+      "content_hash": "982d96ddf611ba59",
+      "name": "date matrix: flag %0g",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0g'; echo rc=$?"
+    },
+    {
+      "content_hash": "b26e422239ca4fbc",
+      "name": "date matrix: flag %0G",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0G'; echo rc=$?"
+    },
+    {
+      "content_hash": "027fe63f295df6d6",
+      "name": "date matrix: flag %0h",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0h'; echo rc=$?"
+    },
+    {
+      "content_hash": "c8bc725ea912506e",
+      "name": "date matrix: flag %0H",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0H'; echo rc=$?"
+    },
+    {
+      "content_hash": "80b8523fd224b1f0",
+      "name": "date matrix: flag %0I",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0I'; echo rc=$?"
+    },
+    {
+      "content_hash": "c29f6fb6eb5251e6",
+      "name": "date matrix: flag %0j",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0j'; echo rc=$?"
+    },
+    {
+      "content_hash": "aa804e768622b488",
+      "name": "date matrix: flag %0k",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0k'; echo rc=$?"
+    },
+    {
+      "content_hash": "c87b2bae8395a8fa",
+      "name": "date matrix: flag %0l",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0l'; echo rc=$?"
+    },
+    {
+      "content_hash": "9b53be509d83d217",
+      "name": "date matrix: flag %0m",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0m'; echo rc=$?"
+    },
+    {
+      "content_hash": "38bb1d6d03174814",
+      "name": "date matrix: flag %0M",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0M'; echo rc=$?"
+    },
+    {
+      "content_hash": "d795d4f687140885",
+      "name": "date matrix: flag %0n",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0n'; echo rc=$?"
+    },
+    {
+      "content_hash": "a96424eb6f39541e",
+      "name": "date matrix: flag %0N",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0N'; echo rc=$?"
+    },
+    {
+      "content_hash": "7f93812405033564",
+      "name": "date matrix: flag %0p",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0p'; echo rc=$?"
+    },
+    {
+      "content_hash": "d6085bde043abc83",
+      "name": "date matrix: flag %0P",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0P'; echo rc=$?"
+    },
+    {
+      "content_hash": "9e39a4c3291a8d90",
+      "name": "date matrix: flag %0q",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0q'; echo rc=$?"
+    },
+    {
+      "content_hash": "e7b28f210db91a52",
+      "name": "date matrix: flag %0r",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0r'; echo rc=$?"
+    },
+    {
+      "content_hash": "8598262c112adefa",
+      "name": "date matrix: flag %0R",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0R'; echo rc=$?"
+    },
+    {
+      "content_hash": "2738f92d2943228f",
+      "name": "date matrix: flag %0s",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0s'; echo rc=$?"
+    },
+    {
+      "content_hash": "1e4b294cc2268c7d",
+      "name": "date matrix: flag %0S",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0S'; echo rc=$?"
+    },
+    {
+      "content_hash": "6743fcce4bbf2887",
+      "name": "date matrix: flag %0t",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0t'; echo rc=$?"
+    },
+    {
+      "content_hash": "bdaaceb44b702082",
+      "name": "date matrix: flag %0T",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0T'; echo rc=$?"
+    },
+    {
+      "content_hash": "7e8aa1aecb8296bb",
+      "name": "date matrix: flag %0u",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0u'; echo rc=$?"
+    },
+    {
+      "content_hash": "014435c117f879cf",
+      "name": "date matrix: flag %0U",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0U'; echo rc=$?"
+    },
+    {
+      "content_hash": "23b312eb34190ea7",
+      "name": "date matrix: flag %0V",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0V'; echo rc=$?"
+    },
+    {
+      "content_hash": "e78343ef6dcbd1f7",
+      "name": "date matrix: flag %0w",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0w'; echo rc=$?"
+    },
+    {
+      "content_hash": "519252fe13c6e350",
+      "name": "date matrix: flag %0W",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0W'; echo rc=$?"
+    },
+    {
+      "content_hash": "caacebcd05389228",
+      "name": "date matrix: flag %0x",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0x'; echo rc=$?"
+    },
+    {
+      "content_hash": "ae9af1e9c1c3f131",
+      "name": "date matrix: flag %0X",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0X'; echo rc=$?"
+    },
+    {
+      "content_hash": "dfccb362790b3258",
+      "name": "date matrix: flag %0y",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0y'; echo rc=$?"
+    },
+    {
+      "content_hash": "e852cfb140d42d6d",
+      "name": "date matrix: flag %0Y",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "792660f864e01fb0",
+      "name": "date matrix: flag %0z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0z'; echo rc=$?"
+    },
+    {
+      "content_hash": "7b68013f3dfa211c",
+      "name": "date matrix: flag %0Z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0Z'; echo rc=$?"
+    },
+    {
+      "content_hash": "ab405901da827a16",
+      "name": "date matrix: flag %^a",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^a'; echo rc=$?"
+    },
+    {
+      "content_hash": "f14d37ce61c87d4b",
+      "name": "date matrix: flag %^A",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^A'; echo rc=$?"
+    },
+    {
+      "content_hash": "f3f1f3a5b76ee9f0",
+      "name": "date matrix: flag %^b",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^b'; echo rc=$?"
+    },
+    {
+      "content_hash": "2f8f0724d3091cac",
+      "name": "date matrix: flag %^B",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^B'; echo rc=$?"
+    },
+    {
+      "content_hash": "30bb09c0abdddba5",
+      "name": "date matrix: flag %^c",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^c'; echo rc=$?"
+    },
+    {
+      "content_hash": "1f7ec900a2b0309d",
+      "name": "date matrix: flag %^C",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^C'; echo rc=$?"
+    },
+    {
+      "content_hash": "618b2871d8392f08",
+      "name": "date matrix: flag %^d",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^d'; echo rc=$?"
+    },
+    {
+      "content_hash": "3f2ab8f1b125e5a8",
+      "name": "date matrix: flag %^D",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^D'; echo rc=$?"
+    },
+    {
+      "content_hash": "0f53162b2ebb4eb0",
+      "name": "date matrix: flag %^e",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^e'; echo rc=$?"
+    },
+    {
+      "content_hash": "12ee0b88c12ee689",
+      "name": "date matrix: flag %^F",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^F'; echo rc=$?"
+    },
+    {
+      "content_hash": "d64a75c6132da727",
+      "name": "date matrix: flag %^g",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^g'; echo rc=$?"
+    },
+    {
+      "content_hash": "cd3eed8319a0fe99",
+      "name": "date matrix: flag %^G",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^G'; echo rc=$?"
+    },
+    {
+      "content_hash": "0c629296c4a78a44",
+      "name": "date matrix: flag %^h",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^h'; echo rc=$?"
+    },
+    {
+      "content_hash": "fdc350bf8c1573a6",
+      "name": "date matrix: flag %^H",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^H'; echo rc=$?"
+    },
+    {
+      "content_hash": "d7332d58bc494b40",
+      "name": "date matrix: flag %^I",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^I'; echo rc=$?"
+    },
+    {
+      "content_hash": "41244cb0024e16bd",
+      "name": "date matrix: flag %^j",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^j'; echo rc=$?"
+    },
+    {
+      "content_hash": "459d1bfaff25dbb4",
+      "name": "date matrix: flag %^k",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^k'; echo rc=$?"
+    },
+    {
+      "content_hash": "d6376572782a387f",
+      "name": "date matrix: flag %^l",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^l'; echo rc=$?"
+    },
+    {
+      "content_hash": "bc33432ef38130d8",
+      "name": "date matrix: flag %^m",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^m'; echo rc=$?"
+    },
+    {
+      "content_hash": "76cb1d74982105be",
+      "name": "date matrix: flag %^M",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^M'; echo rc=$?"
+    },
+    {
+      "content_hash": "2d444f5be4f15a99",
+      "name": "date matrix: flag %^n",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^n'; echo rc=$?"
+    },
+    {
+      "content_hash": "c5ff6f30bc2e227e",
+      "name": "date matrix: flag %^N",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^N'; echo rc=$?"
+    },
+    {
+      "content_hash": "aabf90a25fdd49d4",
+      "name": "date matrix: flag %^p",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^p'; echo rc=$?"
+    },
+    {
+      "content_hash": "cd69d4eef64e547d",
+      "name": "date matrix: flag %^P",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^P'; echo rc=$?"
+    },
+    {
+      "content_hash": "2f41480d8b3d1465",
+      "name": "date matrix: flag %^q",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^q'; echo rc=$?"
+    },
+    {
+      "content_hash": "424bead86501d9ac",
+      "name": "date matrix: flag %^r",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^r'; echo rc=$?"
+    },
+    {
+      "content_hash": "5a8115afe7d15955",
+      "name": "date matrix: flag %^R",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^R'; echo rc=$?"
+    },
+    {
+      "content_hash": "d7d975fa5f3c1535",
+      "name": "date matrix: flag %^s",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^s'; echo rc=$?"
+    },
+    {
+      "content_hash": "dbcee95ee17c1bfd",
+      "name": "date matrix: flag %^S",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^S'; echo rc=$?"
+    },
+    {
+      "content_hash": "73214385332e3c12",
+      "name": "date matrix: flag %^t",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^t'; echo rc=$?"
+    },
+    {
+      "content_hash": "e5738b9fe3684c94",
+      "name": "date matrix: flag %^T",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^T'; echo rc=$?"
+    },
+    {
+      "content_hash": "c132772f9a46f479",
+      "name": "date matrix: flag %^u",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^u'; echo rc=$?"
+    },
+    {
+      "content_hash": "d3d20c920fefbddc",
+      "name": "date matrix: flag %^U",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^U'; echo rc=$?"
+    },
+    {
+      "content_hash": "b9cab9973568d685",
+      "name": "date matrix: flag %^V",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^V'; echo rc=$?"
+    },
+    {
+      "content_hash": "05fbc6817c7c1819",
+      "name": "date matrix: flag %^w",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^w'; echo rc=$?"
+    },
+    {
+      "content_hash": "936b92d72ac9c73f",
+      "name": "date matrix: flag %^W",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^W'; echo rc=$?"
+    },
+    {
+      "content_hash": "8a4ac30056195257",
+      "name": "date matrix: flag %^x",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^x'; echo rc=$?"
+    },
+    {
+      "content_hash": "d0ba2790c6047a04",
+      "name": "date matrix: flag %^X",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^X'; echo rc=$?"
+    },
+    {
+      "content_hash": "122801a4c0135656",
+      "name": "date matrix: flag %^y",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^y'; echo rc=$?"
+    },
+    {
+      "content_hash": "e7e19c3e6a66c2b0",
+      "name": "date matrix: flag %^Y",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "d3f4cf7534aecefb",
+      "name": "date matrix: flag %^z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^z'; echo rc=$?"
+    },
+    {
+      "content_hash": "2880f4f953a32524",
+      "name": "date matrix: flag %^Z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^Z'; echo rc=$?"
+    },
+    {
+      "content_hash": "1a878fb99c2ff0cc",
+      "name": "date matrix: flag %#a",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#a'; echo rc=$?"
+    },
+    {
+      "content_hash": "557bcabb193e659e",
+      "name": "date matrix: flag %#A",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#A'; echo rc=$?"
+    },
+    {
+      "content_hash": "92b550f3cd7f654a",
+      "name": "date matrix: flag %#b",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#b'; echo rc=$?"
+    },
+    {
+      "content_hash": "2e169f1fd60285fb",
+      "name": "date matrix: flag %#B",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#B'; echo rc=$?"
+    },
+    {
+      "content_hash": "c5c9b673849db851",
+      "name": "date matrix: flag %#c",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#c'; echo rc=$?"
+    },
+    {
+      "content_hash": "aea8fb3b7d8aca65",
+      "name": "date matrix: flag %#C",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#C'; echo rc=$?"
+    },
+    {
+      "content_hash": "c3ccc7042dba0db3",
+      "name": "date matrix: flag %#d",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#d'; echo rc=$?"
+    },
+    {
+      "content_hash": "534914ec351738eb",
+      "name": "date matrix: flag %#D",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#D'; echo rc=$?"
+    },
+    {
+      "content_hash": "93334662e6c86337",
+      "name": "date matrix: flag %#e",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#e'; echo rc=$?"
+    },
+    {
+      "content_hash": "b1671f93d8aefbda",
+      "name": "date matrix: flag %#F",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#F'; echo rc=$?"
+    },
+    {
+      "content_hash": "2d4c7450104d89d0",
+      "name": "date matrix: flag %#g",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#g'; echo rc=$?"
+    },
+    {
+      "content_hash": "bac8cb661fecb3bc",
+      "name": "date matrix: flag %#G",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#G'; echo rc=$?"
+    },
+    {
+      "content_hash": "77eb0a176a381839",
+      "name": "date matrix: flag %#h",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#h'; echo rc=$?"
+    },
+    {
+      "content_hash": "2fcc1e1a94df49f5",
+      "name": "date matrix: flag %#H",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#H'; echo rc=$?"
+    },
+    {
+      "content_hash": "fb9a45d588b1d38c",
+      "name": "date matrix: flag %#I",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#I'; echo rc=$?"
+    },
+    {
+      "content_hash": "dae93da62a436b1e",
+      "name": "date matrix: flag %#j",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#j'; echo rc=$?"
+    },
+    {
+      "content_hash": "002d950e25a6f9ad",
+      "name": "date matrix: flag %#k",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#k'; echo rc=$?"
+    },
+    {
+      "content_hash": "6e6b8f6f3bb979cb",
+      "name": "date matrix: flag %#l",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#l'; echo rc=$?"
+    },
+    {
+      "content_hash": "3b2fb0ccd786d3ef",
+      "name": "date matrix: flag %#m",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#m'; echo rc=$?"
+    },
+    {
+      "content_hash": "2a918e84f2e26aae",
+      "name": "date matrix: flag %#M",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#M'; echo rc=$?"
+    },
+    {
+      "content_hash": "728f10c402800ebf",
+      "name": "date matrix: flag %#n",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#n'; echo rc=$?"
+    },
+    {
+      "content_hash": "bc7a931949a4c54c",
+      "name": "date matrix: flag %#N",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#N'; echo rc=$?"
+    },
+    {
+      "content_hash": "f9232be618071299",
+      "name": "date matrix: flag %#p",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#p'; echo rc=$?"
+    },
+    {
+      "content_hash": "c806656a45379dce",
+      "name": "date matrix: flag %#P",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#P'; echo rc=$?"
+    },
+    {
+      "content_hash": "4ff739f98be88934",
+      "name": "date matrix: flag %#q",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#q'; echo rc=$?"
+    },
+    {
+      "content_hash": "47fad51461d9953f",
+      "name": "date matrix: flag %#r",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#r'; echo rc=$?"
+    },
+    {
+      "content_hash": "9c31491156548bec",
+      "name": "date matrix: flag %#R",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#R'; echo rc=$?"
+    },
+    {
+      "content_hash": "8d482fb2f7626de7",
+      "name": "date matrix: flag %#s",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#s'; echo rc=$?"
+    },
+    {
+      "content_hash": "cf6824ebed1e6cff",
+      "name": "date matrix: flag %#S",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#S'; echo rc=$?"
+    },
+    {
+      "content_hash": "5dc20f56a3542c48",
+      "name": "date matrix: flag %#t",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#t'; echo rc=$?"
+    },
+    {
+      "content_hash": "1a72ccc4a9c46682",
+      "name": "date matrix: flag %#T",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#T'; echo rc=$?"
+    },
+    {
+      "content_hash": "c490b33ded7cf349",
+      "name": "date matrix: flag %#u",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#u'; echo rc=$?"
+    },
+    {
+      "content_hash": "c322bb6b2db8cab6",
+      "name": "date matrix: flag %#U",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#U'; echo rc=$?"
+    },
+    {
+      "content_hash": "44323ef2eb39e02b",
+      "name": "date matrix: flag %#V",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#V'; echo rc=$?"
+    },
+    {
+      "content_hash": "c771f9b5426fdd97",
+      "name": "date matrix: flag %#w",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#w'; echo rc=$?"
+    },
+    {
+      "content_hash": "d484cf9f554d8982",
+      "name": "date matrix: flag %#W",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#W'; echo rc=$?"
+    },
+    {
+      "content_hash": "29723d23c9f43e05",
+      "name": "date matrix: flag %#x",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#x'; echo rc=$?"
+    },
+    {
+      "content_hash": "3e5b8da8047c10ca",
+      "name": "date matrix: flag %#X",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#X'; echo rc=$?"
+    },
+    {
+      "content_hash": "e44f98612018fb5e",
+      "name": "date matrix: flag %#y",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#y'; echo rc=$?"
+    },
+    {
+      "content_hash": "604ddecf1bf530bc",
+      "name": "date matrix: flag %#Y",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "a36885590aefc7f3",
+      "name": "date matrix: flag %#z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#z'; echo rc=$?"
+    },
+    {
+      "content_hash": "077360c2b061b56d",
+      "name": "date matrix: flag %#Z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#Z'; echo rc=$?"
+    },
+    {
+      "content_hash": "4f8d74c7f4ec0ff7",
+      "name": "date matrix: locale modifier %Ea",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ea'; echo rc=$?"
+    },
+    {
+      "content_hash": "c5a4dcb7c2d1bdfb",
+      "name": "date matrix: locale modifier %EA",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EA'; echo rc=$?"
+    },
+    {
+      "content_hash": "81302a6ffdc42d1e",
+      "name": "date matrix: locale modifier %Eb",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Eb'; echo rc=$?"
+    },
+    {
+      "content_hash": "175a3dcd1af0bb03",
+      "name": "date matrix: locale modifier %EB",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EB'; echo rc=$?"
+    },
+    {
+      "content_hash": "299e716895d0959c",
+      "name": "date matrix: locale modifier %Ec",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ec'; echo rc=$?"
+    },
+    {
+      "content_hash": "23a3825ec17a96c1",
+      "name": "date matrix: locale modifier %EC",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EC'; echo rc=$?"
+    },
+    {
+      "content_hash": "fa4c23b3c508b17e",
+      "name": "date matrix: locale modifier %Ed",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ed'; echo rc=$?"
+    },
+    {
+      "content_hash": "82a24db541c80742",
+      "name": "date matrix: locale modifier %ED",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%ED'; echo rc=$?"
+    },
+    {
+      "content_hash": "49e6de53dbc570e4",
+      "name": "date matrix: locale modifier %Ee",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ee'; echo rc=$?"
+    },
+    {
+      "content_hash": "f60e88173d28bc48",
+      "name": "date matrix: locale modifier %EF",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EF'; echo rc=$?"
+    },
+    {
+      "content_hash": "76c1acf3538a9557",
+      "name": "date matrix: locale modifier %Eg",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Eg'; echo rc=$?"
+    },
+    {
+      "content_hash": "31abf8f1703ca5ff",
+      "name": "date matrix: locale modifier %EG",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EG'; echo rc=$?"
+    },
+    {
+      "content_hash": "31b4bc1994cc769a",
+      "name": "date matrix: locale modifier %Eh",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Eh'; echo rc=$?"
+    },
+    {
+      "content_hash": "28e4e336ba516361",
+      "name": "date matrix: locale modifier %EH",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EH'; echo rc=$?"
+    },
+    {
+      "content_hash": "6eb0219741e66dad",
+      "name": "date matrix: locale modifier %EI",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EI'; echo rc=$?"
+    },
+    {
+      "content_hash": "6aba66c2b9e0af83",
+      "name": "date matrix: locale modifier %Ej",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ej'; echo rc=$?"
+    },
+    {
+      "content_hash": "48b241f732f2b8fc",
+      "name": "date matrix: locale modifier %Ek",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ek'; echo rc=$?"
+    },
+    {
+      "content_hash": "5cb1bc1b44e74f9b",
+      "name": "date matrix: locale modifier %El",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%El'; echo rc=$?"
+    },
+    {
+      "content_hash": "30de0f0cbbf23c2a",
+      "name": "date matrix: locale modifier %Em",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Em'; echo rc=$?"
+    },
+    {
+      "content_hash": "26fe9eb19183d21b",
+      "name": "date matrix: locale modifier %EM",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EM'; echo rc=$?"
+    },
+    {
+      "content_hash": "92432f541665777c",
+      "name": "date matrix: locale modifier %En",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%En'; echo rc=$?"
+    },
+    {
+      "content_hash": "e1748c8bc52ab8b0",
+      "name": "date matrix: locale modifier %EN",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EN'; echo rc=$?"
+    },
+    {
+      "content_hash": "fa83f0d99c1bdf35",
+      "name": "date matrix: locale modifier %Ep",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ep'; echo rc=$?"
+    },
+    {
+      "content_hash": "ac62f0350f2299ba",
+      "name": "date matrix: locale modifier %EP",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EP'; echo rc=$?"
+    },
+    {
+      "content_hash": "a860a6e1808d25ab",
+      "name": "date matrix: locale modifier %Eq",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Eq'; echo rc=$?"
+    },
+    {
+      "content_hash": "b5a2464de118ee1e",
+      "name": "date matrix: locale modifier %Er",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Er'; echo rc=$?"
+    },
+    {
+      "content_hash": "6ecd45cfefb4387b",
+      "name": "date matrix: locale modifier %ER",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%ER'; echo rc=$?"
+    },
+    {
+      "content_hash": "2e9412395d13f0dd",
+      "name": "date matrix: locale modifier %Es",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Es'; echo rc=$?"
+    },
+    {
+      "content_hash": "fb3d870041f14722",
+      "name": "date matrix: locale modifier %ES",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%ES'; echo rc=$?"
+    },
+    {
+      "content_hash": "8dcab8de7001b5c6",
+      "name": "date matrix: locale modifier %Et",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Et'; echo rc=$?"
+    },
+    {
+      "content_hash": "ba58d0cdff765ab6",
+      "name": "date matrix: locale modifier %ET",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%ET'; echo rc=$?"
+    },
+    {
+      "content_hash": "c386d9a19d744123",
+      "name": "date matrix: locale modifier %Eu",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Eu'; echo rc=$?"
+    },
+    {
+      "content_hash": "e9af76d9929adfa3",
+      "name": "date matrix: locale modifier %EU",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EU'; echo rc=$?"
+    },
+    {
+      "content_hash": "74a2829e548872dc",
+      "name": "date matrix: locale modifier %EV",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EV'; echo rc=$?"
+    },
+    {
+      "content_hash": "d55b6299395d5a33",
+      "name": "date matrix: locale modifier %Ew",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ew'; echo rc=$?"
+    },
+    {
+      "content_hash": "b6891efd30953667",
+      "name": "date matrix: locale modifier %EW",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EW'; echo rc=$?"
+    },
+    {
+      "content_hash": "a62624309e7efd64",
+      "name": "date matrix: locale modifier %Ex",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ex'; echo rc=$?"
+    },
+    {
+      "content_hash": "1256a1ffe4c0c633",
+      "name": "date matrix: locale modifier %EX",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EX'; echo rc=$?"
+    },
+    {
+      "content_hash": "4bfbb30c9d187d22",
+      "name": "date matrix: locale modifier %Ey",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ey'; echo rc=$?"
+    },
+    {
+      "content_hash": "028afdbc859f4e97",
+      "name": "date matrix: locale modifier %EY",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EY'; echo rc=$?"
+    },
+    {
+      "content_hash": "bb2dc44e2472530e",
+      "name": "date matrix: locale modifier %Ez",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ez'; echo rc=$?"
+    },
+    {
+      "content_hash": "c32bf4666c5e885b",
+      "name": "date matrix: locale modifier %EZ",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EZ'; echo rc=$?"
+    },
+    {
+      "content_hash": "4d16dd13e0eaf625",
+      "name": "date matrix: locale modifier %Oa",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Oa'; echo rc=$?"
+    },
+    {
+      "content_hash": "b146302a0719dc4a",
+      "name": "date matrix: locale modifier %OA",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OA'; echo rc=$?"
+    },
+    {
+      "content_hash": "043a8412b8d78cce",
+      "name": "date matrix: locale modifier %Ob",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ob'; echo rc=$?"
+    },
+    {
+      "content_hash": "b942eb74b8128e5a",
+      "name": "date matrix: locale modifier %OB",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OB'; echo rc=$?"
+    },
+    {
+      "content_hash": "bc3c4fea5ef39512",
+      "name": "date matrix: locale modifier %Oc",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Oc'; echo rc=$?"
+    },
+    {
+      "content_hash": "594ea446d1457795",
+      "name": "date matrix: locale modifier %OC",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OC'; echo rc=$?"
+    },
+    {
+      "content_hash": "592a38672bb6c04a",
+      "name": "date matrix: locale modifier %Od",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Od'; echo rc=$?"
+    },
+    {
+      "content_hash": "ea44801fae22013e",
+      "name": "date matrix: locale modifier %OD",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OD'; echo rc=$?"
+    },
+    {
+      "content_hash": "3e7a3011aceae9cb",
+      "name": "date matrix: locale modifier %Oe",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Oe'; echo rc=$?"
+    },
+    {
+      "content_hash": "3186d6c290757b44",
+      "name": "date matrix: locale modifier %OF",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OF'; echo rc=$?"
+    },
+    {
+      "content_hash": "cfa6bc7ed4711d4c",
+      "name": "date matrix: locale modifier %Og",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Og'; echo rc=$?"
+    },
+    {
+      "content_hash": "df789c6a20a1c1a6",
+      "name": "date matrix: locale modifier %OG",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OG'; echo rc=$?"
+    },
+    {
+      "content_hash": "12e40daf46fb5596",
+      "name": "date matrix: locale modifier %Oh",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Oh'; echo rc=$?"
+    },
+    {
+      "content_hash": "12a18c9bd01102c6",
+      "name": "date matrix: locale modifier %OH",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OH'; echo rc=$?"
+    },
+    {
+      "content_hash": "c93e48bfa96d6f67",
+      "name": "date matrix: locale modifier %OI",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OI'; echo rc=$?"
+    },
+    {
+      "content_hash": "afbbb5f9e671dd16",
+      "name": "date matrix: locale modifier %Oj",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Oj'; echo rc=$?"
+    },
+    {
+      "content_hash": "db2dedca7d367c7f",
+      "name": "date matrix: locale modifier %Ok",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ok'; echo rc=$?"
+    },
+    {
+      "content_hash": "33b768f627560356",
+      "name": "date matrix: locale modifier %Ol",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ol'; echo rc=$?"
+    },
+    {
+      "content_hash": "07ac09ea3a02ce74",
+      "name": "date matrix: locale modifier %Om",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Om'; echo rc=$?"
+    },
+    {
+      "content_hash": "3346162193a097ab",
+      "name": "date matrix: locale modifier %OM",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OM'; echo rc=$?"
+    },
+    {
+      "content_hash": "a322ad54a6fdf13c",
+      "name": "date matrix: locale modifier %On",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%On'; echo rc=$?"
+    },
+    {
+      "content_hash": "3d24784ef23e1fd3",
+      "name": "date matrix: locale modifier %ON",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%ON'; echo rc=$?"
+    },
+    {
+      "content_hash": "5f6ec320db686d7d",
+      "name": "date matrix: locale modifier %Op",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Op'; echo rc=$?"
+    },
+    {
+      "content_hash": "680670a5b8051ee2",
+      "name": "date matrix: locale modifier %OP",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OP'; echo rc=$?"
+    },
+    {
+      "content_hash": "c380e5369754fafe",
+      "name": "date matrix: locale modifier %Oq",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Oq'; echo rc=$?"
+    },
+    {
+      "content_hash": "3268d5de40b42440",
+      "name": "date matrix: locale modifier %Or",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Or'; echo rc=$?"
+    },
+    {
+      "content_hash": "c3fd34a3d67f050c",
+      "name": "date matrix: locale modifier %OR",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OR'; echo rc=$?"
+    },
+    {
+      "content_hash": "746d04f2b73512db",
+      "name": "date matrix: locale modifier %Os",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Os'; echo rc=$?"
+    },
+    {
+      "content_hash": "82e5a06d378a7c04",
+      "name": "date matrix: locale modifier %OS",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OS'; echo rc=$?"
+    },
+    {
+      "content_hash": "5b115c0ad7d7590f",
+      "name": "date matrix: locale modifier %Ot",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ot'; echo rc=$?"
+    },
+    {
+      "content_hash": "324848793be124cb",
+      "name": "date matrix: locale modifier %OT",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OT'; echo rc=$?"
+    },
+    {
+      "content_hash": "f45857ebfd823182",
+      "name": "date matrix: locale modifier %Ou",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ou'; echo rc=$?"
+    },
+    {
+      "content_hash": "3804a50fc07a198c",
+      "name": "date matrix: locale modifier %OU",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OU'; echo rc=$?"
+    },
+    {
+      "content_hash": "16cfc7e7d7b6d964",
+      "name": "date matrix: locale modifier %OV",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OV'; echo rc=$?"
+    },
+    {
+      "content_hash": "449616e1ad2d6f63",
+      "name": "date matrix: locale modifier %Ow",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ow'; echo rc=$?"
+    },
+    {
+      "content_hash": "f2d13cb664269952",
+      "name": "date matrix: locale modifier %OW",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OW'; echo rc=$?"
+    },
+    {
+      "content_hash": "9035b97c02d70f0e",
+      "name": "date matrix: locale modifier %Ox",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Ox'; echo rc=$?"
+    },
+    {
+      "content_hash": "88f8ad861b485185",
+      "name": "date matrix: locale modifier %OX",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OX'; echo rc=$?"
+    },
+    {
+      "content_hash": "8edaf716e7dd9859",
+      "name": "date matrix: locale modifier %Oy",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Oy'; echo rc=$?"
+    },
+    {
+      "content_hash": "8ef53bdaa49254c9",
+      "name": "date matrix: locale modifier %OY",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OY'; echo rc=$?"
+    },
+    {
+      "content_hash": "56eeac2868e9afdb",
+      "name": "date matrix: locale modifier %Oz",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%Oz'; echo rc=$?"
+    },
+    {
+      "content_hash": "7060068055714b19",
+      "name": "date matrix: locale modifier %OZ",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OZ'; echo rc=$?"
+    },
+    {
+      "content_hash": "eba05f52ff547b4b",
+      "name": "date matrix: compound %-F",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-F'; echo rc=$?"
+    },
+    {
+      "content_hash": "a7351926ae19e579",
+      "name": "date matrix: compound %-D",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-D'; echo rc=$?"
+    },
+    {
+      "content_hash": "05d99cc1d4636010",
+      "name": "date matrix: compound %-T",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-T'; echo rc=$?"
+    },
+    {
+      "content_hash": "4bf6ada66979991b",
+      "name": "date matrix: compound %-R",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-R'; echo rc=$?"
+    },
+    {
+      "content_hash": "5065c620714cac4f",
+      "name": "date matrix: compound %-c",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-c'; echo rc=$?"
+    },
+    {
+      "content_hash": "b5d4f8bd8adf5d09",
+      "name": "date matrix: compound %-r",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-r'; echo rc=$?"
+    },
+    {
+      "content_hash": "bf02e524b411ce7c",
+      "name": "date matrix: compound %-x",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-x'; echo rc=$?"
+    },
+    {
+      "content_hash": "896cded467fe9dbf",
+      "name": "date matrix: compound %-X",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%-X'; echo rc=$?"
+    },
+    {
+      "content_hash": "6877fa0ce66ff72f",
+      "name": "date matrix: compound %_F",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%_F'; echo rc=$?"
+    },
+    {
+      "content_hash": "2e9a56152d85bd31",
+      "name": "date matrix: compound %_D",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%_D'; echo rc=$?"
+    },
+    {
+      "content_hash": "8f808490c6659d94",
+      "name": "date matrix: compound %_T",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%_T'; echo rc=$?"
+    },
+    {
+      "content_hash": "27b242fa3e04ad31",
+      "name": "date matrix: compound %_R",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%_R'; echo rc=$?"
+    },
+    {
+      "content_hash": "a3d6ad842daf66c6",
+      "name": "date matrix: compound %_c",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%_c'; echo rc=$?"
+    },
+    {
+      "content_hash": "3f795c0821ebaa54",
+      "name": "date matrix: compound %_r",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%_r'; echo rc=$?"
+    },
+    {
+      "content_hash": "8eac3d5bcefff596",
+      "name": "date matrix: compound %_x",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%_x'; echo rc=$?"
+    },
+    {
+      "content_hash": "1f2964bd747b1d77",
+      "name": "date matrix: compound %_X",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%_X'; echo rc=$?"
+    },
+    {
+      "content_hash": "e0b99a84e4e6d7ce",
+      "name": "date matrix: compound %0F",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%0F'; echo rc=$?"
+    },
+    {
+      "content_hash": "f256d89ffcf52411",
+      "name": "date matrix: compound %0D",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%0D'; echo rc=$?"
+    },
+    {
+      "content_hash": "ce64dc3bacea07d1",
+      "name": "date matrix: compound %0T",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%0T'; echo rc=$?"
+    },
+    {
+      "content_hash": "e32ee5f4a2793d62",
+      "name": "date matrix: compound %0R",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%0R'; echo rc=$?"
+    },
+    {
+      "content_hash": "f4fd9c609ad00ea0",
+      "name": "date matrix: compound %0c",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%0c'; echo rc=$?"
+    },
+    {
+      "content_hash": "7f1d695214d6b21c",
+      "name": "date matrix: compound %0r",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%0r'; echo rc=$?"
+    },
+    {
+      "content_hash": "dce863a6901234c0",
+      "name": "date matrix: compound %0x",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%0x'; echo rc=$?"
+    },
+    {
+      "content_hash": "1da5303f4103d962",
+      "name": "date matrix: compound %0X",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%0X'; echo rc=$?"
+    },
+    {
+      "content_hash": "b9249f053d0bf0cb",
+      "name": "date matrix: compound %^F",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%^F'; echo rc=$?"
+    },
+    {
+      "content_hash": "e65332ca9b84883d",
+      "name": "date matrix: compound %^D",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%^D'; echo rc=$?"
+    },
+    {
+      "content_hash": "abc232a89f2866b7",
+      "name": "date matrix: compound %^T",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%^T'; echo rc=$?"
+    },
+    {
+      "content_hash": "355bd2d6b1bbb499",
+      "name": "date matrix: compound %^R",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%^R'; echo rc=$?"
+    },
+    {
+      "content_hash": "5576c76a46ba2be7",
+      "name": "date matrix: compound %^c",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%^c'; echo rc=$?"
+    },
+    {
+      "content_hash": "1a5932c2ff39e3a4",
+      "name": "date matrix: compound %^r",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%^r'; echo rc=$?"
+    },
+    {
+      "content_hash": "21c3648e11f7a593",
+      "name": "date matrix: compound %^x",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%^x'; echo rc=$?"
+    },
+    {
+      "content_hash": "621878f9b6b73627",
+      "name": "date matrix: compound %^X",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%^X'; echo rc=$?"
+    },
+    {
+      "content_hash": "cce045512c7bf171",
+      "name": "date matrix: compound %#F",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%#F'; echo rc=$?"
+    },
+    {
+      "content_hash": "7a30bef3cfddefd3",
+      "name": "date matrix: compound %#D",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%#D'; echo rc=$?"
+    },
+    {
+      "content_hash": "b5554097552abbed",
+      "name": "date matrix: compound %#T",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%#T'; echo rc=$?"
+    },
+    {
+      "content_hash": "90d5d446a5d72920",
+      "name": "date matrix: compound %#R",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%#R'; echo rc=$?"
+    },
+    {
+      "content_hash": "e3d39dbe4802417d",
+      "name": "date matrix: compound %#c",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%#c'; echo rc=$?"
+    },
+    {
+      "content_hash": "684bd469b15869e4",
+      "name": "date matrix: compound %#r",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%#r'; echo rc=$?"
+    },
+    {
+      "content_hash": "6f8a1fe644faec03",
+      "name": "date matrix: compound %#x",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%#x'; echo rc=$?"
+    },
+    {
+      "content_hash": "89553fba98012b57",
+      "name": "date matrix: compound %#X",
+      "script": "TZ=UTC LC_ALL=C date -d '0005-01-05 09:05:03' '+%#X'; echo rc=$?"
+    },
+    {
+      "content_hash": "a3fc3db7f11b6528",
+      "name": "date matrix: zone %-:z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-:z'; echo rc=$?"
+    },
+    {
+      "content_hash": "0e219599a6438436",
+      "name": "date matrix: zone %_:z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_:z'; echo rc=$?"
+    },
+    {
+      "content_hash": "be08864d1997c364",
+      "name": "date matrix: zone %0:z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0:z'; echo rc=$?"
+    },
+    {
+      "content_hash": "6b27735adbb22c3b",
+      "name": "date matrix: zone %3:z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%3:z'; echo rc=$?"
+    },
+    {
+      "content_hash": "5ce3dbdb215786c7",
+      "name": "date matrix: zone %8:z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%8:z'; echo rc=$?"
+    },
+    {
+      "content_hash": "2fa382f6f0f4e5ae",
+      "name": "date matrix: zone %-::z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-::z'; echo rc=$?"
+    },
+    {
+      "content_hash": "325c2edfd14a0bed",
+      "name": "date matrix: zone %_::z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_::z'; echo rc=$?"
+    },
+    {
+      "content_hash": "07c260c71da0034b",
+      "name": "date matrix: zone %-:::z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-:::z'; echo rc=$?"
+    },
+    {
+      "content_hash": "ab32088721d39e96",
+      "name": "date matrix: zone %^:z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^:z'; echo rc=$?"
+    },
+    {
+      "content_hash": "16d879078262ca6d",
+      "name": "date matrix: zone %-z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-z'; echo rc=$?"
+    },
+    {
+      "content_hash": "24e3e30259f9c4fd",
+      "name": "date matrix: zone %_z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_z'; echo rc=$?"
+    },
+    {
+      "content_hash": "792660f864e01fb0",
+      "name": "date matrix: zone %0z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0z'; echo rc=$?"
+    },
+    {
+      "content_hash": "5c18bde73424c811",
+      "name": "date matrix: zone %1z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%1z'; echo rc=$?"
+    },
+    {
+      "content_hash": "6babeeec90d1d5aa",
+      "name": "date matrix: zone %5z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%5z'; echo rc=$?"
+    },
+    {
+      "content_hash": "d993696d41af0d5d",
+      "name": "date matrix: zone %8z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%8z'; echo rc=$?"
+    },
+    {
+      "content_hash": "d3f4cf7534aecefb",
+      "name": "date matrix: zone %^z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^z'; echo rc=$?"
+    },
+    {
+      "content_hash": "a36885590aefc7f3",
+      "name": "date matrix: zone %#z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#z'; echo rc=$?"
+    },
+    {
+      "content_hash": "cdf1466c0a6cba1a",
+      "name": "date matrix: string width %5a",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%5a'; echo rc=$?"
+    },
+    {
+      "content_hash": "08decb2cff2a59d9",
+      "name": "date matrix: string width %_5a",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_5a'; echo rc=$?"
+    },
+    {
+      "content_hash": "7bedb784ab4b4576",
+      "name": "date matrix: string width %05a",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%05a'; echo rc=$?"
+    },
+    {
+      "content_hash": "b055dc15fd75c2ed",
+      "name": "date matrix: string width %-5a",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-5a'; echo rc=$?"
+    },
+    {
+      "content_hash": "6aac967ba6fc3791",
+      "name": "date matrix: string width %^5a",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^5a'; echo rc=$?"
+    },
+    {
+      "content_hash": "38eb512ee121b10f",
+      "name": "date matrix: string width %2a",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%2a'; echo rc=$?"
+    },
+    {
+      "content_hash": "0427595ac9851b4d",
+      "name": "date matrix: string width %12D",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%12D'; echo rc=$?"
+    },
+    {
+      "content_hash": "5757f5846dcb289d",
+      "name": "date matrix: string width %12T",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%12T'; echo rc=$?"
+    },
+    {
+      "content_hash": "0d4d9bf5f6fede61",
+      "name": "date matrix: string width %_12F",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_12F'; echo rc=$?"
+    },
+    {
+      "content_hash": "22e78375c37104cd",
+      "name": "date matrix: string width %012F",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%012F'; echo rc=$?"
+    },
+    {
+      "content_hash": "63f7d849da268954",
+      "name": "date matrix: string width %20c",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%20c'; echo rc=$?"
+    },
+    {
+      "content_hash": "43ac513f77565329",
+      "name": "date matrix: string width %6p",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%6p'; echo rc=$?"
+    },
+    {
+      "content_hash": "2e4c8bc1569f6972",
+      "name": "date matrix: string width %6Z",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%6Z'; echo rc=$?"
+    },
+    {
+      "content_hash": "ea30e6f3c446de10",
+      "name": "date matrix: modifier form %-Od",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-Od'; echo rc=$?"
+    },
+    {
+      "content_hash": "5157ed575cd64f61",
+      "name": "date matrix: modifier form %_5Od",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_5Od'; echo rc=$?"
+    },
+    {
+      "content_hash": "17b4093d534da131",
+      "name": "date matrix: modifier form %3Od",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%3Od'; echo rc=$?"
+    },
+    {
+      "content_hash": "c8bd01d5a7b9bb86",
+      "name": "date matrix: modifier form %05Ed",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%05Ed'; echo rc=$?"
+    },
+    {
+      "content_hash": "a58bc9fba1e647f6",
+      "name": "date matrix: modifier form %0Ey",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%0Ey'; echo rc=$?"
+    },
+    {
+      "content_hash": "e49526c4279536f8",
+      "name": "date matrix: modifier form %5EY",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%5EY'; echo rc=$?"
+    },
+    {
+      "content_hash": "4eeafce1eb58b080",
+      "name": "date matrix: modifier form %-Ey",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-Ey'; echo rc=$?"
+    },
+    {
+      "content_hash": "6236caabc709ab75",
+      "name": "date matrix: modifier form %_5Ey",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_5Ey'; echo rc=$?"
+    },
+    {
+      "content_hash": "6ca10f36af4afae1",
+      "name": "date matrix: modifier form %-Oe",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%-Oe'; echo rc=$?"
+    },
+    {
+      "content_hash": "5c89d5c2b66a58d9",
+      "name": "date matrix: modifier form %_OH",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%_OH'; echo rc=$?"
+    },
+    {
+      "content_hash": "3dc84339bbf8909c",
+      "name": "date matrix: modifier form %^Ec",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^Ec'; echo rc=$?"
+    },
+    {
+      "content_hash": "74338fb7ec3faf87",
+      "name": "date matrix: modifier form %#Ec",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%#Ec'; echo rc=$?"
+    },
+    {
+      "content_hash": "09cf7a8bda1b1a8d",
+      "name": "date matrix: modifier form %^Ea",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^Ea'; echo rc=$?"
+    },
+    {
+      "content_hash": "aaf4049a15c31fcd",
+      "name": "date matrix: modifier form %^Oa",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%^Oa'; echo rc=$?"
+    },
+    {
+      "content_hash": "25c158802a479f43",
+      "name": "date matrix: modifier form %E",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%E'; echo rc=$?"
+    },
+    {
+      "content_hash": "dd6ea147efdc23db",
+      "name": "date matrix: modifier form %O",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%O'; echo rc=$?"
+    },
+    {
+      "content_hash": "eb31acc98805233d",
+      "name": "date matrix: modifier form %EJ",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EJ'; echo rc=$?"
+    },
+    {
+      "content_hash": "9a09816881ff1af5",
+      "name": "date matrix: modifier form %OJ",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OJ'; echo rc=$?"
+    },
+    {
+      "content_hash": "904aedd198290e83",
+      "name": "date matrix: modifier form %O%d",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%O%d'; echo rc=$?"
+    },
+    {
+      "content_hash": "1a1e6f59a63311fe",
+      "name": "date matrix: modifier form %E%d",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%E%d'; echo rc=$?"
+    },
+    {
+      "content_hash": "07cfb2791f83a5b9",
+      "name": "date matrix: modifier form %EOd",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%EOd'; echo rc=$?"
+    },
+    {
+      "content_hash": "7b75ba26b911333d",
+      "name": "date matrix: modifier form %OEd",
+      "script": "TZ=UTC LC_ALL=C date -d '2005-01-05 09:05:03' '+%OEd'; echo rc=$?"
     },
     {
       "content_hash": "48edbdf07a846391",
@@ -616,6 +2941,56 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%^!'; echo rc=$?"
     },
     {
+      "content_hash": "20e42eca498d572c",
+      "name": "date matrix: sequence %^J",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%^J'; echo rc=$?"
+    },
+    {
+      "content_hash": "35e41054b53a4000",
+      "name": "date matrix: sequence %#J",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%#J'; echo rc=$?"
+    },
+    {
+      "content_hash": "f58218ab0fce7caf",
+      "name": "date matrix: sequence %-J",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%-J'; echo rc=$?"
+    },
+    {
+      "content_hash": "738a5e423600f56f",
+      "name": "date matrix: sequence %_J",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%_J'; echo rc=$?"
+    },
+    {
+      "content_hash": "c42447317b64381b",
+      "name": "date matrix: sequence %0J",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%0J'; echo rc=$?"
+    },
+    {
+      "content_hash": "05e5eec974ed85ac",
+      "name": "date matrix: sequence %_3J",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%_3J'; echo rc=$?"
+    },
+    {
+      "content_hash": "f9af83361ccb7191",
+      "name": "date matrix: sequence %0!",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%0!'; echo rc=$?"
+    },
+    {
+      "content_hash": "88653b7d296c2e9b",
+      "name": "date matrix: sequence %^!x",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%^!x'; echo rc=$?"
+    },
+    {
+      "content_hash": "86a9f6a982a03c51",
+      "name": "date matrix: sequence %0d%-d",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%0d%-d'; echo rc=$?"
+    },
+    {
+      "content_hash": "34c05fcb91fe5543",
+      "name": "date matrix: sequence %_H:%-M",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' '+%_H:%-M'; echo rc=$?"
+    },
+    {
       "content_hash": "b5d066f089dbf4aa",
       "name": "date matrix: width %3d",
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%3d'; echo rc=$?"
@@ -706,58 +3081,69 @@
       "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%-j'; echo rc=$?"
     },
     {
-      "content_hash": "3eae86bc7a2e37d4",
-      "name": "date matrix: nanoseconds %N",
-      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%N'; echo rc=$?"
+      "content_hash": "1c8ea06677be68d1",
+      "name": "date matrix: width %1d",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%1d'; echo rc=$?"
     },
     {
-      "content_hash": "4ed5c032daf57339",
-      "name": "date matrix: nanoseconds %-N",
-      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%-N'; echo rc=$?"
+      "content_hash": "ceb525deec3fc8e7",
+      "name": "date matrix: width %1e",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%1e'; echo rc=$?"
     },
     {
-      "content_hash": "ddd7406e16565600",
-      "name": "date matrix: nanoseconds %0N",
-      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%0N'; echo rc=$?"
+      "content_hash": "e27e2b9e83b8dfcc",
+      "name": "date matrix: width %1H",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%1H'; echo rc=$?"
     },
     {
-      "content_hash": "c571c2da89e6886e",
-      "name": "date matrix: nanoseconds %^N",
-      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%^N'; echo rc=$?"
+      "content_hash": "94346ff6dfbe13e0",
+      "name": "date matrix: width %0d",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%0d'; echo rc=$?"
     },
     {
-      "content_hash": "75c7156a1bf629a7",
-      "name": "date matrix: nanoseconds %3N",
-      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%3N'; echo rc=$?"
+      "content_hash": "b1a4e04fc989c8a2",
+      "name": "date matrix: width %5e",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%5e'; echo rc=$?"
     },
     {
-      "content_hash": "513512382567a1d8",
-      "name": "date matrix: nanoseconds %6N",
-      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%6N'; echo rc=$?"
+      "content_hash": "c94d64af145bad8b",
+      "name": "date matrix: width %5k",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%5k'; echo rc=$?"
     },
     {
-      "content_hash": "1e836116dc5c3c11",
-      "name": "date matrix: nanoseconds %_N",
-      "opts": {
-        "known_gap": "GNU pads %N with trailing spaces under _ and -, unlike every other conversion"
-      },
-      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%_N'; echo rc=$?"
+      "content_hash": "6dea9bbd52b5f4a0",
+      "name": "date matrix: width %5l",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%5l'; echo rc=$?"
     },
     {
-      "content_hash": "0514b760a2820297",
-      "name": "date matrix: nanoseconds %-3N",
-      "opts": {
-        "known_gap": "GNU pads %N with trailing spaces under _ and -, unlike every other conversion"
-      },
-      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%-3N'; echo rc=$?"
+      "content_hash": "7f65c020804d2453",
+      "name": "date matrix: width %5Y",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%5Y'; echo rc=$?"
     },
     {
-      "content_hash": "fc387fb480e5d687",
-      "name": "date matrix: nanoseconds %_6N",
-      "opts": {
-        "known_gap": "GNU pads %N with trailing spaces under _ and -, unlike every other conversion"
-      },
-      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%_6N'; echo rc=$?"
+      "content_hash": "9dd1a9f733cbebdf",
+      "name": "date matrix: width %_5Y",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%_5Y'; echo rc=$?"
+    },
+    {
+      "content_hash": "9b5ebc760f292961",
+      "name": "date matrix: width %5s",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%5s'; echo rc=$?"
+    },
+    {
+      "content_hash": "00f2fd6f71f578ed",
+      "name": "date matrix: width %_5j",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%_5j'; echo rc=$?"
+    },
+    {
+      "content_hash": "04c43fd8f8c7bcd9",
+      "name": "date matrix: width %_1j",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%_1j'; echo rc=$?"
+    },
+    {
+      "content_hash": "21e0bad557731b05",
+      "name": "date matrix: width %2j",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-05 09:05:03' '+%2j'; echo rc=$?"
     },
     {
       "content_hash": "c6678c35339e5c11",
@@ -827,10 +3213,18 @@
       "script": "TZ=UTC LC_ALL=C date -j '+%Y-%m-%d'; echo rc=$?"
     },
     {
+      "content_hash": "60d08fb452de1fe3",
+      "name": "date matrix: absent flag -j -f %Y",
+      "opts": {
+        "known_gap": "-j/-f are supported as documented BSD spellings; GNU date rejects them"
+      },
+      "script": "TZ=UTC LC_ALL=C date -j -f %Y '+%Y-%m-%d'; echo rc=$?"
+    },
+    {
       "content_hash": "af848d1644742c50",
       "name": "date matrix: absent flag -jf %Y",
       "opts": {
-        "known_gap": "-j/-f are supported as documented BSD spellings; GNU date rejects them"
+        "known_gap": "the refusal is BSD-worded (illegal option, usage) where GNU says invalid option"
       },
       "script": "TZ=UTC LC_ALL=C date -jf %Y '+%Y-%m-%d'; echo rc=$?"
     },
@@ -869,6 +3263,26 @@
       "content_hash": "7678424c6ef68df8",
       "name": "date matrix: input @1718458200",
       "script": "TZ=UTC LC_ALL=C date -d '@1718458200' '+%Y-%m-%d %H:%M:%S'; echo rc=$?"
+    },
+    {
+      "content_hash": "9f383ce19a5d671b",
+      "name": "date matrix: input @0",
+      "script": "TZ=UTC LC_ALL=C date -d '@0' '+%Y-%m-%d %H:%M:%S'; echo rc=$?"
+    },
+    {
+      "content_hash": "c28f5f1ba4f6c97a",
+      "name": "date matrix: input @-1",
+      "script": "TZ=UTC LC_ALL=C date -d '@-1' '+%Y-%m-%d %H:%M:%S'; echo rc=$?"
+    },
+    {
+      "content_hash": "56111777896aef17",
+      "name": "date matrix: input @99999999999999999999",
+      "script": "TZ=UTC LC_ALL=C date -d '@99999999999999999999' '+%Y-%m-%d %H:%M:%S'; echo rc=$?"
+    },
+    {
+      "content_hash": "5c7c5c6aabee439f",
+      "name": "date matrix: input @-99999999999999999999",
+      "script": "TZ=UTC LC_ALL=C date -d '@-99999999999999999999' '+%Y-%m-%d %H:%M:%S'; echo rc=$?"
     },
     {
       "content_hash": "7d29779998b12451",
@@ -954,6 +3368,69 @@
         "known_gap": "the refusal is BSD-worded (illegal option, usage) where GNU says invalid option"
       },
       "script": "TZ=UTC LC_ALL=C date -d; echo rc=$?"
+    },
+    {
+      "content_hash": "96a320fc514e0bc6",
+      "name": "date matrix: long --date with no argument",
+      "opts": {
+        "known_gap": "the refusal is BSD-worded (illegal option, usage) where GNU says invalid option"
+      },
+      "script": "TZ=UTC LC_ALL=C date --date; echo rc=$?"
+    },
+    {
+      "content_hash": "333fe6220aa6ca0e",
+      "name": "date matrix: long --reference with no argument",
+      "opts": {
+        "known_gap": "the refusal is BSD-worded (illegal option, usage) where GNU says invalid option"
+      },
+      "script": "TZ=UTC LC_ALL=C date --reference; echo rc=$?"
+    },
+    {
+      "content_hash": "f9edbc49cb982e02",
+      "name": "date matrix: reference -r and -d together",
+      "opts": {
+        "known_gap": "the refusal is BSD-worded (illegal option, usage) where GNU says invalid option"
+      },
+      "script": "touch /tmp/jb_r_$$; TZ=UTC LC_ALL=C date -r /tmp/jb_r_$$ -d '2024-06-15 13:30:00' '+%F'; echo rc=$?; rm -f /tmp/jb_r_$$"
+    },
+    {
+      "content_hash": "2f3fe6a526b18fd6",
+      "name": "date matrix: end of options --",
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' -- '+%F'; echo rc=$?"
+    },
+    {
+      "content_hash": "2e38f635541d8c9c",
+      "name": "date matrix: long --date with a separate argument",
+      "script": "TZ=UTC LC_ALL=C date --date '2024-06-15 13:30:00' '+%F'; echo rc=$?"
+    },
+    {
+      "content_hash": "32006898d6eb11e0",
+      "name": "date matrix: long --reference with a separate argument",
+      "script": "touch /tmp/jb_l_$$; TZ=UTC LC_ALL=C date --reference /tmp/jb_l_$$ '+%Y' > /dev/null; echo rc=$?; rm -f /tmp/jb_l_$$"
+    },
+    {
+      "content_hash": "3600cd824c22b465",
+      "name": "date matrix: long --iso-8601 with a separate argument",
+      "opts": {
+        "known_gap": "an operand is refused as a BSD settable time, not as a GNU extra operand"
+      },
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' --iso-8601 hours; echo rc=$?"
+    },
+    {
+      "content_hash": "924df887302ce0d4",
+      "name": "date matrix: bare - operand",
+      "opts": {
+        "known_gap": "an operand is refused as a BSD settable time, not as a GNU extra operand"
+      },
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' - '+%F'; echo rc=$?"
+    },
+    {
+      "content_hash": "82d0225adb7b0429",
+      "name": "date matrix: extra operand",
+      "opts": {
+        "known_gap": "an operand is refused as a BSD settable time, not as a GNU extra operand"
+      },
+      "script": "TZ=UTC LC_ALL=C date -d '2024-06-15 13:30:00' extra '+%F'; echo rc=$?"
     },
     {
       "content_hash": "078461a27e682c98",

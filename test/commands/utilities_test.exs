@@ -271,6 +271,28 @@ defmodule JustBash.Commands.UtilitiesTest do
       # message must not claim the file is merely absent.
       assert result.stderr == "date: /ref.txt/nope: Not a directory\n"
     end
+
+    test "accepts the long spelling with a separate argument", %{bash: bash} do
+      {result, _} = JustBash.exec(bash, "date --reference /ref.txt '+%F'")
+
+      assert result.exit_code == 0
+      assert result.stdout == "2021-03-04\n"
+    end
+
+    # The matrix records the mutual exclusion against real bash, but only in the
+    # direction `-r` then `-d`; a reference the recorder can seed does not exist,
+    # so the other order is asserted here.
+    test "refuses -d after -r rather than picking one", %{bash: bash} do
+      {result, _} = JustBash.exec(bash, "date -d '2024-06-15' -r /ref.txt '+%F'")
+
+      assert result.exit_code == 1
+      assert result.stdout == ""
+
+      assert result.stderr =~
+               "date: the options to specify dates for printing are mutually exclusive\n"
+
+      assert result.stderr =~ "usage: date"
+    end
   end
 
   describe "date command" do
