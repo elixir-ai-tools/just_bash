@@ -415,12 +415,14 @@ defmodule JustBash.PropertyTest do
     # The failure mode this guards is worse than a missing flag: an option that
     # gets dropped prints the current date at exit 0, so the caller reads a
     # wrong answer as a real one. Exit 0 is only ever allowed for an option we
-    # actually implement.
+    # actually implement — or for `--`, which is getopt's end-of-options marker
+    # rather than an option, and which real date accepts.
     @implemented ~w(-u -j -I -d -f -r -v)
 
     property "an option date does not implement never exits 0" do
       check all(
               flag <- string([?a..?z, ?A..?Z, ?0..?9, ?-, ?=, ?+], min_length: 1, max_length: 6),
+              flag != "-",
               not Enum.any?(@implemented, &String.starts_with?("-" <> flag, &1))
             ) do
         bash = JustBash.new()
@@ -432,15 +434,66 @@ defmodule JustBash.PropertyTest do
       end
     end
 
+    # Clustering must not launder an unknown option: a run of flags date does
+    # implement, followed by one it does not, is still an error. `-` is in the
+    # unknown set because inside a cluster it is an option character, not the
+    # start of the end-of-options marker.
+    @option_chars Enum.to_list(?a..?z) ++ Enum.to_list(?A..?Z) ++ [?-]
+    @known_option_chars [?j, ?u, ?d, ?f, ?r, ?v, ?I]
+
+    property "an unknown option is rejected inside a cluster too" do
+      check all(
+              cluster <- string([?j, ?u], min_length: 1, max_length: 3),
+              unknown <- member_of(@option_chars -- @known_option_chars)
+            ) do
+        bash = JustBash.new()
+        arg = "-#{cluster}#{<<unknown>>}"
+        {result, _} = JustBash.exec(bash, "date #{arg} '+%Y-%m-%d'")
+
+        assert result.exit_code == 1, "date #{arg} exited 0 with #{inspect(result.stdout)}"
+        assert result.stdout == ""
+        assert result.stderr =~ "date:"
+      end
+    end
+
+    # A -v adjustment is applied by moving a DateTime, and the cost of that grows
+    # with how far the result lands from the epoch — far enough and it never
+    # comes back. Every spec must therefore reach a verdict, whatever its
+    # magnitude, so an out-of-range value has to be rejected before it is
+    # applied rather than after.
+    property "a -v adjustment always reaches a verdict, however large" do
+      check all(
+              sign <- member_of(~w(+ -)),
+              digits <- integer(1..40),
+              unit <- member_of(~w(y m w d H M S))
+            ) do
+        spec = "#{sign}#{String.duplicate("9", digits)}#{unit}"
+        task = Task.async(fn -> JustBash.exec(JustBash.new(), "date -v#{spec} '+%F'") end)
+
+        case Task.yield(task, 2_000) || Task.shutdown(task, :brutal_kill) do
+          {:ok, {result, _}} ->
+            assert result.exit_code in [0, 1]
+
+          nil ->
+            flunk("date -v#{spec} did not terminate within 2s")
+        end
+      end
+    end
+
     # An adjustment we cannot apply must be rejected, never silently skipped.
-    @base "2024-06-15 12:00:00"
+    # Named for its describe block rather than plainly, because a module
+    # attribute is module-wide however deeply it is indented.
+    @adjustment_base "2024-06-15 12:00:00"
 
     property "a -v adjustment is either applied or rejected, never ignored" do
       check all(
               spec <- string([?a..?z, ?A..?Z, ?0..?9, ?+, ?-, ?.], min_length: 1, max_length: 5)
             ) do
         bash = JustBash.new()
-        {result, _} = JustBash.exec(bash, "date -d '#{@base}' -v#{spec} '+%F %T'")
+        {result, _} = JustBash.exec(bash, "date -d '#{@adjustment_base}' -v#{spec} '+%F %T'")
+        # Deliberately a second copy of the implementation's grammar, not a
+        # shared constant: an oracle that imports the rule it is checking cannot
+        # catch the rule being wrong.
         parsed = Regex.run(~r/^([+-])(\d+)([ymwdHMS])$/, spec)
 
         case {result.exit_code, parsed} do
@@ -452,7 +505,7 @@ defmodule JustBash.PropertyTest do
           # Applied: every unit strictly moves the clock, so only a zero
           # adjustment may leave the base date untouched.
           {0, [_, sign, value, _unit]} ->
-            moved = result.stdout != "#{@base}\n"
+            moved = result.stdout != "#{@adjustment_base}\n"
             assert moved == (String.to_integer(sign <> value) != 0)
 
           {0, nil} ->

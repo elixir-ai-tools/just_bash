@@ -485,20 +485,36 @@ defmodule JustBash.Commands.UtilitiesTest do
   # An unimplemented flag must not be dropped: silently ignoring it returns the
   # current date at exit 0, which the caller cannot tell from a real answer.
   describe "unrecognized arguments" do
+    # A long option is named in full, as GNU date words it. BSD reports the
+    # offending character, which for a long option is the second `-` — a message
+    # that identifies nothing.
     test "an unknown long option is an error, not a silently ignored flag" do
       bash = JustBash.new()
       {result, _} = JustBash.exec(bash, "date --definitely-not-a-flag '+%Y-%m-%d'")
       assert result.exit_code == 1
       assert result.stdout == ""
-      assert result.stderr =~ "illegal option -- --definitely-not-a-flag"
+      assert result.stderr =~ "date: unrecognized option '--definitely-not-a-flag'\n"
     end
 
-    test "an unknown short option is an error" do
+    # A short option is named by its character, as BSD date does, because that
+    # is the unit getopt rejected — `-Xu` is a bad `X`, not a bad `Xu`.
+    test "an unknown short option is named by its character" do
       bash = JustBash.new()
-      {result, _} = JustBash.exec(bash, "date -X '+%Y'")
+      {r1, _} = JustBash.exec(bash, "date -X '+%Y'")
+      {r2, _} = JustBash.exec(bash, "date -Xu '+%Y'")
+      assert r1.exit_code == 1
+      assert r1.stdout == ""
+      assert r1.stderr =~ "date: illegal option -- X\n"
+      assert r2.exit_code == 1
+      assert r2.stderr =~ "date: illegal option -- X\n"
+    end
+
+    # A lone `-` is not option-shaped to getopt, so it is an operand.
+    test "a lone dash is an operand, not an option" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -")
       assert result.exit_code == 1
-      assert result.stdout == ""
-      assert result.stderr =~ "illegal option -- -X"
+      assert result.stderr =~ "illegal time format"
     end
 
     test "the error names the supported flags" do
@@ -550,6 +566,87 @@ defmodule JustBash.Commands.UtilitiesTest do
         assert result.stderr =~ "option requires an argument -- #{flag}"
       end
     end
+
+    # -f names the format of an operand. With no operand there is nothing for it
+    # to parse, so real date prints usage rather than falling back to now — the
+    # same defect class as an ignored flag, on the one path that still had it.
+    test "-f without an operand is an error, not the current date" do
+      bash = JustBash.new()
+      {r1, _} = JustBash.exec(bash, "date -f '%Y-%m-%d' '+%F'")
+      {r2, _} = JustBash.exec(bash, "date -j -f '%Y-%m-%d' '+%F'")
+      assert r1.exit_code == 1
+      assert r1.stdout == ""
+      assert r1.stderr =~ "usage: date"
+      assert r2.exit_code == 1
+      assert r2.stdout == ""
+      assert r2.stderr =~ "usage: date"
+    end
+  end
+
+  # getopt's conventions, which real date inherits: `--` ends option parsing and
+  # no-argument flags may be clustered. Rejecting unknown options meant these
+  # two spellings started erroring, so they need to be understood rather than
+  # merely tolerated.
+  describe "getopt conventions" do
+    test "-- ends option parsing" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -d '2024-06-15' -- '+%F'")
+      assert result.exit_code == 0
+      assert result.stdout == "2024-06-15\n"
+    end
+
+    test "-- alone still prints the date" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date --")
+      assert result.exit_code == 0
+      assert result.stdout =~ ~r/^\w{3} \w{3} \d{2} \d{2}:\d{2}:\d{2} UTC \d{4}\n$/
+    end
+
+    # After `--` an option-shaped argument is an operand, so it fails as a time
+    # rather than as an option.
+    test "an option after -- is an operand" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "date -- -X")
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr =~ "illegal time format"
+      refute result.stderr =~ "illegal option"
+    end
+
+    test "no-argument short flags may be clustered" do
+      bash = JustBash.new()
+      {r1, _} = JustBash.exec(bash, "date -ju -d '2024-06-15' '+%F'")
+      {r2, _} = JustBash.exec(bash, "date -uj -d '2024-06-15' '+%F'")
+      assert r1.exit_code == 0, r1.stderr
+      assert r1.stdout == "2024-06-15\n"
+      assert r2.stdout == "2024-06-15\n"
+    end
+
+    # Inside a cluster the next character is an option character, and `-` is not
+    # one. Reading the remainder as a fresh argument instead would turn `-u-`
+    # into `-u --` and print the date at exit 0.
+    test "a dash inside a cluster is an illegal option, not end-of-options" do
+      bash = JustBash.new()
+
+      for arg <- ["-u-", "-u-x", "-ju-"] do
+        {result, _} = JustBash.exec(bash, "date #{arg} '+%F'")
+        assert result.exit_code == 1, "expected date #{arg} to fail"
+        assert result.stdout == ""
+        assert result.stderr =~ "date: illegal option -- -\n"
+      end
+    end
+
+    # A cluster ends at the first flag that takes a value; the remainder is that
+    # value, so `-ur0` is `-u -r 0`.
+    test "a clustered flag may carry the value of the flag that ends the cluster" do
+      bash = JustBash.new()
+      {r1, _} = JustBash.exec(bash, "date -ur0 '+%F'")
+      {r2, _} = JustBash.exec(bash, "date -d '2024-06-15' -ujv+1d '+%F'")
+      {r3, _} = JustBash.exec(bash, "date -d '2024-06-15' -uIseconds")
+      assert r1.stdout == "1970-01-01\n"
+      assert r2.stdout == "2024-06-16\n"
+      assert r3.stdout == "2024-06-15T00:00:00+00:00\n"
+    end
   end
 
   describe "-v adjustments" do
@@ -566,11 +663,18 @@ defmodule JustBash.Commands.UtilitiesTest do
       assert result.stdout == "2025-08-04\n"
     end
 
+    # Bracketing the call rather than reading the clock once keeps the assertion
+    # honest across UTC midnight.
     test "the adjustment applies to the current date when there is no -d" do
       bash = JustBash.new()
+      before = Date.utc_today()
       {result, _} = JustBash.exec(bash, "date -v+1d '+%Y-%m-%d'")
-      expected = Date.utc_today() |> Date.add(1) |> Date.to_iso8601()
-      assert result.stdout == expected <> "\n"
+      after_call = Date.utc_today()
+
+      allowed =
+        for day <- [before, after_call], do: "#{Date.to_iso8601(Date.add(day, 1))}\n"
+
+      assert result.stdout in allowed
     end
 
     test "the value may be a separate argument, as getopt allows" do
@@ -630,13 +734,17 @@ defmodule JustBash.Commands.UtilitiesTest do
       assert s.stdout == "2026-08-04 12:31:05\n"
     end
 
-    # BSD: "Flags are processed in the order given."
+    # BSD: "Flags are processed in the order given." March 31 is a base where the
+    # two orders genuinely disagree: +1m clamps to April 30 before -1d takes a
+    # day off, where -1d lands on March 30 first and +1m then keeps the 30th. A
+    # base like August 4 gives the same answer either way and so cannot tell an
+    # ordered fold from a reversed one.
     test "several adjustments compose left to right" do
       bash = JustBash.new()
-      {r1, _} = JustBash.exec(bash, "date -d '2026-08-04' -v+1m -v-1d '+%Y-%m-%d'")
-      {r2, _} = JustBash.exec(bash, "date -d '2026-08-04' -v-1d -v+1m '+%Y-%m-%d'")
-      assert r1.stdout == "2026-09-03\n"
-      assert r2.stdout == "2026-09-03\n"
+      {r1, _} = JustBash.exec(bash, "date -d '2026-03-31' -v+1m -v-1d '+%Y-%m-%d'")
+      {r2, _} = JustBash.exec(bash, "date -d '2026-03-31' -v-1d -v+1m '+%Y-%m-%d'")
+      assert r1.stdout == "2026-04-29\n"
+      assert r2.stdout == "2026-04-30\n"
     end
 
     test "an unsigned adjustment sets rather than adjusts, and is not supported" do
@@ -684,6 +792,41 @@ defmodule JustBash.Commands.UtilitiesTest do
         assert result.exit_code == 1, "expected -v#{spec} to fail"
         assert result.stderr =~ "#{spec}: Cannot apply date adjustment"
       end
+    end
+
+    # An out-of-range adjustment has to be rejected before it is applied, not
+    # after: the fixed-length units go through DateTime.add/3, whose cost grows
+    # with how far the result lands from the epoch, so 10^20 days does not come
+    # back at all. This asserts termination first — a rejection that arrives in a
+    # week is not a rejection.
+    test "an enormous adjustment is rejected rather than computed" do
+      for unit <- ~w(y m w d H M S), sign <- ~w(+ -) do
+        spec = "#{sign}#{String.duplicate("9", 20)}#{unit}"
+
+        task =
+          Task.async(fn -> JustBash.exec(JustBash.new(), "date -v#{spec} '+%Y-%m-%d'") end)
+
+        case Task.yield(task, 2_000) || Task.shutdown(task, :brutal_kill) do
+          {:ok, {result, _}} ->
+            assert result.exit_code == 1, "expected -v#{spec} to fail"
+            assert result.stdout == ""
+            assert result.stderr =~ "#{spec}: Cannot apply date adjustment"
+
+          nil ->
+            flunk("date -v#{spec} did not terminate within 2s")
+        end
+      end
+    end
+
+    # The bound on a fixed-length unit has to be the whole ISO calendar, not a
+    # convenient round number: these two adjustments span it exactly, from the
+    # first representable day to the last.
+    test "an adjustment spanning the whole calendar is still applied" do
+      bash = JustBash.new()
+      {days, _} = JustBash.exec(bash, "date -d '0000-01-01' -v+3652424d '+%Y-%m-%d'")
+      {secs, _} = JustBash.exec(bash, "date -d '0000-01-01' -v+315569433600S '+%Y-%m-%d'")
+      assert days.stdout == "9999-12-31\n", days.stderr
+      assert secs.stdout == "9999-12-31\n", secs.stderr
     end
   end
 

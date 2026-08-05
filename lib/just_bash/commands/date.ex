@@ -15,11 +15,18 @@ defmodule JustBash.Commands.Date do
   so a caller can tell the difference between "not supported" and a real value.
 
   Flags: `-d` / `--date=`, `-I[FMT]` / `--iso-8601[=FMT]`, `-u`, `-r SECONDS`,
-  the BSD `-v` adjustments, and the BSD `-j` / `-f` pair.
+  the BSD `-v` adjustments, and the BSD `-j` / `-f` pair. Values may be attached
+  or separate (`-d2024-06-15`), no-argument flags may cluster (`-ju`), and `--`
+  ends option parsing — the getopt conventions real date inherits.
 
   Everything else is an error. An unimplemented flag must not be dropped:
   ignoring it would print the current date at exit 0, which a caller cannot
   tell apart from a real answer.
+
+  Errors follow whichever real implementation spells the flag: GNU's wording for
+  a long option (`unrecognized option '--foo'`), BSD's for a short one
+  (`illegal option -- X`), since BSD names a long option by its second `-` and
+  so identifies nothing.
 
   Two BSD features are deliberately partial, and say so rather than guessing:
   `-v` implements only the relative form (`[+-]val[ymwdHMS]`), not the
@@ -38,6 +45,25 @@ defmodule JustBash.Commands.Date do
   # Real date's operand is a time to set the system clock to. There is no clock
   # to set here, and an unprivileged real date fails on it too.
   @settable_time ~r/^(\d{2}){2,6}(\.\d{2})?$/
+
+  # Short flags that take no value, and so may cluster: `-ju` is `-j -u`.
+  @no_argument_flags [?j, ?u]
+
+  # The ISO calendar spans fewer than 3.7M days, so no adjustment larger than
+  # that lands inside it from any base.
+  @max_seconds 3_652_425 * 86_400
+
+  # Seconds per unit, each rounded down to the shortest that unit can be, so the
+  # bound above never rejects an adjustment that would have been in range.
+  @unit_seconds %{
+    "y" => 365 * 86_400,
+    "m" => 28 * 86_400,
+    "w" => 7 * 86_400,
+    "d" => 86_400,
+    "H" => 3_600,
+    "M" => 60,
+    "S" => 1
+  }
 
   @impl true
   def names, do: ["date"]
@@ -64,16 +90,10 @@ defmodule JustBash.Commands.Date do
     })
   end
 
-  defp parse_args([], opts), do: {:ok, opts}
+  defp parse_args([], opts), do: finish(opts)
 
-  # Real date rejects competing output formats rather than picking one.
-  defp parse_args(["+" <> _format | _rest], %{iso_format: iso}) when iso != nil do
-    {:error, "date: multiple output formats specified\n"}
-  end
-
-  defp parse_args(["+" <> format | rest], opts) do
-    parse_args(rest, %{opts | format: format})
-  end
+  defp parse_args(["+" <> format | rest], opts),
+    do: put_format(format, rest, opts, &parse_args/2)
 
   defp parse_args(["-I" <> spec | rest], opts), do: put_iso_format(spec, rest, opts)
   defp parse_args(["--iso-8601" | rest], opts), do: put_iso_format("", rest, opts)
@@ -112,33 +132,86 @@ defmodule JustBash.Commands.Date do
     parse_args(rest, opts)
   end
 
+  # Inside a cluster the next character is an option character, and `-` is not
+  # one. This clause has to precede the rewrite below, which would otherwise read
+  # `-u-` as `-u --` and print the date at exit 0.
+  defp parse_args([<<?-, flag, ?-, _::binary>> | _rest], _opts)
+       when flag in @no_argument_flags do
+    {:error, "date: illegal option -- -\n" <> usage()}
+  end
+
+  # getopt lets no-argument flags cluster, and lets whichever flag ends a cluster
+  # carry its value attached: `-ur0` is `-u -r 0`.
+  defp parse_args([<<?-, flag, rest::binary>> | args], opts)
+       when flag in @no_argument_flags and rest != "" do
+    parse_args([<<?-, flag>>, "-" <> rest | args], opts)
+  end
+
   # When we have an input_format set (BSD -f flag) and encounter a non-option arg
   defp parse_args([<<c, _::binary>> = date_str | rest], %{input_format: input_format} = opts)
        when input_format != nil and c != ?+ and c != ?- do
-    case parse_formatted_date(date_str, input_format) do
-      {:ok, datetime} ->
-        parse_args(rest, %{opts | datetime: datetime, input_format: nil})
-
-      {:error, _} ->
-        {:error, "date: invalid date '#{date_str}'\n"}
-    end
+    put_formatted_date(date_str, rest, opts, &parse_args/2)
   end
+
+  # `--` ends option parsing, as getopt does.
+  defp parse_args(["--" | rest], opts), do: parse_operands(rest, opts)
 
   # An option we do not implement fails loudly. Dropping it would print the
   # current date at exit 0 — a wrong answer nothing downstream can detect.
-  defp parse_args(["-" <> flag = arg | _rest], _opts) when flag != "" do
-    {:error, "date: illegal option -- #{arg}\n" <> usage()}
+  defp parse_args(["--" <> flag | _rest], _opts) when flag != "" do
+    {:error, "date: unrecognized option '--#{flag}'\n" <> usage()}
   end
+
+  # A short option is named by the character getopt rejected, so `-Xu` is a bad
+  # `X` rather than a bad `Xu`. A lone `-` has no such character and falls
+  # through to the operand clause below, which is where getopt leaves it too.
+  defp parse_args([<<?-, char, _::binary>> | _rest], _opts) do
+    {:error, "date: illegal option -- #{<<char>>}\n" <> usage()}
+  end
+
+  defp parse_args([operand | _rest], opts), do: operand_error(operand, opts)
+
+  # After `--` nothing is an option, so an argument is `+format`, the operand a
+  # pending -f describes, or a time we are being asked to set the clock to.
+  defp parse_operands([], opts), do: finish(opts)
+
+  defp parse_operands(["+" <> format | rest], opts),
+    do: put_format(format, rest, opts, &parse_operands/2)
+
+  defp parse_operands([date_str | rest], %{input_format: input_format} = opts)
+       when input_format != nil do
+    put_formatted_date(date_str, rest, opts, &parse_operands/2)
+  end
+
+  defp parse_operands([operand | _rest], opts), do: operand_error(operand, opts)
+
+  # -f names the format of an operand. With no operand there is nothing to parse,
+  # and real date prints usage rather than falling back to the current time.
+  defp finish(%{input_format: input_format}) when input_format != nil, do: {:error, usage()}
+  defp finish(opts), do: {:ok, opts}
 
   # With -j there is no clock to set, so an operand is a time to display — and
   # the canonical `[[[[mm]dd]HH]MM[[cc]yy][.SS]` form is one we cannot parse.
-  defp parse_args([_operand | _rest], %{no_set: true}), do: {:error, illegal_time_format()}
+  defp operand_error(_operand, %{no_set: true}), do: {:error, illegal_time_format()}
 
-  defp parse_args([operand | _rest], _opts) do
+  defp operand_error(operand, _opts) do
     if Regex.match?(@settable_time, operand) do
       {:error, "date: clock_settime: Operation not permitted\n"}
     else
       {:error, illegal_time_format()}
+    end
+  end
+
+  # Real date rejects competing output formats rather than picking one.
+  defp put_format(_format, _rest, %{iso_format: iso}, _cont) when iso != nil,
+    do: {:error, "date: multiple output formats specified\n"}
+
+  defp put_format(format, rest, opts, cont), do: cont.(rest, %{opts | format: format})
+
+  defp put_formatted_date(date_str, rest, %{input_format: input_format} = opts, cont) do
+    case parse_formatted_date(date_str, input_format) do
+      {:ok, datetime} -> cont.(rest, %{opts | datetime: datetime, input_format: nil})
+      {:error, _} -> {:error, "date: invalid date '#{date_str}'\n"}
     end
   end
 
@@ -160,13 +233,27 @@ defmodule JustBash.Commands.Date do
   end
 
   defp put_adjustment(spec, rest, opts) do
-    case Regex.run(@adjustment, spec) do
-      [_spec, sign, value, unit] ->
-        amount = String.to_integer(sign <> value)
-        parse_args(rest, %{opts | adjustments: [{amount, unit, spec} | opts.adjustments]})
+    case parse_adjustment(spec) do
+      {:ok, adjustment} ->
+        parse_args(rest, %{opts | adjustments: [adjustment | opts.adjustments]})
 
-      nil ->
+      :error ->
         {:error, cannot_adjust(spec)}
+    end
+  end
+
+  # An adjustment too large for the ISO calendar is rejected here, before it is
+  # applied, and not by the range check in adjust/2 afterwards. That is not just
+  # an early exit: a fixed-length unit is applied with DateTime.add/3, whose cost
+  # grows with how far the result lands from the epoch, so a spec like
+  # `+99999999999999999999d` does not come back at all.
+  defp parse_adjustment(spec) do
+    with [_spec, sign, value, unit] <- Regex.run(@adjustment, spec),
+         amount = String.to_integer(sign <> value),
+         true <- abs(amount) * Map.fetch!(@unit_seconds, unit) <= @max_seconds do
+      {:ok, {amount, unit, spec}}
+    else
+      _unparseable_or_too_large -> :error
     end
   end
 
