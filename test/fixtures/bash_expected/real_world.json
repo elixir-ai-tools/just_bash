@@ -1,203 +1,203 @@
 {
   "results": [
     {
-      "content_hash": "eaacb08dc037c211",
+      "content_hash": "74c95df538c61f82",
       "exit_code": 0,
       "name": "one-liner: head -c to extract prefix",
       "stderr": "",
       "stdout": "abcdefgh"
     },
     {
-      "content_hash": "083347a2abd71572",
+      "content_hash": "b76e1721be41059e",
       "exit_code": 0,
       "name": "one-liner: wc -l on pipeline",
       "stderr": "",
       "stdout": "4\n"
     },
     {
-      "content_hash": "9d86b75c746af369",
+      "content_hash": "34b82bad77c9c42c",
       "exit_code": 0,
       "name": "one-liner: sort | uniq -c pattern",
       "stderr": "",
       "stdout": "      3 apple\n      2 banana\n      1 cherry\n"
     },
     {
-      "content_hash": "3b79f7af0f85c70c",
+      "content_hash": "020d5d322c0af014",
       "exit_code": 0,
       "name": "one-liner: grep -c count matches",
       "stderr": "",
       "stdout": "3\n"
     },
     {
-      "content_hash": "6eeff81a3301a492",
+      "content_hash": "f756a39f8eb28890",
       "exit_code": 0,
       "name": "one-liner: awk field extraction",
       "stderr": "",
       "stdout": "alice\nbob\ncharlie\n"
     },
     {
-      "content_hash": "c5ba448c28900215",
+      "content_hash": "a81b22adba9e637f",
       "exit_code": 0,
       "name": "one-liner: tr squeeze whitespace",
       "stderr": "",
       "stdout": "hello world foo\n"
     },
     {
-      "content_hash": "2970dfa9a50ddb14",
+      "content_hash": "3ad319a4311151ec",
       "exit_code": 0,
       "name": "one-liner: cut -d and paste -d",
       "stderr": "",
       "stdout": "1\n2\n3\n"
     },
     {
-      "content_hash": "349023f7ed641054",
+      "content_hash": "c7e52bee6d3dbb72",
       "exit_code": 0,
       "name": "one-liner: xargs -I replacement",
       "stderr": "",
       "stdout": "item: one\nitem: two\nitem: three\n"
     },
     {
-      "content_hash": "c628dcdbe4252c5f",
+      "content_hash": "05cc878852343c79",
       "exit_code": 0,
       "name": "one-liner: subshell variable isolation",
       "stderr": "",
       "stdout": "inner\nouter\n"
     },
     {
-      "content_hash": "d14924a4f4853e17",
+      "content_hash": "e6c7ee4dc4861f7a",
       "exit_code": 0,
       "name": "one-liner: while read loop with IFS",
       "stderr": "",
       "stdout": "a=1\nb=2\nc=3\n"
     },
     {
-      "content_hash": "cddacda6f0b7191b",
+      "content_hash": "d11d335828ec5695",
       "exit_code": 0,
       "name": "one-liner: printf format string",
       "stderr": "",
       "stdout": "alice         30\nbob           25\ncharlie       35\n"
     },
     {
-      "content_hash": "07110906f0b5c126",
+      "content_hash": "f76e1c4f3128ece7",
       "exit_code": 127,
       "name": "one-liner: seq into arithmetic",
       "stderr": "bash: line 1: bc: command not found\n",
       "stdout": ""
     },
     {
-      "content_hash": "6f0a7fdaffe87eeb",
+      "content_hash": "7044737c2b2abf72",
       "exit_code": 0,
       "name": "one-liner: nested pipelines",
       "stderr": "",
       "stdout": "8\n"
     },
     {
-      "content_hash": "47e28e1f2ab57443",
+      "content_hash": "770504a919dba521",
       "exit_code": 0,
       "name": "one-liner: sed and grep pipeline",
       "stderr": "",
       "stdout": "disk full\ntimeout\n"
     },
     {
-      "content_hash": "99756c361f26f918",
+      "content_hash": "fd6bbe23e5a96aaf",
       "exit_code": 0,
       "name": "one-liner: awk sum column",
       "stderr": "",
       "stdout": "100\n"
     },
     {
-      "content_hash": "00e6d02eceb4529d",
+      "content_hash": "0ff17388743835b3",
       "exit_code": 0,
       "name": "one-liner: head and tail to extract middle",
       "stderr": "",
       "stdout": "5\n6\n7\n"
     },
     {
-      "content_hash": "1f5fd4c459e3af9a",
+      "content_hash": "269f1d6add4855cb",
       "exit_code": 0,
       "name": "one-liner: cat - for stdin in pipeline",
       "stderr": "",
       "stdout": "hello\n"
     },
     {
-      "content_hash": "9cbf6b06d4af11ae",
+      "content_hash": "8264f067ed2932a1",
       "exit_code": 0,
       "name": "one-liner: rev and cut for last field",
       "stderr": "",
       "stdout": "file.txt\n"
     },
     {
-      "content_hash": "803f68986f94d7ee",
+      "content_hash": "f08df403cb4ddb04",
       "exit_code": 0,
       "name": "one-liner: tr delete characters",
       "stderr": "",
       "stdout": "Hello World \n"
     },
     {
-      "content_hash": "1d1e66fd89e6a570",
+      "content_hash": "b24b8385f42442a7",
       "exit_code": 0,
       "name": "one-liner: sort -t -k field sort",
       "stderr": "",
       "stdout": "a:1\nb:2\nc:3\n"
     },
     {
-      "content_hash": "df28220700b4bc69",
+      "content_hash": "04f7363563dc3773",
       "exit_code": 0,
       "name": "one-liner: command substitution in echo",
       "stderr": "",
       "stdout": "there are 3 lines\n"
     },
     {
-      "content_hash": "a4602a1af2bbb56d",
+      "content_hash": "194005786bf4019d",
       "exit_code": 0,
       "name": "one-liner: tail -c byte mode",
       "stderr": "",
       "stdout": "fghij"
     },
     {
-      "content_hash": "4a9f5f03127723c0",
+      "content_hash": "bbb282486f87cb03",
       "exit_code": 0,
       "name": "one-liner: multiple pipes with wc -lw",
       "stderr": "",
       "stdout": "      2       5\n"
     },
     {
-      "content_hash": "3419f4248a3df601",
+      "content_hash": "edc40e3dbaf083d5",
       "exit_code": 0,
       "name": "one-liner: for loop with seq",
       "stderr": "",
       "stdout": "num:1\nnum:2\nnum:3\nnum:4\nnum:5\n"
     },
     {
-      "content_hash": "0fdc8b2425e0deb0",
+      "content_hash": "da8c5d5aaa389136",
       "exit_code": 0,
       "name": "one-liner: grep -v | sort -u dedup",
       "stderr": "",
       "stdout": "apple\nbanana\ncherry\n"
     },
     {
-      "content_hash": "efebc32e5cab5fe2",
+      "content_hash": "e868b1f67ac6c8c0",
       "exit_code": 0,
       "name": "one-liner: awk NR line numbers",
       "stderr": "",
       "stdout": "1: first\n2: second\n3: third\n"
     },
     {
-      "content_hash": "8dd4f831fccb49a1",
+      "content_hash": "c0abb65b0624a388",
       "exit_code": 0,
       "name": "one-liner: tr character translation",
       "stderr": "",
       "stdout": "HELLO WORLD\n"
     },
     {
-      "content_hash": "5baf2740972bb77c",
+      "content_hash": "116f4177d21289bd",
       "exit_code": 0,
       "name": "one-liner: head -c with wc -c to verify",
       "stderr": "",
       "stdout": "5\n"
     },
     {
-      "content_hash": "0a91498ee638b805",
+      "content_hash": "edef90d0772b5c0f",
       "exit_code": 0,
       "name": "one-liner: nested command substitution",
       "stderr": "",

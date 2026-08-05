@@ -302,77 +302,77 @@
       "stdout": "a\n3\n"
     },
     {
-      "content_hash": "4e0be3d964a9dc35",
+      "content_hash": "f9a035703a612267",
       "exit_code": 0,
       "name": "special var trailing text: $# followed by literal",
       "stderr": "",
       "stdout": "0args\n"
     },
     {
-      "content_hash": "f93a4db1b75def55",
+      "content_hash": "195cbbd549607bd6",
       "exit_code": 0,
       "name": "special var trailing text: $? followed by literal",
       "stderr": "",
       "stdout": "0foo\n"
     },
     {
-      "content_hash": "4aa29b0ca8c839cd",
+      "content_hash": "e8696165992d6f4a",
       "exit_code": 0,
       "name": "special var trailing text: bare $ before space",
       "stderr": "",
       "stdout": "$ end\n"
     },
     {
-      "content_hash": "5764212ad8da2dc0",
+      "content_hash": "16d196e1707123d1",
       "exit_code": 0,
       "name": "special var trailing text: bare $ at end of word",
       "stderr": "",
       "stdout": "hello$\n"
     },
     {
-      "content_hash": "88c458d384d8eeb9",
+      "content_hash": "96145d8724412328",
       "exit_code": 0,
       "name": "special var trailing text: $# in double quotes with trailing",
       "stderr": "",
       "stdout": "0items\n"
     },
     {
-      "content_hash": "154514f76d1fabfb",
+      "content_hash": "934702a9133a94fe",
       "exit_code": 0,
       "name": "special var trailing text: $? in double quotes with trailing",
       "stderr": "",
       "stdout": "1code\n"
     },
     {
-      "content_hash": "0b5535321931d845",
+      "content_hash": "655c8da00a65c3a5",
       "exit_code": 0,
       "name": "special var trailing text: $# no args with text in function",
       "stderr": "",
       "stdout": "0done\n"
     },
     {
-      "content_hash": "c8adc8afdbeef2dc",
+      "content_hash": "722a5a2f6ebe8047",
       "exit_code": 0,
       "name": "special var trailing text: $# with args text in function",
       "stderr": "",
       "stdout": "3done\n"
     },
     {
-      "content_hash": "cbabebb75f046268",
+      "content_hash": "f66dc575dbdc263f",
       "exit_code": 0,
       "name": "special var trailing text: regular var consumes full identifier",
       "stderr": "",
       "stdout": "\n"
     },
     {
-      "content_hash": "65d19613148cb12e",
+      "content_hash": "9e706a143cd1c56f",
       "exit_code": 0,
       "name": "special var trailing text: regular var stopped by non-ident char",
       "stderr": "",
       "stdout": "hello/path\n"
     },
     {
-      "content_hash": "2a41edd942666616",
+      "content_hash": "07ca1720edf65304",
       "exit_code": 0,
       "name": "special var trailing text: $@ in function with trailing text",
       "stderr": "",

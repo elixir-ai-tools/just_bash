@@ -109,22 +109,22 @@
     {
       "name": "wc combined flags: -lw lines and words",
       "script": "echo -e 'one two\\nthree four five' | wc -lw",
-      "content_hash": "364ea40429bd538e"
+      "content_hash": "20074798e3e17a48"
     },
     {
       "name": "wc combined flags: -lc lines and bytes",
       "script": "echo 'hello' | wc -lc",
-      "content_hash": "44438c7f2ced5b1b"
+      "content_hash": "b4d38a44930be149"
     },
     {
       "name": "wc combined flags: -lwc all three",
       "script": "echo -e 'one two\\nthree' | wc -lwc",
-      "content_hash": "7981339a5ac59b1e"
+      "content_hash": "4ca6748c61836f69"
     },
     {
       "name": "wc combined flags: -wc words and bytes",
       "script": "echo 'hello world' | wc -wc",
-      "content_hash": "e53de18540523d34"
+      "content_hash": "3782a58db4103e82"
     }
   ]
 }

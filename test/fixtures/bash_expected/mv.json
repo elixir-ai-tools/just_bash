@@ -50,14 +50,14 @@
       "stdout": "rc=1\nC\n"
     },
     {
-      "content_hash": "62b26859204b5de7",
+      "content_hash": "561d53b939dce772",
       "exit_code": 0,
       "name": "mv comparison: refuses to move into a symlink pointing at itself",
       "stderr": "mv: cannot move 'a' to a subdirectory of itself, 'l/a'\n",
       "stdout": "rc=1\nF\n"
     },
     {
-      "content_hash": "849325d826f72e28",
+      "content_hash": "8d1741056805202f",
       "exit_code": 0,
       "name": "mv comparison: refuses to move beneath a symlink pointing at itself",
       "stderr": "mv: cannot move 'a' to a subdirectory of itself, 'l/x'\n",

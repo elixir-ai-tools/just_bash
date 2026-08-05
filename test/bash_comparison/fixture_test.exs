@@ -1,14 +1,25 @@
 defmodule JustBash.FixtureTest do
   @moduledoc """
-  Dynamically loads bash comparison test fixtures from JSON files.
+  Asserts JustBash matches real bash, byte for byte, on the recorded corpus.
 
-  Test cases are defined in `test/fixtures/bash_cases/*.json`.
-  Expected outputs are in `test/fixtures/bash_expected/*.json`.
+  Cases live in `test/fixtures/bash_cases/*.json`; what real bash produced for
+  them lives in `test/fixtures/bash_expected/*.json`. Recording needs Docker
+  (`mix bash_fixtures`), but this test compares against the recording, so it
+  runs offline.
 
-  Run `mix bash_fixtures` to regenerate expected outputs via Docker.
+  The two files are joined by `content_hash`, a digest of the case inputs. The
+  hash is **recomputed** here rather than read from the case file: a stored hash
+  that is never re-derived is just an opaque label, and a case whose script was
+  edited without re-recording would keep passing while asserting against output
+  recorded for a different script. Recomputing makes that a compile error.
+
+  See `mix bash_fixtures.verify` for the same checks as a friendly offline
+  report, and `mix bash_fixtures.rehash` to adopt edited scripts.
   """
 
   use ExUnit.Case, async: true
+
+  alias JustBash.Fixtures
 
   @cases_dir Path.expand("../fixtures/bash_cases", __DIR__)
   @expected_dir Path.expand("../fixtures/bash_expected", __DIR__)
@@ -22,14 +33,25 @@ defmodule JustBash.FixtureTest do
     if File.exists?(expected_file) do
       cases = case_file |> File.read!() |> Jason.decode!()
       expected = expected_file |> File.read!() |> Jason.decode!()
+      results = Map.get(expected, "results", [])
 
-      # Build a lookup from content_hash -> expected result.
-      # Content hash is a SHA-256 of the canonical {script, files} — immune
-      # to test renames, only invalidated when actual inputs change.
-      expected_by_hash =
-        expected
-        |> Map.get("results", [])
-        |> Enum.into(%{}, fn r -> {r["content_hash"], r} end)
+      # A broken join makes every assertion in the suite untrustworthy, so the
+      # two problems that corrupt it fail the build. A merely missing recording
+      # is reported per-case below, and orphans are left to bash_fixtures.verify.
+      fatal =
+        cases["cases"]
+        |> Fixtures.validate(results)
+        |> Enum.filter(&(elem(&1, 0) in [:stale_hash, :hash_collision]))
+
+      if fatal != [] do
+        raise CompileError,
+          description:
+            "Fixture corpus integrity failure in #{suite}:\n" <>
+              Enum.map_join(fatal, "\n", &"  - #{Fixtures.describe(&1)}") <>
+              "\n\nRun `mix bash_fixtures.verify` for the full report."
+      end
+
+      expected_by_hash = Map.new(results, fn r -> {r["content_hash"], r} end)
 
       describe suite do
         for test_case <- cases["cases"] do
@@ -37,17 +59,8 @@ defmodule JustBash.FixtureTest do
           script = test_case["script"]
           files = test_case["files"]
           opts = test_case["opts"] || %{}
-          content_hash = test_case["content_hash"]
-
-          expected_result =
-            if content_hash do
-              expected_by_hash[content_hash]
-            else
-              raise CompileError,
-                description:
-                  "Fixture case missing content_hash in #{suite}: #{name}. " <>
-                    "Regenerate cases with: mix run scripts/extract_bash_cases.exs"
-            end
+          content_hash = Fixtures.hash_case(test_case)
+          expected_result = expected_by_hash[content_hash]
 
           @tag suite: suite
           if expected_result do

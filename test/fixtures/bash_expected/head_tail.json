@@ -36,84 +36,84 @@
       "stdout": "3\n4\n5\n"
     },
     {
-      "content_hash": "a5922d6daf8dda41",
+      "content_hash": "91499b571209b0d1",
       "exit_code": 0,
       "name": "head -c byte mode: first 5 bytes",
       "stderr": "",
       "stdout": "Hello"
     },
     {
-      "content_hash": "f2cc07f2b479ff77",
+      "content_hash": "864eae7f738f5a1a",
       "exit_code": 0,
       "name": "head -c byte mode: from stdin pipe",
       "stderr": "",
       "stdout": "abc"
     },
     {
-      "content_hash": "74f4ff0916d80285",
+      "content_hash": "b64a0ce933b5357d",
       "exit_code": 0,
       "name": "head -c byte mode: N larger than input",
       "stderr": "",
       "stdout": "short"
     },
     {
-      "content_hash": "c239fa665b670645",
+      "content_hash": "74a2f8e4e4bf61bf",
       "exit_code": 0,
       "name": "head -c byte mode: zero bytes",
       "stderr": "",
       "stdout": ""
     },
     {
-      "content_hash": "a9cfeb0cd1dbaa26",
+      "content_hash": "55ed0f84f48dbb88",
       "exit_code": 0,
       "name": "head -c byte mode: empty input",
       "stderr": "",
       "stdout": ""
     },
     {
-      "content_hash": "c6d52634160a6c13",
+      "content_hash": "c0d83bd31ca4eb0f",
       "exit_code": 0,
       "name": "head -c byte mode: includes newlines",
       "stderr": "",
       "stdout": "line1\nli"
     },
     {
-      "content_hash": "ac6c29f2e051b845",
+      "content_hash": "8a706bb6d3f01cdd",
       "exit_code": 0,
       "name": "tail -c byte mode: last 7 bytes",
       "stderr": "",
       "stdout": "World!"
     },
     {
-      "content_hash": "cd8e1303f084b24b",
+      "content_hash": "4640623236d21a01",
       "exit_code": 0,
       "name": "tail -c byte mode: from stdin pipe",
       "stderr": "",
       "stdout": "ghij"
     },
     {
-      "content_hash": "5b4394666e2e4a52",
+      "content_hash": "8d99f00253524e93",
       "exit_code": 0,
       "name": "tail -c byte mode: N larger than input",
       "stderr": "",
       "stdout": "short"
     },
     {
-      "content_hash": "19681666c21ef715",
+      "content_hash": "686e4902cab2250d",
       "exit_code": 0,
       "name": "tail -c byte mode: zero bytes",
       "stderr": "",
       "stdout": ""
     },
     {
-      "content_hash": "575c18be3c2725b7",
+      "content_hash": "cab1715d6c17e313",
       "exit_code": 0,
       "name": "tail -c byte mode: empty input",
       "stderr": "",
       "stdout": ""
     },
     {
-      "content_hash": "d0ef8df077e5a212",
+      "content_hash": "5a6082eb5e3b82ac",
       "exit_code": 0,
       "name": "tail -c byte mode: includes newlines",
       "stderr": "",

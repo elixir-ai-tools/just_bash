@@ -219,57 +219,57 @@
     {
       "name": "special var trailing text: $# followed by literal",
       "script": "echo $#args",
-      "content_hash": "4e0be3d964a9dc35"
+      "content_hash": "f9a035703a612267"
     },
     {
       "name": "special var trailing text: $? followed by literal",
       "script": "true; echo $?foo",
-      "content_hash": "f93a4db1b75def55"
+      "content_hash": "195cbbd549607bd6"
     },
     {
       "name": "special var trailing text: bare $ before space",
       "script": "echo $ end",
-      "content_hash": "4aa29b0ca8c839cd"
+      "content_hash": "e8696165992d6f4a"
     },
     {
       "name": "special var trailing text: bare $ at end of word",
       "script": "echo hello$",
-      "content_hash": "5764212ad8da2dc0"
+      "content_hash": "16d196e1707123d1"
     },
     {
       "name": "special var trailing text: $# in double quotes with trailing",
       "script": "echo \"$#items\"",
-      "content_hash": "88c458d384d8eeb9"
+      "content_hash": "96145d8724412328"
     },
     {
       "name": "special var trailing text: $? in double quotes with trailing",
       "script": "false; echo \"$?code\"",
-      "content_hash": "154514f76d1fabfb"
+      "content_hash": "934702a9133a94fe"
     },
     {
       "name": "special var trailing text: $# no args with text in function",
       "script": "f() { echo $#done; }; f",
-      "content_hash": "0b5535321931d845"
+      "content_hash": "655c8da00a65c3a5"
     },
     {
       "name": "special var trailing text: $# with args text in function",
       "script": "f() { echo $#done; }; f a b c",
-      "content_hash": "c8adc8afdbeef2dc"
+      "content_hash": "722a5a2f6ebe8047"
     },
     {
       "name": "special var trailing text: regular var consumes full identifier",
       "script": "FOO=hello; echo $FOObar",
-      "content_hash": "cbabebb75f046268"
+      "content_hash": "f66dc575dbdc263f"
     },
     {
       "name": "special var trailing text: regular var stopped by non-ident char",
       "script": "FOO=hello; echo $FOO/path",
-      "content_hash": "65d19613148cb12e"
+      "content_hash": "9e706a143cd1c56f"
     },
     {
       "name": "special var trailing text: $@ in function with trailing text",
       "script": "f() { echo \"$@\"end; }; f a b",
-      "content_hash": "2a41edd942666616"
+      "content_hash": "07ca1720edf65304"
     }
   ]
 }

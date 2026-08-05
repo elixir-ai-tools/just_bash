@@ -1,37 +1,53 @@
 defmodule Mix.Tasks.BashFixtures do
   @moduledoc """
-  Generates expected bash outputs for fixture-based comparison tests.
+  Records what real bash does for the fixture comparison corpus.
 
-  Reads JSON test case files from `test/fixtures/bash_cases/*.json`,
-  runs each script in an Ubuntu Docker container with real bash,
-  and writes expected outputs to `test/fixtures/bash_expected/*.json`.
+  Reads case files from `test/fixtures/bash_cases/*.json`, runs each script under
+  real bash in a Docker container, and writes the resulting stdout, stderr and
+  exit code to `test/fixtures/bash_expected/*.json`. `JustBash.FixtureTest` then
+  asserts JustBash produces the same bytes, offline.
 
-  Locked fixtures (results with `"locked": true`) are preserved during
-  re-recording. Use `--force` to overwrite locked fixtures.
+  A whole suite is recorded in a single container: startup dominates per-case
+  cost, so batching is what keeps recording the corpus tractable.
+
+  Cases and recordings are joined by `content_hash`, a digest of the case inputs
+  computed by `JustBash.Fixtures`. Editing a script therefore changes its hash
+  and orphans its recording, which `mix bash_fixtures.verify` detects offline —
+  no Docker needed on the PR path.
 
   ## Usage
 
-      # Generate all fixtures
+      # Record all suites
       mix bash_fixtures
 
-      # Generate specific suite(s)
+      # Record specific suites
       mix bash_fixtures wc sort arithmetic
 
-      # Rebuild Docker image first
+      # Rebuild the Docker image first
       mix bash_fixtures --rebuild
 
-      # Force overwrite locked fixtures
-      mix bash_fixtures --force
+  ## Related tasks
+
+    * `mix bash_fixtures.verify` — offline integrity check (no Docker)
+    * `mix bash_fixtures.rehash` — recompute stored hashes after a script edit
   """
 
   use Mix.Task
 
-  @shortdoc "Generate expected bash outputs via Docker"
+  alias JustBash.Fixtures
+
+  @shortdoc "Record expected bash outputs via Docker"
 
   @cases_dir Path.expand("../../../test/fixtures/bash_cases", __DIR__)
   @expected_dir Path.expand("../../../test/fixtures/bash_expected", __DIR__)
   @fixtures_dir Path.expand("../../../test/fixtures", __DIR__)
   @docker_image "just-bash-runner"
+
+  @doc false
+  def cases_dir, do: @cases_dir
+
+  @doc false
+  def expected_dir, do: @expected_dir
 
   @impl Mix.Task
   def run(args) do
@@ -39,38 +55,35 @@ defmodule Mix.Tasks.BashFixtures do
 
     ensure_docker_image(opts[:rebuild])
 
-    case_files = discover_case_files(suites)
+    case discover_case_files(suites) do
+      [] ->
+        Mix.shell().info("No case files found in #{@cases_dir}")
 
-    if case_files == [] do
-      Mix.shell().info("No case files found in #{@cases_dir}")
-      :ok
-    else
-      File.mkdir_p!(@expected_dir)
+      case_files ->
+        File.mkdir_p!(@expected_dir)
 
-      Enum.each(case_files, fn case_file ->
-        suite = Path.basename(case_file, ".json")
-        Mix.shell().info("Generating: #{suite}")
+        Enum.each(case_files, fn case_file ->
+          suite = Path.basename(case_file, ".json")
+          Mix.shell().info("Recording: #{suite}")
+          record_suite(case_file, Path.join(@expected_dir, "#{suite}.json"))
+        end)
 
-        expected_file = Path.join(@expected_dir, "#{suite}.json")
-        generate_expected(case_file, expected_file, opts[:force])
-      end)
-
-      Mix.shell().info("Done. Expected outputs in #{@expected_dir}")
+        Mix.shell().info("Done. Expected outputs in #{@expected_dir}")
     end
   end
 
   defp parse_args(args) do
-    {opts, suites, _} =
-      OptionParser.parse(args, switches: [rebuild: :boolean, force: :boolean])
-
+    {opts, suites, _} = OptionParser.parse(args, switches: [rebuild: :boolean])
     {opts, suites}
   end
 
-  defp discover_case_files([]) do
-    Path.wildcard(Path.join(@cases_dir, "*.json")) |> Enum.sort()
+  @doc false
+  @spec discover_case_files([String.t()]) :: [String.t()]
+  def discover_case_files([]) do
+    @cases_dir |> Path.join("*.json") |> Path.wildcard() |> Enum.sort()
   end
 
-  defp discover_case_files(suites) do
+  def discover_case_files(suites) do
     Enum.flat_map(suites, fn suite ->
       path = Path.join(@cases_dir, "#{suite}.json")
 
@@ -83,6 +96,14 @@ defmodule Mix.Tasks.BashFixtures do
     end)
   end
 
+  @doc false
+  @spec read_json!(String.t()) :: map()
+  def read_json!(path), do: path |> File.read!() |> Jason.decode!()
+
+  @doc false
+  @spec write_json!(String.t(), map()) :: :ok
+  def write_json!(path, data), do: File.write!(path, Jason.encode!(data, pretty: true) <> "\n")
+
   defp ensure_docker_image(rebuild) do
     if rebuild || !docker_image_exists?() do
       Mix.shell().info("Building Docker image: #{@docker_image}")
@@ -92,9 +113,7 @@ defmodule Mix.Tasks.BashFixtures do
           stderr_to_stdout: true
         )
 
-      if status != 0 do
-        Mix.raise("Docker build failed:\n#{output}")
-      end
+      if status != 0, do: Mix.raise("Docker build failed:\n#{output}")
     end
   end
 
@@ -105,69 +124,71 @@ defmodule Mix.Tasks.BashFixtures do
     end
   end
 
-  defp generate_expected(case_file, expected_file, force) do
-    # Load existing locked fixtures
-    locked_by_name = load_locked_fixtures(expected_file, force)
+  defp record_suite(case_file, expected_file) do
+    out_dir = Path.join(System.tmp_dir!(), "just_bash_fixtures_#{unique_suffix()}")
+    File.mkdir_p!(out_dir)
 
-    # Mount the cases file directly into the container and redirect to runner
-    {output, status} =
-      System.cmd(
-        "docker",
-        [
-          "run",
-          "--rm",
-          "--network=none",
-          "-v",
-          "#{@fixtures_dir}/runner.sh:/work/runner.sh:ro",
-          "-v",
-          "#{Path.expand(case_file)}:/work/cases.json:ro",
-          @docker_image,
-          "-c",
-          "/work/runner.sh < /work/cases.json"
-        ],
-        stderr_to_stdout: true
-      )
+    try do
+      case run_container(case_file, out_dir) do
+        {:ok, recorded} ->
+          verify_recorded!(case_file, recorded)
+          write_json!(expected_file, recorded)
 
-    if status != 0 do
-      Mix.shell().error(
-        "Runner failed for #{Path.basename(case_file)} (exit #{status}):\n#{output}"
-      )
-    else
-      decoded = Jason.decode!(output)
-      results = merge_locked_results(decoded["results"], locked_by_name)
-      merged = Map.put(decoded, "results", results)
-      pretty = Jason.encode!(merged, pretty: true)
-      File.write!(expected_file, pretty <> "\n")
-    end
-  end
-
-  defp load_locked_fixtures(expected_file, force) do
-    if force || !File.exists?(expected_file) do
-      %{}
-    else
-      expected_file
-      |> File.read!()
-      |> Jason.decode!()
-      |> Map.get("results", [])
-      |> Enum.filter(fn r -> r["locked"] == true end)
-      |> Enum.into(%{}, fn r -> {r["content_hash"], r} end)
-    end
-  end
-
-  defp merge_locked_results(new_results, locked_by_hash) when locked_by_hash == %{} do
-    new_results
-  end
-
-  defp merge_locked_results(new_results, locked_by_hash) do
-    Enum.map(new_results, fn result ->
-      case Map.get(locked_by_hash, result["content_hash"]) do
-        nil ->
-          result
-
-        locked ->
-          Mix.shell().info("  Keeping locked: #{result["name"]}")
-          locked
+        {:error, message} ->
+          Mix.shell().error("#{Path.basename(case_file)}: #{message}")
       end
-    end)
+    after
+      File.rm_rf!(out_dir)
+    end
   end
+
+  # The runner writes its payload to a mounted file rather than stdout. Docker
+  # itself writes to stderr (image platform mismatches, pull progress), and
+  # folding that into the payload would corrupt the JSON — silently, since a
+  # truncated parse fails far from its cause.
+  defp run_container(case_file, out_dir) do
+    args = [
+      "run",
+      "--rm",
+      "--network=none",
+      "-v",
+      "#{@fixtures_dir}/runner.sh:/work/runner.sh:ro",
+      "-v",
+      "#{Path.expand(case_file)}:/work/cases.json:ro",
+      "-v",
+      "#{out_dir}:/out",
+      @docker_image,
+      "-c",
+      "/work/runner.sh < /work/cases.json > /out/result.json"
+    ]
+
+    {diagnostics, status} = System.cmd("docker", args, stderr_to_stdout: true)
+    result_path = Path.join(out_dir, "result.json")
+
+    cond do
+      status != 0 -> {:error, "runner exited #{status}:\n#{diagnostics}"}
+      not File.exists?(result_path) -> {:error, "runner wrote no output:\n#{diagnostics}"}
+      true -> {:ok, read_json!(result_path)}
+    end
+  end
+
+  # A recording is only usable if every live case can find it. Checking here
+  # means a hash mismatch surfaces at record time, against the container we just
+  # ran, rather than as a puzzling compile error in the test suite later.
+  defp verify_recorded!(case_file, recorded) do
+    cases = case_file |> read_json!() |> Map.fetch!("cases")
+
+    case Fixtures.validate(cases, Map.get(recorded, "results", [])) do
+      [] ->
+        :ok
+
+      problems ->
+        Mix.shell().error(
+          "#{Path.basename(case_file)}: recorded output does not cover every case:\n" <>
+            Enum.map_join(problems, "\n", &"  - #{Fixtures.describe(&1)}")
+        )
+    end
+  end
+
+  defp unique_suffix, do: Integer.to_string(System.unique_integer([:positive]))
 end

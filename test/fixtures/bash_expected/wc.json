@@ -148,28 +148,28 @@
       "stdout": "3\n"
     },
     {
-      "content_hash": "364ea40429bd538e",
+      "content_hash": "20074798e3e17a48",
       "exit_code": 0,
       "name": "wc combined flags: -lw lines and words",
       "stderr": "",
       "stdout": "      2       5\n"
     },
     {
-      "content_hash": "44438c7f2ced5b1b",
+      "content_hash": "b4d38a44930be149",
       "exit_code": 0,
       "name": "wc combined flags: -lc lines and bytes",
       "stderr": "",
       "stdout": "      1       6\n"
     },
     {
-      "content_hash": "7981339a5ac59b1e",
+      "content_hash": "4ca6748c61836f69",
       "exit_code": 0,
       "name": "wc combined flags: -lwc all three",
       "stderr": "",
       "stdout": "      2       3      14\n"
     },
     {
-      "content_hash": "e53de18540523d34",
+      "content_hash": "3782a58db4103e82",
       "exit_code": 0,
       "name": "wc combined flags: -wc words and bytes",
       "stderr": "",

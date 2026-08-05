@@ -39,12 +39,12 @@
     {
       "name": "mv comparison: refuses to move into a symlink pointing at itself",
       "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir a; echo F > a/f.md; ln -s $D/a l; mv a l; echo rc=$?; cat a/f.md; rm -rf $D",
-      "content_hash": "62b26859204b5de7"
+      "content_hash": "561d53b939dce772"
     },
     {
       "name": "mv comparison: refuses to move beneath a symlink pointing at itself",
       "script": "D=/tmp/jb_mv_$$; rm -rf $D; mkdir -p $D; cd $D; mkdir a; echo F > a/f.md; ln -s $D/a l; mv a l/x; echo rc=$?; cat a/f.md; rm -rf $D",
-      "content_hash": "849325d826f72e28"
+      "content_hash": "8d1741056805202f"
     }
   ]
 }

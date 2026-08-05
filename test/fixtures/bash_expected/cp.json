@@ -302,28 +302,28 @@
       "stdout": "rc=1\n"
     },
     {
-      "content_hash": "e9450712650bb4a0",
+      "content_hash": "25486a1918ca99f1",
       "exit_code": 0,
       "name": "cp comparison: -r into a symlink pointing at the source is refused",
       "stderr": "cp: cannot copy a directory, 'a', into itself, 'l/a'\n",
       "stdout": "rc=1\nF\n"
     },
     {
-      "content_hash": "77d202dbbde3dd3b",
+      "content_hash": "21356459cab5b2c7",
       "exit_code": 0,
       "name": "cp comparison: a destination whose ancestor is a regular file cannot be stat'd",
       "stderr": "cp: cannot stat 'f/sub.md': Not a directory\n",
       "stdout": "rc=1\n"
     },
     {
-      "content_hash": "52a761acc5075034",
+      "content_hash": "14a536df09d1f593",
       "exit_code": 0,
       "name": "cp comparison: -r onto a destination whose ancestor is a regular file cannot be stat'd",
       "stderr": "cp: cannot stat 'f/sub': Not a directory\n",
       "stdout": "rc=1\n"
     },
     {
-      "content_hash": "3ee5b4e3ffbbc648",
+      "content_hash": "4def2da60668382f",
       "exit_code": 0,
       "name": "cp comparison: -r onto an existing regular file cannot overwrite a non-directory",
       "stderr": "cp: cannot overwrite non-directory 'f' with directory 's'\n",
