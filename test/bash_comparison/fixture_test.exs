@@ -62,6 +62,14 @@ defmodule JustBash.FixtureTest do
           content_hash = Fixtures.hash_case(test_case)
           expected_result = expected_by_hash[content_hash]
 
+          # A recorded case JustBash is known not to match yet. The expectation
+          # stays recorded and the reason stays in the corpus, so the gap is
+          # visible and countable rather than absent — an unwritten case looks
+          # exactly like a passing one.
+          if gap = opts["known_gap"] do
+            @tag skip: "known gap: #{gap}"
+          end
+
           @tag suite: suite
           if expected_result do
             expected_stdout = expected_result["stdout"]

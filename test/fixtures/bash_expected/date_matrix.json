@@ -1,0 +1,1258 @@
+{
+  "results": [
+    {
+      "content_hash": "8a512421c503f1f6",
+      "exit_code": 0,
+      "name": "date matrix: directive %a (pm)",
+      "stderr": "",
+      "stdout": "Sat\nrc=0\n"
+    },
+    {
+      "content_hash": "dd87e162c7b9fe45",
+      "exit_code": 0,
+      "name": "date matrix: directive %a (am)",
+      "stderr": "",
+      "stdout": "Wed\nrc=0\n"
+    },
+    {
+      "content_hash": "bd952c3ad83363ea",
+      "exit_code": 0,
+      "name": "date matrix: directive %A (pm)",
+      "stderr": "",
+      "stdout": "Saturday\nrc=0\n"
+    },
+    {
+      "content_hash": "58ac9d25be86ee02",
+      "exit_code": 0,
+      "name": "date matrix: directive %A (am)",
+      "stderr": "",
+      "stdout": "Wednesday\nrc=0\n"
+    },
+    {
+      "content_hash": "3bccf3cb091a0df4",
+      "exit_code": 0,
+      "name": "date matrix: directive %b (pm)",
+      "stderr": "",
+      "stdout": "Jun\nrc=0\n"
+    },
+    {
+      "content_hash": "48c2f1533e4edc90",
+      "exit_code": 0,
+      "name": "date matrix: directive %b (am)",
+      "stderr": "",
+      "stdout": "Jun\nrc=0\n"
+    },
+    {
+      "content_hash": "b42f00344ba38511",
+      "exit_code": 0,
+      "name": "date matrix: directive %B (pm)",
+      "stderr": "",
+      "stdout": "June\nrc=0\n"
+    },
+    {
+      "content_hash": "27ea602ff75dbb76",
+      "exit_code": 0,
+      "name": "date matrix: directive %B (am)",
+      "stderr": "",
+      "stdout": "June\nrc=0\n"
+    },
+    {
+      "content_hash": "e148e5d7269cc6f7",
+      "exit_code": 0,
+      "name": "date matrix: directive %c (pm)",
+      "stderr": "",
+      "stdout": "Sat Jun 15 13:30:00 2024\nrc=0\n"
+    },
+    {
+      "content_hash": "8170cd93b1ee3970",
+      "exit_code": 0,
+      "name": "date matrix: directive %c (am)",
+      "stderr": "",
+      "stdout": "Wed Jun  5 09:05:03 2024\nrc=0\n"
+    },
+    {
+      "content_hash": "609c417d9eb36be8",
+      "exit_code": 0,
+      "name": "date matrix: directive %C (pm)",
+      "stderr": "",
+      "stdout": "20\nrc=0\n"
+    },
+    {
+      "content_hash": "8ed42a3fc85ee04b",
+      "exit_code": 0,
+      "name": "date matrix: directive %C (am)",
+      "stderr": "",
+      "stdout": "20\nrc=0\n"
+    },
+    {
+      "content_hash": "9a0b9535ba5de345",
+      "exit_code": 0,
+      "name": "date matrix: directive %d (pm)",
+      "stderr": "",
+      "stdout": "15\nrc=0\n"
+    },
+    {
+      "content_hash": "3b9fe013a4373c65",
+      "exit_code": 0,
+      "name": "date matrix: directive %d (am)",
+      "stderr": "",
+      "stdout": "05\nrc=0\n"
+    },
+    {
+      "content_hash": "4d092b7823d5509a",
+      "exit_code": 0,
+      "name": "date matrix: directive %D (pm)",
+      "stderr": "",
+      "stdout": "06/15/24\nrc=0\n"
+    },
+    {
+      "content_hash": "572da704437b15c6",
+      "exit_code": 0,
+      "name": "date matrix: directive %D (am)",
+      "stderr": "",
+      "stdout": "06/05/24\nrc=0\n"
+    },
+    {
+      "content_hash": "2e652974ea03e3b6",
+      "exit_code": 0,
+      "name": "date matrix: directive %e (pm)",
+      "stderr": "",
+      "stdout": "15\nrc=0\n"
+    },
+    {
+      "content_hash": "c679b175dfc9da46",
+      "exit_code": 0,
+      "name": "date matrix: directive %e (am)",
+      "stderr": "",
+      "stdout": " 5\nrc=0\n"
+    },
+    {
+      "content_hash": "bdc3ff2379f61837",
+      "exit_code": 0,
+      "name": "date matrix: directive %F (pm)",
+      "stderr": "",
+      "stdout": "2024-06-15\nrc=0\n"
+    },
+    {
+      "content_hash": "6fa6074d14e7b962",
+      "exit_code": 0,
+      "name": "date matrix: directive %F (am)",
+      "stderr": "",
+      "stdout": "2024-06-05\nrc=0\n"
+    },
+    {
+      "content_hash": "0eecc350b1f35b97",
+      "exit_code": 0,
+      "name": "date matrix: directive %g (pm)",
+      "stderr": "",
+      "stdout": "24\nrc=0\n"
+    },
+    {
+      "content_hash": "858671d4c811b091",
+      "exit_code": 0,
+      "name": "date matrix: directive %g (am)",
+      "stderr": "",
+      "stdout": "24\nrc=0\n"
+    },
+    {
+      "content_hash": "47ac3d2e0f9d2716",
+      "exit_code": 0,
+      "name": "date matrix: directive %G (pm)",
+      "stderr": "",
+      "stdout": "2024\nrc=0\n"
+    },
+    {
+      "content_hash": "0e188f1f98b57670",
+      "exit_code": 0,
+      "name": "date matrix: directive %G (am)",
+      "stderr": "",
+      "stdout": "2024\nrc=0\n"
+    },
+    {
+      "content_hash": "84f1b7701869bcde",
+      "exit_code": 0,
+      "name": "date matrix: directive %h (pm)",
+      "stderr": "",
+      "stdout": "Jun\nrc=0\n"
+    },
+    {
+      "content_hash": "8bcc542278a94e87",
+      "exit_code": 0,
+      "name": "date matrix: directive %h (am)",
+      "stderr": "",
+      "stdout": "Jun\nrc=0\n"
+    },
+    {
+      "content_hash": "fadeb047a08c49a9",
+      "exit_code": 0,
+      "name": "date matrix: directive %H (pm)",
+      "stderr": "",
+      "stdout": "13\nrc=0\n"
+    },
+    {
+      "content_hash": "c7965c3eb24b29df",
+      "exit_code": 0,
+      "name": "date matrix: directive %H (am)",
+      "stderr": "",
+      "stdout": "09\nrc=0\n"
+    },
+    {
+      "content_hash": "7b48191fb1a5b6e1",
+      "exit_code": 0,
+      "name": "date matrix: directive %I (pm)",
+      "stderr": "",
+      "stdout": "01\nrc=0\n"
+    },
+    {
+      "content_hash": "0356bc1b00d5d7cd",
+      "exit_code": 0,
+      "name": "date matrix: directive %I (am)",
+      "stderr": "",
+      "stdout": "09\nrc=0\n"
+    },
+    {
+      "content_hash": "5f76f4e8a7710411",
+      "exit_code": 0,
+      "name": "date matrix: directive %j (pm)",
+      "stderr": "",
+      "stdout": "167\nrc=0\n"
+    },
+    {
+      "content_hash": "e58beffeef851e1f",
+      "exit_code": 0,
+      "name": "date matrix: directive %j (am)",
+      "stderr": "",
+      "stdout": "157\nrc=0\n"
+    },
+    {
+      "content_hash": "660eaf3387141170",
+      "exit_code": 0,
+      "name": "date matrix: directive %k (pm)",
+      "stderr": "",
+      "stdout": "13\nrc=0\n"
+    },
+    {
+      "content_hash": "632fe732934bf946",
+      "exit_code": 0,
+      "name": "date matrix: directive %k (am)",
+      "stderr": "",
+      "stdout": " 9\nrc=0\n"
+    },
+    {
+      "content_hash": "da9e91385bcd9b4b",
+      "exit_code": 0,
+      "name": "date matrix: directive %l (pm)",
+      "stderr": "",
+      "stdout": " 1\nrc=0\n"
+    },
+    {
+      "content_hash": "9d316b249d037cba",
+      "exit_code": 0,
+      "name": "date matrix: directive %l (am)",
+      "stderr": "",
+      "stdout": " 9\nrc=0\n"
+    },
+    {
+      "content_hash": "daf96127b6418ff3",
+      "exit_code": 0,
+      "name": "date matrix: directive %m (pm)",
+      "stderr": "",
+      "stdout": "06\nrc=0\n"
+    },
+    {
+      "content_hash": "e2241c81bb5421e5",
+      "exit_code": 0,
+      "name": "date matrix: directive %m (am)",
+      "stderr": "",
+      "stdout": "06\nrc=0\n"
+    },
+    {
+      "content_hash": "c3ec8615e5a118d0",
+      "exit_code": 0,
+      "name": "date matrix: directive %M (pm)",
+      "stderr": "",
+      "stdout": "30\nrc=0\n"
+    },
+    {
+      "content_hash": "0767e07ab78c1866",
+      "exit_code": 0,
+      "name": "date matrix: directive %M (am)",
+      "stderr": "",
+      "stdout": "05\nrc=0\n"
+    },
+    {
+      "content_hash": "719c85d03b940f5e",
+      "exit_code": 0,
+      "name": "date matrix: directive %n (pm)",
+      "stderr": "",
+      "stdout": "\n\nrc=0\n"
+    },
+    {
+      "content_hash": "dff7a0b251ec631b",
+      "exit_code": 0,
+      "name": "date matrix: directive %n (am)",
+      "stderr": "",
+      "stdout": "\n\nrc=0\n"
+    },
+    {
+      "content_hash": "a3a907a330f4067e",
+      "exit_code": 0,
+      "name": "date matrix: directive %N (pm)",
+      "stderr": "",
+      "stdout": "000000000\nrc=0\n"
+    },
+    {
+      "content_hash": "3eae86bc7a2e37d4",
+      "exit_code": 0,
+      "name": "date matrix: directive %N (am)",
+      "stderr": "",
+      "stdout": "000000000\nrc=0\n"
+    },
+    {
+      "content_hash": "79424f8605970eb7",
+      "exit_code": 0,
+      "name": "date matrix: directive %p (pm)",
+      "stderr": "",
+      "stdout": "PM\nrc=0\n"
+    },
+    {
+      "content_hash": "c9463befa11f6f38",
+      "exit_code": 0,
+      "name": "date matrix: directive %p (am)",
+      "stderr": "",
+      "stdout": "AM\nrc=0\n"
+    },
+    {
+      "content_hash": "71ad8effb369c9c1",
+      "exit_code": 0,
+      "name": "date matrix: directive %P (pm)",
+      "stderr": "",
+      "stdout": "pm\nrc=0\n"
+    },
+    {
+      "content_hash": "6b6b3a6c5184cdb3",
+      "exit_code": 0,
+      "name": "date matrix: directive %P (am)",
+      "stderr": "",
+      "stdout": "am\nrc=0\n"
+    },
+    {
+      "content_hash": "791f14466df2dfba",
+      "exit_code": 0,
+      "name": "date matrix: directive %q (pm)",
+      "stderr": "",
+      "stdout": "2\nrc=0\n"
+    },
+    {
+      "content_hash": "07898ee3cfe3a06b",
+      "exit_code": 0,
+      "name": "date matrix: directive %q (am)",
+      "stderr": "",
+      "stdout": "2\nrc=0\n"
+    },
+    {
+      "content_hash": "e6ef1b48a0f443a7",
+      "exit_code": 0,
+      "name": "date matrix: directive %r (pm)",
+      "stderr": "",
+      "stdout": "01:30:00 PM\nrc=0\n"
+    },
+    {
+      "content_hash": "9ba578beaeb9caaa",
+      "exit_code": 0,
+      "name": "date matrix: directive %r (am)",
+      "stderr": "",
+      "stdout": "09:05:03 AM\nrc=0\n"
+    },
+    {
+      "content_hash": "cc32452e4893127c",
+      "exit_code": 0,
+      "name": "date matrix: directive %R (pm)",
+      "stderr": "",
+      "stdout": "13:30\nrc=0\n"
+    },
+    {
+      "content_hash": "5ac22ccbc33a7714",
+      "exit_code": 0,
+      "name": "date matrix: directive %R (am)",
+      "stderr": "",
+      "stdout": "09:05\nrc=0\n"
+    },
+    {
+      "content_hash": "271379063d131a1b",
+      "exit_code": 0,
+      "name": "date matrix: directive %s (pm)",
+      "stderr": "",
+      "stdout": "1718458200\nrc=0\n"
+    },
+    {
+      "content_hash": "e219273c7021b090",
+      "exit_code": 0,
+      "name": "date matrix: directive %s (am)",
+      "stderr": "",
+      "stdout": "1717578303\nrc=0\n"
+    },
+    {
+      "content_hash": "e1da279f3096227e",
+      "exit_code": 0,
+      "name": "date matrix: directive %S (pm)",
+      "stderr": "",
+      "stdout": "00\nrc=0\n"
+    },
+    {
+      "content_hash": "ad0169d4ceaa89e7",
+      "exit_code": 0,
+      "name": "date matrix: directive %S (am)",
+      "stderr": "",
+      "stdout": "03\nrc=0\n"
+    },
+    {
+      "content_hash": "fc362ca8a86a8cb2",
+      "exit_code": 0,
+      "name": "date matrix: directive %t (pm)",
+      "stderr": "",
+      "stdout": "\t\nrc=0\n"
+    },
+    {
+      "content_hash": "5a2df75753a2fbcd",
+      "exit_code": 0,
+      "name": "date matrix: directive %t (am)",
+      "stderr": "",
+      "stdout": "\t\nrc=0\n"
+    },
+    {
+      "content_hash": "b56ecdd6fca6eed8",
+      "exit_code": 0,
+      "name": "date matrix: directive %T (pm)",
+      "stderr": "",
+      "stdout": "13:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "0bd0bfc60fe97ab3",
+      "exit_code": 0,
+      "name": "date matrix: directive %T (am)",
+      "stderr": "",
+      "stdout": "09:05:03\nrc=0\n"
+    },
+    {
+      "content_hash": "3675bace1c8ec962",
+      "exit_code": 0,
+      "name": "date matrix: directive %u (pm)",
+      "stderr": "",
+      "stdout": "6\nrc=0\n"
+    },
+    {
+      "content_hash": "1b1e5222a3b78309",
+      "exit_code": 0,
+      "name": "date matrix: directive %u (am)",
+      "stderr": "",
+      "stdout": "3\nrc=0\n"
+    },
+    {
+      "content_hash": "e58e8b6022b29444",
+      "exit_code": 0,
+      "name": "date matrix: directive %U (pm)",
+      "stderr": "",
+      "stdout": "23\nrc=0\n"
+    },
+    {
+      "content_hash": "9951f88ca197b753",
+      "exit_code": 0,
+      "name": "date matrix: directive %U (am)",
+      "stderr": "",
+      "stdout": "22\nrc=0\n"
+    },
+    {
+      "content_hash": "826a2a38c18df58d",
+      "exit_code": 0,
+      "name": "date matrix: directive %V (pm)",
+      "stderr": "",
+      "stdout": "24\nrc=0\n"
+    },
+    {
+      "content_hash": "7b98ed3a2a17a83a",
+      "exit_code": 0,
+      "name": "date matrix: directive %V (am)",
+      "stderr": "",
+      "stdout": "23\nrc=0\n"
+    },
+    {
+      "content_hash": "2ca3916a701a047a",
+      "exit_code": 0,
+      "name": "date matrix: directive %w (pm)",
+      "stderr": "",
+      "stdout": "6\nrc=0\n"
+    },
+    {
+      "content_hash": "d4c53a88b8e7a6ba",
+      "exit_code": 0,
+      "name": "date matrix: directive %w (am)",
+      "stderr": "",
+      "stdout": "3\nrc=0\n"
+    },
+    {
+      "content_hash": "75a718845d827205",
+      "exit_code": 0,
+      "name": "date matrix: directive %W (pm)",
+      "stderr": "",
+      "stdout": "24\nrc=0\n"
+    },
+    {
+      "content_hash": "a878077f0a57eb7d",
+      "exit_code": 0,
+      "name": "date matrix: directive %W (am)",
+      "stderr": "",
+      "stdout": "23\nrc=0\n"
+    },
+    {
+      "content_hash": "5954a7be901a6c4c",
+      "exit_code": 0,
+      "name": "date matrix: directive %x (pm)",
+      "stderr": "",
+      "stdout": "06/15/24\nrc=0\n"
+    },
+    {
+      "content_hash": "8f9b16c5f1080215",
+      "exit_code": 0,
+      "name": "date matrix: directive %x (am)",
+      "stderr": "",
+      "stdout": "06/05/24\nrc=0\n"
+    },
+    {
+      "content_hash": "152b36fbeb49a36f",
+      "exit_code": 0,
+      "name": "date matrix: directive %X (pm)",
+      "stderr": "",
+      "stdout": "13:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "f43c67c955e7269a",
+      "exit_code": 0,
+      "name": "date matrix: directive %X (am)",
+      "stderr": "",
+      "stdout": "09:05:03\nrc=0\n"
+    },
+    {
+      "content_hash": "08afc71636bf9f82",
+      "exit_code": 0,
+      "name": "date matrix: directive %y (pm)",
+      "stderr": "",
+      "stdout": "24\nrc=0\n"
+    },
+    {
+      "content_hash": "8e3fe28f48e3d777",
+      "exit_code": 0,
+      "name": "date matrix: directive %y (am)",
+      "stderr": "",
+      "stdout": "24\nrc=0\n"
+    },
+    {
+      "content_hash": "229b0f4f8cc45377",
+      "exit_code": 0,
+      "name": "date matrix: directive %Y (pm)",
+      "stderr": "",
+      "stdout": "2024\nrc=0\n"
+    },
+    {
+      "content_hash": "5f3de776c7224721",
+      "exit_code": 0,
+      "name": "date matrix: directive %Y (am)",
+      "stderr": "",
+      "stdout": "2024\nrc=0\n"
+    },
+    {
+      "content_hash": "5afc4f2c3e44ff0e",
+      "exit_code": 0,
+      "name": "date matrix: directive %z (pm)",
+      "stderr": "",
+      "stdout": "+0000\nrc=0\n"
+    },
+    {
+      "content_hash": "3d5e0f401a55e41e",
+      "exit_code": 0,
+      "name": "date matrix: directive %z (am)",
+      "stderr": "",
+      "stdout": "+0000\nrc=0\n"
+    },
+    {
+      "content_hash": "9dd7a235eb4e5d94",
+      "exit_code": 0,
+      "name": "date matrix: directive %Z (pm)",
+      "stderr": "",
+      "stdout": "UTC\nrc=0\n"
+    },
+    {
+      "content_hash": "dace2b94dc0a864c",
+      "exit_code": 0,
+      "name": "date matrix: directive %Z (am)",
+      "stderr": "",
+      "stdout": "UTC\nrc=0\n"
+    },
+    {
+      "content_hash": "f3240fae37076edc",
+      "exit_code": 0,
+      "name": "date matrix: modifier %:z (pm)",
+      "stderr": "",
+      "stdout": "+00:00\nrc=0\n"
+    },
+    {
+      "content_hash": "6933c63c2d5f4a12",
+      "exit_code": 0,
+      "name": "date matrix: modifier %:z (am)",
+      "stderr": "",
+      "stdout": "+00:00\nrc=0\n"
+    },
+    {
+      "content_hash": "ed6b7ad13ec47e70",
+      "exit_code": 0,
+      "name": "date matrix: modifier %::z (pm)",
+      "stderr": "",
+      "stdout": "+00:00:00\nrc=0\n"
+    },
+    {
+      "content_hash": "b2b0f809d217affc",
+      "exit_code": 0,
+      "name": "date matrix: modifier %::z (am)",
+      "stderr": "",
+      "stdout": "+00:00:00\nrc=0\n"
+    },
+    {
+      "content_hash": "075e142ce0fa9942",
+      "exit_code": 0,
+      "name": "date matrix: modifier %:::z (pm)",
+      "stderr": "",
+      "stdout": "+00\nrc=0\n"
+    },
+    {
+      "content_hash": "5849420cd1bf91a7",
+      "exit_code": 0,
+      "name": "date matrix: modifier %:::z (am)",
+      "stderr": "",
+      "stdout": "+00\nrc=0\n"
+    },
+    {
+      "content_hash": "7cd1652285503484",
+      "exit_code": 0,
+      "name": "date matrix: modifier %-d (pm)",
+      "stderr": "",
+      "stdout": "15\nrc=0\n"
+    },
+    {
+      "content_hash": "91179ae7c00a3af6",
+      "exit_code": 0,
+      "name": "date matrix: modifier %-d (am)",
+      "stderr": "",
+      "stdout": "5\nrc=0\n"
+    },
+    {
+      "content_hash": "f89ee1d2976a8689",
+      "exit_code": 0,
+      "name": "date matrix: modifier %_d (pm)",
+      "stderr": "",
+      "stdout": "15\nrc=0\n"
+    },
+    {
+      "content_hash": "0fb029c7e0add102",
+      "exit_code": 0,
+      "name": "date matrix: modifier %_d (am)",
+      "stderr": "",
+      "stdout": " 5\nrc=0\n"
+    },
+    {
+      "content_hash": "c4dda1e428c67866",
+      "exit_code": 0,
+      "name": "date matrix: modifier %0d (pm)",
+      "stderr": "",
+      "stdout": "15\nrc=0\n"
+    },
+    {
+      "content_hash": "94346ff6dfbe13e0",
+      "exit_code": 0,
+      "name": "date matrix: modifier %0d (am)",
+      "stderr": "",
+      "stdout": "05\nrc=0\n"
+    },
+    {
+      "content_hash": "5a6fe0fcac6631f1",
+      "exit_code": 0,
+      "name": "date matrix: modifier %^a (pm)",
+      "stderr": "",
+      "stdout": "SAT\nrc=0\n"
+    },
+    {
+      "content_hash": "56690bb18e265c4a",
+      "exit_code": 0,
+      "name": "date matrix: modifier %^a (am)",
+      "stderr": "",
+      "stdout": "WED\nrc=0\n"
+    },
+    {
+      "content_hash": "e693440e54e2530e",
+      "exit_code": 0,
+      "name": "date matrix: modifier %#a (pm)",
+      "stderr": "",
+      "stdout": "SAT\nrc=0\n"
+    },
+    {
+      "content_hash": "c4829e5b13f00357",
+      "exit_code": 0,
+      "name": "date matrix: modifier %#a (am)",
+      "stderr": "",
+      "stdout": "WED\nrc=0\n"
+    },
+    {
+      "content_hash": "48edbdf07a846391",
+      "exit_code": 0,
+      "name": "date matrix: sequence %%F",
+      "stderr": "",
+      "stdout": "%F\nrc=0\n"
+    },
+    {
+      "content_hash": "c9013071fb71b575",
+      "exit_code": 0,
+      "name": "date matrix: sequence %%%F",
+      "stderr": "",
+      "stdout": "%2024-06-15\nrc=0\n"
+    },
+    {
+      "content_hash": "c69bcf0d89af124a",
+      "exit_code": 0,
+      "name": "date matrix: sequence %F%T",
+      "stderr": "",
+      "stdout": "2024-06-1513:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "4ddbd4f98603f2ab",
+      "exit_code": 0,
+      "name": "date matrix: sequence %Y%m%d",
+      "stderr": "",
+      "stdout": "20240615\nrc=0\n"
+    },
+    {
+      "content_hash": "abdf09331b00ebe6",
+      "exit_code": 0,
+      "name": "date matrix: sequence %%",
+      "stderr": "",
+      "stdout": "%\nrc=0\n"
+    },
+    {
+      "content_hash": "fd5a9115d88d4190",
+      "exit_code": 0,
+      "name": "date matrix: sequence %%%%",
+      "stderr": "",
+      "stdout": "%%\nrc=0\n"
+    },
+    {
+      "content_hash": "42cffd71070ce1e1",
+      "exit_code": 0,
+      "name": "date matrix: sequence %",
+      "stderr": "",
+      "stdout": "%\nrc=0\n"
+    },
+    {
+      "content_hash": "002f9b3c53113712",
+      "exit_code": 0,
+      "name": "date matrix: sequence %F%",
+      "stderr": "",
+      "stdout": "2024-06-15%\nrc=0\n"
+    },
+    {
+      "content_hash": "397f45f11970880b",
+      "exit_code": 0,
+      "name": "date matrix: sequence %J",
+      "stderr": "",
+      "stdout": "%J\nrc=0\n"
+    },
+    {
+      "content_hash": "a543f6a69bf87053",
+      "exit_code": 0,
+      "name": "date matrix: sequence %%J",
+      "stderr": "",
+      "stdout": "%J\nrc=0\n"
+    },
+    {
+      "content_hash": "f77f349300cbffd1",
+      "exit_code": 0,
+      "name": "date matrix: sequence %F%J%T",
+      "stderr": "",
+      "stdout": "2024-06-15%J13:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "4c65d6e69f93fba9",
+      "exit_code": 0,
+      "name": "date matrix: sequence %#%!",
+      "stderr": "",
+      "stdout": "%#%!\nrc=0\n"
+    },
+    {
+      "content_hash": "15c5ec781c0d815b",
+      "exit_code": 0,
+      "name": "date matrix: sequence %-%d",
+      "stderr": "",
+      "stdout": "%-15\nrc=0\n"
+    },
+    {
+      "content_hash": "cbf3a17d2580c73b",
+      "exit_code": 0,
+      "name": "date matrix: sequence %#%%",
+      "stderr": "",
+      "stdout": "%#%\nrc=0\n"
+    },
+    {
+      "content_hash": "0e29e7b180781137",
+      "exit_code": 0,
+      "name": "date matrix: sequence %--d",
+      "stderr": "",
+      "stdout": "15\nrc=0\n"
+    },
+    {
+      "content_hash": "942bd10ef2ec1c13",
+      "exit_code": 0,
+      "name": "date matrix: sequence %0-d",
+      "stderr": "",
+      "stdout": "15\nrc=0\n"
+    },
+    {
+      "content_hash": "9e580938236787c7",
+      "exit_code": 0,
+      "name": "date matrix: sequence %^%a",
+      "stderr": "",
+      "stdout": "%^Sat\nrc=0\n"
+    },
+    {
+      "content_hash": "c34887335e1a489e",
+      "exit_code": 0,
+      "name": "date matrix: sequence %#",
+      "stderr": "",
+      "stdout": "%#\nrc=0\n"
+    },
+    {
+      "content_hash": "7cae49cca129dabc",
+      "exit_code": 0,
+      "name": "date matrix: sequence %-",
+      "stderr": "",
+      "stdout": "%-\nrc=0\n"
+    },
+    {
+      "content_hash": "07448cba5cb51935",
+      "exit_code": 0,
+      "name": "date matrix: sequence %_",
+      "stderr": "",
+      "stdout": "%_\nrc=0\n"
+    },
+    {
+      "content_hash": "fb74626e515523a9",
+      "exit_code": 0,
+      "name": "date matrix: sequence %0",
+      "stderr": "",
+      "stdout": "%0\nrc=0\n"
+    },
+    {
+      "content_hash": "46c200f56a5d2098",
+      "exit_code": 0,
+      "name": "date matrix: sequence %^",
+      "stderr": "",
+      "stdout": "%^\nrc=0\n"
+    },
+    {
+      "content_hash": "ccff5030b14bab86",
+      "exit_code": 0,
+      "name": "date matrix: sequence %^!",
+      "stderr": "",
+      "stdout": "%^!\nrc=0\n"
+    },
+    {
+      "content_hash": "b5d066f089dbf4aa",
+      "exit_code": 0,
+      "name": "date matrix: width %3d",
+      "stderr": "",
+      "stdout": "005\nrc=0\n"
+    },
+    {
+      "content_hash": "4b3428a2d17eab55",
+      "exit_code": 0,
+      "name": "date matrix: width %03d",
+      "stderr": "",
+      "stdout": "005\nrc=0\n"
+    },
+    {
+      "content_hash": "796c4afea8a20282",
+      "exit_code": 0,
+      "name": "date matrix: width %_3d",
+      "stderr": "",
+      "stdout": "  5\nrc=0\n"
+    },
+    {
+      "content_hash": "4f1e4eff6077d5cb",
+      "exit_code": 0,
+      "name": "date matrix: width %-3d",
+      "stderr": "",
+      "stdout": "5\nrc=0\n"
+    },
+    {
+      "content_hash": "18a98b4727e1de45",
+      "exit_code": 0,
+      "name": "date matrix: width %_10d",
+      "stderr": "",
+      "stdout": "         5\nrc=0\n"
+    },
+    {
+      "content_hash": "992f6e762d513467",
+      "exit_code": 0,
+      "name": "date matrix: width %^3a",
+      "stderr": "",
+      "stdout": "WED\nrc=0\n"
+    },
+    {
+      "content_hash": "0aea9aaafcf3c704",
+      "exit_code": 0,
+      "name": "date matrix: width %-0d",
+      "stderr": "",
+      "stdout": "05\nrc=0\n"
+    },
+    {
+      "content_hash": "2ba86bfc2bec7580",
+      "exit_code": 0,
+      "name": "date matrix: width %0_d",
+      "stderr": "",
+      "stdout": " 5\nrc=0\n"
+    },
+    {
+      "content_hash": "01d474ef0f50a4b6",
+      "exit_code": 0,
+      "name": "date matrix: width %_2H",
+      "stderr": "",
+      "stdout": " 9\nrc=0\n"
+    },
+    {
+      "content_hash": "0e4b24f19f3e863d",
+      "exit_code": 0,
+      "name": "date matrix: width %_3H",
+      "stderr": "",
+      "stdout": "  9\nrc=0\n"
+    },
+    {
+      "content_hash": "91179ae7c00a3af6",
+      "exit_code": 0,
+      "name": "date matrix: width %-d",
+      "stderr": "",
+      "stdout": "5\nrc=0\n"
+    },
+    {
+      "content_hash": "a738e8a06de22838",
+      "exit_code": 0,
+      "name": "date matrix: width %-H",
+      "stderr": "",
+      "stdout": "9\nrc=0\n"
+    },
+    {
+      "content_hash": "c63003a9b4ecfa83",
+      "exit_code": 0,
+      "name": "date matrix: width %-M",
+      "stderr": "",
+      "stdout": "5\nrc=0\n"
+    },
+    {
+      "content_hash": "d48bfaf8b016c0a9",
+      "exit_code": 0,
+      "name": "date matrix: width %-e",
+      "stderr": "",
+      "stdout": "5\nrc=0\n"
+    },
+    {
+      "content_hash": "c3062753465650c5",
+      "exit_code": 0,
+      "name": "date matrix: width %_e",
+      "stderr": "",
+      "stdout": " 5\nrc=0\n"
+    },
+    {
+      "content_hash": "44ea476b5fb31d31",
+      "exit_code": 0,
+      "name": "date matrix: width %0e",
+      "stderr": "",
+      "stdout": "05\nrc=0\n"
+    },
+    {
+      "content_hash": "4d0391419efaee45",
+      "exit_code": 0,
+      "name": "date matrix: width %-I",
+      "stderr": "",
+      "stdout": "9\nrc=0\n"
+    },
+    {
+      "content_hash": "ba54a2f29b2c6048",
+      "exit_code": 0,
+      "name": "date matrix: width %-j",
+      "stderr": "",
+      "stdout": "157\nrc=0\n"
+    },
+    {
+      "content_hash": "3eae86bc7a2e37d4",
+      "exit_code": 0,
+      "name": "date matrix: nanoseconds %N",
+      "stderr": "",
+      "stdout": "000000000\nrc=0\n"
+    },
+    {
+      "content_hash": "4ed5c032daf57339",
+      "exit_code": 0,
+      "name": "date matrix: nanoseconds %-N",
+      "stderr": "",
+      "stdout": "000000000\nrc=0\n"
+    },
+    {
+      "content_hash": "ddd7406e16565600",
+      "exit_code": 0,
+      "name": "date matrix: nanoseconds %0N",
+      "stderr": "",
+      "stdout": "000000000\nrc=0\n"
+    },
+    {
+      "content_hash": "c571c2da89e6886e",
+      "exit_code": 0,
+      "name": "date matrix: nanoseconds %^N",
+      "stderr": "",
+      "stdout": "000000000\nrc=0\n"
+    },
+    {
+      "content_hash": "75c7156a1bf629a7",
+      "exit_code": 0,
+      "name": "date matrix: nanoseconds %3N",
+      "stderr": "",
+      "stdout": "000\nrc=0\n"
+    },
+    {
+      "content_hash": "513512382567a1d8",
+      "exit_code": 0,
+      "name": "date matrix: nanoseconds %6N",
+      "stderr": "",
+      "stdout": "000000\nrc=0\n"
+    },
+    {
+      "content_hash": "1e836116dc5c3c11",
+      "exit_code": 0,
+      "name": "date matrix: nanoseconds %_N",
+      "stderr": "",
+      "stdout": "0        \nrc=0\n"
+    },
+    {
+      "content_hash": "0514b760a2820297",
+      "exit_code": 0,
+      "name": "date matrix: nanoseconds %-3N",
+      "stderr": "",
+      "stdout": "0\nrc=0\n"
+    },
+    {
+      "content_hash": "fc387fb480e5d687",
+      "exit_code": 0,
+      "name": "date matrix: nanoseconds %_6N",
+      "stderr": "",
+      "stdout": "0     \nrc=0\n"
+    },
+    {
+      "content_hash": "c6678c35339e5c11",
+      "exit_code": 0,
+      "name": "date matrix: iso -I",
+      "stderr": "",
+      "stdout": "2024-06-15\nrc=0\n"
+    },
+    {
+      "content_hash": "7a7f5d0b21ac6a77",
+      "exit_code": 0,
+      "name": "date matrix: iso -Idate",
+      "stderr": "",
+      "stdout": "2024-06-15\nrc=0\n"
+    },
+    {
+      "content_hash": "635ff93ef2156c55",
+      "exit_code": 0,
+      "name": "date matrix: iso -Ihours",
+      "stderr": "",
+      "stdout": "2024-06-15T13+00:00\nrc=0\n"
+    },
+    {
+      "content_hash": "459b35fb1d9b8b0c",
+      "exit_code": 0,
+      "name": "date matrix: iso -Iminutes",
+      "stderr": "",
+      "stdout": "2024-06-15T13:30+00:00\nrc=0\n"
+    },
+    {
+      "content_hash": "7c0227ca707c26b2",
+      "exit_code": 0,
+      "name": "date matrix: iso -Iseconds",
+      "stderr": "",
+      "stdout": "2024-06-15T13:30:00+00:00\nrc=0\n"
+    },
+    {
+      "content_hash": "840b099ca0fabb34",
+      "exit_code": 0,
+      "name": "date matrix: iso -Ins",
+      "stderr": "",
+      "stdout": "2024-06-15T13:30:00,000000000+00:00\nrc=0\n"
+    },
+    {
+      "content_hash": "4f11cc12be3bc172",
+      "exit_code": 0,
+      "name": "date matrix: iso --iso-8601=date",
+      "stderr": "",
+      "stdout": "2024-06-15\nrc=0\n"
+    },
+    {
+      "content_hash": "c84169ea50e52d6a",
+      "exit_code": 0,
+      "name": "date matrix: absent flag -v+6m",
+      "stderr": "date: invalid option -- 'v'\nTry 'date --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "abb8f913c622f810",
+      "exit_code": 0,
+      "name": "date matrix: absent flag -v +6m",
+      "stderr": "date: invalid option -- 'v'\nTry 'date --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "664b17e37dd38307",
+      "exit_code": 0,
+      "name": "date matrix: absent flag -v-1d",
+      "stderr": "date: invalid option -- 'v'\nTry 'date --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "3424b4761e50bb0b",
+      "exit_code": 0,
+      "name": "date matrix: absent flag -j",
+      "stderr": "date: invalid option -- 'j'\nTry 'date --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "af848d1644742c50",
+      "exit_code": 0,
+      "name": "date matrix: absent flag -jf %Y",
+      "stderr": "date: invalid option -- 'j'\nTry 'date --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "71fe849c4622447d",
+      "exit_code": 0,
+      "name": "date matrix: absent flag --not-a-flag",
+      "stderr": "date: unrecognized option '--not-a-flag'\nTry 'date --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "3b45b455bd05a440",
+      "exit_code": 0,
+      "name": "date matrix: absent flag -Z",
+      "stderr": "date: invalid option -- 'Z'\nTry 'date --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6d4acdf0797b483c",
+      "exit_code": 0,
+      "name": "date matrix: input 2024-06-15",
+      "stderr": "",
+      "stdout": "2024-06-15 00:00:00\nrc=0\n"
+    },
+    {
+      "content_hash": "5f093291eb930c27",
+      "exit_code": 0,
+      "name": "date matrix: input 2024-06-15 13:30:00",
+      "stderr": "",
+      "stdout": "2024-06-15 13:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "4756938c087e2646",
+      "exit_code": 0,
+      "name": "date matrix: input 2024-06-15T13:30:00",
+      "stderr": "",
+      "stdout": "2024-06-15 13:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "7678424c6ef68df8",
+      "exit_code": 0,
+      "name": "date matrix: input @1718458200",
+      "stderr": "",
+      "stdout": "2024-06-15 13:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "7d29779998b12451",
+      "exit_code": 0,
+      "name": "date matrix: input 2024-06-15 13:30:00 +1 day",
+      "stderr": "",
+      "stdout": "2024-06-16 12:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "ea28149f995dc2e0",
+      "exit_code": 0,
+      "name": "date matrix: input 2024-06-15 13:30:00 1 day ago",
+      "stderr": "",
+      "stdout": "2024-06-14 13:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "5f8d8bfedf84679e",
+      "exit_code": 0,
+      "name": "date matrix: input 2024-06-15 13:30:00 +6 months",
+      "stderr": "",
+      "stdout": "2024-07-15 07:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "cedb8e27b704590a",
+      "exit_code": 0,
+      "name": "date matrix: input 2024-06-15 13:30:00 6 months ago",
+      "stderr": "",
+      "stdout": "2023-12-15 13:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "d63f27de2f944ae9",
+      "exit_code": 0,
+      "name": "date matrix: input 2024-06-15 13:30:00 next tuesday",
+      "stderr": "",
+      "stdout": "2024-06-15 13:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "e2d87faf59d17708",
+      "exit_code": 0,
+      "name": "date matrix: input 2024-06-15 13:30:00 last monday",
+      "stderr": "",
+      "stdout": "2024-06-15 13:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "56e4575071228587",
+      "exit_code": 0,
+      "name": "date matrix: input 2024-06-15 13:30:00 +2 weeks",
+      "stderr": "",
+      "stdout": "2024-06-22 11:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "d2003f3c147e0007",
+      "exit_code": 0,
+      "name": "date matrix: input 2024-06-15 13:30:00 -3 hours",
+      "stderr": "",
+      "stdout": "2024-06-15 17:30:00\nrc=0\n"
+    },
+    {
+      "content_hash": "078461a27e682c98",
+      "exit_code": 0,
+      "name": "date matrix: utc flag -u",
+      "stderr": "",
+      "stdout": "2024-06-15 13:30:00 UTC\nrc=0\n"
+    },
+    {
+      "content_hash": "c2adae4be1a7309e",
+      "exit_code": 0,
+      "name": "date matrix: rfc flag -R",
+      "stderr": "",
+      "stdout": "Sat, 15 Jun 2024 13:30:00 +0000\nrc=0\n"
+    },
+    {
+      "content_hash": "0cae21027fa38e87",
+      "exit_code": 0,
+      "name": "date matrix: reads -f from a file",
+      "stderr": "",
+      "stdout": "2024-06-15\nrc=0\n"
+    }
+  ],
+  "suite": "date_matrix"
+}
