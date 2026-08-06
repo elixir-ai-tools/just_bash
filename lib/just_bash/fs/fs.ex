@@ -98,6 +98,46 @@ defmodule JustBash.FS do
   def resolve_path(_base, "/" <> _ = path), do: normalize_path(path)
   def resolve_path(base, path), do: VPath.join(normalize_path(base), path)
 
+  @doc """
+  Does the way `path` is spelled require it to name a directory?
+
+  POSIX resolves a trailing slash as a trailing `/.`, so `f/` is not another
+  spelling of the regular file `f` — it is an assertion that `f` is a
+  directory. The `.` and `..` components the slash stands for say the same
+  thing. `resolve_path/2` normalizes all of them away, so a caller that writes
+  through a user-supplied path asks this of the operand before trusting where
+  it resolved to.
+
+  An empty operand names nothing at all, which is a different complaint.
+  """
+  @spec directory_spelling?(String.t()) :: boolean()
+  def directory_spelling?(""), do: false
+
+  def directory_spelling?(path) do
+    last = path |> String.split("/") |> List.last()
+    last in ["", ".", ".."]
+  end
+
+  @doc """
+  Hold a path to what its spelling promised: `{:ok, fs}` unless `spelling`
+  demands a directory (see `directory_spelling?/1`) and `resolved` — the path
+  it resolved to — is not one.
+
+  The error is the one `stat("f/")` itself gives: `:enotdir` when something
+  that is not a directory is already there, naming the operand as the caller
+  spelled it, and whatever `stat/2` reported otherwise. `:enoent` means the
+  destination does not exist yet, which a caller about to create the directory
+  — a recursive copy, say — can ignore.
+  """
+  @spec check_directory_spelling(t(), String.t(), String.t()) :: {:ok, t()} | {:error, Error.t()}
+  def check_directory_spelling(fs, spelling, resolved) do
+    if directory_spelling?(spelling) do
+      require_directory(fs, spelling, resolved)
+    else
+      {:ok, fs}
+    end
+  end
+
   # ── core operations (delegated to VFS) ───────────────────────────────────
 
   @doc "See `VFS.read_file/2`."
@@ -281,6 +321,16 @@ defmodule JustBash.FS do
   def strerror(kind) when is_atom(kind), do: to_string(kind)
 
   # ── private ──────────────────────────────────────────────────────────────
+
+  # The stat behind `check_directory_spelling/3`. The error names the operand
+  # as it was spelled, since that spelling is what the caller reports.
+  defp require_directory(fs, spelling, resolved) do
+    case stat(fs, resolved) do
+      {:ok, %VFS.Stat{type: :directory}, fs} -> {:ok, fs}
+      {:ok, %VFS.Stat{}, _fs} -> {:error, Error.new(:enotdir, path: spelling)}
+      {:error, %Error{} = error} -> {:error, error}
+    end
+  end
 
   # Is `dest` the same path as `src`, or nested inside it? Everything is
   # inside the root, so a recursive copy of "/" never has a safe destination.

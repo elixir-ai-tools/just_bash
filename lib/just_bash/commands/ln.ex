@@ -15,17 +15,35 @@ defmodule JustBash.Commands.Ln do
     if opts.files == [] or length(opts.files) < 2 do
       {Command.error("ln: missing file operand\n"), bash}
     else
-      [target | rest] = opts.files
-      link_name = List.last(rest)
-      link_path = FS.resolve_path(bash.cwd, link_name)
+      link(bash, opts)
+    end
+  end
 
-      case create_link(bash, target, link_path, link_name, opts) do
-        {:ok, new_bash, output} ->
-          {Command.ok(output), new_bash}
+  defp link(bash, opts) do
+    [target | rest] = opts.files
+    link_name = List.last(rest)
+    link_path = FS.resolve_path(bash.cwd, link_name)
 
-        {:error, msg} ->
-          {Command.error(msg), bash}
-      end
+    # POSIX reads the trailing slash in `ln -s a.md f/` as an assertion that
+    # `f` is a directory, and `FS.resolve_path/2` normalizes it away. The check
+    # comes before anything else because `-f` unlinks the destination first: a
+    # link that may not be created must not take the file with it. Checked
+    # against GNU coreutils 9.11:
+    #
+    #     $ ln -s a.md f/  ln: failed to create symbolic link 'f/': Not a directory
+    case FS.check_directory_spelling(bash.fs, link_name, link_path) do
+      {:ok, fs} ->
+        linked(%{bash | fs: fs}, target, link_path, link_name, opts)
+
+      {:error, %VFS.Error{} = error} ->
+        {Command.error(create_failed(link_name, error, opts)), bash}
+    end
+  end
+
+  defp linked(bash, target, link_path, link_name, opts) do
+    case create_link(bash, target, link_path, link_name, opts) do
+      {:ok, new_bash, output} -> {Command.ok(output), new_bash}
+      {:error, msg} -> {Command.error(msg), bash}
     end
   end
 
@@ -143,9 +161,14 @@ defmodule JustBash.Commands.Ln do
     {:ok, %{bash | fs: new_fs}, output}
   end
 
-  defp handle_link_result(_bash, {:error, %VFS.Error{kind: :eexist}}, _target, link_name, opts) do
-    link_type = if opts.symbolic, do: "symbolic ", else: ""
-    {:error, "ln: failed to create #{link_type}link '#{link_name}': File exists\n"}
+  defp handle_link_result(
+         _bash,
+         {:error, %VFS.Error{kind: :eexist} = err},
+         _target,
+         link_name,
+         opts
+       ) do
+    {:error, create_failed(link_name, err, opts)}
   end
 
   defp handle_link_result(_bash, {:error, %VFS.Error{kind: :enoent}}, target, _link_name, _opts) do
@@ -166,7 +189,11 @@ defmodule JustBash.Commands.Ln do
 
   # Foreign mounts can refuse links entirely (:enotsup, :erofs, :exdev, ...).
   defp handle_link_result(_bash, {:error, %VFS.Error{} = err}, _target, link_name, opts) do
+    {:error, create_failed(link_name, err, opts)}
+  end
+
+  defp create_failed(link_name, error, opts) do
     link_type = if opts.symbolic, do: "symbolic ", else: ""
-    {:error, "ln: failed to create #{link_type}link '#{link_name}': #{FS.strerror(err)}\n"}
+    "ln: failed to create #{link_type}link '#{link_name}': #{FS.strerror(error)}\n"
   end
 end
