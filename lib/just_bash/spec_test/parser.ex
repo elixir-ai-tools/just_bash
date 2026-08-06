@@ -2,16 +2,34 @@ defmodule JustBash.SpecTest.Parser do
   @moduledoc """
   Parser for Oils spec test format (.test.sh files).
 
-  The format is:
-  - Lines starting with `##` are metadata (compare_shells, oils_failures_allowed)
-  - Lines starting with `####` are test case names
-  - Following lines until the next `##` directive are the script
-  - `## stdout:` single line expected stdout
-  - `## STDOUT:` ... `## END` multiline expected stdout
-  - `## status:` expected exit status (default 0)
-  - `## N-I` (not implemented) and `## BUG` mark shell-specific behaviors
+  A file is a run of cases. Each case opens with `#### <name>`; every line
+  after that up to the next `####` is either a `##` directive or a line of the
+  script, in any order — Oils puts `## SKIP` *above* the script and the
+  expectations below it.
+
+  Directives:
+
+    * `## stdout: LINE` / `## stderr: LINE` — one expected line
+    * `## stdout-json: "…"` / `## stderr-json: "…"` — an escaped expectation,
+      the only way to express output with no trailing newline
+    * `## STDOUT:` … `## END` / `## STDERR:` … `## END` — multiline
+    * `## status: N` — expected exit status (default 0)
+    * `## SKIP (why): reason` — do not run this case
+    * `## N-I <shells> …`, `## BUG <shells> …`, `## OK <shells> …` — the
+      expectation for a shell that is not bash. Bash is the oracle here, so
+      these are dropped; a multiline one is consumed to `## END` so its body
+      does not fall through into the script.
+    * `## compare_shells:`, `## oils_failures_allowed:`, `## tags:`, … —
+      file- or case-level metadata we have no use for
+
+  The script is kept byte-for-byte between its first and last non-blank line.
+  Only whole blank lines at either end — the file's layout, not the case's —
+  are dropped: `$LINENO`, `set -x` traces and bash's own `line N` diagnostics
+  count from the first surviving line, and a trailing space on the last
+  command is part of what the case tests.
 
   Example:
+
       #### Add one to var
       i=1
       echo $(($i+1))
@@ -24,6 +42,7 @@ defmodule JustBash.SpecTest.Parser do
       :name,
       :script,
       :expected_stdout,
+      :expected_stderr,
       :expected_status,
       :skip_reason,
       :line_number
@@ -33,6 +52,7 @@ defmodule JustBash.SpecTest.Parser do
             name: String.t(),
             script: String.t(),
             expected_stdout: String.t() | nil,
+            expected_stderr: String.t() | nil,
             expected_status: non_neg_integer(),
             skip_reason: String.t() | nil,
             line_number: pos_integer()
@@ -55,9 +75,8 @@ defmodule JustBash.SpecTest.Parser do
   """
   @spec parse(String.t()) :: [TestCase.t()]
   def parse(content) do
-    lines = String.split(content, "\n")
-
-    lines
+    content
+    |> String.split("\n")
     |> Enum.with_index(1)
     |> extract_test_cases([])
     |> Enum.reverse()
@@ -65,121 +84,134 @@ defmodule JustBash.SpecTest.Parser do
 
   defp extract_test_cases([], acc), do: acc
 
-  defp extract_test_cases([{line, line_num} | rest], acc) do
-    if String.starts_with?(line, "#### ") do
-      name = String.trim_leading(line, "#### ")
-      {test_case, remaining} = parse_test_case(name, line_num, rest)
-      extract_test_cases(remaining, [test_case | acc])
-    else
-      extract_test_cases(rest, acc)
-    end
+  defp extract_test_cases([{"#### " <> name, line_num} | rest], acc) do
+    {body, remaining} = Enum.split_while(rest, fn {line, _} -> not case_header?(line) end)
+    extract_test_cases(remaining, [build_test_case(name, line_num, body) | acc])
   end
 
-  defp parse_test_case(name, line_num, lines) do
-    {script_lines, rest} = collect_script(lines, [])
-    {expectations, remaining} = collect_expectations(rest, %{stdout: nil, status: 0, skip: nil})
+  defp extract_test_cases([_line | rest], acc), do: extract_test_cases(rest, acc)
 
-    script = script_lines |> Enum.reverse() |> Enum.join("\n") |> String.trim()
+  defp case_header?("#### " <> _), do: true
+  defp case_header?(_), do: false
 
-    test_case = %TestCase{
+  defp build_test_case(name, line_num, body) do
+    {script_lines, expectations} =
+      collect(body, [], %{stdout: nil, stderr: nil, status: 0, skip: nil})
+
+    %TestCase{
       name: name,
-      script: script,
+      script: script(script_lines),
       expected_stdout: expectations.stdout,
+      expected_stderr: expectations.stderr,
       expected_status: expectations.status,
       skip_reason: expectations.skip,
       line_number: line_num
     }
-
-    {test_case, remaining}
   end
 
-  defp collect_script([], acc), do: {acc, []}
+  # One pass over a case body, sorting each line into the script or into an
+  # expectation. Script lines and directives interleave freely.
+  defp collect([], script, exp), do: {Enum.reverse(script), exp}
 
-  defp collect_script([{line, _} | rest] = lines, acc) do
-    cond do
-      String.starts_with?(line, "#### ") ->
-        {acc, lines}
+  defp collect([{"## stdout: " <> value, _} | rest], script, exp),
+    do: collect(rest, script, %{exp | stdout: value <> "\n"})
 
-      String.starts_with?(line, "## ") ->
-        {acc, lines}
+  defp collect([{"## stderr: " <> value, _} | rest], script, exp),
+    do: collect(rest, script, %{exp | stderr: value <> "\n"})
 
-      true ->
-        collect_script(rest, [line | acc])
+  defp collect([{"## stdout-json: " <> json, _} | rest], script, exp),
+    do: collect(rest, script, %{exp | stdout: parse_json_string(json)})
+
+  defp collect([{"## stderr-json: " <> json, _} | rest], script, exp),
+    do: collect(rest, script, %{exp | stderr: parse_json_string(json)})
+
+  defp collect([{"## status: " <> value, _} | rest], script, exp),
+    do: collect(rest, script, %{exp | status: value |> String.trim() |> String.to_integer()})
+
+  defp collect([{"## SKIP" <> reason, _} | rest], script, exp),
+    do: collect(rest, script, %{exp | skip: skip_reason(reason)})
+
+  defp collect([{"## " <> _ = line, _} | rest], script, exp) do
+    case block_opener(line) do
+      :stdout ->
+        {stdout, rest} = collect_block(rest, [])
+        collect(rest, script, %{exp | stdout: stdout})
+
+      :stderr ->
+        {stderr, rest} = collect_block(rest, [])
+        collect(rest, script, %{exp | stderr: stderr})
+
+      # Another shell's multiline expectation: drop it, body and all.
+      :other_shell ->
+        {_ignored, rest} = collect_block(rest, [])
+        collect(rest, script, exp)
+
+      nil ->
+        collect(rest, script, exp)
     end
   end
 
-  defp collect_expectations([], acc), do: {acc, []}
+  defp collect([{line, _} | rest], script, exp), do: collect(rest, [line | script], exp)
 
-  defp collect_expectations([{line, _} | rest] = lines, acc) do
-    cond do
-      String.starts_with?(line, "#### ") ->
-        {acc, lines}
-
-      String.starts_with?(line, "## stdout: ") ->
-        stdout = String.trim_leading(line, "## stdout: ")
-        collect_expectations(rest, %{acc | stdout: stdout <> "\n"})
-
-      String.starts_with?(line, "## stdout-json: ") ->
-        json = String.trim_leading(line, "## stdout-json: ")
-        stdout = parse_json_string(json)
-        collect_expectations(rest, %{acc | stdout: stdout})
-
-      String.starts_with?(line, "## STDOUT:") ->
-        {stdout, remaining} = collect_multiline_stdout(rest, [])
-        collect_expectations(remaining, %{acc | stdout: stdout})
-
-      String.starts_with?(line, "## status: ") ->
-        status = line |> String.trim_leading("## status: ") |> String.to_integer()
-        collect_expectations(rest, %{acc | status: status})
-
-      String.starts_with?(line, "## N-I ") ->
-        # Not implemented in some shells - we might skip or handle differently
-        collect_expectations(rest, acc)
-
-      String.starts_with?(line, "## BUG ") ->
-        # Bug in some shells - skip this expectation
-        collect_expectations(rest, acc)
-
-      String.starts_with?(line, "## OK ") ->
-        # OK for some shells - skip
-        collect_expectations(rest, acc)
-
-      String.starts_with?(line, "## ") ->
-        # Other directives we don't handle yet
-        collect_expectations(rest, acc)
-
-      true ->
-        # Comment or blank line, continue
-        collect_expectations(rest, acc)
+  # `## STDOUT:` and `## STDERR:` open a block; so does the same suffix behind a
+  # shell annotation (`## N-I dash STDOUT:`). Trailing spaces after the colon
+  # are common in the corpus and mean nothing.
+  defp block_opener(line) do
+    case String.trim_trailing(line) do
+      "## STDOUT:" -> :stdout
+      "## STDERR:" -> :stderr
+      trimmed -> if String.ends_with?(trimmed, ["STDOUT:", "STDERR:"]), do: :other_shell
     end
   end
 
-  defp collect_multiline_stdout([], acc) do
-    {acc |> Enum.reverse() |> Enum.join("\n"), []}
-  end
+  # A block runs to `## END` (spelled `## END:` in a few upstream files). A
+  # missing terminator ends it at the next directive rather than eating the
+  # rest of the case.
+  defp collect_block([], acc), do: {block_text(acc), []}
 
-  defp collect_multiline_stdout([{line, _} | rest], acc) do
-    cond do
-      line == "## END" ->
-        stdout = acc |> Enum.reverse() |> Enum.join("\n")
-        # Add trailing newline if content exists
-        stdout = if stdout != "", do: stdout <> "\n", else: stdout
-        {stdout, rest}
+  defp collect_block([{"## END" <> _, _} | rest], acc), do: {block_text(acc), rest}
 
-      String.starts_with?(line, "## ") ->
-        # Another directive, end multiline
-        stdout = acc |> Enum.reverse() |> Enum.join("\n")
-        stdout = if stdout != "", do: stdout <> "\n", else: stdout
-        {stdout, [{line, 0} | rest]}
+  defp collect_block([{"## " <> _, _} | _] = lines, acc), do: {block_text(acc), lines}
 
-      true ->
-        collect_multiline_stdout(rest, [line | acc])
+  defp collect_block([{"#### " <> _, _} | _] = lines, acc), do: {block_text(acc), lines}
+
+  defp collect_block([{line, _} | rest], acc), do: collect_block(rest, [line | acc])
+
+  defp block_text([]), do: ""
+  defp block_text(acc), do: acc |> Enum.reverse() |> Enum.join("\n") |> Kernel.<>("\n")
+
+  # `## SKIP (unimplementable): python2 not available` and the bare
+  # `## SKIP: reason` both carry their reason after the colon.
+  defp skip_reason(rest) do
+    case String.split(rest, ":", parts: 2) do
+      [_prefix, reason] -> String.trim(reason)
+      [_only] -> String.trim(rest)
     end
   end
+
+  # Trim at line granularity, not character granularity. The blank lines that
+  # frame a case belong to the file's layout; a trailing space on a command
+  # belongs to the case — `#### a && b ` in shell-grammar.test.sh is testing
+  # exactly that. `String.trim/1` cannot tell them apart and drops both.
+  #
+  # Interior blank lines stay: `$LINENO` and bash's `line N:` diagnostics are
+  # counted from the first surviving line, which is what the corpus's recorded
+  # expectations assume (`builtin-trap-err.test.sh` asserts `line=3`).
+  defp script(lines) do
+    lines
+    |> Enum.drop_while(&blank?/1)
+    |> Enum.reverse()
+    |> Enum.drop_while(&blank?/1)
+    |> Enum.reverse()
+    |> Enum.join("\n")
+  end
+
+  defp blank?(line), do: String.trim(line) == ""
 
   defp parse_json_string(json) do
     # Handle simple JSON string escapes
     json
+    |> String.trim()
     |> String.trim("\"")
     |> String.replace("\\n", "\n")
     |> String.replace("\\t", "\t")
