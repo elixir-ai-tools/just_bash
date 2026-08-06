@@ -13,12 +13,20 @@ defmodule JustBash.Commands.Ls do
     aliases: %{"1" => :one}
   }
 
+  @usage "Try 'ls --help' for more information.\n"
+
   @impl true
   def names, do: ["ls"]
 
   @impl true
   def execute(bash, args, _stdin) do
-    {flags, paths} = FlagParser.parse(args, @flag_spec)
+    case FlagParser.parse(args, @flag_spec) do
+      {:ok, flags, paths} -> list(bash, flags, paths)
+      {:error, reason} -> {Command.error(FlagParser.format_error("ls", reason, @usage), 2), bash}
+    end
+  end
+
+  defp list(bash, flags, paths) do
     paths = if paths == [], do: ["."], else: paths
 
     {stdout, stderr, exit_code, fs} =

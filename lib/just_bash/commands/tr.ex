@@ -3,6 +3,9 @@ defmodule JustBash.Commands.Tr do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.FlagParser
+
+  @try_help "Try 'tr --help' for more information.\n"
 
   @impl true
   def names, do: ["tr"]
@@ -31,30 +34,45 @@ defmodule JustBash.Commands.Tr do
     {:ok, %{opts | sets: Enum.reverse(opts.sets)}}
   end
 
-  defp parse_args(["-d" | rest], opts), do: parse_args(rest, %{opts | delete: true})
-  defp parse_args(["-s" | rest], opts), do: parse_args(rest, %{opts | squeeze: true})
-  defp parse_args(["-c" | rest], opts), do: parse_args(rest, %{opts | complement: true})
-  defp parse_args(["-C" | rest], opts), do: parse_args(rest, %{opts | complement: true})
+  # Everything after `--` is a character set, even when it is dash-shaped.
+  defp parse_args(["--" | rest], opts) do
+    parse_args([], %{opts | sets: Enum.reverse(rest) ++ opts.sets})
+  end
 
-  # Combined flags like -ds, -cs, -cd, etc.
-  defp parse_args(["-" <> flags | rest], opts) when byte_size(flags) > 1 do
-    opts =
-      flags
-      |> String.graphemes()
-      |> Enum.reduce(opts, fn
-        "d", acc -> %{acc | delete: true}
-        "s", acc -> %{acc | squeeze: true}
-        "c", acc -> %{acc | complement: true}
-        "C", acc -> %{acc | complement: true}
-        _, acc -> acc
-      end)
-
-    parse_args(rest, opts)
+  # Combined flags like -ds, -cs, -cd, and single flags like -d. A character
+  # the reducer does not know is an error: dropping it silently made
+  # `tr -dX b` delete `b` and report success, and a lone unknown flag such as
+  # `-x` used to fall through to the clause below and become a character set.
+  defp parse_args(["-" <> flags | rest], opts) when flags != "" do
+    case reduce_flags(flags, opts) do
+      {:ok, opts} -> parse_args(rest, opts)
+      {:error, _reason} = error -> error
+    end
   end
 
   defp parse_args([set | rest], opts) do
     parse_args(rest, %{opts | sets: [set | opts.sets]})
   end
+
+  defp reduce_flags("-" <> _ = long_flag, _opts) do
+    {:error, unknown_flag("-" <> long_flag)}
+  end
+
+  defp reduce_flags(flags, opts) do
+    flags
+    |> String.graphemes()
+    |> Enum.reduce_while({:ok, opts}, fn char, {:ok, acc} -> apply_flag(char, acc) end)
+  end
+
+  defp apply_flag("d", opts), do: {:cont, {:ok, %{opts | delete: true}}}
+  defp apply_flag("s", opts), do: {:cont, {:ok, %{opts | squeeze: true}}}
+
+  defp apply_flag(char, opts) when char in ["c", "C"],
+    do: {:cont, {:ok, %{opts | complement: true}}}
+
+  defp apply_flag(char, _opts), do: {:halt, {:error, unknown_flag(char)}}
+
+  defp unknown_flag(flag), do: FlagParser.format_error("tr", {:unknown_flag, flag}, @try_help)
 
   defp run(input, %{delete: true, squeeze: false, sets: [set1]}) do
     chars = expand_set(set1) |> MapSet.new(&<<&1::utf8>>)

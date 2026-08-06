@@ -9,16 +9,24 @@ defmodule JustBash.Commands.Tail do
   @flag_spec %{
     boolean: [],
     value: [:n, :c],
+    integer: [:n, :c],
     defaults: %{n: 10, c: nil}
   }
+
+  @usage "Try 'tail --help' for more information.\n"
 
   @impl true
   def names, do: ["tail"]
 
   @impl true
   def execute(bash, args, stdin) do
-    {flags, files} = FlagParser.parse(args, @flag_spec)
+    case FlagParser.parse(args, @flag_spec) do
+      {:ok, flags, files} -> tail(bash, flags, files, stdin)
+      {:error, reason} -> {Command.error(FlagParser.format_error("tail", reason, @usage)), bash}
+    end
+  end
 
+  defp tail(bash, flags, files, stdin) do
     mode =
       if flags.c do
         {:bytes, flags.c}

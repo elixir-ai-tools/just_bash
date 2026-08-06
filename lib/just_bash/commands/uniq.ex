@@ -12,13 +12,20 @@ defmodule JustBash.Commands.Uniq do
     defaults: %{c: false, d: false, u: false}
   }
 
+  @usage "Try 'uniq --help' for more information.\n"
+
   @impl true
   def names, do: ["uniq"]
 
   @impl true
   def execute(bash, args, stdin) do
-    {flags, files} = FlagParser.parse(args, @flag_spec)
+    case FlagParser.parse(args, @flag_spec) do
+      {:ok, flags, files} -> uniq(bash, flags, files, stdin)
+      {:error, reason} -> {Command.error(FlagParser.format_error("uniq", reason, @usage)), bash}
+    end
+  end
 
+  defp uniq(bash, flags, files, stdin) do
     {content, fs} =
       case files do
         [] ->

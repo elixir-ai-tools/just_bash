@@ -88,8 +88,13 @@ defmodule JustBash.Commands.Cp do
 
   @impl true
   def execute(bash, args, _stdin) do
-    {flags, operands} = FlagParser.parse(args, @flag_spec)
-    copy(bash, operands, options(flags))
+    case FlagParser.parse(args, @flag_spec) do
+      {:ok, flags, operands} ->
+        copy(bash, operands, options(flags))
+
+      {:error, reason} ->
+        {Command.error(FlagParser.format_error("cp", reason, @try_help)), bash}
+    end
   end
 
   defp options(flags) do

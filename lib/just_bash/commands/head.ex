@@ -9,16 +9,24 @@ defmodule JustBash.Commands.Head do
   @flag_spec %{
     boolean: [],
     value: [:n, :c],
+    integer: [:n, :c],
     defaults: %{n: 10, c: nil}
   }
+
+  @usage "Try 'head --help' for more information.\n"
 
   @impl true
   def names, do: ["head"]
 
   @impl true
   def execute(bash, args, stdin) do
-    {flags, files} = FlagParser.parse(args, @flag_spec)
+    case FlagParser.parse(args, @flag_spec) do
+      {:ok, flags, files} -> head(bash, flags, files, stdin)
+      {:error, reason} -> {Command.error(FlagParser.format_error("head", reason, @usage)), bash}
+    end
+  end
 
+  defp head(bash, flags, files, stdin) do
     mode =
       if flags.c do
         {:bytes, flags.c}

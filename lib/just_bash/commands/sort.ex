@@ -13,12 +13,23 @@ defmodule JustBash.Commands.Sort do
     defaults: %{r: false, u: false, n: false, f: false, k: [], t: nil}
   }
 
+  @usage "Try 'sort --help' for more information.\n"
+
   @impl true
   def names, do: ["sort"]
 
   @impl true
   def execute(bash, args, stdin) do
-    {flags, files} = FlagParser.parse(args, @flag_spec)
+    case FlagParser.parse(args, @flag_spec) do
+      {:ok, flags, files} ->
+        sort(bash, flags, files, stdin)
+
+      {:error, reason} ->
+        {Command.error(FlagParser.format_error("sort", reason, @usage), 2), bash}
+    end
+  end
+
+  defp sort(bash, flags, files, stdin) do
     {content, fs} = get_content(bash, files, stdin)
     # Don't trim - preserve empty lines. Only remove trailing empty if content ends with \n
     lines = String.split(content, "\n", trim: false)
