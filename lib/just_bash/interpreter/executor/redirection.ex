@@ -146,6 +146,14 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   #     $ echo hi > f/     bash: f/: Not a directory
   #     $ echo hi > d/     bash: d/: Is a directory
   #     $ echo hi > nope/  bash: nope/: No such file or directory
+  #
+  # An empty target names nothing at all — `open("")` is ENOENT, not a write
+  # to the working directory that resolving it would produce:
+  #
+  #     $ echo hi > ''     bash: : No such file or directory
+  defp open_file(bash, _mode, "" = target_path, _resolved),
+    do: {:error, target_path, VFS.Error.new(:enoent, path: target_path), bash}
+
   defp open_file(bash, mode, target_path, resolved) do
     if FS.directory_spelling?(target_path) do
       {:error, target_path, directory_target(bash, target_path, resolved), bash}

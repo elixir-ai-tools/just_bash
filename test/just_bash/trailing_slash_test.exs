@@ -331,6 +331,42 @@ defmodule JustBash.TrailingSlashTest do
     end
   end
 
+  # bash names a redirect target the way the operand was written, not where it
+  # resolved — the two only read alike when the operand is already absolute.
+  # bash 5, in a directory holding the regular file `keep`:
+  #
+  #     $ cd d && echo hi > keep/x  bash: keep/x: Not a directory
+  #     $ cd d && echo hi > keep/   bash: keep/: Not a directory
+  #     $ cd d && echo hi > nope/   bash: nope/: No such file or directory
+  #     $ echo hi > ''              bash: : No such file or directory
+  describe "redirection names the target the way the operand spelled it" do
+    for {command, message} <- [
+          {"cd /d && echo hi > keep/x", "bash: keep/x: Not a directory\n"},
+          {"cd /d && echo hi > keep/", "bash: keep/: Not a directory\n"},
+          {"cd /d && echo hi >> keep/", "bash: keep/: Not a directory\n"},
+          {"cd /d && echo hi > nope/", "bash: nope/: No such file or directory\n"},
+          {"cd /d && echo hi > ../f/", "bash: ../f/: Not a directory\n"}
+        ] do
+      test "`#{command}`" do
+        {result, bash} = JustBash.exec(bash(), unquote(command))
+
+        assert result.exit_code == 1
+        assert result.stderr == unquote(message)
+        assert {:ok, "K\n", _fs} = read(bash, "/d/keep")
+        assert {:ok, "F\n", _fs} = read(bash, "/f")
+      end
+    end
+
+    # An empty target names nothing at all — `open("")` is ENOENT, not a
+    # write to the working directory that resolving it would produce.
+    test "an empty target is reported as the nothing it names" do
+      {result, _bash} = JustBash.exec(bash(), "echo hi > ''")
+
+      assert result.exit_code == 1
+      assert result.stderr == "bash: : No such file or directory\n"
+    end
+  end
+
   describe "output redirection to a target spelled as a directory" do
     # $ cat a.md > f/
     # bash: f/: Not a directory
