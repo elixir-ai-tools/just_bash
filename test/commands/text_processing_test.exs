@@ -937,6 +937,34 @@ defmodule JustBash.Commands.TextProcessingTest do
       {result, _} = JustBash.exec(bash, "sort -k1,1nr -k2,2 /data.txt")
       assert result.stdout == "3 date\n2 apple\n2 cherry\n1 banana\n"
     end
+
+    # Every way an operand can fail to be read, and the diagnostic GNU sort
+    # prints for it. coreutils uses two templates, not one: the open failure
+    # is `cannot read:`, while a directory - which opens fine and only fails
+    # once sort reads it - is `read failed:`. Collapsing both onto the ENOENT
+    # wording told the caller a path that exists does not, which is a worse
+    # answer than the exit code alone. Checked against GNU coreutils 9 gsort;
+    # the whole table is asserted at once so a fourth error kind cannot arrive
+    # wearing the wrong template.
+    @unreadable_operands [
+      {:enoent, "/nope", "sort: cannot read: /nope: No such file or directory\n"},
+      {:eisdir, "/d", "sort: read failed: /d: Is a directory\n"},
+      {:enotdir, "/file.txt/sub", "sort: cannot read: /file.txt/sub: Not a directory\n"}
+    ]
+
+    test "an operand sort cannot read is named with the reason it could not be read" do
+      bash = JustBash.new(files: %{"/file.txt" => "b\na\n", "/d/inner" => "x\n"})
+
+      observed =
+        Map.new(@unreadable_operands, fn {kind, path, _} ->
+          {result, _} = JustBash.exec(bash, "sort #{path}")
+          {kind, {result.exit_code, result.stdout, result.stderr}}
+        end)
+
+      expected = Map.new(@unreadable_operands, fn {kind, _, msg} -> {kind, {2, "", msg}} end)
+
+      assert observed == expected
+    end
   end
 
   describe "uniq command" do

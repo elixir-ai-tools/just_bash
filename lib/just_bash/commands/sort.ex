@@ -70,9 +70,19 @@ defmodule JustBash.Commands.Sort do
 
     case FS.read_file(bash.fs, resolved) do
       {:ok, content, fs} -> {:ok, content, fs}
-      {:error, _} -> {:error, "sort: cannot read: #{file}: No such file or directory\n"}
+      {:error, error} -> {:error, read_error(file, error)}
     end
   end
+
+  # GNU sort has two templates, and which one it uses says where the failure
+  # happened. A directory opens, so it is the read that fails and coreutils
+  # says `read failed:`; everything else fails at open and says `cannot read:`.
+  # The reason always comes from strerror - naming a directory that exists
+  # "No such file or directory" is a false statement about the filesystem.
+  defp read_error(file, %VFS.Error{kind: :eisdir} = error),
+    do: "sort: read failed: #{file}: #{FS.strerror(error)}\n"
+
+  defp read_error(file, error), do: "sort: cannot read: #{file}: #{FS.strerror(error)}\n"
 
   defp sort_lines(lines, %{k: key_specs} = flags) when key_specs != [] do
     delimiter = flags[:t] || " "
