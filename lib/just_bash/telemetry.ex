@@ -27,6 +27,10 @@ defmodule JustBash.Telemetry do
     * Measurement: `%{duration: native_time, monotonic_time: integer}`
     * Metadata: `%{session: pid(), kind: :error | :exit | :throw, reason: term,
       stacktrace: list, telemetry_span_context: reference()}`
+    * Rare by design: the interpreter contains a crashed command and a raise
+      from the statement loop, so those produce a `:stop` with a non-zero
+      `exit_code` — plus a `[:just_bash, :command, :exception]` when a command
+      was the cause — rather than an exception here.
 
   ### Command Execution
 
@@ -47,6 +51,10 @@ defmodule JustBash.Telemetry do
     * Measurement: `%{duration: native_time, monotonic_time: integer}`
     * Metadata: `%{command: String.t(), args: list(String.t()), kind: atom,
       reason: term, stacktrace: list, telemetry_span_context: reference()}`
+    * A command that raises is *contained* — `JustBash.exec/2` still returns a
+      shell result — but the containment sits outside this span deliberately,
+      so a crash stays distinguishable from a script that legitimately fails.
+      The `:stop` event does not fire for the same command.
 
   ### For Loop Execution
 

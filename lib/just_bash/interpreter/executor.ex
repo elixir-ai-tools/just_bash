@@ -40,9 +40,7 @@ defmodule JustBash.Interpreter.Executor do
         if b.interpreter.halted do
           {:halt, {b, out, err, 1, true}}
         else
-          {result, new_bash} = execute_statement(b, stmt)
-          new_env = Map.put(new_bash.env, "?", to_string(result.exit_code))
-          new_bash = %{new_bash | last_exit_code: result.exit_code, env: new_env}
+          {result, new_bash} = run_statement(b, stmt)
           acc = {new_bash, [out, result.stdout], [err, result.stderr], result.exit_code, false}
 
           if new_bash.shell_opts.errexit and result.exit_code != 0 and
@@ -64,6 +62,59 @@ defmodule JustBash.Interpreter.Executor do
     }
 
     {result, final_bash}
+  end
+
+  # Containment, not defensive coding: `JustBash.exec/2` is a trust boundary and
+  # a raise reaching here is a bug in JustBash, but a host driving the sandbox
+  # has no way to act on an Elixir exception naming a JustBash internal.
+  #
+  # It is contained *here*, in the statement loop, rather than at `exec/2`,
+  # because this is where the last known-good shell lives: the accumulated
+  # output of the statements that already ran, and the struct they left behind.
+  # Rescuing at `exec/2` can only see the parameter, so it silently rolls the
+  # whole session back. The neighbouring `Limit.ExceededError` handler in
+  # `execute_statement/2` already keeps prior work; this matches it.
+  defp run_statement(bash, stmt) do
+    {result, new_bash} = execute_statement(bash, stmt)
+    new_env = Map.put(new_bash.env, "?", to_string(result.exit_code))
+    {result, %{new_bash | last_exit_code: result.exit_code, env: new_env}}
+  rescue
+    error ->
+      detail = "#{inspect(error.__struct__)}: #{Exception.message(error)}"
+      {internal_error(bash, detail), put_in(bash.interpreter.halted, true)}
+  end
+
+  @internal_error_bytes 512
+  @internal_error_overhead byte_size("bash: internal error ()\n")
+
+  @doc """
+  Build the shell-shaped result for an exception that escaped containment.
+
+  Public so `JustBash.exec/2`'s outer net reports the same way the statement
+  loop does. `Exception.message/1` is unbounded from the sandbox's point of
+  view — `inspect/1` alone allows 4096 bytes per binary and 50 collection
+  elements — so a `MatchError` or `KeyError` carrying interpreter or filesystem
+  state could inline sandbox file contents into a stderr the host asked to be
+  capped. The detail is truncated to fit `:max_output_bytes`, or 512 bytes,
+  whichever is smaller.
+  """
+  @spec internal_error(JustBash.t(), String.t()) :: result()
+  def internal_error(bash, detail) do
+    budget = max(internal_error_cap(bash.limits) - @internal_error_overhead, 0)
+    stderr = "bash: internal error (#{truncate_utf8(detail, budget)})\n"
+    %{stdout: "", stderr: stderr, exit_code: 1, env: bash.env}
+  end
+
+  defp internal_error_cap(%Limit{max_output_bytes: max_output_bytes}),
+    do: min(@internal_error_bytes, max_output_bytes)
+
+  defp internal_error_cap(nil), do: @internal_error_bytes
+
+  defp truncate_utf8(binary, max_bytes) when byte_size(binary) <= max_bytes, do: binary
+
+  defp truncate_utf8(binary, max_bytes) do
+    prefix = binary_part(binary, 0, max_bytes)
+    if String.valid?(prefix), do: prefix, else: truncate_utf8(binary, max_bytes - 1)
   end
 
   defp has_short_circuit_operators?(%AST.Statement{operators: operators}) do
@@ -429,34 +480,78 @@ defmodule JustBash.Interpreter.Executor do
   defp invoke_command(bash, cmd_name, args, stdin) do
     case Map.get(bash.functions, cmd_name) do
       nil ->
-        JustBash.Telemetry.command_span(cmd_name, args, fn ->
-          {result, new_bash} =
-            case Map.get(bash.commands, cmd_name) do
-              nil -> execute_builtin(bash, cmd_name, args, stdin)
-              module -> execute_custom_command(bash, cmd_name, module, args, stdin)
-            end
-
-          # A JustBash.CLI router stashes the resolved subcommand path here; surface it
-          # in telemetry and strip it before the result reaches the shell.
-          {subcommand, result} = Map.pop(result, :__subcommand__)
-
-          stop_metadata = %{
-            exit_code: result.exit_code,
-            bytes_in: byte_size(stdin),
-            bytes_out: byte_size(result.stdout) + byte_size(result.stderr)
-          }
-
-          stop_metadata =
-            if subcommand,
-              do: Map.put(stop_metadata, :subcommand, subcommand),
-              else: stop_metadata
-
-          {{result, new_bash}, stop_metadata}
+        contain_command_crash(bash, cmd_name, fn ->
+          dispatch_with_span(bash, cmd_name, args, stdin)
         end)
 
       func_body ->
         execute_function(bash, func_body, args)
     end
+  end
+
+  defp dispatch_with_span(bash, cmd_name, args, stdin) do
+    JustBash.Telemetry.command_span(cmd_name, args, fn ->
+      {result, new_bash} =
+        case Map.get(bash.commands, cmd_name) do
+          nil -> execute_builtin(bash, cmd_name, args, stdin)
+          module -> execute_custom_command(bash, cmd_name, module, args, stdin)
+        end
+
+      # A JustBash.CLI router stashes the resolved subcommand path here; surface it
+      # in telemetry and strip it before the result reaches the shell.
+      {subcommand, result} = Map.pop(result, :__subcommand__)
+
+      stop_metadata = %{
+        exit_code: result.exit_code,
+        bytes_in: byte_size(stdin),
+        bytes_out: byte_size(result.stdout) + byte_size(result.stderr)
+      }
+
+      stop_metadata =
+        if subcommand,
+          do: Map.put(stop_metadata, :subcommand, subcommand),
+          else: stop_metadata
+
+      {{result, new_bash}, stop_metadata}
+    end)
+  end
+
+  # Containment, not defensive coding: a command that raises is a bug, but the
+  # ~90 registry commands and any host-supplied command run on behalf of a
+  # caller that has no way to act on an Elixir exception naming a JustBash
+  # internal, so it must still get a shell-shaped answer.
+  #
+  # This sits *outside* `command_span/3` on purpose. Containing the raise
+  # inside it means `:telemetry.span/3` never sees the exception, and the
+  # documented `[:just_bash, :command, :exception]` event silently stops
+  # firing — turning a loud failure class into an ordinary exit 1,
+  # indistinguishable in metrics from a script legitimately failing.
+  defp contain_command_crash(bash, cmd_name, dispatch) do
+    # credo:disable-for-next-line Credo.Check.Readability.PreferImplicitTry
+    try do
+      dispatch.()
+    rescue
+      # These have handlers further up that produce a better diagnostic than
+      # "crashed", and a limit breach must keep unwinding to halt the script.
+      e in [Limit.ExceededError, Expansion.UnsetVariableError, ArithmeticError] ->
+        reraise e, __STACKTRACE__
+
+      error ->
+        command_crashed(
+          bash,
+          cmd_name,
+          "#{inspect(error.__struct__)}: #{Exception.message(error)}"
+        )
+    catch
+      kind, reason ->
+        command_crashed(bash, cmd_name, "#{kind}: #{inspect(reason)}")
+    end
+  end
+
+  defp command_crashed(bash, cmd_name, detail) do
+    kind = if Map.has_key?(bash.commands, cmd_name), do: "custom command", else: "command"
+    stderr = "bash: #{cmd_name}: #{kind} crashed (#{detail})\n"
+    {%{stdout: "", stderr: stderr, exit_code: 1}, bash}
   end
 
   # --- Redirections ---
@@ -875,62 +970,26 @@ defmodule JustBash.Interpreter.Executor do
 
       module ->
         bash = Limit.step!(bash)
-        invoke_builtin(bash, cmd, module, args, stdin)
+        module.execute(bash, args, stdin)
     end
-  end
-
-  # Containment, not defensive coding: a builtin that raises is a bug, but the
-  # ~90 registry commands run on behalf of a host that cannot act on an Elixir
-  # exception naming a JustBash internal. This gives them the same treatment
-  # `execute_custom_command/5` already gives host-supplied commands.
-  defp invoke_builtin(bash, cmd, module, args, stdin) do
-    # credo:disable-for-next-line Credo.Check.Readability.PreferImplicitTry
-    try do
-      module.execute(bash, args, stdin)
-    rescue
-      # These have handlers further up that produce a better diagnostic than
-      # "crashed", and a limit breach must keep unwinding to halt the script.
-      e in [Limit.ExceededError, Expansion.UnsetVariableError, ArithmeticError] ->
-        reraise e, __STACKTRACE__
-
-      error ->
-        command_crashed(bash, cmd, "#{inspect(error.__struct__)}: #{Exception.message(error)}")
-    catch
-      kind, reason ->
-        command_crashed(bash, cmd, "#{kind}: #{inspect(reason)}")
-    end
-  end
-
-  defp command_crashed(bash, cmd, detail) do
-    {%{stdout: "", stderr: "bash: #{cmd}: command crashed (#{detail})\n", exit_code: 1}, bash}
   end
 
   @control_signal_keys [:__break__, :__continue__, :__return__]
 
+  # A raise here is contained by `contain_command_crash/3`, outside the
+  # telemetry span, so a host-supplied command that crashes is reported the
+  # same way a registry one is — and stays visible in telemetry.
   defp execute_custom_command(bash, cmd_name, command, args, stdin) do
     bash = Limit.step!(bash)
 
-    # credo:disable-for-next-line Credo.Check.Readability.PreferImplicitTry
-    try do
-      case dispatch_custom_command(command, bash, args, stdin) do
-        {%{stdout: stdout, stderr: stderr, exit_code: exit_code} = result, %JustBash{} = new_bash}
-        when is_binary(stdout) and is_binary(stderr) and is_integer(exit_code) and exit_code >= 0 ->
-          # Strip any internal control-flow signals that could leak from custom commands
-          {Map.drop(result, @control_signal_keys), new_bash}
+    case dispatch_custom_command(command, bash, args, stdin) do
+      {%{stdout: stdout, stderr: stderr, exit_code: exit_code} = result, %JustBash{} = new_bash}
+      when is_binary(stdout) and is_binary(stderr) and is_integer(exit_code) and exit_code >= 0 ->
+        # Strip any internal control-flow signals that could leak from custom commands
+        {Map.drop(result, @control_signal_keys), new_bash}
 
-        _ ->
-          custom_command_error(bash, cmd_name, "custom command returned an invalid result")
-      end
-    rescue
-      error ->
-        message =
-          "custom command crashed (#{inspect(error.__struct__)}: #{Exception.message(error)})"
-
-        custom_command_error(bash, cmd_name, message)
-    catch
-      kind, reason ->
-        message = "custom command #{kind}: #{inspect(reason)}"
-        custom_command_error(bash, cmd_name, message)
+      _ ->
+        custom_command_error(bash, cmd_name, "custom command returned an invalid result")
     end
   end
 

@@ -120,6 +120,116 @@ defmodule JustBash.SandboxContractTest do
     end
   end
 
+  describe "an internal error" do
+    test "keeps the output and the session state of the statements before it" do
+      # Containment must not mean amnesia. The neighbouring Limit.ExceededError
+      # handler already behaves this way; this one must match it.
+      script = "echo hi > /f.txt; export FOO=bar; echo before; wreck-env; echo $HOME"
+      {result, bash} = JustBash.exec(probe_bash(), script)
+
+      assert result.exit_code == 1
+      assert result.stdout == "before\n"
+      assert result.stderr =~ "bash: internal error ("
+
+      {result, _bash} = JustBash.exec(bash, "cat /f.txt; echo FOO=$FOO")
+      assert result.stdout == "hi\nFOO=bar\n"
+    end
+
+    test "halts the rest of the script, the way a limit breach does" do
+      {result, _bash} = JustBash.exec(probe_bash(), "echo before; wreck-env; echo after")
+
+      assert result.exit_code == 1
+      assert result.stdout == "before\n"
+      refute result.stdout =~ "after"
+    end
+
+    test "a limit breach keeps the output of the statements before it" do
+      # The behaviour the internal-error path is being held to.
+      bash = JustBash.new(limits: [max_steps: 4])
+      script = "echo a > /f.txt; echo one; echo two; echo three; echo four; echo five"
+      {result, bash} = JustBash.exec(bash, script)
+
+      assert result.exit_code == 1
+      assert result.stdout == "one\ntwo\nthree\n"
+
+      {result, _bash} = JustBash.exec(bash, "cat /f.txt")
+      assert result.stdout == "a\n"
+    end
+
+    test "has a stderr that respects max_output_bytes" do
+      # `Exception.message/1` is unbounded from the sandbox's point of view —
+      # `inspect/1` alone allows 4096 bytes per binary — so a MatchError or
+      # KeyError carrying interpreter or filesystem state could inline sandbox
+      # file contents into a stderr the host asked to be capped.
+      bash = probe_bash(limits: [max_output_bytes: 100])
+      {result, _bash} = JustBash.exec(bash, "wreck-env; echo $HOME")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "bash: internal error ("
+      assert byte_size(result.stderr) <= 100
+    end
+
+    test "has a stderr that stays bounded under generous limits" do
+      {result, _bash} = JustBash.exec(probe_bash(limits: :relaxed), "wreck-env; echo $HOME")
+
+      assert result.exit_code == 1
+      assert byte_size(result.stderr) <= 512
+    end
+  end
+
+  describe "telemetry" do
+    # Containing a crash must not retire the documented
+    # [:just_bash, :command, :exception] event: the failure class this PR
+    # contains used to be loud, and a host can already subscribe to it.
+    setup do
+      handler = "sandbox-contract-#{System.unique_integer([:positive])}"
+      test_pid = self()
+
+      :telemetry.attach(
+        handler,
+        [:just_bash, :command, :exception],
+        fn event, measurements, metadata, _config ->
+          # Other async modules share this global handler; only forward the
+          # commands this module drives.
+          if metadata.command in ["cat", "boom", "echo"] do
+            send(test_pid, {:telemetry, event, measurements, metadata})
+          end
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler) end)
+      :ok
+    end
+
+    test "a contained registry crash still emits [:just_bash, :command, :exception]" do
+      {result, _bash} = JustBash.exec(probe_bash(), "wreck; cat /etc/hosts")
+
+      assert result.exit_code == 1
+      assert_receive {:telemetry, [:just_bash, :command, :exception], measurements, metadata}
+      assert metadata.command == "cat"
+      assert metadata.kind == :error
+      assert metadata.reason == :function_clause
+      assert is_list(metadata.stacktrace)
+      assert is_integer(measurements.duration)
+    end
+
+    test "a contained custom-command crash still emits [:just_bash, :command, :exception]" do
+      {result, _bash} = JustBash.exec(probe_bash(), "boom")
+
+      assert result.exit_code == 1
+      assert_receive {:telemetry, [:just_bash, :command, :exception], _measurements, metadata}
+      assert metadata.command == "boom"
+    end
+
+    test "a command that does not raise emits no exception event" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "echo ok")
+
+      assert result.exit_code == 0
+      refute_receive {:telemetry, [:just_bash, :command, :exception], _, _}, 50
+    end
+  end
+
   describe "exec!/2" do
     test "arms the wall clock like exec/2" do
       # Unlike `max_steps`, the wall clock has to be armed, so an entry point
@@ -135,19 +245,23 @@ defmodule JustBash.SandboxContractTest do
       assert elapsed_us < 300_000
     end
 
-    test "propagates an interpreter exception rather than containing it" do
-      # The documented difference from `exec/2`: `exec!/2` is the uncontained
-      # entry point. A host running untrusted script text wants `exec/2`.
-      assert catch_error(JustBash.exec!(probe_bash(), "wreck-env; echo $HOME"))
+    test "contains an internal error, because the statement loop does" do
+      # The containment lives in the interpreter now, not in `exec/2`'s rescue,
+      # so both public entry points get it.
+      {result, _bash} = JustBash.exec!(probe_bash(), "wreck-env; echo $HOME")
 
-      {result, _bash} = JustBash.exec(probe_bash(), "wreck-env; echo $HOME")
       assert result.exit_code == 1
+      assert result.stderr =~ "bash: internal error ("
     end
 
-    test "raises on a parse error" do
+    test "raises on a parse error, where exec/2 returns a syntax-error result" do
       assert_raise RuntimeError, ~r/Parse error/, fn ->
         JustBash.exec!(JustBash.new(), "echo 'unterminated")
       end
+
+      {result, _bash} = JustBash.exec(JustBash.new(), "echo 'unterminated")
+      assert result.exit_code == 2
+      assert result.stderr =~ "bash: syntax error:"
     end
   end
 
@@ -416,7 +530,9 @@ defmodule JustBash.SandboxContractTest do
       assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
     end
 
-    test "an awk loop that terminates on its own is untouched", %{bash: bash} do
+    test "an awk loop that terminates on its own is untouched" do
+      # A budget the shared 50 ms one cannot flake against under a loaded suite.
+      bash = JustBash.new(limits: [max_wall_ms: 30_000])
       result = bounded_exec(bash, "awk 'BEGIN{for(i=0;i<3;i++){print i}}'")
 
       assert result.exit_code == 0
@@ -448,9 +564,12 @@ defmodule JustBash.SandboxContractTest do
         {elapsed_us, {result, _bash}} =
           :timer.tc(fn -> JustBash.exec(bash, unquote(script) <> " > /dev/null") end)
 
+        # The exit code is the discriminator — unbounded, each of these returns
+        # exit 0 with empty stderr. `elapsed_us` is the overrun guard: the
+        # review measured 4.9-8.1 s on a larger tree under a 1 ms budget.
         assert result.exit_code == 1
         assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
-        assert elapsed_us < 300_000
+        assert elapsed_us < 1_000_000
       end
     end
 

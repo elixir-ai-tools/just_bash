@@ -396,8 +396,13 @@ defmodule JustBash do
     # untrusted script text on behalf of a host that has no way to interpret an
     # Elixir exception naming a JustBash internal. A raise reaching here is a
     # bug in JustBash, but the host must still get a shell-shaped answer.
-    # Individual commands are contained closer to the raise; this is the net
-    # under everything else — expansion, redirection, control flow.
+    #
+    # This is the last resort only. Commands are contained at
+    # `Executor.contain_command_crash/3` and everything the statement loop runs
+    # — expansion, redirection, control flow — at `Executor.run_statement/2`,
+    # both of which keep the work that came before. Reaching *here* means the
+    # raise happened outside the statement loop (parsing, the EXIT trap), where
+    # there is no session state left to preserve.
     error ->
       internal_error(bash, "#{inspect(error.__struct__)}: #{Exception.message(error)}")
   catch
@@ -418,10 +423,7 @@ defmodule JustBash do
 
   defp arm_top_level(%__MODULE__{} = bash), do: bash
 
-  defp internal_error(bash, detail) do
-    stderr = "bash: internal error (#{detail})\n"
-    {%{stdout: "", stderr: stderr, exit_code: 1, env: bash.env}, bash}
-  end
+  defp internal_error(bash, detail), do: {Executor.internal_error(bash, detail), bash}
 
   defp do_exec(bash, command) do
     JustBash.Telemetry.session_span(self(), fn ->
@@ -523,14 +525,17 @@ defmodule JustBash do
   Same limits as `exec/2` — including `:max_wall_ms`, which is armed here too,
   so a script that spins is bounded by both entry points.
 
-  Unlike `exec/2`, this function is *not* a trust boundary. It propagates:
+  It differs from `exec/2` in what it does with a failure it cannot express as
+  a shell result. It raises a `RuntimeError` on a parse error, where `exec/2`
+  returns exit 2 with a `bash: syntax error: ...` diagnostic; and it propagates
+  any exception that escapes the interpreter's own containment — the EXIT trap
+  and telemetry are the paths that can still do that — where `exec/2` reports
+  `bash: internal error (...)`.
 
-  - a `RuntimeError` for a parse error, where `exec/2` returns exit 2 with a
-    `bash: syntax error: ...` diagnostic; and
-  - any exception raised by the interpreter or by a command, where `exec/2`
-    contains it and returns a shell-shaped result.
-
-  A host running untrusted script text wants `exec/2`.
+  A command that crashes and a raise from inside the statement loop are
+  contained by the interpreter itself, so both entry points get a shell result
+  for those. A host running untrusted script text should still prefer `exec/2`,
+  which is the documented trust boundary.
 
   ## Examples
 
