@@ -255,6 +255,27 @@ defmodule JustBash.CLI.BuilderTest do
       end
     end
 
+    # `ArgParser` splits a long token on its first `=` before consulting the long-form map, so
+    # a spelling containing `=` is registered but unreachable — it would build clean and never
+    # match, the exact silent-drop failure the key allowlist exists to prevent.
+    test "raises when an alias contains =" do
+      assert_raise ArgumentError, ~r/alias "--target=date" cannot contain "="/, fn ->
+        CLI.command("x",
+          flags: [target_on: [type: :string, aliases: ["--target=date"]]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises when a :long form contains =" do
+      assert_raise ArgumentError, ~r/long form "--target=date" cannot contain "="/, fn ->
+        CLI.command("x",
+          flags: [target_on: [type: :string, long: "--target=date"]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
     test "raises when two flags claim the same long form" do
       assert_raise ArgumentError, ~r/long form "--dup" collides/, fn ->
         CLI.command("x",

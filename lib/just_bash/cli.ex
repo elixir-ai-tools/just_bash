@@ -56,6 +56,8 @@ defmodule JustBash.CLI do
     * an alias must start with `--`, and no two flags may share a long form, an alias, or a
       short form — the parser indexes them into one map, so a collision would silently bind
       the wrong flag.
+    * a long form or alias may not contain `=` — the parser splits `--flag=value` on the first
+      `=` before matching, so such a spelling could never be reached.
 
   ## Flag aliases
 
@@ -932,6 +934,7 @@ defmodule JustBash.CLI do
   #     runs on provided flags.
   defp validate_flag_spec!(name, flag_name, spec) do
     validate_flag_keys!(name, flag_name, spec)
+    validate_flag_long!(name, flag_name, spec[:long])
     validate_flag_aliases!(name, flag_name, spec[:aliases])
 
     cond do
@@ -962,6 +965,24 @@ defmodule JustBash.CLI do
     end
   end
 
+  defp validate_flag_long!(name, flag_name, long) when is_binary(long),
+    do: reject_equals!(name, flag_name, "long form", long)
+
+  defp validate_flag_long!(_name, _flag_name, _long), do: :ok
+
+  # `ArgParser.parse_loop/5` splits a long token on its first `=` (the `--flag=value` form)
+  # before consulting the long-form map, so a spelling containing `=` is registered but can
+  # never be matched: it builds clean and does nothing.
+  defp reject_equals!(name, flag_name, kind, form) do
+    if String.contains?(form, "=") do
+      raise ArgumentError,
+            "command #{inspect(name)} flag #{inspect(flag_name)}: #{kind} #{inspect(form)} " <>
+              "cannot contain \"=\" — the parser splits a long flag on \"=\" before matching it"
+    end
+
+    :ok
+  end
+
   defp validate_flag_aliases!(_name, _flag_name, nil), do: :ok
 
   defp validate_flag_aliases!(name, flag_name, aliases) when is_list(aliases) do
@@ -987,7 +1008,7 @@ defmodule JustBash.CLI do
                 "be a long flag form starting with \"--\""
 
       true ->
-        :ok
+        reject_equals!(name, flag_name, "alias", form)
     end
   end
 
