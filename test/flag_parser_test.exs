@@ -194,6 +194,20 @@ defmodule JustBash.FlagParserTest do
 
       assert {:ok, %{a: false}, ["-x"]} = FlagParser.parse(["--", "-x"], spec)
     end
+
+    # `Try '<cmd> --help' for more information.` has to lead somewhere.
+    test "--help is a request for the usage, not an unknown flag" do
+      spec = %{boolean: [:a], value: [], defaults: %{a: false}}
+
+      assert :help = FlagParser.parse(["--help"], spec)
+      assert :help = FlagParser.parse(["-a", "--help", "file"], spec)
+    end
+
+    test "--help after -- is an operand" do
+      spec = %{boolean: [:a], value: [], defaults: %{a: false}}
+
+      assert {:ok, %{a: false}, ["--help"]} = FlagParser.parse(["--", "--help"], spec)
+    end
   end
 
   describe "value coercion" do
@@ -267,6 +281,65 @@ defmodule JustBash.FlagParserTest do
                {:invalid_value, "number of lines", "abc"},
                "usage\n"
              ) == "head: invalid number of lines: 'abc'\n"
+    end
+  end
+
+  describe "help/2" do
+    test "lists every spelling the spec accepts" do
+      spec = %{
+        boolean: [:a, :r],
+        value: [:t],
+        multi_value: [:k],
+        aliases: %{"R" => :r, "-recursive" => :r},
+        defaults: %{a: false, r: false, t: nil, k: []},
+        usage: "demo [OPTION]... [FILE]..."
+      }
+
+      assert FlagParser.help("demo", spec) == """
+             Usage: demo [OPTION]... [FILE]...
+             Options this shell implements:
+               -a
+               -k VALUE
+               -r, -R, --recursive
+               -t VALUE
+             """
+    end
+
+    # `flag_lookup/1` answers to a multi-character atom's own name too, so grep
+    # parses `-with_filename`. That is an artifact, not an option to advertise.
+    test "lists the short spelling of a multi-character flag, not its atom name" do
+      spec = %{
+        boolean: [:with_filename],
+        value: [],
+        aliases: %{"H" => :with_filename},
+        defaults: %{with_filename: false}
+      }
+
+      assert FlagParser.help("demo", spec) == """
+             Usage: demo [OPTION]...
+             Options this shell implements:
+               -H
+             """
+    end
+
+    test "falls back to the atom name when a flag has no other spelling" do
+      spec = %{boolean: [:verbose], value: [], defaults: %{verbose: false}}
+
+      assert FlagParser.help("demo", spec) == """
+             Usage: demo [OPTION]...
+             Options this shell implements:
+               -verbose
+             """
+    end
+
+    test "falls back to a generic synopsis when the spec gives none" do
+      spec = %{boolean: [:a], value: [], defaults: %{a: false}}
+
+      assert FlagParser.help("demo", spec) == """
+             Usage: demo [OPTION]...
+             Options this shell implements:
+               -a
+             """
     end
   end
 end

@@ -11,7 +11,8 @@ defmodule JustBash.Commands.Head do
     value: [:n, :c],
     integer: [:n, :c],
     value_labels: %{n: "number of lines", c: "number of bytes"},
-    defaults: %{n: 10, c: nil}
+    defaults: %{n: 10, c: nil},
+    usage: "head [OPTION]... [FILE]..."
   }
 
   @usage "Try 'head --help' for more information.\n"
@@ -23,6 +24,7 @@ defmodule JustBash.Commands.Head do
   def execute(bash, args, stdin) do
     case FlagParser.parse(args, @flag_spec) do
       {:ok, flags, files} -> head(bash, flags, files, stdin)
+      :help -> {Command.ok(FlagParser.help("head", @flag_spec)), bash}
       {:error, reason} -> {Command.error(FlagParser.format_error("head", reason, @usage)), bash}
     end
   end

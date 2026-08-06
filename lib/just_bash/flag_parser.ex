@@ -8,6 +8,7 @@ defmodule JustBash.FlagParser do
   - Value flags: `-n 10`, `-d ","` (flag that takes next argument)
   - Getopt clusters ending in a value flag: `-nk2` is `-n -k 2`
   - Stop parsing at `--`
+  - `--help`, answered from the spec itself
 
   A flag the spec does not describe is an error, never an operand. Demoting it
   turned `sort -Q file` into a read of a file named `-Q`, which sort reports as
@@ -28,6 +29,7 @@ defmodule JustBash.FlagParser do
       # Parse arguments
       case FlagParser.parse(args, spec) do
         {:ok, flags, rest} -> ...
+        :help -> FlagParser.help("ls", spec)
         {:error, reason} -> FlagParser.format_error("ls", reason, @usage)
       end
 
@@ -43,6 +45,8 @@ defmodule JustBash.FlagParser do
     everything else stays a string, so `sort -t 1` is the delimiter `"1"`
   - `:value_labels` - What an `:integer` flag counts, as GNU names it in
     `invalid number of lines: 'abc'`. Required for every `:integer` flag
+  - `:usage` - The synopsis line `help/2` prints, defaulting to
+    `"<command> [OPTION]..."`
   """
 
   @type flag_spec :: %{
@@ -52,7 +56,8 @@ defmodule JustBash.FlagParser do
           optional(:aliases) => map(),
           optional(:multi_value) => [atom()],
           optional(:integer) => [atom()],
-          optional(:value_labels) => %{atom() => String.t()}
+          optional(:value_labels) => %{atom() => String.t()},
+          optional(:usage) => String.t()
         }
 
   @type error ::
@@ -60,7 +65,7 @@ defmodule JustBash.FlagParser do
           | {:missing_value, String.t()}
           | {:invalid_value, String.t(), String.t()}
 
-  @type parse_result :: {:ok, map(), [String.t()]} | {:error, error()}
+  @type parse_result :: {:ok, map(), [String.t()]} | :help | {:error, error()}
 
   @doc """
   Parse command-line arguments according to the given flag specification.
@@ -69,9 +74,9 @@ defmodule JustBash.FlagParser do
   - `flags` is a map containing all flag values
   - `remaining_args` is a list of non-flag arguments
 
-  Returns `{:error, reason}` for the first argument that is flag-shaped but not
-  in the spec, for a value flag with nothing after it, and for a value declared
-  `:integer` that is not a number.
+  Returns `:help` for `--help`, and `{:error, reason}` for the first argument
+  that is flag-shaped but not in the spec, for a value flag with nothing after
+  it, and for a value declared `:integer` that is not a number.
 
   ## Examples
 
@@ -127,6 +132,61 @@ defmodule JustBash.FlagParser do
   def format_error(command, {:invalid_value, label, value}, _usage),
     do: "#{command}: invalid #{label}: '#{value}'\n"
 
+  @doc """
+  The usage `Try '<command> --help' for more information.` promises.
+
+  Rendered from the spec, so it lists exactly the flags the parser accepts and
+  cannot drift from them.
+
+  ## Examples
+
+      iex> spec = %{boolean: [:a], value: [:n], defaults: %{a: false, n: nil}}
+      iex> FlagParser.help("demo", spec)
+      "Usage: demo [OPTION]...\\nOptions this shell implements:\\n  -a\\n  -n VALUE\\n"
+  """
+  @spec help(String.t(), flag_spec()) :: String.t()
+  def help(command, spec) do
+    synopsis = Map.get(spec, :usage, "#{command} [OPTION]...")
+
+    ["Usage: ", synopsis, "\nOptions this shell implements:\n", option_lines(spec)]
+    |> IO.iodata_to_binary()
+  end
+
+  defp option_lines(spec) do
+    values = value_flags(spec)
+
+    spec
+    |> flag_lookup()
+    |> Enum.group_by(fn {_spelling, atom} -> atom end, fn {spelling, _atom} -> "-" <> spelling end)
+    |> Enum.map(fn {atom, spellings} ->
+      {atom, spellings |> typeable(atom) |> Enum.sort_by(&spelling_order(&1, atom))}
+    end)
+    |> Enum.sort_by(fn {_atom, [first | _]} -> {String.downcase(first), first} end)
+    |> Enum.map(fn {atom, spellings} ->
+      argument = if atom in values, do: " VALUE", else: ""
+      ["  ", Enum.join(spellings, ", "), argument, "\n"]
+    end)
+  end
+
+  # `flag_lookup/1` also answers to a multi-character atom's own name, so grep
+  # accepts `-with_filename` as well as `-H`. Printing that would advertise a
+  # spelling nobody means to type, so only real short and long options are
+  # listed — unless the atom's name is all a flag has.
+  defp typeable(spellings, atom) do
+    case Enum.filter(spellings, &short_or_long?/1) do
+      [] -> ["-" <> Atom.to_string(atom)]
+      typeable -> typeable
+    end
+  end
+
+  defp short_or_long?("-" <> name), do: String.length(name) == 1 or String.starts_with?(name, "-")
+
+  # The flag's own name first, then its other short spellings, then the long
+  # ones — the order a reader scans for "which letter do I type".
+  defp spelling_order(spelling, atom) do
+    {String.starts_with?(spelling, "--"), spelling != "-" <> Atom.to_string(atom), spelling}
+  end
+
   defp do_parse([], _spec, flags, rest) do
     {:ok, flags, Enum.reverse(rest)}
   end
@@ -156,6 +216,9 @@ defmodule JustBash.FlagParser do
 
       flag_atom in value_flags(spec) ->
         take_value(flag_atom, flag_str, remaining, spec, flags)
+
+      flag_str == "-help" ->
+        :help
 
       true ->
         parse_unnamed(flag_str, remaining, spec, flags, lookup)

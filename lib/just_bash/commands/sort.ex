@@ -10,7 +10,8 @@ defmodule JustBash.Commands.Sort do
     boolean: [:r, :u, :n, :f],
     value: [:t],
     multi_value: [:k],
-    defaults: %{r: false, u: false, n: false, f: false, k: [], t: nil}
+    defaults: %{r: false, u: false, n: false, f: false, k: [], t: nil},
+    usage: "sort [OPTION]... [FILE]..."
   }
 
   @usage "Try 'sort --help' for more information.\n"
@@ -23,6 +24,9 @@ defmodule JustBash.Commands.Sort do
     case FlagParser.parse(args, @flag_spec) do
       {:ok, flags, files} ->
         sort(bash, flags, files, stdin)
+
+      :help ->
+        {Command.ok(FlagParser.help("sort", @flag_spec)), bash}
 
       {:error, reason} ->
         {Command.error(FlagParser.format_error("sort", reason, @usage), 2), bash}

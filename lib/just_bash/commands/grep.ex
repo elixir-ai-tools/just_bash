@@ -50,7 +50,8 @@ defmodule JustBash.Commands.Grep do
       r: false,
       with_filename: false,
       no_filename: false
-    }
+    },
+    usage: "grep [OPTION]... PATTERNS [FILE]..."
   }
 
   @usage """
@@ -66,6 +67,9 @@ defmodule JustBash.Commands.Grep do
     case FlagParser.parse(args, @flag_spec) do
       {:ok, flags, rest} ->
         grep(bash, flags, rest, stdin)
+
+      :help ->
+        {Command.ok(FlagParser.help("grep", @flag_spec)), bash}
 
       {:error, reason} ->
         {Command.error(FlagParser.format_error("grep", reason, @usage), 2), bash}

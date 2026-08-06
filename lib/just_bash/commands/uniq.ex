@@ -9,7 +9,8 @@ defmodule JustBash.Commands.Uniq do
   @flag_spec %{
     boolean: [:c, :d, :u],
     value: [],
-    defaults: %{c: false, d: false, u: false}
+    defaults: %{c: false, d: false, u: false},
+    usage: "uniq [OPTION]... [INPUT [OUTPUT]]"
   }
 
   @usage "Try 'uniq --help' for more information.\n"
@@ -21,6 +22,7 @@ defmodule JustBash.Commands.Uniq do
   def execute(bash, args, stdin) do
     case FlagParser.parse(args, @flag_spec) do
       {:ok, flags, files} -> uniq(bash, flags, files, stdin)
+      :help -> {Command.ok(FlagParser.help("uniq", @flag_spec)), bash}
       {:error, reason} -> {Command.error(FlagParser.format_error("uniq", reason, @usage)), bash}
     end
   end

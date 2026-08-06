@@ -330,6 +330,55 @@ defmodule JustBash.Commands.UnknownFlagsTest do
     end
   end
 
+  # `Try '<cmd> --help' for more information.` is printed by every rejection in
+  # this file. It has to lead somewhere: advising a second command that also
+  # fails is the same dead end issue #68 is about.
+  describe "the advice the diagnostics print" do
+    @flag_parser_commands ~w(cp grep head ls sort tail tr uniq)
+
+    test "--help succeeds on every command that advertises it" do
+      for name <- @flag_parser_commands do
+        {result, _} = JustBash.exec(bash(), "#{name} --help")
+
+        assert result.exit_code == 0, "#{name} --help exited #{result.exit_code}"
+        assert result.stderr == ""
+        assert result.stdout =~ "Usage: #{name} "
+      end
+    end
+
+    test "--help lists the flags the command actually implements" do
+      {result, _} = JustBash.exec(bash(), "sort --help")
+
+      assert result.stdout == """
+             Usage: sort [OPTION]... [FILE]...
+             Options this shell implements:
+               -f
+               -k VALUE
+               -n
+               -r
+               -t VALUE
+               -u
+             """
+    end
+
+    # A flag the command does not implement is still an error after --help
+    # exists, and the advice it prints now names a command that answers.
+    test "an unknown flag still points at a --help that works" do
+      {rejection, _} = JustBash.exec(bash(), "sort -Q /f.txt")
+      assert rejection.stderr =~ "Try 'sort --help' for more information."
+
+      {advice, _} = JustBash.exec(bash(), "sort --help")
+      assert advice.exit_code == 0
+    end
+
+    test "--help after -- is an operand, not a request for help" do
+      {result, _} = JustBash.exec(bash(), "sort -- --help")
+
+      assert result.exit_code == 2
+      assert result.stderr == "sort: cannot read: --help: No such file or directory\n"
+    end
+  end
+
   describe "flag values are not coerced" do
     # `parse_value/1` used to turn every integer-looking value into an integer,
     # so `sort -t 1` handed String.split/2 the number 1 and crashed the shell.

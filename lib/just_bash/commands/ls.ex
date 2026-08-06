@@ -10,7 +10,8 @@ defmodule JustBash.Commands.Ls do
     boolean: [:a, :l, :h, :r, :R, :S, :t, :one],
     value: [],
     defaults: %{a: false, l: false, h: false, r: false, R: false, S: false, t: false, one: false},
-    aliases: %{"1" => :one}
+    aliases: %{"1" => :one},
+    usage: "ls [OPTION]... [FILE]..."
   }
 
   @usage "Try 'ls --help' for more information.\n"
@@ -22,6 +23,7 @@ defmodule JustBash.Commands.Ls do
   def execute(bash, args, _stdin) do
     case FlagParser.parse(args, @flag_spec) do
       {:ok, flags, paths} -> list(bash, flags, paths)
+      :help -> {Command.ok(FlagParser.help("ls", @flag_spec)), bash}
       {:error, reason} -> {Command.error(FlagParser.format_error("ls", reason, @usage), 2), bash}
     end
   end

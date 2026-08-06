@@ -78,7 +78,8 @@ defmodule JustBash.Commands.Cp do
       P: false,
       L: false,
       d: false
-    }
+    },
+    usage: "cp [OPTION]... SOURCE... DEST"
   }
 
   @try_help "Try 'cp --help' for more information.\n"
@@ -91,6 +92,9 @@ defmodule JustBash.Commands.Cp do
     case FlagParser.parse(args, @flag_spec) do
       {:ok, flags, operands} ->
         copy(bash, operands, options(flags))
+
+      :help ->
+        {Command.ok(FlagParser.help("cp", @flag_spec)), bash}
 
       {:error, reason} ->
         {Command.error(FlagParser.format_error("cp", reason, @try_help)), bash}

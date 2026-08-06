@@ -7,6 +7,16 @@ defmodule JustBash.Commands.Tr do
 
   @try_help "Try 'tr --help' for more information.\n"
 
+  # `tr` keeps its own reducer because a set may look like a flag, but the flags
+  # it accepts are still declared once, so `tr --help` answers from them.
+  @flag_spec %{
+    boolean: [:c, :d, :s],
+    value: [],
+    aliases: %{"C" => :c},
+    defaults: %{c: false, d: false, s: false},
+    usage: "tr [OPTION]... SET1 [SET2]"
+  }
+
   @impl true
   def names, do: ["tr"]
 
@@ -16,6 +26,9 @@ defmodule JustBash.Commands.Tr do
       {:ok, opts} ->
         output = run(stdin, opts)
         {Command.ok(output), bash}
+
+      :help ->
+        {Command.ok(FlagParser.help("tr", @flag_spec)), bash}
 
       {:error, msg} ->
         {Command.error(msg), bash}
@@ -42,6 +55,8 @@ defmodule JustBash.Commands.Tr do
   defp parse_args([], opts) do
     {:ok, %{opts | sets: Enum.reverse(opts.sets)}}
   end
+
+  defp parse_args(["--help" | _rest], _opts), do: :help
 
   # Everything after `--` is a character set, even when it is dash-shaped.
   defp parse_args(["--" | rest], opts) do
