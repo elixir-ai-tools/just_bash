@@ -65,7 +65,9 @@ defmodule JustBash.Commands.ErrorMessageTest do
     {"ls PATH", @stat_kinds, :stderr, "ls: cannot access 'PATH': MSG\n"},
     {"rm PATH", @stat_kinds, :stderr, "rm: cannot remove 'PATH': MSG\n"},
     {"cp PATH /dest", @stat_kinds, :stderr, "cp: cannot stat 'PATH': MSG\n"},
-    {"file PATH", @stat_kinds, :stdout, "PATH: cannot open (MSG)\n"}
+    {"file PATH", @stat_kinds, :stdout, "PATH: cannot open (MSG)\n"},
+    # -b suppresses the filename prefix, not the reason.
+    {"file -b PATH", @stat_kinds, :stdout, "cannot open (MSG)\n"}
   ]
 
   @strerror %{

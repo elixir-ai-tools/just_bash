@@ -65,13 +65,12 @@ defmodule JustBash.Commands.File do
     if opts.brief, do: "#{result}\n", else: "#{file}: #{result}\n"
   end
 
-  defp format_error_line(opts, file, error) do
-    if opts.brief do
-      "cannot open\n"
-    else
-      "#{file}: cannot open (#{FS.strerror(error)})\n"
-    end
-  end
+  # -b suppresses the filename prefix, not the reason the open failed.
+  defp format_error_line(%{brief: true}, _file, error),
+    do: "cannot open (#{FS.strerror(error)})\n"
+
+  defp format_error_line(_opts, file, error),
+    do: "#{file}: cannot open (#{FS.strerror(error)})\n"
 
   defp parse_args(args) do
     parse_args(args, %{brief: false, mime: false, files: []})
