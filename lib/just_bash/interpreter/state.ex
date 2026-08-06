@@ -21,6 +21,11 @@ defmodule JustBash.Interpreter.State do
     associative arrays (`declare -A`). Used during `${arr[key]}` expansion to
     decide whether to treat the subscript as a string key or integer index.
 
+  - `deadline` — the `JustBash.Limit.Deadline` armed by the current top-level
+    `JustBash.exec/2`, or `nil` when limits are disabled. Checked by the
+    statement loop so a script that burns wall clock without doing countable
+    work still terminates.
+
   - `call_depth` — current shell function call depth. Incremented on each
     function entry, restored to the caller's depth on return. Checked against
     `bash.max_call_depth` to prevent unbounded recursion from consuming all
@@ -43,7 +48,8 @@ defmodule JustBash.Interpreter.State do
           output_bytes: non_neg_integer(),
           exec_depth: non_neg_integer(),
           max_exec_depth: non_neg_integer(),
-          halted: boolean()
+          halted: boolean(),
+          deadline: JustBash.Limit.Deadline.t() | nil
         }
 
   defstruct stdin: nil,
@@ -54,7 +60,8 @@ defmodule JustBash.Interpreter.State do
             output_bytes: 0,
             exec_depth: 0,
             max_exec_depth: 0,
-            halted: false
+            halted: false,
+            deadline: nil
 
   @doc "Returns a fresh interpreter state."
   @spec new() :: t()
@@ -65,4 +72,8 @@ defmodule JustBash.Interpreter.State do
   def reset_counters(%__MODULE__{} = state) do
     %{state | step_count: 0, output_bytes: 0, max_exec_depth: 0, halted: false}
   end
+
+  @doc "Arm the wall clock deadline for a new top-level execution."
+  @spec arm_deadline(t(), JustBash.Limit.Deadline.t() | nil) :: t()
+  def arm_deadline(%__MODULE__{} = state, deadline), do: %{state | deadline: deadline}
 end

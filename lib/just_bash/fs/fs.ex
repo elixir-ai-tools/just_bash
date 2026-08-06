@@ -25,6 +25,7 @@ defmodule JustBash.FS do
 
   alias JustBash.FS.Memory
   alias JustBash.FS.POSIX
+  alias JustBash.Limit
   alias VFS.Error
   alias VFS.Path, as: VPath
 
@@ -220,9 +221,22 @@ defmodule JustBash.FS do
     VFS.rm(fs, path, opts)
   end
 
-  @doc "See `VFS.walk/3`."
+  @doc """
+  See `VFS.walk/3`, plus one option vfs does not have.
+
+  `:deadline` — a `JustBash.Limit.Deadline` (or `nil`). A traversal is a single
+  step as far as the step counter is concerned, so a large or pathological tree
+  is otherwise unbounded; with a deadline, each entry yielded checks the wall
+  clock and raises `JustBash.Limit.ExceededError` once it has passed.
+  """
   @spec walk(t(), String.t(), keyword()) :: Enumerable.t()
-  defdelegate walk(fs, root, opts \\ []), to: VFS
+  def walk(fs, root, opts \\ []) do
+    {deadline, walk_opts} = Keyword.pop(opts, :deadline)
+
+    fs
+    |> VFS.walk(root, walk_opts)
+    |> Limit.enforce_deadline(deadline)
+  end
 
   # ── POSIX extensions (dispatched through JustBash.FS.POSIX) ─────────────
 

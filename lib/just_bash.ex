@@ -388,14 +388,41 @@ defmodule JustBash do
   """
   @spec exec(t(), String.t()) :: {exec_result(), t()}
   def exec(bash, command) when is_binary(command) do
-    # Reset counters only for top-level exec (not nested eval/source)
+    # Reset counters and arm the wall clock only for top-level exec
+    # (not nested eval/source, which run inside the caller's budget)
     bash =
       if bash.interpreter.exec_depth == 0 do
-        %{bash | interpreter: State.reset_counters(bash.interpreter)}
+        interpreter =
+          bash.interpreter
+          |> State.reset_counters()
+          |> State.arm_deadline(Limit.deadline(bash.limits))
+
+        %{bash | interpreter: interpreter}
       else
         bash
       end
 
+    do_exec(bash, command)
+  rescue
+    # Containment, not defensive coding. `exec/2` is a trust boundary: it runs
+    # untrusted script text on behalf of a host that has no way to interpret an
+    # Elixir exception naming a JustBash internal. A raise reaching here is a
+    # bug in JustBash, but the host must still get a shell-shaped answer.
+    # Individual commands are contained closer to the raise; this is the net
+    # under everything else — expansion, redirection, control flow.
+    error ->
+      internal_error(bash, "#{inspect(error.__struct__)}: #{Exception.message(error)}")
+  catch
+    kind, reason ->
+      internal_error(bash, "#{kind}: #{inspect(reason)}")
+  end
+
+  defp internal_error(bash, detail) do
+    stderr = "bash: internal error (#{detail})\n"
+    {%{stdout: "", stderr: stderr, exit_code: 1, env: bash.env}, bash}
+  end
+
+  defp do_exec(bash, command) do
     JustBash.Telemetry.session_span(self(), fn ->
       case Parser.parse(command) do
         {:ok, ast} ->

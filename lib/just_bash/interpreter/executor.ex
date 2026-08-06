@@ -79,6 +79,10 @@ defmodule JustBash.Interpreter.Executor do
     if bash.interpreter.halted do
       {%{stdout: "", stderr: "", exit_code: 1}, bash}
     else
+      # The statement loop is the only place a script can spin indefinitely
+      # while every counting limit stays flat, so the wall clock is checked here.
+      Limit.check_deadline!(bash)
+
       tracked_before = bash.interpreter.output_bytes
       {result, new_bash} = do_execute_statement(bash, stmt)
 
@@ -194,16 +198,20 @@ defmodule JustBash.Interpreter.Executor do
   """
   @spec execute_pipeline(JustBash.t(), AST.Pipeline.t()) :: {result(), JustBash.t()}
   def execute_pipeline(bash, %AST.Pipeline{commands: commands, negated: negated}) do
-    # Track all exit codes for pipefail (prepend for O(1), reverse at end)
-    {final_result, final_bash, exit_codes_reversed} =
-      Enum.reduce(commands, {%{stdout: "", stderr: "", exit_code: 0}, bash, []}, fn cmd,
-                                                                                    {prev_result,
-                                                                                     current_bash,
-                                                                                     codes} ->
+    # Track all exit codes for pipefail (prepend for O(1), reverse at end).
+    # Only stdout is piped onwards; every stage's stderr goes to the shell's
+    # stderr, so it is accumulated as iodata rather than overwritten.
+    {final_result, final_bash, exit_codes_reversed, stderr_io} =
+      Enum.reduce(commands, {%{stdout: "", stderr: "", exit_code: 0}, bash, [], []}, fn cmd,
+                                                                                        {prev_result,
+                                                                                         current_bash,
+                                                                                         codes,
+                                                                                         errs} ->
         {result, new_bash} = execute_command(current_bash, cmd, prev_result.stdout)
-        {result, new_bash, [result.exit_code | codes]}
+        {result, new_bash, [result.exit_code | codes], [errs, result.stderr]}
       end)
 
+    final_result = %{final_result | stderr: IO.iodata_to_binary(stderr_io)}
     exit_codes = Enum.reverse(exit_codes_reversed)
 
     # Set PIPESTATUS array with exit codes from each command in the pipeline
@@ -842,8 +850,34 @@ defmodule JustBash.Interpreter.Executor do
 
       module ->
         bash = Limit.step!(bash)
-        module.execute(bash, args, stdin)
+        invoke_builtin(bash, cmd, module, args, stdin)
     end
+  end
+
+  # Containment, not defensive coding: a builtin that raises is a bug, but the
+  # ~90 registry commands run on behalf of a host that cannot act on an Elixir
+  # exception naming a JustBash internal. This gives them the same treatment
+  # `execute_custom_command/5` already gives host-supplied commands.
+  defp invoke_builtin(bash, cmd, module, args, stdin) do
+    # credo:disable-for-next-line Credo.Check.Readability.PreferImplicitTry
+    try do
+      module.execute(bash, args, stdin)
+    rescue
+      # These have handlers further up that produce a better diagnostic than
+      # "crashed", and a limit breach must keep unwinding to halt the script.
+      e in [Limit.ExceededError, Expansion.UnsetVariableError, ArithmeticError] ->
+        reraise e, __STACKTRACE__
+
+      error ->
+        command_crashed(bash, cmd, "#{inspect(error.__struct__)}: #{Exception.message(error)}")
+    catch
+      kind, reason ->
+        command_crashed(bash, cmd, "#{kind}: #{inspect(reason)}")
+    end
+  end
+
+  defp command_crashed(bash, cmd, detail) do
+    {%{stdout: "", stderr: "bash: #{cmd}: command crashed (#{detail})\n", exit_code: 1}, bash}
   end
 
   @control_signal_keys [:__break__, :__continue__, :__return__]

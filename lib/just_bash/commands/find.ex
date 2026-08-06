@@ -4,6 +4,7 @@ defmodule JustBash.Commands.Find do
 
   alias JustBash.Commands.Command
   alias JustBash.FS
+  alias JustBash.Limit
 
   @impl true
   def names, do: ["find"]
@@ -15,6 +16,8 @@ defmodule JustBash.Commands.Find do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
+        # A whole traversal is one step, so the step counter cannot bound it.
+        opts = %{opts | deadline: bash.interpreter.deadline}
         paths = if opts.paths == [], do: ["."], else: opts.paths
 
         {results, stderr, exit_code} =
@@ -53,7 +56,8 @@ defmodule JustBash.Commands.Find do
       mindepth: nil,
       empty: false,
       print0: false,
-      exec_cmd: nil
+      exec_cmd: nil,
+      deadline: nil
     })
   end
 
@@ -135,6 +139,8 @@ defmodule JustBash.Commands.Find do
   end
 
   defp find_recursive(fs, full_path, display_path, opts, depth) do
+    Limit.check_deadline!(opts.deadline)
+
     if exceeds_maxdepth?(opts, depth) do
       {:ok, []}
     else
