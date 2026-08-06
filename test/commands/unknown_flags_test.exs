@@ -164,20 +164,33 @@ defmodule JustBash.Commands.UnknownFlagsTest do
     end
 
     # `--` still ends option parsing, so an option-shaped operand after it is
-    # a filename, not a flag to reject.
-    test "an option-shaped operand after -- is not rejected as a flag" do
+    # a filename, not a flag to reject. It is a filename that does not exist,
+    # and sort has to say so: answering with empty output at exit 0 is the
+    # symptom of issue #68 reappearing one `--` away from the command it quotes.
+    test "an option-shaped operand after -- is read as a file, not rejected as a flag" do
       {result, _} = JustBash.exec(bash(), "sort -- -Q")
 
       refute result.stderr =~ "invalid option"
+      assert result.exit_code == 2
+      assert result.stdout == ""
+      assert result.stderr == "sort: cannot read: -Q: No such file or directory\n"
     end
 
-    # A lone `-` is not option-shaped, so it stays an operand. (Reading it as
-    # stdin is a separate gap in sort, untouched here.)
-    test "a lone dash is still an operand" do
+    test "an operand after -- that does exist is sorted" do
+      {result, _} = JustBash.exec(bash(), "sort -- /f.txt")
+
+      assert result.exit_code == 0
+      assert result.stdout == "a\nb\nc\n"
+    end
+
+    # A lone `-` is not option-shaped, so it stays an operand - and the operand
+    # it names is standard input.
+    test "a lone dash is standard input, not a missing file" do
       {result, _} = JustBash.exec(bash(), "printf 'b\\na\\n' | sort -")
 
       assert result.exit_code == 0
-      refute result.stderr =~ "invalid option"
+      assert result.stdout == "a\nb\n"
+      assert result.stderr == ""
     end
   end
 

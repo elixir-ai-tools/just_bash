@@ -30,7 +30,13 @@ defmodule JustBash.Commands.Sort do
   end
 
   defp sort(bash, flags, files, stdin) do
-    {content, fs} = get_content(bash, files, stdin)
+    case get_content(bash, files, stdin) do
+      {:ok, content, fs} -> sorted(bash, flags, content, fs)
+      {:error, message} -> {Command.error(message, 2), bash}
+    end
+  end
+
+  defp sorted(bash, flags, content, fs) do
     # Don't trim - preserve empty lines. Only remove trailing empty if content ends with \n
     lines = String.split(content, "\n", trim: false)
 
@@ -50,14 +56,17 @@ defmodule JustBash.Commands.Sort do
     {Command.ok(output), %{bash | fs: fs}}
   end
 
-  defp get_content(bash, [], stdin), do: {stdin, bash.fs}
+  defp get_content(bash, [], stdin), do: {:ok, stdin, bash.fs}
+  defp get_content(bash, ["-" | _], stdin), do: {:ok, stdin, bash.fs}
 
+  # A file sort cannot read is reported, not read as empty: swallowing the
+  # error is how `sort -- -Q` answered with nothing at exit 0.
   defp get_content(bash, [file | _], _stdin) do
     resolved = FS.resolve_path(bash.cwd, file)
 
     case FS.read_file(bash.fs, resolved) do
-      {:ok, c, fs} -> {c, fs}
-      {:error, _} -> {"", bash.fs}
+      {:ok, content, fs} -> {:ok, content, fs}
+      {:error, _} -> {:error, "sort: cannot read: #{file}: No such file or directory\n"}
     end
   end
 
@@ -107,8 +116,6 @@ defmodule JustBash.Commands.Sort do
         key_a < key_b
     end
   end
-
-  defp parse_key_spec(spec) when is_integer(spec), do: {spec, nil}
 
   defp parse_key_spec(spec) when is_binary(spec) do
     # Parse key spec like "2" or "2,2" or "2,2nr" or "1,1rn"
