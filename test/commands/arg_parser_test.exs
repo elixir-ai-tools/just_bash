@@ -289,6 +289,42 @@ defmodule JustBash.Commands.ArgParserTest do
     end
   end
 
+  describe "aliases option" do
+    @alias_flags [
+      target_on: [long: "--target-on", aliases: ["--target-date"], type: :string, required: true],
+      verbose: [long: "--verbose", aliases: ["--loud"], type: :boolean]
+    ]
+
+    test "parses the canonical long form" do
+      {:ok, opts, _} = ArgParser.parse(["--target-on", "2027-02-03"], @alias_flags)
+      assert opts.target_on == "2027-02-03"
+    end
+
+    test "parses an alias into the same flag" do
+      {:ok, opts, _} = ArgParser.parse(["--target-date", "2027-02-03"], @alias_flags)
+      assert opts.target_on == "2027-02-03"
+    end
+
+    test "parses an alias in --flag=value form" do
+      {:ok, opts, _} = ArgParser.parse(["--target-date=2027-02-03"], @alias_flags)
+      assert opts.target_on == "2027-02-03"
+    end
+
+    test "an alias satisfies a required flag" do
+      assert {:ok, _opts, _} = ArgParser.parse(["--target-date", "x"], @alias_flags)
+    end
+
+    test "an alias sets a boolean flag" do
+      {:ok, opts, _} = ArgParser.parse(["--target-on", "x", "--loud"], @alias_flags)
+      assert opts.verbose == true
+    end
+
+    test "errors still name the canonical long form, not the alias used" do
+      assert {:error, message} = ArgParser.parse([], @alias_flags)
+      assert message =~ "missing required flag: --target-on"
+    end
+  end
+
   describe "values (enum) option" do
     @enum_flags [
       format: [long: "--format", type: :string, values: ["text", "json"], default: "text"]

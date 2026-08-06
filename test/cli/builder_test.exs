@@ -141,6 +141,120 @@ defmodule JustBash.CLI.BuilderTest do
       end
     end
 
+    test "raises on an unrecognized flag-spec key" do
+      assert_raise ArgumentError,
+                   ~r/unknown flag option :totally_bogus_key.*valid options are/s,
+                   fn ->
+                     CLI.command("x",
+                       flags: [
+                         other: [type: :string, long: "--other-name", totally_bogus_key: 123]
+                       ],
+                       run: fn i -> {ok(), i.bash} end
+                     )
+                   end
+    end
+
+    test "raises on a misspelled flag-spec key" do
+      assert_raise ArgumentError, ~r/unknown flag option :requird/, fn ->
+        CLI.command("x",
+          flags: [n: [type: :integer, requird: true]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "accepts a flag :aliases list and keeps :long canonical" do
+      cmd =
+        CLI.command("x",
+          flags: [target_on: [type: :string, aliases: ["--target-date", "--date"]]],
+          run: fn i -> {ok(), i.bash} end
+        )
+
+      assert cmd.flags[:target_on][:long] == "--target-on"
+      assert cmd.flags[:target_on][:aliases] == ["--target-date", "--date"]
+    end
+
+    test "raises when :aliases is not a list of strings" do
+      assert_raise ArgumentError, ~r/:aliases must be a list of strings/, fn ->
+        CLI.command("x",
+          flags: [target_on: [type: :string, aliases: "--target-date"]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+
+      assert_raise ArgumentError, ~r/:aliases must be a list of strings/, fn ->
+        CLI.command("x",
+          flags: [target_on: [type: :string, aliases: [:"--target-date"]]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises when an alias is not a long flag form" do
+      assert_raise ArgumentError, ~r/alias "target-date" must be a long flag form/, fn ->
+        CLI.command("x",
+          flags: [target_on: [type: :string, aliases: ["target-date"]]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+
+      assert_raise ArgumentError, ~r/alias "-t" must be a long flag form/, fn ->
+        CLI.command("x",
+          flags: [target_on: [type: :string, aliases: ["-t"]]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+
+      assert_raise ArgumentError, ~r/alias "--" must be a long flag form/, fn ->
+        CLI.command("x",
+          flags: [target_on: [type: :string, aliases: ["--"]]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises when an alias claims the reserved --help form" do
+      assert_raise ArgumentError, ~r/--help.* is reserved/, fn ->
+        CLI.command("x",
+          flags: [target_on: [type: :string, aliases: ["--help"]]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises when an alias collides with another flag's long form" do
+      assert_raise ArgumentError, ~r/alias "--format" collides/, fn ->
+        CLI.command("x",
+          flags: [
+            format: [type: :string],
+            target_on: [type: :string, aliases: ["--format"]]
+          ],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises when an alias collides with another flag's alias" do
+      assert_raise ArgumentError, ~r/alias "--date" collides/, fn ->
+        CLI.command("x",
+          flags: [
+            recorded_on: [type: :string, aliases: ["--date"]],
+            target_on: [type: :string, aliases: ["--date"]]
+          ],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises when an alias collides with its own flag's long form" do
+      assert_raise ArgumentError, ~r/alias "--target-on" collides/, fn ->
+        CLI.command("x",
+          flags: [target_on: [type: :string, aliases: ["--target-on"]]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
     test "raises on flags that are not a keyword list" do
       assert_raise ArgumentError, ~r/:flags must be a keyword list/, fn ->
         CLI.command("x", flags: %{not: :keyword}, run: fn i -> {ok(), i.bash} end)

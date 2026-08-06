@@ -41,16 +41,26 @@ defmodule JustBash.CLI do
 
   Flag specs use the exact shape of `JustBash.Commands.ArgParser`: a keyword list of
   `name: [type: ..., ...]`. Supported keys: `:type` (`:boolean`, `:string`, `:integer`,
-  `:float`, `:accumulator`), `:short`, `:long` (defaults to `--name`), `:default`,
-  `:required`, `:values` (enum), `:transform`, and `:doc` (used in help output).
+  `:float`, `:accumulator`), `:short`, `:long` (defaults to `--name`), `:aliases`,
+  `:default`, `:required`, `:values` (enum), `:transform`, and `:doc` (used in help output).
 
   Flag specs are validated at build time (`command/2` raises `ArgumentError`):
 
+    * an unrecognized spec key is rejected — a typo'd or imagined key would otherwise be
+      silently ignored and indistinguishable from a working one.
     * `--help`/`-h` are **reserved** — see "Reserved flags" below.
     * `:required` and `:default` are mutually exclusive (a required flag errors when omitted,
       so the default could never apply).
     * a `:default` must be a member of `:values` when both are given (the enum check only
       runs on flags the user actually provides, so an out-of-range default would slip past it).
+    * an alias must start with `--` and may not collide with another flag's long form or alias.
+
+  ## Flag aliases
+
+  `:aliases` gives one flag extra long spellings, for renaming a flag without breaking
+  callers: `target_on: [type: :string, aliases: ["--target-date"]]` accepts both
+  `--target-on` and `--target-date`. `:long` stays canonical and is the only form shown in
+  usage lines, help, and `describe/1` — aliases are accepted, not advertised.
 
   `:values` is compared against the **coerced** value, so list members must match the flag's
   `:type` — e.g. `type: :integer, values: [1, 2]` (integers, not `~w(1 2)`). The raw
@@ -129,6 +139,20 @@ defmodule JustBash.CLI do
   # Exit code used for all usage errors (unknown command, bad flags, missing args),
   # matching the convention of git/most CLIs.
   @usage_exit 2
+
+  # Every key a flag spec may carry — the `JustBash.Commands.ArgParser` shape plus `:doc`.
+  # Anything else is rejected at build time (see `validate_flag_spec!/3`).
+  @flag_spec_keys [
+    :type,
+    :short,
+    :long,
+    :aliases,
+    :default,
+    :required,
+    :values,
+    :transform,
+    :doc
+  ]
 
   @enforce_keys [:name]
   defstruct name: nil, doc: nil, commands: [], aliases: [], on_missing_subcommand: :error
@@ -873,16 +897,20 @@ defmodule JustBash.CLI do
             "command #{inspect(name)} :flags must be a keyword list of flag specs, got: #{inspect(flags)}"
     end
 
-    Enum.map(flags, fn {flag_name, spec} ->
-      unless Keyword.keyword?(spec) do
-        raise ArgumentError,
-              "command #{inspect(name)} flag #{inspect(flag_name)} spec must be a keyword list, got: #{inspect(spec)}"
-      end
+    flags =
+      Enum.map(flags, fn {flag_name, spec} ->
+        unless Keyword.keyword?(spec) do
+          raise ArgumentError,
+                "command #{inspect(name)} flag #{inspect(flag_name)} spec must be a keyword list, got: #{inspect(spec)}"
+        end
 
-      spec = Keyword.put_new(spec, :long, default_long(flag_name))
-      validate_flag_spec!(name, flag_name, spec)
-      {flag_name, spec}
-    end)
+        spec = Keyword.put_new(spec, :long, default_long(flag_name))
+        validate_flag_spec!(name, flag_name, spec)
+        {flag_name, spec}
+      end)
+
+    validate_alias_collisions!(name, flags)
+    flags
   end
 
   defp normalize_flags!(name, flags) do
@@ -891,6 +919,8 @@ defmodule JustBash.CLI do
   end
 
   # Build-time guards that can't drift into runtime surprises:
+  #   * an unrecognized key is never read by the parser, so a typo (or an imagined feature)
+  #     would behave exactly like a spec that works — until the flag is exercised.
   #   * `--help`/`-h` are intercepted by the router before any leaf parses, so a flag that
   #     claims them could never receive its value (see the "reserved flags" note in the
   #     moduledoc).
@@ -899,6 +929,9 @@ defmodule JustBash.CLI do
   #   * a `:default` outside `:values` would silently bypass the enum check, which only
   #     runs on provided flags.
   defp validate_flag_spec!(name, flag_name, spec) do
+    validate_flag_keys!(name, flag_name, spec)
+    validate_flag_aliases!(name, flag_name, spec[:aliases])
+
     cond do
       spec[:long] == "--help" or spec[:short] == "-h" ->
         reserved = if spec[:long] == "--help", do: "--help", else: "-h"
@@ -913,6 +946,75 @@ defmodule JustBash.CLI do
       true ->
         validate_default_in_values!(name, flag_name, spec)
     end
+  end
+
+  defp validate_flag_keys!(name, flag_name, spec) do
+    case Keyword.keys(spec) -- @flag_spec_keys do
+      [] ->
+        :ok
+
+      [unknown | _rest] ->
+        raise ArgumentError,
+              "command #{inspect(name)} flag #{inspect(flag_name)}: unknown flag option " <>
+                "#{inspect(unknown)}; valid options are #{inspect(@flag_spec_keys)}"
+    end
+  end
+
+  defp validate_flag_aliases!(_name, _flag_name, nil), do: :ok
+
+  defp validate_flag_aliases!(name, flag_name, aliases) when is_list(aliases) do
+    Enum.each(aliases, &validate_flag_alias!(name, flag_name, &1))
+  end
+
+  defp validate_flag_aliases!(name, flag_name, other) do
+    raise ArgumentError,
+          "command #{inspect(name)} flag #{inspect(flag_name)}: :aliases must be a list of " <>
+            "strings, got: #{inspect(other)}"
+  end
+
+  defp validate_flag_alias!(name, flag_name, form) when is_binary(form) do
+    cond do
+      form == "--help" ->
+        raise ArgumentError,
+              "command #{inspect(name)} flag #{inspect(flag_name)}: alias \"--help\" is reserved " <>
+                "for help and cannot be used as a flag"
+
+      not String.starts_with?(form, "--") or form == "--" ->
+        raise ArgumentError,
+              "command #{inspect(name)} flag #{inspect(flag_name)}: alias #{inspect(form)} must " <>
+                "be a long flag form starting with \"--\""
+
+      true ->
+        :ok
+    end
+  end
+
+  defp validate_flag_alias!(name, flag_name, other) do
+    raise ArgumentError,
+          "command #{inspect(name)} flag #{inspect(flag_name)}: :aliases must be a list of " <>
+            "strings, got: #{inspect(other)}"
+  end
+
+  # Two flags claiming the same long form would resolve to whichever the parser indexed last,
+  # silently binding the wrong flag. Aliases make that easy to do by accident, so every alias
+  # must be distinct from every long form and every other alias on the command.
+  defp validate_alias_collisions!(name, flags) do
+    longs = for {_flag_name, spec} <- flags, spec[:long], do: spec[:long]
+    aliased = for {flag_name, spec} <- flags, form <- spec[:aliases] || [], do: {flag_name, form}
+
+    do_validate_alias_collisions!(name, aliased, longs)
+  end
+
+  defp do_validate_alias_collisions!(_name, [], _taken), do: :ok
+
+  defp do_validate_alias_collisions!(name, [{flag_name, form} | rest], taken) do
+    if form in taken do
+      raise ArgumentError,
+            "command #{inspect(name)} flag #{inspect(flag_name)}: alias #{inspect(form)} " <>
+              "collides with an existing flag long form or alias"
+    end
+
+    do_validate_alias_collisions!(name, rest, [form | taken])
   end
 
   defp validate_default_in_values!(name, flag_name, spec) do

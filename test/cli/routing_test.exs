@@ -215,6 +215,77 @@ defmodule JustBash.CLI.RoutingTest do
     end
   end
 
+  describe "flag aliases" do
+    defp alias_cli do
+      CLI.new("probe",
+        commands: [
+          CLI.command("go",
+            doc: "Write a date column",
+            flags: [
+              target_on: [type: :string, aliases: ["--target-date"], doc: "date"],
+              verbose: [type: :boolean, short: "-v", aliases: ["--loud"]]
+            ],
+            run: fn inv ->
+              tag = if inv.flags.verbose, do: "VERBOSE ", else: ""
+              {Command.ok("#{tag}target_on=#{inv.flags.target_on}\n"), inv.bash}
+            end
+          )
+        ]
+      )
+    end
+
+    defp run_alias(script) do
+      bash = JustBash.new(commands: %{"probe" => alias_cli()})
+      {result, _bash} = JustBash.exec(bash, script)
+      result
+    end
+
+    test "the canonical long form still parses" do
+      result = run_alias("probe go --target-on 1")
+      assert result.exit_code == 0
+      assert result.stdout == "target_on=1\n"
+    end
+
+    test "an alias parses into the same flag" do
+      result = run_alias("probe go --target-date 1")
+      assert result.exit_code == 0
+      assert result.stdout == "target_on=1\n"
+    end
+
+    test "an alias accepts the --flag=value form" do
+      result = run_alias("probe go --target-date=1")
+      assert result.exit_code == 0
+      assert result.stdout == "target_on=1\n"
+    end
+
+    test "an alias works for a boolean flag" do
+      result = run_alias("probe go --target-on 1 --loud")
+      assert result.exit_code == 0
+      assert result.stdout == "VERBOSE target_on=1\n"
+    end
+
+    test "an unrelated unknown flag still errors" do
+      result = run_alias("probe go --target-dat 1")
+      assert result.exit_code == 2
+      assert result.stderr =~ "unknown option: --target-dat"
+    end
+
+    test "help shows only the canonical long form" do
+      result = run_alias("probe go --help")
+      assert result.exit_code == 0
+      assert result.stdout =~ "--target-on"
+      refute result.stdout =~ "--target-date"
+      refute result.stdout =~ "--loud"
+    end
+
+    test "the usage line on an error shows only the canonical long form" do
+      result = run_alias("probe go --nope")
+      assert result.exit_code == 2
+      assert result.stderr =~ "[--target-on <string>]"
+      refute result.stderr =~ "--target-date"
+    end
+  end
+
   describe "command-level validation" do
     defp validating_cli do
       CLI.new("acme",

@@ -34,6 +34,8 @@ defmodule JustBash.Commands.ArgParser do
 
   - `:short` - Short flag form (e.g., "-s")
   - `:long` - Long flag form (e.g., "--silent")
+  - `:aliases` - Additional long forms accepted for the same flag (e.g., `["--quiet"]`).
+    `:long` stays the canonical spelling used in help and error messages
   - `:type` - Value type (`:boolean`, `:string`, `:integer`, `:float`, `:accumulator`)
   - `:default` - Default value if flag not provided
   - `:required` - When `true`, parsing fails if the flag is not provided
@@ -49,6 +51,7 @@ defmodule JustBash.Commands.ArgParser do
   @type flag_spec :: [
           short: String.t(),
           long: String.t(),
+          aliases: [String.t()],
           type: flag_type(),
           default: any(),
           required: boolean(),
@@ -107,10 +110,16 @@ defmodule JustBash.Commands.ArgParser do
     end
   end
 
+  # `:aliases` share the long map with `:long`, so an alias parses exactly like the canonical
+  # form. Only `:long` is ever read back out for display (see `flag_display_name/1`).
   defp build_flag_maps(flags) do
     Enum.reduce(flags, {%{}, %{}}, fn {name, spec}, {shorts, longs} ->
       shorts = if spec[:short], do: Map.put(shorts, spec[:short], {name, spec}), else: shorts
       longs = if spec[:long], do: Map.put(longs, spec[:long], {name, spec}), else: longs
+
+      longs =
+        Enum.reduce(spec[:aliases] || [], longs, &Map.put(&2, &1, {name, spec}))
+
       {shorts, longs}
     end)
   end
