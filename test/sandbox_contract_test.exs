@@ -522,10 +522,18 @@ defmodule JustBash.SandboxContractTest do
     end
 
     defp bounded_exec(bash, script) do
-      task = Task.async(fn -> JustBash.exec(bash, script) end)
+      {_elapsed_us, result} = bounded_exec_timed(bash, script)
+      result
+    end
+
+    # The clock is read *inside* the task, so a probe that asserts on elapsed
+    # time measures the run itself rather than the yield, and still fails at 5s
+    # instead of wedging the suite.
+    defp bounded_exec_timed(bash, script) do
+      task = Task.async(fn -> :timer.tc(fn -> JustBash.exec(bash, script) end) end)
 
       case Task.yield(task, 5_000) || Task.shutdown(task, :brutal_kill) do
-        {:ok, {result, _bash}} -> result
+        {:ok, {elapsed_us, {result, _bash}}} -> {elapsed_us, result}
         nil -> flunk("`#{script}` did not terminate within 5s")
       end
     end
@@ -603,8 +611,7 @@ defmodule JustBash.SandboxContractTest do
       # to measure. The clock gets room it cannot need so cardinality answers.
       bash = JustBash.new(limits: [max_steps: 100, max_wall_ms: 30_000])
 
-      {elapsed_us, {result, _bash}} =
-        :timer.tc(fn -> JustBash.exec(bash, "echo {1..20000000}") end)
+      {elapsed_us, result} = bounded_exec_timed(bash, "echo {1..20000000}")
 
       assert result.exit_code == 1
       assert result.stderr =~ "word expansion limit exceeded (100 words)"
@@ -616,7 +623,7 @@ defmodule JustBash.SandboxContractTest do
       # the 2,500 words their product names are caught only by counting as the
       # walk produces them. The clock again has room it cannot need.
       bash = JustBash.new(limits: [max_steps: 100, max_wall_ms: 30_000])
-      {result, _bash} = JustBash.exec(bash, "echo {1..50}{1..50}")
+      result = bounded_exec(bash, "echo {1..50}{1..50}")
 
       assert result.exit_code == 1
       assert result.stderr =~ "word expansion limit exceeded (100 words)"
@@ -634,7 +641,7 @@ defmodule JustBash.SandboxContractTest do
 
     test "an expansion that fits inside the budget is untouched" do
       bash = JustBash.new(limits: [max_steps: 100, max_wall_ms: 30_000])
-      {result, _bash} = JustBash.exec(bash, "echo {1..5} {a..e} {x,y}{1..3}")
+      result = bounded_exec(bash, "echo {1..5} {a..e} {x,y}{1..3}")
 
       assert result.exit_code == 0
       assert result.stdout == "1 2 3 4 5 a b c d e x1 x2 x3 y1 y2 y3\n"
@@ -642,7 +649,7 @@ defmodule JustBash.SandboxContractTest do
 
     test "a word list right at the bound is allowed" do
       bash = JustBash.new(limits: [max_steps: 100, max_wall_ms: 30_000])
-      {result, _bash} = JustBash.exec(bash, "echo {1..10}{1..10} | wc -w")
+      result = bounded_exec(bash, "echo {1..10}{1..10} | wc -w")
 
       assert result.exit_code == 0
       assert result.stdout == "100\n"
