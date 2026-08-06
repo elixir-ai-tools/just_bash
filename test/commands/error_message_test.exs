@@ -14,50 +14,58 @@ defmodule JustBash.Commands.ErrorMessageTest do
 
   alias JustBash.Test.FailingBackend
 
-  # Commands that read a file's *contents*. Every one of these can hit all four
-  # kinds, including :eisdir — reading a directory is an error.
-  #
-  # `PATH` is the operand under test; `MSG` is the strerror text for the kind.
-  @content_readers [
-    {"cat PATH", :stderr, "cat: PATH: MSG\n"},
-    {"wc PATH", :stderr, "wc: PATH: MSG\n"},
-    {"head PATH", :stderr, "head: cannot open 'PATH' for reading: MSG\n"},
-    {"tail PATH", :stderr, "tail: cannot open 'PATH' for reading: MSG\n"},
-    {"od PATH", :stderr, "od: PATH: MSG\n"},
-    {"xxd PATH", :stderr, "xxd: PATH: MSG\n"},
-    {"base64 PATH", :stderr, "base64: PATH: MSG\n"},
-    {"tac PATH", :stderr, "tac: PATH: MSG\n"},
-    {"rev PATH", :stderr, "rev: PATH: MSG\n"},
-    {"nl PATH", :stderr, "nl: PATH: MSG\n"},
-    {"fold PATH", :stderr, "fold: PATH: MSG\n"},
-    {"expand PATH", :stderr, "expand: PATH: MSG\n"},
-    {"paste PATH", :stderr, "paste: PATH: MSG\n"},
-    {"comm PATH PATH", :stderr, "comm: PATH: MSG\n"},
-    {"jq . PATH", :stderr, "jq: PATH: MSG\n"},
-    {"awk '{print}' PATH", :stderr, "awk: PATH: MSG\n"},
-    {"sed -n p PATH", :stderr, "sed: PATH: MSG\n"},
-    {"sed -i s/a/b/ PATH", :stderr, "sed: PATH: MSG\n"},
-    {"sha256sum PATH", :stderr, "sha256sum: PATH: MSG\n"},
-    {"shasum PATH", :stderr, "shasum: PATH: MSG\n"},
-    {"diff PATH PATH", :stderr, "diff: PATH: MSG\n"},
-    {"source PATH", :stderr, "bash: source: PATH: MSG\n"},
-    {"md5sum PATH", :stderr, "md5sum: PATH: MSG\n"}
-  ]
+  # Reading a file's *contents* can hit all four kinds, including :eisdir —
+  # reading a directory is an error.
+  @read_kinds [:enoent, :enotdir, :eisdir, :eacces]
 
-  # Commands that only inspect metadata. A directory is a perfectly good answer
-  # for these, so :eisdir is not among the kinds they can surface.
-  @metadata_readers [
-    {"stat PATH", :stderr, "stat: cannot stat 'PATH': MSG\n"},
-    {"chmod 644 PATH", :stderr, "chmod: cannot access 'PATH': MSG\n"},
-    {"chown u PATH", :stderr, "chown: cannot access 'PATH': MSG\n"},
-    {"realpath PATH", :stderr, "realpath: PATH: MSG\n"},
-    {"du PATH", :stderr, "du: cannot access 'PATH': MSG\n"},
-    {"find PATH", :stderr, "find: PATH: MSG\n"},
-    {"tree PATH", :stderr, "tree: PATH: MSG\n"},
-    {"ls PATH", :stderr, "ls: cannot access 'PATH': MSG\n"},
-    {"rm PATH", :stderr, "rm: cannot remove 'PATH': MSG\n"},
-    {"cp PATH /dest", :stderr, "cp: cannot stat 'PATH': MSG\n"},
-    {"file PATH", :stdout, "PATH: cannot open (MSG)\n"}
+  # A directory is a perfectly good answer for a command that only inspects
+  # metadata, so :eisdir is not among the kinds it can surface. It is also not
+  # among the kinds that can reach a template chosen at `open(2)` time — GNU
+  # head/tail/tac open a directory successfully and fail at `read(2)`, which
+  # gets its own wording.
+  @stat_kinds [:enoent, :enotdir, :eacces]
+
+  # Each row is an invocation, the kinds it covers, the stream the diagnostic
+  # belongs on, and the template. `PATH` is the operand under test; `MSG` is
+  # the strerror text for the kind.
+  @matrix [
+    {"cat PATH", @read_kinds, :stderr, "cat: PATH: MSG\n"},
+    {"wc PATH", @read_kinds, :stderr, "wc: PATH: MSG\n"},
+    {"head PATH", @stat_kinds, :stderr, "head: cannot open 'PATH' for reading: MSG\n"},
+    {"head PATH", [:eisdir], :stderr, "head: error reading 'PATH': MSG\n"},
+    {"tail PATH", @stat_kinds, :stderr, "tail: cannot open 'PATH' for reading: MSG\n"},
+    {"tail PATH", [:eisdir], :stderr, "tail: error reading 'PATH': MSG\n"},
+    {"od PATH", @read_kinds, :stderr, "od: PATH: MSG\n"},
+    {"xxd PATH", @read_kinds, :stderr, "xxd: PATH: MSG\n"},
+    {"base64 PATH", @read_kinds, :stderr, "base64: PATH: MSG\n"},
+    {"tac PATH", @stat_kinds, :stderr, "tac: failed to open 'PATH' for reading: MSG\n"},
+    {"tac PATH", [:eisdir], :stderr, "tac: PATH: read error: MSG\n"},
+    {"rev PATH", @read_kinds, :stderr, "rev: PATH: MSG\n"},
+    {"nl PATH", @read_kinds, :stderr, "nl: PATH: MSG\n"},
+    {"fold PATH", @read_kinds, :stderr, "fold: PATH: MSG\n"},
+    {"expand PATH", @read_kinds, :stderr, "expand: PATH: MSG\n"},
+    {"paste PATH", @read_kinds, :stderr, "paste: PATH: MSG\n"},
+    {"comm PATH PATH", @read_kinds, :stderr, "comm: PATH: MSG\n"},
+    {"jq . PATH", @read_kinds, :stderr, "jq: PATH: MSG\n"},
+    {"awk '{print}' PATH", @read_kinds, :stderr, "awk: PATH: MSG\n"},
+    {"sed -n p PATH", @read_kinds, :stderr, "sed: PATH: MSG\n"},
+    {"sed -i s/a/b/ PATH", @read_kinds, :stderr, "sed: PATH: MSG\n"},
+    {"sha256sum PATH", @read_kinds, :stderr, "sha256sum: PATH: MSG\n"},
+    {"shasum PATH", @read_kinds, :stderr, "shasum: PATH: MSG\n"},
+    {"diff PATH PATH", @read_kinds, :stderr, "diff: PATH: MSG\n"},
+    {"source PATH", @read_kinds, :stderr, "bash: source: PATH: MSG\n"},
+    {"md5sum PATH", @read_kinds, :stderr, "md5sum: PATH: MSG\n"},
+    {"stat PATH", @stat_kinds, :stderr, "stat: cannot stat 'PATH': MSG\n"},
+    {"chmod 644 PATH", @stat_kinds, :stderr, "chmod: cannot access 'PATH': MSG\n"},
+    {"chown u PATH", @stat_kinds, :stderr, "chown: cannot access 'PATH': MSG\n"},
+    {"realpath PATH", @stat_kinds, :stderr, "realpath: PATH: MSG\n"},
+    {"du PATH", @stat_kinds, :stderr, "du: cannot access 'PATH': MSG\n"},
+    {"find PATH", @stat_kinds, :stderr, "find: PATH: MSG\n"},
+    {"tree PATH", @stat_kinds, :stderr, "tree: PATH: MSG\n"},
+    {"ls PATH", @stat_kinds, :stderr, "ls: cannot access 'PATH': MSG\n"},
+    {"rm PATH", @stat_kinds, :stderr, "rm: cannot remove 'PATH': MSG\n"},
+    {"cp PATH /dest", @stat_kinds, :stderr, "cp: cannot stat 'PATH': MSG\n"},
+    {"file PATH", @stat_kinds, :stdout, "PATH: cannot open (MSG)\n"}
   ]
 
   @strerror %{
@@ -92,19 +100,7 @@ defmodule JustBash.Commands.ErrorMessageTest do
   end
 
   describe "the strerror matrix" do
-    for {script, stream, template} <- @content_readers,
-        kind <- [:enoent, :enotdir, :eisdir, :eacces] do
-      test "#{script} names #{kind} rather than guessing" do
-        kind = unquote(kind)
-        {result, _bash} = JustBash.exec(sandbox(kind), fill(unquote(script), kind))
-
-        assert Map.fetch!(result, unquote(stream)) == fill(unquote(template), kind)
-        assert result.exit_code != 0
-      end
-    end
-
-    for {script, stream, template} <- @metadata_readers,
-        kind <- [:enoent, :enotdir, :eacces] do
+    for {script, kinds, stream, template} <- @matrix, kind <- kinds do
       test "#{script} names #{kind} rather than guessing" do
         kind = unquote(kind)
         {result, _bash} = JustBash.exec(sandbox(kind), fill(unquote(script), kind))

@@ -56,8 +56,7 @@ defmodule JustBash.Commands.Tail do
             {[header <> body | out_acc], err_acc, code, fs}
 
           {:error, error} ->
-            err = "tail: cannot open '#{file}' for reading: #{FS.strerror(error)}\n"
-            {out_acc, [err | err_acc], 1, fs}
+            {out_acc, [read_error(file, error) | err_acc], 1, fs}
         end
       end)
 
@@ -76,9 +75,17 @@ defmodule JustBash.Commands.Tail do
         {Command.ok(output), %{bash | fs: fs}}
 
       {:error, error} ->
-        {Command.error("tail: cannot open '#{file}' for reading: #{FS.strerror(error)}\n"), bash}
+        {Command.error(read_error(file, error)), bash}
     end
   end
+
+  # GNU tail `open(2)`s a directory successfully and only fails at `read(2)`,
+  # so EISDIR gets a template of its own rather than the open-failure one.
+  defp read_error(file, %VFS.Error{kind: :eisdir}),
+    do: "tail: error reading '#{file}': Is a directory\n"
+
+  defp read_error(file, error),
+    do: "tail: cannot open '#{file}' for reading: #{FS.strerror(error)}\n"
 
   defp tail_stdin(bash, stdin, mode) do
     output = take_content(stdin, mode)

@@ -35,10 +35,18 @@ defmodule JustBash.Commands.Tac do
 
       case FS.read_file(fs, resolved) do
         {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
-        {:error, error} -> {:halt, {:error, "tac: #{file}: #{FS.strerror(error)}\n"}}
+        {:error, error} -> {:halt, {:error, read_error(file, error)}}
       end
     end)
   end
+
+  # GNU tac `open(2)`s a directory successfully and only fails at `read(2)`,
+  # so EISDIR gets a template of its own rather than the open-failure one.
+  defp read_error(file, %VFS.Error{kind: :eisdir}),
+    do: "tac: #{file}: read error: Is a directory\n"
+
+  defp read_error(file, error),
+    do: "tac: failed to open '#{file}' for reading: #{FS.strerror(error)}\n"
 
   defp reverse_lines(content) do
     lines = String.split(content, "\n", trim: false)

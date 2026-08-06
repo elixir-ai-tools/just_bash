@@ -56,8 +56,7 @@ defmodule JustBash.Commands.Head do
             {[header <> body | out_acc], err_acc, code, fs}
 
           {:error, error} ->
-            err = "head: cannot open '#{file}' for reading: #{FS.strerror(error)}\n"
-            {out_acc, [err | err_acc], 1, fs}
+            {out_acc, [read_error(file, error) | err_acc], 1, fs}
         end
       end)
 
@@ -76,9 +75,17 @@ defmodule JustBash.Commands.Head do
         {Command.ok(output), %{bash | fs: fs}}
 
       {:error, error} ->
-        {Command.error("head: cannot open '#{file}' for reading: #{FS.strerror(error)}\n"), bash}
+        {Command.error(read_error(file, error)), bash}
     end
   end
+
+  # GNU head `open(2)`s a directory successfully and only fails at `read(2)`,
+  # so EISDIR gets a template of its own rather than the open-failure one.
+  defp read_error(file, %VFS.Error{kind: :eisdir}),
+    do: "head: error reading '#{file}': Is a directory\n"
+
+  defp read_error(file, error),
+    do: "head: cannot open '#{file}' for reading: #{FS.strerror(error)}\n"
 
   defp head_stdin(bash, stdin, mode) do
     output = take_content(stdin, mode)
