@@ -6,6 +6,7 @@ defmodule JustBash.FlagParser do
   - Boolean flags: `-a`, `-l`, `-v`
   - Combined flags: `-la` (equivalent to `-l -a`)
   - Value flags: `-n 10`, `-d ","` (flag that takes next argument)
+  - Getopt clusters ending in a value flag: `-nk2` is `-n -k 2`
   - Stop parsing at `--`
 
   A flag the spec does not describe is an error, never an operand. Demoting it
@@ -121,11 +122,8 @@ defmodule JustBash.FlagParser do
 
   defp do_parse(["-" <> flag_str | remaining], spec, flags, rest) when flag_str != "" do
     case parse_flag(flag_str, remaining, spec, flags) do
-      {:ok, new_flags, new_remaining} ->
-        do_parse(new_remaining, spec, new_flags, rest)
-
-      {:error, _reason} = error ->
-        error
+      {:ok, new_flags, new_remaining} -> do_parse(new_remaining, spec, new_flags, rest)
+      other -> other
     end
   end
 
@@ -134,92 +132,91 @@ defmodule JustBash.FlagParser do
   end
 
   defp parse_flag(flag_str, remaining, spec, flags) do
-    aliases = Map.get(spec, :aliases, %{})
     lookup = flag_lookup(spec)
-    flag_atom = Map.get(aliases, flag_str) || Map.get(lookup, flag_str)
+    flag_atom = Map.get(lookup, flag_str)
 
     cond do
       flag_atom in spec.boolean ->
         {:ok, Map.put(flags, flag_atom, true), remaining}
 
-      flag_atom in spec.value or flag_atom in Map.get(spec, :multi_value, []) ->
+      flag_atom in value_flags(spec) ->
         take_value(flag_atom, flag_str, remaining, spec, flags)
 
-      String.length(flag_str) > 1 ->
-        combined_lookup = Map.merge(lookup, aliases)
-
-        with :error <- try_attached_value_flag(flag_str, spec, flags, combined_lookup),
-             :error <- parse_combined_flags(flag_str, spec, flags, combined_lookup) do
-          try_numeric_flag(flag_str, remaining, spec, flags)
-        else
-          {:ok, new_flags} -> {:ok, new_flags, remaining}
-        end
-
       true ->
-        try_numeric_flag(flag_str, remaining, spec, flags)
+        parse_unnamed(flag_str, remaining, spec, flags, lookup)
     end
   end
 
-  defp take_value(flag_atom, _flag_str, [value | rest], spec, flags) do
-    {:ok, put_flag(flags, flag_atom, parse_value(value, flag_atom, spec), spec), rest}
+  # A flag the spec does not name outright is a bare count (`head -5`), a
+  # getopt cluster (`sort -nk2`), or an error.
+  defp parse_unnamed("-" <> _ = long_flag_str, _remaining, _spec, _flags, _lookup) do
+    {:error, {:unknown_flag, display_flag(long_flag_str)}}
+  end
+
+  defp parse_unnamed(flag_str, remaining, spec, flags, lookup) do
+    case numeric_shorthand(flag_str, spec) do
+      {:ok, count} ->
+        {:ok, Map.put(flags, :n, count), remaining}
+
+      :error ->
+        parse_cluster(String.graphemes(flag_str), remaining, spec, flags, lookup)
+    end
+  end
+
+  defp numeric_shorthand(flag_str, spec) do
+    with true <- :n in spec.value,
+         {count, ""} <- Integer.parse(flag_str) do
+      {:ok, count}
+    else
+      _ -> :error
+    end
+  end
+
+  # getopt walks a cluster one character at a time: booleans accumulate, and a
+  # value flag takes the rest of the cluster as its argument — or the next
+  # argument when it is the last character. It stops on the first character the
+  # spec does not describe at all, so the diagnostic can never name a flag the
+  # command implements.
+  defp parse_cluster([], remaining, _spec, flags, _lookup), do: {:ok, flags, remaining}
+
+  defp parse_cluster([char | rest], remaining, spec, flags, lookup) do
+    flag_atom = Map.get(lookup, char)
+
+    cond do
+      flag_atom in spec.boolean ->
+        parse_cluster(rest, remaining, spec, Map.put(flags, flag_atom, true), lookup)
+
+      flag_atom in value_flags(spec) ->
+        take_cluster_value(flag_atom, char, Enum.join(rest), remaining, spec, flags)
+
+      true ->
+        {:error, {:unknown_flag, char}}
+    end
+  end
+
+  defp take_cluster_value(flag_atom, char, "", remaining, spec, flags) do
+    take_value(flag_atom, char, remaining, spec, flags)
+  end
+
+  defp take_cluster_value(flag_atom, _char, attached, remaining, spec, flags) do
+    {:ok, put_flag(flags, flag_atom, parse_value(attached, flag_atom, spec), spec), remaining}
+  end
+
+  defp take_value(flag_atom, _flag_str, [raw | rest], spec, flags) do
+    {:ok, put_flag(flags, flag_atom, parse_value(raw, flag_atom, spec), spec), rest}
   end
 
   defp take_value(_flag_atom, flag_str, [], _spec, _flags) do
     {:error, {:missing_value, display_flag(flag_str)}}
   end
 
-  defp try_attached_value_flag(flag_str, spec, flags, lookup) do
-    <<first_char::binary-size(1), rest::binary>> = flag_str
-    flag_atom = Map.get(lookup, first_char)
-    multi_value = Map.get(spec, :multi_value, [])
-
-    if flag_atom != nil and (flag_atom in spec.value or flag_atom in multi_value) and rest != "" do
-      {:ok, put_flag(flags, flag_atom, parse_value(rest, flag_atom, spec), spec)}
-    else
-      :error
-    end
-  end
-
-  defp parse_combined_flags(flag_str, spec, flags, lookup) do
-    atoms = Enum.map(String.graphemes(flag_str), &Map.get(lookup, &1))
-
-    if Enum.all?(atoms, &(&1 in spec.boolean)) do
-      {:ok, Enum.reduce(atoms, flags, fn atom, acc -> Map.put(acc, atom, true) end)}
-    else
-      :error
-    end
-  end
-
   defp flag_lookup(spec) do
-    (spec.boolean ++ spec.value ++ Map.get(spec, :multi_value, []))
+    (spec.boolean ++ value_flags(spec))
     |> Map.new(fn atom -> {Atom.to_string(atom), atom} end)
+    |> Map.merge(Map.get(spec, :aliases, %{}))
   end
 
-  defp try_numeric_flag(flag_str, remaining, spec, flags) do
-    with true <- :n in spec.value,
-         {num, ""} <- Integer.parse(flag_str) do
-      {:ok, Map.put(flags, :n, num), remaining}
-    else
-      _ -> unknown_flag(flag_str, spec)
-    end
-  end
-
-  defp unknown_flag("-" <> _ = long_flag_str, _spec) do
-    {:error, {:unknown_flag, display_flag(long_flag_str)}}
-  end
-
-  # Out of a cluster, getopt stops on the first character the spec does not
-  # describe as a boolean flag, so that is what is named — not the cluster.
-  defp unknown_flag(flag_str, spec) do
-    lookup = Map.merge(flag_lookup(spec), Map.get(spec, :aliases, %{}))
-
-    offender =
-      flag_str
-      |> String.graphemes()
-      |> Enum.find(flag_str, fn char -> Map.get(lookup, char) not in spec.boolean end)
-
-    {:error, {:unknown_flag, offender}}
-  end
+  defp value_flags(spec), do: spec.value ++ Map.get(spec, :multi_value, [])
 
   # `parse/2` sees one leading `-` already stripped, so a long option arrives
   # here still carrying the second one.
@@ -227,11 +224,8 @@ defmodule JustBash.FlagParser do
   defp display_flag(short_flag_str), do: short_flag_str
 
   defp put_flag(flags, flag_atom, value, spec) do
-    multi_value = Map.get(spec, :multi_value, [])
-
-    if flag_atom in multi_value do
-      existing = Map.get(flags, flag_atom, [])
-      Map.put(flags, flag_atom, existing ++ [value])
+    if flag_atom in Map.get(spec, :multi_value, []) do
+      Map.put(flags, flag_atom, Map.get(flags, flag_atom, []) ++ [value])
     else
       Map.put(flags, flag_atom, value)
     end

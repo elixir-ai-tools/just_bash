@@ -102,6 +102,50 @@ defmodule JustBash.FlagParserTest do
     end
   end
 
+  describe "parse/2 with a cluster containing a value flag" do
+    # getopt lets a value option end a cluster of booleans: `sort -nk2` is
+    # `-n -k 2`. Peeling the attached value off character 0 only made the whole
+    # cluster unknown, and the diagnostic then named `k` - a flag sort has.
+    defp sort_like_spec do
+      %{
+        boolean: [:r, :n, :u],
+        value: [:t],
+        multi_value: [:k],
+        defaults: %{r: false, n: false, u: false, t: nil, k: []}
+      }
+    end
+
+    test "a run of booleans may be followed by a value flag with an attached value" do
+      assert {:ok, %{n: true, k: ["2"]}, []} = FlagParser.parse(["-nk2"], sort_like_spec())
+      assert {:ok, %{r: true, t: ":"}, []} = FlagParser.parse(["-rt:"], sort_like_spec())
+
+      assert {:ok, %{r: true, u: true, k: ["1,1n"]}, ["f"]} =
+               FlagParser.parse(["-ruk1,1n", "f"], sort_like_spec())
+    end
+
+    test "a value flag that ends a cluster takes the next argument" do
+      assert {:ok, %{r: true, k: ["2"]}, ["f"]} =
+               FlagParser.parse(["-rk", "2", "f"], sort_like_spec())
+    end
+
+    test "a value flag that ends a cluster with nothing after it is a missing argument" do
+      assert {:error, {:missing_value, "t"}} = FlagParser.parse(["-rt"], sort_like_spec())
+    end
+
+    # The offender has to be a character the spec does not describe at all.
+    # Naming an implemented flag sends the caller after the wrong problem.
+    test "the character named out of a cluster is one the spec does not have" do
+      assert {:error, {:unknown_flag, "Q"}} = FlagParser.parse(["-nQk2"], sort_like_spec())
+      assert {:error, {:unknown_flag, "Q"}} = FlagParser.parse(["-Qk2"], sort_like_spec())
+    end
+
+    # Everything after the value flag belongs to it, so a character that would
+    # otherwise be unknown is just part of the argument.
+    test "an unknown character inside a value flag's argument is not a flag" do
+      assert {:ok, %{r: true, t: "Q"}, []} = FlagParser.parse(["-rtQ"], sort_like_spec())
+    end
+  end
+
   describe "parse/2 with a flag the spec does not describe" do
     # Demoting the flag to an operand is what made `sort -Q file` read a file
     # named `-Q`, find nothing, and exit 0 with no diagnostic.

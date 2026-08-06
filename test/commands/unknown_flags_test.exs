@@ -102,6 +102,45 @@ defmodule JustBash.Commands.UnknownFlagsTest do
       assert result.stderr =~ "sort: invalid option -- 'Q'\n"
     end
 
+    # getopt lets a cluster of booleans end in a value flag, so `-nk2` is
+    # `-n -k 2`. Rejecting the cluster named `k`, a flag sort implements, and
+    # sent the caller after a problem that was not there.
+    test "a cluster ending in an implemented value flag is not an unknown flag" do
+      bash = JustBash.new(files: %{"/f.txt" => "b 2\na 1\n"})
+      {result, _} = JustBash.exec(bash, "sort -nk2 /f.txt")
+
+      assert result.exit_code == 0
+      assert result.stderr == ""
+      assert result.stdout == "a 1\nb 2\n"
+    end
+
+    test "a cluster whose value flag carries its own argument sorts by that key" do
+      bash = JustBash.new(files: %{"/f.txt" => "a:2\nb:1\n"})
+      {result, _} = JustBash.exec(bash, "sort -rt: -k2 /f.txt")
+
+      assert result.exit_code == 0
+      assert result.stderr == ""
+      assert result.stdout == "a:2\nb:1\n"
+    end
+
+    test "a value flag that ends a cluster takes the next argument" do
+      bash = JustBash.new(files: %{"/f.txt" => "a 2\nb 1\n"})
+      {result, _} = JustBash.exec(bash, "sort -rk 2 /f.txt")
+
+      assert result.exit_code == 0
+      assert result.stdout == "a 2\nb 1\n"
+    end
+
+    # The character named out of a cluster has to be one the command really
+    # does not have.
+    test "a cluster is reported by a character the command does not implement" do
+      bash = JustBash.new(files: %{"/f.txt" => "b 2\na 1\n"})
+      {result, _} = JustBash.exec(bash, "sort -nQk2 /f.txt")
+
+      assert result.exit_code == 2
+      assert result.stderr =~ "sort: invalid option -- 'Q'\n"
+    end
+
     # A long option is named in full: `invalid option -- '-'` identifies nothing.
     test "an unknown long option is named in full" do
       {result, _} = JustBash.exec(bash(), "sort --jb-not-a-flag /f.txt")
