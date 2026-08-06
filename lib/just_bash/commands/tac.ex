@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Tac do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -10,35 +11,34 @@ defmodule JustBash.Commands.Tac do
 
   @impl true
   def execute(bash, args, stdin) do
-    files = Enum.reject(args, &String.starts_with?(&1, "-"))
-
-    content =
-      if files == [] or files == ["-"] do
-        {:ok, stdin, bash.fs}
-      else
-        read_files(bash, files)
-      end
-
-    case content do
-      {:error, msg} ->
-        {Command.error(msg), bash}
-
-      {:ok, data, fs} ->
-        output = reverse_lines(data)
-        {Command.ok(output), %{bash | fs: fs}}
+    case read_operands(bash, StdinOperand.operands(args), stdin) do
+      {:error, msg} -> {Command.error(msg), bash}
+      {:ok, output, fs} -> {Command.ok(output), %{bash | fs: fs}}
     end
   end
 
-  defp read_files(bash, files) do
-    Enum.reduce_while(files, {:ok, "", bash.fs}, fn file, {:ok, acc, fs} ->
-      resolved = FS.resolve_path(bash.cwd, file)
-
-      case FS.read_file(fs, resolved) do
-        {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
+  # `tac a b` is `tac a; tac b`: GNU reverses each operand's lines on its own
+  # and writes the operands in the order given, so it is not `cat a b | tac`,
+  # which would also reverse the operands against each other.
+  defp read_operands(bash, files, stdin) do
+    files
+    |> defaults_to_stdin()
+    |> Enum.reduce_while({:ok, [], bash.fs}, fn file, {:ok, acc, fs} ->
+      case StdinOperand.read(fs, bash.cwd, file, stdin) do
+        {:ok, data, fs} -> {:cont, {:ok, [reverse_lines(data) | acc], fs}}
         {:error, error} -> {:halt, {:error, read_error(file, error)}}
       end
     end)
+    |> collect()
   end
+
+  defp defaults_to_stdin([]), do: ["-"]
+  defp defaults_to_stdin(files), do: files
+
+  defp collect({:ok, reversed, fs}),
+    do: {:ok, reversed |> Enum.reverse() |> IO.iodata_to_binary(), fs}
+
+  defp collect({:error, _msg} = error), do: error
 
   # GNU tac `open(2)`s a directory successfully and only fails at `read(2)`,
   # so EISDIR gets a template of its own rather than the open-failure one.

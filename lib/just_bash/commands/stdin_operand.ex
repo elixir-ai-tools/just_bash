@@ -33,4 +33,22 @@ defmodule JustBash.Commands.StdinOperand do
           {:ok, binary(), FS.t()} | {:error, VFS.Error.t()}
   def read(fs, _cwd, @dash, stdin), do: {:ok, stdin || "", fs}
   def read(fs, cwd, operand, _stdin), do: FS.read_file(fs, FS.resolve_path(cwd, operand))
+
+  @doc """
+  Split a command's arguments into its file operands, honouring `--`.
+
+  `Enum.reject(args, &String.starts_with?(&1, "-"))` is not that split. It
+  deletes `-`, which is an operand naming stdin and never an option, and it
+  deletes every operand after `--`, which is the only way to name a file whose
+  name begins with a dash. Both deletions are silent: the command reads one
+  fewer input than it was given and still exits 0.
+  """
+  @spec operands([String.t()]) :: [String.t()]
+  def operands(args), do: do_operands(args, [])
+
+  defp do_operands([], acc), do: Enum.reverse(acc)
+  defp do_operands(["--" | rest], acc), do: Enum.reverse(acc, rest)
+  defp do_operands([@dash | rest], acc), do: do_operands(rest, [@dash | acc])
+  defp do_operands([@dash <> _ | rest], acc), do: do_operands(rest, acc)
+  defp do_operands([operand | rest], acc), do: do_operands(rest, [operand | acc])
 end

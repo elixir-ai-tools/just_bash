@@ -26,23 +26,29 @@ defmodule JustBash.Commands.StdinOperandTest do
 
   @stdin "b\na\nb\n"
 
+  # The bytes of the *other* operand in the two-operand rows, distinct from
+  # `@stdin` so that dropping either one is visible.
+  @other "d\nc\nd\n"
+
   # `jq` is the one row whose input has to be a JSON document rather than
-  # arbitrary lines, so it names its own.
+  # arbitrary lines, so it names its own — both of them.
   @json "{\"k\":1}\n"
+  @json_other "{\"k\":2}\n"
 
   # Every command whose file operand GNU reads as stdin when it is `-`, with
   # the rest of the invocation it needs to do anything. FILE is the operand
-  # under test; a row may carry the stdin it needs, and the name the command
-  # shows for that operand when it is not the literal `-`.
+  # under test; a row may carry the stdin it needs, the name the command shows
+  # for that operand when it is not the literal `-`, and the bytes of the
+  # second operand in the two-operand runs.
   @dash_operand [
-    {"jq . FILE", @json, "-"},
-    {"file FILE", @stdin, "/dev/stdin"},
+    {"jq . FILE", @json, "-", @json_other},
+    {"file FILE", @stdin, "/dev/stdin", @other},
+    {"head FILE", @stdin, "standard input", @other},
+    {"tail FILE", @stdin, "standard input", @other},
+    {"grep b FILE", @stdin, "(standard input)", @other},
     "cat FILE",
     "tac FILE",
-    "head FILE",
-    "tail FILE",
     "wc -l FILE",
-    "grep b FILE",
     "sort FILE",
     "uniq FILE",
     "cut -c1 FILE",
@@ -77,13 +83,13 @@ defmodule JustBash.Commands.StdinOperandTest do
   )
 
   @rows Enum.map(@dash_operand, fn
-          {script, input, shown} -> {script, input, shown}
-          script -> {script, @stdin, "-"}
+          {script, input, shown, other} -> {script, input, shown, other}
+          script -> {script, @stdin, "-", @other}
         end)
 
   describe "the registry is fully classified" do
     test "every command is either a `-`-reads-stdin command or explicitly not" do
-      named = Enum.map(@rows, fn {script, _, _} -> script |> String.split(" ") |> hd() end)
+      named = Enum.map(@rows, fn {script, _, _, _} -> script |> String.split(" ") |> hd() end)
       classified = MapSet.new(named ++ @no_dash_operand)
 
       assert MapSet.new(Registry.list()) == classified
@@ -91,7 +97,7 @@ defmodule JustBash.Commands.StdinOperandTest do
   end
 
   describe "`-` names stdin, not a path" do
-    for {script, input, shown} <- @rows do
+    for {script, input, shown, _other} <- @rows do
       test "#{script} reads stdin" do
         {script, input, shown} = {unquote(script), unquote(input), unquote(shown)}
         dash = String.replace(script, "FILE", "-")
@@ -144,6 +150,60 @@ defmodule JustBash.Commands.StdinOperandTest do
     end
   end
 
+  describe "`-` is still stdin when it shares the command line with a file" do
+    # The rows above only ever build a single-operand invocation, and that is
+    # blind to the bug that mattered: a parser that deletes `-` from the
+    # operand list — `Enum.reject(args, &String.starts_with?(&1, "-"))` — still
+    # looks correct there, because deleting the only operand leaves the command
+    # falling back to stdin for a second reason. It is only with a file beside
+    # it that the deletion shows up, as a missing operand or as `-` reaching
+    # the filesystem.
+    #
+    # The reference run puts `/s` — a real file holding exactly the stdin bytes
+    # — in the `-` slot, so a command that reads only its first operand, or
+    # only its last, compares equal to itself. What is under test is the
+    # classification of `-`, not how many operands the command supports.
+    for {script, input, shown, other} <- @rows do
+      test "#{script}: `- FILE` and `FILE -` name stdin in either position" do
+        {script, input, shown, other} =
+          {unquote(script), unquote(input), unquote(shown), unquote(other)}
+
+        for {dash, ref} <- [{{"-", "/f"}, {"/s", "/f"}}, {{"/f", "-"}, {"/f", "/s"}}] do
+          {piped, _bash} = run(script, dash, input, other)
+          {from_file, _bash} = run(script, ref, input, other)
+
+          assert piped.exit_code == from_file.exit_code
+          assert piped.stderr == String.replace(from_file.stderr, "/s", shown)
+          assert piped.stdout == String.replace(from_file.stdout, "/s", shown)
+        end
+      end
+    end
+
+    # The matrix above compares `-` against a file and so cannot see this:
+    # `tac a b` is `tac a; tac b`, not `cat a b | tac`. GNU reverses each
+    # operand's lines on its own and writes the operands in the order given —
+    # `gtac - b` with `1\n2\n` on stdin prints `2 1 4 3`, not `4 3 2 1`.
+    test "tac reverses each operand on its own, in operand order" do
+      bash = JustBash.new(files: %{"/a" => "1\n2\n", "/b" => "3\n4\n"})
+      piped = "printf '1\\n2\\n' | "
+
+      assert {%{stdout: "2\n1\n4\n3\n"}, _} = JustBash.exec(bash, "tac /a /b")
+      assert {%{stdout: "4\n3\n2\n1\n"}, _} = JustBash.exec(bash, "tac /b /a")
+      assert {%{stdout: "2\n1\n4\n3\n"}, _} = JustBash.exec(bash, piped <> "tac - /b")
+      assert {%{stdout: "4\n3\n2\n1\n"}, _} = JustBash.exec(bash, piped <> "tac /b -")
+    end
+
+    test "an operand after `--` is a path, dash and all" do
+      bash = JustBash.new(files: %{"/-f" => "12\n34\n"})
+
+      assert {%{stdout: "34\n12\n", stderr: "", exit_code: 0}, _} =
+               JustBash.exec(bash, "cd /; tac -- -f")
+
+      assert {%{stdout: "21\n43\n", stderr: "", exit_code: 0}, _} =
+               JustBash.exec(bash, "cd /; rev -- -f")
+    end
+  end
+
   describe "`< /dev/null` closes stdin" do
     test "cat reads nothing and exits 0" do
       {result, _bash} = JustBash.exec(sandbox(), "cat < /dev/null; echo rc=$?")
@@ -189,4 +249,21 @@ defmodule JustBash.Commands.StdinOperandTest do
   # /f holds exactly the bytes the pipeline feeds in, so `cmd -` and `cmd /f`
   # differ only in where the command looked for them.
   defp sandbox(content \\ @stdin), do: JustBash.new(files: %{"/f" => content})
+
+  # In the two-operand runs the two operands hold different bytes, so dropping
+  # either one is visible, and /s holds the stdin bytes so that it stands in
+  # for `-`.
+  defp run(script, {first, second}, input, other) do
+    bash = JustBash.new(files: %{"/f" => other, "/s" => input})
+    JustBash.exec(bash, "printf #{inspect(input)} | " <> invocation(script, first, second))
+  end
+
+  # `comm FILE FILE` and `diff FILE FILE` already name two operands; every
+  # other row names one and gets a second appended.
+  defp invocation(script, first, second) do
+    case String.split(script, "FILE", parts: 3) do
+      [pre, post] -> pre <> first <> " " <> second <> post
+      [pre, mid, post] -> pre <> first <> mid <> second <> post
+    end
+  end
 end

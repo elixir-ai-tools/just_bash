@@ -8,6 +8,7 @@ defmodule JustBash.Commands.Sha256sum do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -17,18 +18,18 @@ defmodule JustBash.Commands.Sha256sum do
   def execute(bash, args, stdin) do
     {opts, files} = parse_args(args)
 
-    cond do
-      opts.check ->
-        check_checksums(bash, files)
-
-      files == [] or files == ["-"] ->
-        hash = :crypto.hash(:sha256, stdin) |> Base.encode16(case: :lower)
-        {Command.ok("#{hash}  -\n"), bash}
-
-      true ->
-        hash_files(bash, files)
+    if opts.check do
+      check_checksums(bash, files)
+    else
+      hash_files(bash, defaults_to_stdin(files), stdin)
     end
   end
+
+  # No operand at all is the same request as a lone `-`, and one `-` among
+  # several files is still that operand: `sha256sum - f` hashes both,
+  # labelling the first `-`.
+  defp defaults_to_stdin([]), do: ["-"]
+  defp defaults_to_stdin(files), do: files
 
   defp parse_args(args) do
     parse_args(args, %{check: false}, [])
@@ -42,12 +43,10 @@ defmodule JustBash.Commands.Sha256sum do
 
   defp parse_args([file | rest], opts, files), do: parse_args(rest, opts, [file | files])
 
-  defp hash_files(bash, files) do
+  defp hash_files(bash, files, stdin) do
     {stdout, stderr, exit_code, fs} =
       Enum.reduce(files, {"", "", 0, bash.fs}, fn file, {out, err, code, fs} ->
-        resolved = FS.resolve_path(bash.cwd, file)
-
-        case FS.read_file(fs, resolved) do
+        case StdinOperand.read(fs, bash.cwd, file, stdin) do
           {:ok, content, new_fs} ->
             hash = :crypto.hash(:sha256, content) |> Base.encode16(case: :lower)
             {out <> "#{hash}  #{file}\n", err, code, new_fs}

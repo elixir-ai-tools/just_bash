@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Rev do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -10,35 +11,31 @@ defmodule JustBash.Commands.Rev do
 
   @impl true
   def execute(bash, args, stdin) do
-    files = Enum.reject(args, &String.starts_with?(&1, "-"))
-
-    content =
-      if files == [] or files == ["-"] do
-        {:ok, stdin, bash.fs}
-      else
-        read_files(bash, files)
-      end
-
-    case content do
+    case read_operands(bash, StdinOperand.operands(args), stdin) do
       {:error, msg} ->
         {Command.error(msg), bash}
 
       {:ok, data, fs} ->
-        output = reverse_chars_per_line(data)
-        {Command.ok(output), %{bash | fs: fs}}
+        {Command.ok(reverse_chars_per_line(data)), %{bash | fs: fs}}
     end
   end
 
-  defp read_files(bash, files) do
-    Enum.reduce_while(files, {:ok, "", bash.fs}, fn file, {:ok, acc, fs} ->
-      resolved = FS.resolve_path(bash.cwd, file)
-
-      case FS.read_file(fs, resolved) do
+  # `rev` is line-local, so reading the operands in the order given is all it
+  # takes to put each one's lines where they belong — unlike `tac`, which has
+  # to reverse each operand on its own.
+  defp read_operands(bash, files, stdin) do
+    files
+    |> defaults_to_stdin()
+    |> Enum.reduce_while({:ok, "", bash.fs}, fn file, {:ok, acc, fs} ->
+      case StdinOperand.read(fs, bash.cwd, file, stdin) do
         {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
         {:error, error} -> {:halt, {:error, "rev: #{file}: #{FS.strerror(error)}\n"}}
       end
     end)
   end
+
+  defp defaults_to_stdin([]), do: ["-"]
+  defp defaults_to_stdin(files), do: files
 
   defp reverse_chars_per_line(content) do
     has_trailing_newline = String.ends_with?(content, "\n")
