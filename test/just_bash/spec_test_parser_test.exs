@@ -17,6 +17,17 @@ defmodule JustBash.SpecTest.ParserTest do
     * `## STDERR` was never read, so the 65 cases carrying a stderr
       expectation asserted nothing about stderr.
 
+  Two more, found reviewing the first round of fixes:
+
+    * every `## OK bash …` / `## BUG bash …` / `## N-I bash …` annotation was
+      dropped as "another shell's expectation". It is the opposite: the
+      unannotated default records osh, and an annotation naming bash is
+      bash's own recorded behaviour. 440 such lines cover 323 of the 2728
+      cases, which were pinned to a shell we are not implementing.
+    * `## stdout:` with nothing after the colon — the format's spelling of
+      "one empty line" — was not recognised, so those cases asserted nothing
+      and passed whatever they printed.
+
   These run against the real corpus rather than hand-written fixtures — the
   parser's only job is to read those 136 files.
   """
@@ -200,10 +211,222 @@ defmodule JustBash.SpecTest.ParserTest do
     end
   end
 
+  describe "a shell annotation naming bash" do
+    test "a multiline STDOUT block overrides the unannotated expectation" do
+      # append.test.sh:134 records `## stdout-json: ""` / `## status: 2` for
+      # osh, then `## OK bash STDOUT:` -> `['1', '2 3']` with status 0. Bash is
+      # the oracle, so the annotation is the expectation.
+      case_ = fetch!("append.test.sh", "Try to append list to element")
+
+      assert case_.expected_stdout == "['1', '2 3']\n"
+      assert case_.expected_status == 0
+    end
+
+    test "overrides one key at a time, leaving the others at their default" do
+      # `## OK bash status: 0` is a single line with no stdout beside it, so
+      # the default `## stdout: hi` still stands.
+      case_ = fetch!("loop.test.sh", "bad arg to break")
+
+      assert case_.expected_stdout == "hi\n"
+      assert case_.expected_status == 128
+    end
+
+    test "just-bash wins over bash" do
+      # loop.test.sh:273 carries `## BUG bash STDOUT: a\n--` / status 0 and
+      # then this repo's own `## OK just-bash STDOUT: a` / status 1.
+      case_ = fetch!("loop.test.sh", "too many args to continue")
+
+      assert case_.expected_stdout == "a\n"
+      assert case_.expected_status == 1
+    end
+
+    test "just-bash wins over bash for a multiline block" do
+      case_ = fetch!("var-op-bash.test.sh", "Array expansion with nullary var op @Q")
+
+      # `## OK bash STDOUT:` records the associative array reversed; the
+      # `## OK just-bash STDOUT:` below it records our insertion order.
+      assert case_.expected_stdout =~ ~s(["'hello'", "'world'", "'osh'", "'ysh'"])
+      refute case_.expected_stdout =~ ~s(["'ysh'", "'osh'")
+    end
+
+    test "an annotation naming another shell is still dropped" do
+      [case_] =
+        Parser.parse("""
+        #### annotated
+        echo hi
+        ## stdout: hi
+        ## status: 0
+        ## OK dash stdout: bye
+        ## OK dash status: 3
+        """)
+
+      assert case_.expected_stdout == "hi\n"
+      assert case_.expected_status == 0
+    end
+
+    test "bash-2 is a different shell from bash" do
+      # assign-extended.test.sh carries both `## OK bash STDOUT:` and
+      # `## OK bash-2 STDOUT:`; bash-2 is bash 2.x, not our oracle.
+      case_ = fetch!("assign-extended.test.sh", "declare -p arr")
+
+      assert case_.expected_stdout =~ "declare -A test_arr6=([a]=\"1\" [b]=\"2\" [c]=\"3\" )"
+    end
+
+    test "a non-bash multiline annotation body still does not leak into the script" do
+      [case_] =
+        Parser.parse("""
+        #### annotated
+        echo hi
+        ## STDOUT:
+        hi
+        ## END
+        ## OK dash STDOUT:
+        not shell
+        ## END
+        """)
+
+      assert case_.script == "echo hi"
+      assert case_.expected_stdout == "hi\n"
+    end
+
+    test "every bash-keyed status annotation in the corpus is the case's status" do
+      annotated = bash_status_annotations()
+
+      # An independent read of the same 136 files: 124 cases spell bash's exit
+      # status as an annotation, and every one of them must survive parsing.
+      assert map_size(annotated) == 124
+
+      mismatched =
+        for {{file, name}, status} <- annotated,
+            case_ = fetch!(file, name),
+            case_.expected_status != status,
+            do: {file, name, case_.expected_status, status}
+
+      assert mismatched == []
+    end
+
+    test "the corpus's 440 bash-keyed annotations cover 323 cases in 89 files" do
+      by_case = bash_annotation_lines()
+
+      assert by_case |> Map.values() |> List.flatten() |> length() == 440
+      assert map_size(by_case) == 323
+      assert by_case |> Map.keys() |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> length() == 89
+    end
+  end
+
+  describe "a bare directive value" do
+    # `## stdout:` with nothing after the colon is how the format spells an
+    # expected single empty line — `echo $unset` prints one.
+    for {file, name} <- [
+          {"sh-func.test.sh", "Locals don't leak"},
+          {"var-op-strip.test.sh", "Remove const suffix from undefined"},
+          {"redirect-command.test.sh", "Redirect in command sub"},
+          {"assign.test.sh", "Empty env binding"}
+        ] do
+      test "#{file} #{inspect(name)} expects one empty line, not nothing" do
+        case_ = fetch!(unquote(file), unquote(name))
+
+        assert case_.expected_stdout == "\n"
+      end
+    end
+
+    test "a bare ## stderr: is read the same way" do
+      [case_] =
+        Parser.parse("""
+        #### bare stderr
+        echo x >&2
+        ## stderr:
+        """)
+
+      assert case_.expected_stderr == "\n"
+    end
+
+    test "Runner fails a case whose bare stdout expectation diverges" do
+      # Before the bare spelling was recognised, expected_stdout stayed nil and
+      # `check_output(nil, _)` passed the case whatever it printed.
+      [case_] =
+        Parser.parse("""
+        #### leaks
+        echo leaked
+        ## stdout:
+        """)
+
+      refute Runner.run_test_case(case_, []).passed
+    end
+  end
+
   describe "the whole corpus" do
     test "parses into 2728 cases across 136 files" do
       assert length(Path.wildcard(Path.join(@cases_dir, "*.test.sh"))) == 136
       assert length(all_cases()) == 2728
     end
+
+    test "2562 cases carry a stdout expectation and only 59 assert nothing" do
+      # These counts are the corpus-wide guard on every directive spelling the
+      # parser claims to read: drop one and they move. A case that asserts
+      # nothing at all passes vacuously, so the second number is the one that
+      # decides whether a ratchet built on this parser means anything.
+      cases = all_cases()
+
+      assert Enum.count(cases, & &1.expected_stdout) == 2562
+      assert Enum.count(cases, &(&1.expected_status != 0)) == 239
+      assert Enum.count(cases, &asserts_nothing?/1) == 59
+    end
+  end
+
+  defp asserts_nothing?(case_) do
+    is_nil(case_.expected_stdout) and is_nil(case_.expected_stderr) and
+      case_.expected_status == 0 and is_nil(case_.skip_reason)
+  end
+
+  # An independent reader of the corpus, deliberately not sharing code with the
+  # parser: split each file on its `#### ` headers and keep the annotation lines
+  # whose shell list names bash or just-bash.
+  @annotation ~r{^## (?:OK|BUG|N-I)(?:-\d+)?\s+(\S+)\s+(.*)$}
+
+  defp bash_annotation_lines do
+    for {file, name, body} <- raw_cases(),
+        lines = Enum.filter(body, &bash_keyed?/1),
+        lines != [],
+        into: %{},
+        do: {{file, name}, lines}
+  end
+
+  defp bash_status_annotations do
+    for {key, lines} <- bash_annotation_lines(),
+        statuses = Enum.flat_map(lines, &annotated_status/1),
+        statuses != [],
+        into: %{},
+        do: {key, List.last(statuses)}
+  end
+
+  defp annotated_status(line) do
+    case Regex.run(~r{^## (?:OK|BUG|N-I)(?:-\d+)?\s+\S+\s+status:\s*(\d+)\s*$}, line) do
+      [_line, status] -> [String.to_integer(status)]
+      nil -> []
+    end
+  end
+
+  defp bash_keyed?(line) do
+    case Regex.run(@annotation, line) do
+      [_line, shells, _keyed] -> Enum.any?(String.split(shells, "/"), &(&1 in ~w(bash just-bash)))
+      nil -> false
+    end
+  end
+
+  defp raw_cases do
+    Enum.flat_map(Path.wildcard(Path.join(@cases_dir, "*.test.sh")), fn path ->
+      file = Path.basename(path)
+
+      path
+      |> File.read!()
+      |> String.split("\n")
+      |> Enum.reduce([], fn
+        "#### " <> name, acc -> [{file, name, []} | acc]
+        _line, [] -> []
+        line, [{f, n, body} | rest] -> [{f, n, [line | body]} | rest]
+      end)
+      |> Enum.map(fn {f, n, body} -> {f, n, Enum.reverse(body)} end)
+    end)
   end
 end
