@@ -158,6 +158,27 @@ defmodule JustBash.CLI do
     :doc
   ]
 
+  # Every option `command/2` reads. Anything else would be dropped unread — including
+  # `visible:` for `:visible?`, which discards an authorization predicate.
+  @command_opt_keys [
+    :doc,
+    :commands,
+    :run,
+    :flags,
+    :args,
+    :examples,
+    :validate,
+    :allow_unknown_flags,
+    :visible?,
+    :on_missing_subcommand
+  ]
+
+  # Every option `new/2` reads.
+  @cli_opt_keys [:doc, :commands, :aliases, :on_missing_subcommand]
+
+  # Every key a positional argument spec may carry (see `t:JustBash.CLI.Command.arg_spec/0`).
+  @arg_spec_keys [:name, :doc, :required, :variadic]
+
   @enforce_keys [:name]
   defstruct name: nil, doc: nil, commands: [], aliases: [], on_missing_subcommand: :error
 
@@ -279,11 +300,14 @@ defmodule JustBash.CLI do
     * `:on_missing_subcommand` — `:error` (default) or `:help`; what the root does when
       invoked with no subcommand (see `command/2`)
 
-  Raises `ArgumentError` if names are invalid or top-level command names collide.
+  Raises `ArgumentError` if names are invalid, top-level command names collide, or an
+  option is unrecognized or repeated — an option this function does not read would be
+  dropped unread, indistinguishable from one that works.
   """
   @spec new(String.t(), keyword()) :: t()
   def new(name, opts \\ []) when is_binary(name) do
     validate_name!(name, "CLI")
+    validate_spec_keys!("CLI #{inspect(name)}", "option", Keyword.keys(opts), @cli_opt_keys)
 
     commands = Keyword.get(opts, :commands, [])
     validate_commands!(commands)
@@ -332,11 +356,22 @@ defmodule JustBash.CLI do
     * `:on_missing_subcommand` — `:error` (default) or `:help` (groups only); `:help` prints
       the command listing at exit 0 instead of a usage error when the group is invoked bare
 
-  Raises `ArgumentError` on invalid shape (e.g. both or neither of `:commands`/`:run`).
+  Raises `ArgumentError` on invalid shape (e.g. both or neither of `:commands`/`:run`), and
+  on an unrecognized or repeated option — including inside an `:args` entry. A key this
+  builder does not read would be dropped unread and behave exactly like one that works;
+  `visible:` for `:visible?` would silently discard an authorization predicate, and
+  `requird:` on a positional would silently make a required argument optional.
   """
   @spec command(String.t(), keyword()) :: Command.t()
   def command(name, opts \\ []) when is_binary(name) do
     validate_name!(name, "command")
+
+    validate_spec_keys!(
+      "command #{inspect(name)}",
+      "option",
+      Keyword.keys(opts),
+      @command_opt_keys
+    )
 
     commands = Keyword.get(opts, :commands, [])
     run = Keyword.get(opts, :run)
@@ -1125,7 +1160,14 @@ defmodule JustBash.CLI do
     raise ArgumentError, "command #{inspect(name)} :args must be a list, got: #{inspect(other)}"
   end
 
-  defp normalize_arg!(_name, %{name: arg_name} = spec) when is_atom(arg_name) do
+  defp normalize_arg!(name, %{name: arg_name} = spec) when is_atom(arg_name) do
+    validate_spec_keys!(
+      "command #{inspect(name)}",
+      "positional argument option",
+      Map.keys(spec),
+      @arg_spec_keys
+    )
+
     %{
       name: arg_name,
       doc: Map.get(spec, :doc),

@@ -339,6 +339,55 @@ defmodule JustBash.CLI.BuilderTest do
         CLI.command("pr", commands: [child], args: [%{name: :id}])
       end
     end
+
+    test "raises on an unrecognized command option" do
+      assert_raise ArgumentError, ~r/command "admin": unknown option :totally_bogus/, fn ->
+        CLI.command("admin",
+          totally_bogus: 123,
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    # Dropping the `?` discards the authorization predicate: the node stays routable for every
+    # caller, which is a silent security downgrade rather than a cosmetic typo.
+    test "raises on :visible written without its question mark" do
+      assert_raise ArgumentError, ~r/unknown option :visible;/, fn ->
+        CLI.command("admin",
+          visible: fn _bash -> false end,
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises on a misspelled :flags option" do
+      assert_raise ArgumentError, ~r/unknown option :flgs/, fn ->
+        CLI.command("go",
+          flgs: [target_on: [type: :string]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises on a duplicated command option" do
+      err =
+        assert_raise ArgumentError, fn ->
+          CLI.command("go", doc: "one", doc: "two", run: fn i -> {ok(), i.bash} end)
+        end
+
+      assert Exception.message(err) =~ "duplicate option :doc"
+    end
+
+    test "raises on an unrecognized positional argument key" do
+      assert_raise ArgumentError,
+                   ~r/unknown positional argument option :requird/,
+                   fn ->
+                     CLI.command("go",
+                       args: [%{name: :path, requird: true, doc: "path"}],
+                       run: fn i -> {ok(), i.bash} end
+                     )
+                   end
+    end
   end
 
   describe "new/2" do
@@ -364,6 +413,18 @@ defmodule JustBash.CLI.BuilderTest do
       assert_raise ArgumentError, ~r/duplicate subcommand name/, fn ->
         CLI.new("acme", commands: [a, b])
       end
+    end
+
+    test "raises on an unrecognized CLI option" do
+      assert_raise ArgumentError, ~r/CLI "acme": unknown option :comands/, fn ->
+        CLI.new("acme", comands: [])
+      end
+    end
+
+    test "raises on a duplicated CLI option" do
+      err = assert_raise ArgumentError, fn -> CLI.new("acme", doc: "one", doc: "two") end
+
+      assert Exception.message(err) =~ "duplicate option :doc"
     end
   end
 
