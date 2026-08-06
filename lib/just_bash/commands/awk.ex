@@ -14,6 +14,7 @@ defmodule JustBash.Commands.Awk do
 
   alias JustBash.Commands.Awk.{Evaluator, Parser}
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -84,8 +85,8 @@ defmodule JustBash.Commands.Awk do
   # Returns {:ok, [{filename, content}, ...], bash} for multi-file support
   defp get_file_data(bash, [], stdin), do: {:ok, [{"", stdin}], bash}
 
-  defp get_file_data(bash, files, _stdin) do
-    read_files_with_names(bash, files)
+  defp get_file_data(bash, files, stdin) do
+    read_files_with_names(bash, files, stdin)
   end
 
   defp parse_args(args) do
@@ -170,13 +171,13 @@ defmodule JustBash.Commands.Awk do
     end
   end
 
-  defp read_files_with_names(bash, files) do
+  defp read_files_with_names(bash, files, stdin) do
     result =
       Enum.reduce_while(files, {:ok, [], bash.fs}, fn file, {:ok, acc, fs} ->
-        resolved = FS.resolve_path(bash.cwd, file)
+        name = if StdinOperand.stdin?(file), do: file, else: FS.resolve_path(bash.cwd, file)
 
-        case FS.read_file(fs, resolved) do
-          {:ok, content, fs} -> {:cont, {:ok, acc ++ [{resolved, content}], fs}}
+        case StdinOperand.read(fs, bash.cwd, file, stdin) do
+          {:ok, content, fs} -> {:cont, {:ok, acc ++ [{name, content}], fs}}
           {:error, error} -> {:halt, {:error, "awk: #{file}: #{FS.strerror(error)}\n"}}
         end
       end)

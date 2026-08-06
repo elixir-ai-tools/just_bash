@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Cut do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -71,6 +72,11 @@ defmodule JustBash.Commands.Cut do
     parse_args(rest, %{opts | suppress_no_delim: true})
   end
 
+  # A bare `-` is never a flag: POSIX reads it as the stdin operand.
+  defp parse_args(["-" | rest], opts) do
+    parse_args(rest, %{opts | files: opts.files ++ ["-"]})
+  end
+
   defp parse_args(["-" <> _ = arg | _rest], _opts) do
     {:error, "cut: invalid option '#{arg}'\n"}
   end
@@ -83,11 +89,9 @@ defmodule JustBash.Commands.Cut do
 
   # GNU cut names the operand it could not read, keeps going with the rest, and
   # exits 1.
-  defp get_content(bash, files, _stdin) do
+  defp get_content(bash, files, stdin) do
     Enum.reduce(files, {"", "", 0, bash.fs}, fn file, {acc, err, code, fs} ->
-      resolved = FS.resolve_path(bash.cwd, file)
-
-      case FS.read_file(fs, resolved) do
+      case StdinOperand.read(fs, bash.cwd, file, stdin) do
         {:ok, content, fs} -> {acc <> content, err, code, fs}
         {:error, error} -> {acc, err <> "cut: #{file}: #{FS.strerror(error)}\n", 1, fs}
       end

@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Grep do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FlagParser
   alias JustBash.FS
   alias JustBash.Limit
@@ -79,7 +80,7 @@ defmodule JustBash.Commands.Grep do
   defp grep(bash, flags, rest, stdin) do
     case rest do
       [pattern | files] when files != [] ->
-        execute_with_files(bash, pattern, files, flags)
+        execute_with_files(bash, pattern, files, stdin, flags)
 
       [pattern] ->
         execute_with_stdin(bash, pattern, stdin, flags)
@@ -89,7 +90,7 @@ defmodule JustBash.Commands.Grep do
     end
   end
 
-  defp execute_with_files(bash, pattern, files, flags) do
+  defp execute_with_files(bash, pattern, files, stdin, flags) do
     regex = compile_pattern(bash, pattern, flags)
 
     # Expand files recursively if -r flag is set
@@ -100,7 +101,7 @@ defmodule JustBash.Commands.Grep do
 
     {results, any_match, errors, fs} =
       Enum.reduce(expanded_files, {[], false, "", bash.fs}, fn file, acc ->
-        process_file(bash, file, regex, flags, show_filename, acc)
+        process_file(bash, file, stdin, regex, flags, show_filename, acc)
       end)
 
     build_files_result(%{bash | fs: fs}, results, any_match, errors, flags)
@@ -163,15 +164,15 @@ defmodule JustBash.Commands.Grep do
   defp join_path("/", entry), do: "/#{entry}"
   defp join_path(path, entry), do: "#{path}/#{entry}"
 
-  defp process_file(bash, file, regex, flags, show_filename, {acc, had_match, errors, fs}) do
-    resolved = FS.resolve_path(bash.cwd, file)
-
-    case FS.read_file(fs, resolved) do
+  defp process_file(bash, file, stdin, regex, flags, show_filename, {acc, had_match, errors, fs}) do
+    case StdinOperand.read(fs, bash.cwd, file, stdin) do
       {:ok, content, fs} ->
-        prefix = if show_filename, do: "#{file}:", else: ""
+        # GNU names the `-` operand "(standard input)" in the prefix, not "-".
+        name = if StdinOperand.stdin?(file), do: "(standard input)", else: file
+        prefix = if show_filename, do: "#{name}:", else: ""
         lines = process_content(content, regex, flags, prefix)
         matched = lines != []
-        result = format_file_result(file, prefix, lines, matched, flags)
+        result = format_file_result(name, prefix, lines, matched, flags)
         {if(result, do: [result | acc], else: acc), had_match or matched, errors, fs}
 
       {:error, error} ->

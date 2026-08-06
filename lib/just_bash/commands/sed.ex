@@ -14,6 +14,7 @@ defmodule JustBash.Commands.Sed do
 
   alias JustBash.Commands.Command
   alias JustBash.Commands.Sed.{Executor, Parser}
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -53,12 +54,12 @@ defmodule JustBash.Commands.Sed do
       output = Executor.execute(stdin, commands, opts.silent)
       {Command.ok(output), bash}
     else
-      execute_on_files(bash, commands, opts)
+      execute_on_files(bash, commands, opts, stdin)
     end
   end
 
-  defp execute_on_files(bash, commands, opts) do
-    case read_and_process_files(bash, opts.files, commands, opts) do
+  defp execute_on_files(bash, commands, opts, stdin) do
+    case read_and_process_files(bash, opts.files, commands, opts, stdin) do
       {:ok, output, new_bash} ->
         {Command.ok(output), new_bash}
 
@@ -158,20 +159,18 @@ defmodule JustBash.Commands.Sed do
   defp apply_single_flag("E", acc), do: %{acc | extended_regex: true}
   defp apply_single_flag("r", acc), do: %{acc | extended_regex: true}
 
-  defp read_and_process_files(bash, files, commands, opts) do
+  defp read_and_process_files(bash, files, commands, opts, stdin) do
     if opts.in_place do
       process_files_in_place(bash, files, commands, opts)
     else
-      process_files_to_output(bash, files, commands, opts)
+      process_files_to_output(bash, files, commands, opts, stdin)
     end
   end
 
-  defp process_files_to_output(bash, files, commands, opts) do
+  defp process_files_to_output(bash, files, commands, opts, stdin) do
     result =
       Enum.reduce_while(files, {:ok, "", bash.fs}, fn file, {:ok, acc, fs} ->
-        resolved = FS.resolve_path(bash.cwd, file)
-
-        case FS.read_file(fs, resolved) do
+        case StdinOperand.read(fs, bash.cwd, file, stdin) do
           {:ok, content, fs} ->
             output = Executor.execute(content, commands, opts.silent)
             {:cont, {:ok, acc <> output, fs}}

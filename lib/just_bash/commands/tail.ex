@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Tail do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FlagParser
   alias JustBash.FS
 
@@ -39,19 +40,17 @@ defmodule JustBash.Commands.Tail do
 
     case files do
       [] -> tail_stdin(bash, stdin, mode)
-      [file] -> tail_file(bash, file, mode)
-      multiple -> tail_multiple(bash, multiple, mode)
+      [file] -> tail_file(bash, file, stdin, mode)
+      multiple -> tail_multiple(bash, multiple, stdin, mode)
     end
   end
 
-  defp tail_multiple(bash, files, mode) do
+  defp tail_multiple(bash, files, stdin, mode) do
     {outputs, errors, exit_code, fs} =
       Enum.reduce(files, {[], [], 0, bash.fs}, fn file, {out_acc, err_acc, code, fs} ->
-        resolved = FS.resolve_path(bash.cwd, file)
-
-        case FS.read_file(fs, resolved) do
+        case StdinOperand.read(fs, bash.cwd, file, stdin) do
           {:ok, content, fs} ->
-            header = "==> #{file} <==\n"
+            header = "==> #{display_name(file)} <==\n"
             body = take_content(content, mode)
             {[header <> body | out_acc], err_acc, code, fs}
 
@@ -66,10 +65,8 @@ defmodule JustBash.Commands.Tail do
     {%{stdout: stdout, stderr: stderr, exit_code: exit_code}, %{bash | fs: fs}}
   end
 
-  defp tail_file(bash, file, mode) do
-    resolved = FS.resolve_path(bash.cwd, file)
-
-    case FS.read_file(bash.fs, resolved) do
+  defp tail_file(bash, file, stdin, mode) do
+    case StdinOperand.read(bash.fs, bash.cwd, file, stdin) do
       {:ok, content, fs} ->
         output = take_content(content, mode)
         {Command.ok(output), %{bash | fs: fs}}
@@ -77,6 +74,11 @@ defmodule JustBash.Commands.Tail do
       {:error, error} ->
         {Command.error(read_error(file, error)), bash}
     end
+  end
+
+  # GNU labels the `-` operand "standard input" in the multi-file header.
+  defp display_name(file) do
+    if StdinOperand.stdin?(file), do: "standard input", else: file
   end
 
   # GNU tail `open(2)`s a directory successfully and only fails at `read(2)`,

@@ -34,6 +34,9 @@ defmodule JustBash.Commands.Xxd do
   defp parse_args(["-p" | rest], opts), do: parse_args(rest, %{opts | plain: true})
   defp parse_args(["-r" | _], _opts), do: {:error, "xxd: -r not supported\n"}
 
+  # A bare `-` is never a flag: POSIX reads it as the stdin operand.
+  defp parse_args(["-" | rest], opts), do: parse_args(rest, %{opts | file: "-"})
+
   defp parse_args(["-" <> _ = flag | _], _opts),
     do: {:error, "xxd: unknown option: #{flag}\n"}
 

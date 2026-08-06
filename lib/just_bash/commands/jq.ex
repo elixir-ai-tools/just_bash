@@ -24,6 +24,7 @@ defmodule JustBash.Commands.Jq do
 
   alias JustBash.Commands.Command
   alias JustBash.Commands.Jq.{Evaluator, Parser}
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -83,17 +84,15 @@ defmodule JustBash.Commands.Jq do
         {:ok, nil, bash}
 
       opts.file ->
-        read_file_input(bash, opts.file)
+        read_file_input(bash, opts.file, stdin)
 
       true ->
         {:ok, stdin, bash}
     end
   end
 
-  defp read_file_input(bash, file) do
-    resolved = FS.resolve_path(bash.cwd, file)
-
-    case FS.read_file(bash.fs, resolved) do
+  defp read_file_input(bash, file, stdin) do
+    case StdinOperand.read(bash.fs, bash.cwd, file, stdin) do
       {:ok, content, fs} -> {:ok, content, %{bash | fs: fs}}
       {:error, error} -> {:error, "jq: #{file}: #{FS.strerror(error)}\n"}
     end

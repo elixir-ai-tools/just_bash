@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Fold do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -26,8 +27,8 @@ defmodule JustBash.Commands.Fold do
 
   defp get_content(bash, %{files: []}, stdin), do: {:ok, stdin, bash.fs}
 
-  defp get_content(bash, %{files: files}, _stdin) do
-    read_files(bash, files)
+  defp get_content(bash, %{files: files}, stdin) do
+    read_files(bash, files, stdin)
   end
 
   defp process_and_return(bash, {:error, msg}, _opts), do: {Command.error(msg), bash}
@@ -79,6 +80,11 @@ defmodule JustBash.Commands.Fold do
     {:ok, %{opts | files: opts.files ++ rest}}
   end
 
+  # A bare `-` is never a flag: POSIX reads it as the stdin operand.
+  defp parse_args(["-" | rest], opts) do
+    parse_args(rest, %{opts | files: opts.files ++ ["-"]})
+  end
+
   defp parse_args(["-" <> _ = arg | _rest], _opts) do
     {:error, "fold: invalid option '#{arg}'\n"}
   end
@@ -87,11 +93,9 @@ defmodule JustBash.Commands.Fold do
     parse_args(rest, %{opts | files: opts.files ++ [file]})
   end
 
-  defp read_files(bash, files) do
+  defp read_files(bash, files, stdin) do
     Enum.reduce_while(files, {:ok, "", bash.fs}, fn file, {:ok, acc, fs} ->
-      resolved = FS.resolve_path(bash.cwd, file)
-
-      case FS.read_file(fs, resolved) do
+      case StdinOperand.read(fs, bash.cwd, file, stdin) do
         {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
         {:error, error} -> {:halt, {:error, "fold: #{file}: #{FS.strerror(error)}\n"}}
       end

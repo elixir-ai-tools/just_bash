@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Wc do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @short_flags %{?l => :l, ?w => :w, ?c => :c}
@@ -20,17 +21,15 @@ defmodule JustBash.Commands.Wc do
         {Command.ok(output), bash}
 
       [file] ->
-        wc_single_file(bash, file, flags)
+        wc_single_file(bash, file, stdin, flags)
 
       multiple ->
-        wc_multiple_files(bash, multiple, flags)
+        wc_multiple_files(bash, multiple, stdin, flags)
     end
   end
 
-  defp wc_single_file(bash, file, flags) do
-    resolved = FS.resolve_path(bash.cwd, file)
-
-    case FS.read_file(bash.fs, resolved) do
+  defp wc_single_file(bash, file, stdin, flags) do
+    case StdinOperand.read(bash.fs, bash.cwd, file, stdin) do
       {:ok, content, fs} ->
         output = format_output(content, file, flags)
         {Command.ok(output), %{bash | fs: fs}}
@@ -40,16 +39,14 @@ defmodule JustBash.Commands.Wc do
     end
   end
 
-  defp wc_multiple_files(bash, files, flags) do
+  defp wc_multiple_files(bash, files, stdin, flags) do
     {outputs, total_counts, err_acc, exit_code, fs} =
       Enum.reduce(files, {[], %{lines: 0, words: 0, bytes: 0}, [], 0, bash.fs}, fn file,
                                                                                    {out_acc,
                                                                                     totals,
                                                                                     err_acc, code,
                                                                                     fs} ->
-        resolved = FS.resolve_path(bash.cwd, file)
-
-        case FS.read_file(fs, resolved) do
+        case StdinOperand.read(fs, bash.cwd, file, stdin) do
           {:ok, content, fs} ->
             counts = count_content(content)
 

@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Base64 do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -23,13 +24,8 @@ defmodule JustBash.Commands.Base64 do
     end
   end
 
-  defp get_content(opts, bash, stdin) do
-    if opts.files == [] or opts.files == ["-"] do
-      {{:ok, stdin}, bash}
-    else
-      read_files(bash, opts.files)
-    end
-  end
+  defp get_content(%{files: []}, bash, stdin), do: {{:ok, stdin}, bash}
+  defp get_content(opts, bash, stdin), do: read_files(bash, opts.files, stdin)
 
   defp process_content({:error, msg}, _opts), do: {:error, msg}
 
@@ -72,6 +68,11 @@ defmodule JustBash.Commands.Base64 do
     end
   end
 
+  # A bare `-` is never a flag: POSIX reads it as the stdin operand.
+  defp parse_args(["-" | rest], opts) do
+    parse_args(rest, %{opts | files: opts.files ++ ["-"]})
+  end
+
   defp parse_args(["-" <> _ = arg | _rest], _opts) do
     {:error, "base64: invalid option '#{arg}'\n"}
   end
@@ -80,10 +81,10 @@ defmodule JustBash.Commands.Base64 do
     parse_args(rest, %{opts | files: opts.files ++ [file]})
   end
 
-  defp read_files(bash, files) do
+  defp read_files(bash, files, stdin) do
     result =
       Enum.reduce_while(files, {:ok, "", bash.fs}, fn file, {:ok, acc, fs} ->
-        read_single_file(bash, fs, file, acc)
+        read_single_file(bash, fs, file, stdin, acc)
       end)
 
     case result do
@@ -92,12 +93,8 @@ defmodule JustBash.Commands.Base64 do
     end
   end
 
-  defp read_single_file(_bash, fs, "-", acc), do: {:cont, {:ok, acc, fs}}
-
-  defp read_single_file(bash, fs, file, acc) do
-    resolved = FS.resolve_path(bash.cwd, file)
-
-    case FS.read_file(fs, resolved) do
+  defp read_single_file(bash, fs, file, stdin, acc) do
+    case StdinOperand.read(fs, bash.cwd, file, stdin) do
       {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
       {:error, error} -> {:halt, {:error, "base64: #{file}: #{FS.strerror(error)}\n"}}
     end

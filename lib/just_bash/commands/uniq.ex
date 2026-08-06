@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Uniq do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FlagParser
   alias JustBash.FS
 
@@ -36,10 +37,8 @@ defmodule JustBash.Commands.Uniq do
 
   defp get_content(bash, [], stdin), do: {:ok, stdin, bash.fs}
 
-  defp get_content(bash, [file | _], _stdin) do
-    resolved = FS.resolve_path(bash.cwd, file)
-
-    case FS.read_file(bash.fs, resolved) do
+  defp get_content(bash, [file | _], stdin) do
+    case StdinOperand.read(bash.fs, bash.cwd, file, stdin) do
       {:ok, content, fs} -> {:ok, content, fs}
       {:error, error} -> {:error, read_error(file, error)}
     end

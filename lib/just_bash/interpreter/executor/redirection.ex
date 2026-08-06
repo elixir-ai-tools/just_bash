@@ -19,6 +19,13 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   @type result :: %{stdout: String.t(), stderr: String.t(), exit_code: non_neg_integer()}
 
+  # The one path the shell services itself instead of opening in the
+  # filesystem. Both directions have to name the same set: `> /dev/null`
+  # discards, so `< /dev/null` reads empty. Otherwise `cmd < /dev/null` — the
+  # standard way to hand a command a closed stdin — reports a missing file for
+  # a target that was never meant to be one.
+  @null_device "/dev/null"
+
   @typedoc """
   A redirection whose target has already been expanded, resolved, and opened
   by `preflight/2`.
@@ -226,13 +233,13 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   @spec classify_redirection(non_neg_integer(), atom(), String.t()) :: redir_type()
   # Combined redirection &> must be checked before /dev/null catch-all
-  defp classify_redirection(_fd, :"&>", "/dev/null"), do: :combined_dev_null
-  defp classify_redirection(_fd, :"&>>", "/dev/null"), do: :combined_dev_null
+  defp classify_redirection(_fd, :"&>", @null_device), do: :combined_dev_null
+  defp classify_redirection(_fd, :"&>>", @null_device), do: :combined_dev_null
   defp classify_redirection(_fd, :"&>", _target), do: :combined_write
   defp classify_redirection(_fd, :"&>>", _target), do: :combined_append
-  defp classify_redirection(2, :>, "/dev/null"), do: :stderr_dev_null
-  defp classify_redirection(2, :">>", "/dev/null"), do: :stderr_dev_null
-  defp classify_redirection(_fd, _operator, "/dev/null"), do: :stdout_dev_null
+  defp classify_redirection(2, :>, @null_device), do: :stderr_dev_null
+  defp classify_redirection(2, :">>", @null_device), do: :stderr_dev_null
+  defp classify_redirection(_fd, _operator, @null_device), do: :stdout_dev_null
   defp classify_redirection(2, :>, _target), do: :stderr_write
   defp classify_redirection(2, :">>", _target), do: :stderr_append
   defp classify_redirection(_fd, :>, _target), do: :stdout_write
@@ -409,22 +416,9 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   # Input redirection: < file
   defp extract_stdin_content(bash, [%AST.Redirection{operator: :<, target: target} | _]) do
-    path = Expansion.expand_redirect_target(bash, target)
-    resolved = FS.resolve_path(bash.cwd, path)
-
-    case FS.read_file(bash.fs, resolved) do
-      {:ok, content, _fs} ->
-        content
-
-      # `open(2)` on a directory succeeds, so bash runs the command and the
-      # *command* fails on its own read — `cat: stdin: Is a directory`. That
-      # is not a shell-level diagnostic, and this model has no seam for it.
-      {:error, %VFS.Error{kind: :eisdir}} ->
-        ""
-
-      {:error, error} ->
-        {:error, path, error}
-    end
+    bash
+    |> Expansion.expand_redirect_target(target)
+    |> read_stdin_target(bash)
   end
 
   # Heredoc with content
@@ -444,5 +438,27 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   defp extract_stdin_content(_bash, []) do
     nil
+  end
+
+  # `< /dev/null` is the read side of `> /dev/null`: the shell services it
+  # without touching the filesystem, and the command gets an empty stdin.
+  defp read_stdin_target(@null_device, _bash), do: ""
+
+  defp read_stdin_target(path, bash) do
+    resolved = FS.resolve_path(bash.cwd, path)
+
+    case FS.read_file(bash.fs, resolved) do
+      {:ok, content, _fs} ->
+        content
+
+      # `open(2)` on a directory succeeds, so bash runs the command and the
+      # *command* fails on its own read — `cat: stdin: Is a directory`. That
+      # is not a shell-level diagnostic, and this model has no seam for it.
+      {:error, %VFS.Error{kind: :eisdir}} ->
+        ""
+
+      {:error, error} ->
+        {:error, path, error}
+    end
   end
 end

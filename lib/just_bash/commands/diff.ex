@@ -76,6 +76,11 @@ defmodule JustBash.Commands.Diff do
     parse_args(rest, %{opts | ignore_case: true})
   end
 
+  # A bare `-` is never a flag: POSIX reads it as the stdin operand.
+  defp parse_args(["-" | rest], opts) do
+    parse_args(rest, %{opts | files: opts.files ++ ["-"]})
+  end
+
   defp parse_args(["-" <> _ = arg | _rest], _opts) do
     {:error, "diff: invalid option '#{arg}'\n"}
   end

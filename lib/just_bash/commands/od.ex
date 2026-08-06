@@ -30,6 +30,9 @@ defmodule JustBash.Commands.Od do
   defp parse_args(["-A", _ | rest], opts), do: parse_args(rest, opts)
   defp parse_args(["-t", _ | rest], opts), do: parse_args(rest, opts)
 
+  # A bare `-` is never a flag: POSIX reads it as the stdin operand.
+  defp parse_args(["-" | rest], opts), do: parse_args(rest, %{opts | file: "-"})
+
   defp parse_args(["-" <> _ = flag | _], _opts),
     do: {:error, "od: unknown option: #{flag}\n"}
 
