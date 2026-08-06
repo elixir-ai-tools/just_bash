@@ -202,6 +202,120 @@ defmodule JustBash.SandboxContractTest do
     end
   end
 
+  describe "command substitution" do
+    # Oracle: GNU bash 3.2.57. A substitution's diagnostic always reaches the
+    # shell's stderr — even past a `2>` on the enclosing command, since the
+    # expansion happens before the redirection is performed. Its exit status is
+    # reported as `$?` only when nothing else in the statement claims `$?`:
+    # a bare assignment takes the *last* substitution's status, while a command
+    # (including the `export`/`local` builtins) reports its own.
+    test "a diagnostic from inside a substitution reaches the caller" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "echo $(cat /nope)")
+
+      assert result.stdout == "\n"
+      assert result.stderr == "cat: /nope: No such file or directory\n"
+    end
+
+    test "a diagnostic survives a redirection on the enclosing command" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "echo $(cat /nope) 2>/dev/null")
+
+      assert result.stderr == "cat: /nope: No such file or directory\n"
+    end
+
+    test "a diagnostic from a quoted substitution reaches the caller" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "echo \"$(cat /nope)\"")
+
+      assert result.stderr == "cat: /nope: No such file or directory\n"
+    end
+
+    test "a diagnostic from a substitution nested in a parameter expansion reaches the caller" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "echo ${x:-$(cat /nope)}")
+
+      assert result.stderr == "cat: /nope: No such file or directory\n"
+    end
+
+    test "every substitution in a command reports" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "echo $(cat /nope) $(cat /nada)")
+
+      assert result.stderr ==
+               "cat: /nope: No such file or directory\ncat: /nada: No such file or directory\n"
+    end
+
+    test "a bare assignment reports the substitution's exit code as $?" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "x=$(cat /nope); echo code=$? x=$x")
+
+      assert result.stdout == "code=1 x=\n"
+      assert result.stderr == "cat: /nope: No such file or directory\n"
+    end
+
+    test "a bare assignment whose substitution succeeds stays at zero" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "x=$(echo hi); echo code=$? x=$x")
+
+      assert result.stdout == "code=0 x=hi\n"
+      assert result.stderr == ""
+    end
+
+    test "a bare assignment with no substitution stays at zero" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "x=1; echo code=$? x=$x")
+
+      assert result.stdout == "code=0 x=1\n"
+    end
+
+    test "a bare assignment reports the last substitution of several" do
+      {result, _bash} =
+        JustBash.exec(JustBash.new(), "y=$(cat /nope) x=$(cat /nada); echo code=$?")
+
+      assert result.stdout == "code=1\n"
+
+      assert result.stderr ==
+               "cat: /nope: No such file or directory\ncat: /nada: No such file or directory\n"
+    end
+
+    test "a failing substitution is the script's exit code when it is the last statement" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "x=$(cat /nope)")
+
+      assert result.exit_code == 1
+      assert result.stderr == "cat: /nope: No such file or directory\n"
+    end
+
+    test "a crashed command inside a substitution is not a silent success" do
+      {result, _bash} = JustBash.exec(probe_bash(), "x=$(boom)")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "custom command crashed"
+    end
+
+    test "export keeps its own exit code, per POSIX" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "export x=$(cat /nope); echo code=$?")
+
+      assert result.stdout == "code=0\n"
+      assert result.stderr == "cat: /nope: No such file or directory\n"
+    end
+
+    test "local keeps its own exit code, per POSIX" do
+      script = "f() { local y=$(cat /nope); echo code=$?; }; f"
+      {result, _bash} = JustBash.exec(JustBash.new(), script)
+
+      assert result.stdout == "code=0\n"
+      assert result.stderr == "cat: /nope: No such file or directory\n"
+    end
+
+    test "a command reports its own exit code, not the substitution's" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "echo $(cat /nope); echo code=$?")
+
+      assert result.stdout == "\ncode=0\n"
+    end
+
+    test "an assignment prefixing a command reports both diagnostics" do
+      {result, _bash} = JustBash.exec(JustBash.new(), "x=$(cat /nope) cat /nada; echo code=$?")
+
+      assert result.stdout == "code=1\n"
+
+      assert result.stderr ==
+               "cat: /nope: No such file or directory\ncat: /nada: No such file or directory\n"
+    end
+  end
+
   describe "max_wall_ms" do
     test "is part of the default limits" do
       assert Limit.defaults().max_wall_ms == 5_000

@@ -23,12 +23,26 @@ defmodule JustBash.Interpreter.Expansion do
     def message(%{variable: var}), do: "#{var}: unbound variable"
   end
 
-  @typedoc "Pending variable assignments from expansions like ${VAR:=default} or $((x++))"
-  @type pending_assignments :: [{String.t(), String.t()}]
+  @typedoc "A variable assignment from an expansion like ${VAR:=default} or $((x++))"
+  @type assignment :: {String.t(), String.t()}
+
+  @typedoc """
+  What a command substitution did, on its way out to the enclosing command.
+
+  Its diagnostic belongs on the shell's stderr — bash writes it there even when
+  the enclosing command redirects stderr, since the expansion happens before
+  the redirection is performed — and its exit status is what a bare assignment
+  reports as `$?`.
+  """
+  @type substitution :: {:substitution, String.t(), non_neg_integer()}
+
+  @typedoc "Side effects an expansion hands back to the enclosing command."
+  @type pending_assignments :: [assignment() | substitution()]
 
   @doc """
   Expand word parts into a string, handling all substitution types.
-  Returns the expanded string and any pending variable assignments.
+  Returns the expanded string and any side effects — see `pending_assignments/0`
+  and `take_substitutions/1`.
 
   ## Examples
 
@@ -63,12 +77,33 @@ defmodule JustBash.Interpreter.Expansion do
     result
   end
 
-  # Apply assignments to bash env (for internal use during expansion)
+  @doc """
+  Split the command-substitution traces out of a list of expansion side effects.
+
+  Returns the accumulated stderr, the exit status of the *last* substitution
+  that ran (`nil` when none did — bash reports the last one as `$?` for a bare
+  assignment), and the assignments left over.
+  """
+  @spec take_substitutions(pending_assignments()) ::
+          {String.t(), non_neg_integer() | nil, [assignment()]}
+  def take_substitutions(effects) do
+    {stderr_io, exit_code, assignments} =
+      Enum.reduce(effects, {[], nil, []}, fn
+        {:substitution, stderr, code}, {errs, _prev, assigns} -> {[errs, stderr], code, assigns}
+        assignment, {errs, code, assigns} -> {errs, code, [assignment | assigns]}
+      end)
+
+    {IO.iodata_to_binary(stderr_io), exit_code, Enum.reverse(assignments)}
+  end
+
+  # Apply assignments to bash env (for internal use during expansion).
+  # Substitution traces travel in the same list but assign nothing.
   defp apply_assignments_to_bash(bash, []), do: bash
 
-  defp apply_assignments_to_bash(bash, assignments) do
-    Enum.reduce(assignments, bash, fn {name, value}, acc ->
-      %{acc | env: Map.put(acc.env, name, value)}
+  defp apply_assignments_to_bash(bash, effects) do
+    Enum.reduce(effects, bash, fn
+      {:substitution, _stderr, _code}, acc -> acc
+      {name, value}, acc -> %{acc | env: Map.put(acc.env, name, value)}
     end)
   end
 
@@ -153,7 +188,7 @@ defmodule JustBash.Interpreter.Expansion do
   end
 
   defp expand_part(bash, %AST.CommandSubstitution{body: body}) do
-    {execute_command_substitution(bash, body), []}
+    execute_command_substitution(bash, body)
   end
 
   defp expand_part(bash, %AST.ArithmeticExpression{} = expr) do
@@ -181,9 +216,10 @@ defmodule JustBash.Interpreter.Expansion do
   defp execute_arithmetic_expansion(bash, %AST.ArithmeticExpression{raw: raw, expression: _expr})
        when raw != nil do
     # Expression contains command substitution - expand it first, then parse and evaluate
-    expanded_str = expand_arithmetic_cmd_subs(bash, raw)
+    {expanded_str, effects} = expand_arithmetic_cmd_subs(bash, raw)
     parsed_expr = Arithmetic.parse(expanded_str)
-    evaluate_arithmetic_expr(bash, parsed_expr)
+    {value, assignments} = evaluate_arithmetic_expr(bash, parsed_expr)
+    {value, effects ++ assignments}
   end
 
   defp execute_arithmetic_expansion(bash, %AST.ArithmeticExpression{expression: inner_expr}) do
@@ -208,32 +244,38 @@ defmodule JustBash.Interpreter.Expansion do
   # Expand command substitutions in arithmetic expression string
   # Handles $(...) and backticks
   defp expand_arithmetic_cmd_subs(bash, str) do
-    str
-    |> expand_dollar_cmd_subs(bash)
-    |> expand_backtick_cmd_subs(bash)
+    {str, dollar_effects} = expand_dollar_cmd_subs(str, bash)
+    {str, backtick_effects} = expand_backtick_cmd_subs(str, bash)
+    {str, dollar_effects ++ backtick_effects}
   end
 
   defp expand_dollar_cmd_subs(str, bash) do
     # Pattern: $(...)  - need to handle nested parens
-    do_expand_dollar_cmd_subs(str, bash, "")
+    do_expand_dollar_cmd_subs(str, bash, "", [])
   end
 
-  defp do_expand_dollar_cmd_subs("", _bash, acc), do: acc
+  defp do_expand_dollar_cmd_subs("", _bash, acc, effects), do: {acc, Enum.reverse(effects)}
 
-  defp do_expand_dollar_cmd_subs("$(" <> rest, bash, acc) do
+  defp do_expand_dollar_cmd_subs("$(" <> rest, bash, acc, effects) do
     # Find matching close paren
     case find_cmd_sub_end(rest, 0, "") do
       {cmd, remaining} ->
-        output = execute_command_substitution(bash, parse_cmd_sub(cmd))
-        do_expand_dollar_cmd_subs(remaining, bash, acc <> output)
+        {output, new_effects} = execute_command_substitution(bash, parse_cmd_sub(cmd))
+
+        do_expand_dollar_cmd_subs(
+          remaining,
+          bash,
+          acc <> output,
+          Enum.reverse(new_effects) ++ effects
+        )
 
       :error ->
-        do_expand_dollar_cmd_subs(rest, bash, acc <> "$(")
+        do_expand_dollar_cmd_subs(rest, bash, acc <> "$(", effects)
     end
   end
 
-  defp do_expand_dollar_cmd_subs(<<c::binary-size(1), rest::binary>>, bash, acc) do
-    do_expand_dollar_cmd_subs(rest, bash, acc <> c)
+  defp do_expand_dollar_cmd_subs(<<c::binary-size(1), rest::binary>>, bash, acc, effects) do
+    do_expand_dollar_cmd_subs(rest, bash, acc <> c, effects)
   end
 
   defp find_cmd_sub_end("", _depth, _acc), do: :error
@@ -254,24 +296,30 @@ defmodule JustBash.Interpreter.Expansion do
 
   defp expand_backtick_cmd_subs(str, bash) do
     # Pattern: `...`
-    do_expand_backtick_cmd_subs(str, bash, "")
+    do_expand_backtick_cmd_subs(str, bash, "", [])
   end
 
-  defp do_expand_backtick_cmd_subs("", _bash, acc), do: acc
+  defp do_expand_backtick_cmd_subs("", _bash, acc, effects), do: {acc, Enum.reverse(effects)}
 
-  defp do_expand_backtick_cmd_subs("`" <> rest, bash, acc) do
+  defp do_expand_backtick_cmd_subs("`" <> rest, bash, acc, effects) do
     case find_backtick_end(rest, "") do
       {cmd, remaining} ->
-        output = execute_command_substitution(bash, parse_cmd_sub(cmd))
-        do_expand_backtick_cmd_subs(remaining, bash, acc <> output)
+        {output, new_effects} = execute_command_substitution(bash, parse_cmd_sub(cmd))
+
+        do_expand_backtick_cmd_subs(
+          remaining,
+          bash,
+          acc <> output,
+          Enum.reverse(new_effects) ++ effects
+        )
 
       :error ->
-        do_expand_backtick_cmd_subs(rest, bash, acc <> "`")
+        do_expand_backtick_cmd_subs(rest, bash, acc <> "`", effects)
     end
   end
 
-  defp do_expand_backtick_cmd_subs(<<c::binary-size(1), rest::binary>>, bash, acc) do
-    do_expand_backtick_cmd_subs(rest, bash, acc <> c)
+  defp do_expand_backtick_cmd_subs(<<c::binary-size(1), rest::binary>>, bash, acc, effects) do
+    do_expand_backtick_cmd_subs(rest, bash, acc <> c, effects)
   end
 
   defp find_backtick_end("", _acc), do: :error
@@ -299,9 +347,18 @@ defmodule JustBash.Interpreter.Expansion do
     end)
   end
 
+  # The substitution runs in a subshell, so its `bash` is discarded — but its
+  # stderr and exit status are not the subshell's to keep.
   defp execute_command_substitution(bash, %AST.Script{} = script) do
     {result, _bash} = Executor.execute_script(bash, script)
-    String.trim_trailing(result.stdout, "\n")
+
+    {String.trim_trailing(result.stdout, "\n"),
+     [{:substitution, result.stderr, result.exit_code}]}
+  end
+
+  defp command_substitution_output(bash, script) do
+    {output, _effects} = execute_command_substitution(bash, script)
+    output
   end
 
   @doc """
@@ -439,7 +496,7 @@ defmodule JustBash.Interpreter.Expansion do
   end
 
   defp expand_for_loop_part(bash, %AST.CommandSubstitution{body: body}, _ifs) do
-    {execute_command_substitution(bash, body), true}
+    {command_substitution_output(bash, body), true}
   end
 
   defp expand_for_loop_part(bash, %AST.ArithmeticExpansion{expression: expr}, _ifs) do

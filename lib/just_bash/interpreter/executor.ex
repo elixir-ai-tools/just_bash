@@ -264,8 +264,13 @@ defmodule JustBash.Interpreter.Executor do
   def execute_command(bash, %AST.SimpleCommand{name: nil, assignments: assignments}, _stdin) do
     # credo:disable-for-next-line Credo.Check.Readability.PreferImplicitTry
     try do
-      new_bash = execute_assignments(bash, assignments)
-      {%{stdout: "", stderr: "", exit_code: 0}, new_bash}
+      {new_bash, effects} = execute_assignments(bash, assignments)
+      {stderr, subst_exit_code, _assigns} = Expansion.take_substitutions(effects)
+
+      # With no command to claim `$?`, a bare assignment reports the exit status
+      # of the last command substitution it ran — `x=$(cat /nope)` is exit 1 in
+      # bash. Verified against GNU bash 3.2.57.
+      {%{stdout: "", stderr: stderr, exit_code: subst_exit_code || 0}, new_bash}
     rescue
       e in ArithmeticError ->
         {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
@@ -377,7 +382,7 @@ defmodule JustBash.Interpreter.Executor do
   # --- Simple Command Execution (with implicit try for UnsetVariableError) ---
 
   defp do_execute_simple_command(bash, name, args, assignments, redirs, stdin) do
-    temp_bash = execute_assignments(bash, assignments)
+    {temp_bash, assign_effects} = execute_assignments(bash, assignments)
     {cmd_name, cmd_assigns} = Expansion.expand_word_parts(temp_bash, name.parts)
 
     # Apply any assignments from ${VAR:=default} expansions
@@ -386,23 +391,33 @@ defmodule JustBash.Interpreter.Executor do
     # Expand args sequentially, applying any assignments between each
     # This ensures side effects like $((x++)) are visible to subsequent args
     # Use prepend for O(1) and reverse at end for correct order
-    {expanded_args_reversed, temp_bash} =
-      Enum.reduce(args, {[], temp_bash}, fn arg, {acc, current_bash} ->
+    {expanded_args_reversed, temp_bash, arg_effects} =
+      Enum.reduce(args, {[], temp_bash, []}, fn arg, {acc, current_bash, effects} ->
         {expanded, arg_assigns} = Expansion.expand_word_with_glob(current_bash, arg.parts)
         current_bash = apply_pending_assignments(current_bash, arg_assigns)
         # Prepend expanded (which is a list) reversed, so final reverse gives correct order
-        {Enum.reverse(expanded) ++ acc, current_bash}
+        {Enum.reverse(expanded) ++ acc, current_bash, [effects, arg_assigns]}
       end)
 
     expanded_args = Enum.reverse(expanded_args_reversed)
+
+    # A diagnostic produced while expanding goes to the shell's stderr, not
+    # through the command's redirections — bash performs redirections after
+    # expansion, so `echo $(cat /nope) 2>/dev/null` still prints it.
+    {expansion_stderr, _code, _assigns} =
+      (assign_effects ++ cmd_assigns ++ List.flatten(arg_effects))
+      |> Expansion.take_substitutions()
 
     # Extract heredoc content as stdin if present
     {heredoc_stdin, non_heredoc_redirs} = Redirection.extract_heredoc_stdin(temp_bash, redirs)
     effective_stdin = heredoc_stdin || stdin
 
-    with_redirections(temp_bash, non_heredoc_redirs, fn temp_bash ->
-      invoke_command(temp_bash, cmd_name, expanded_args, effective_stdin)
-    end)
+    {result, new_bash} =
+      with_redirections(temp_bash, non_heredoc_redirs, fn temp_bash ->
+        invoke_command(temp_bash, cmd_name, expanded_args, effective_stdin)
+      end)
+
+    {%{result | stderr: expansion_stderr <> result.stderr}, new_bash}
   rescue
     e in Expansion.UnsetVariableError ->
       {%{stdout: "", stderr: "bash: #{Exception.message(e)}\n", exit_code: 1}, bash}
@@ -739,9 +754,16 @@ defmodule JustBash.Interpreter.Executor do
     end)
   end
 
+  # Returns the updated shell plus the expansion side effects the assignments
+  # produced, so the caller can surface a command substitution's diagnostic and
+  # exit status — see `Expansion.take_substitutions/1`.
   defp execute_assignments(bash, assignments) do
-    Enum.reduce(assignments, bash, fn %AST.Assignment{name: name, value: value, array: array},
-                                      acc ->
+    Enum.reduce(assignments, {bash, []}, fn %AST.Assignment{
+                                              name: name,
+                                              value: value,
+                                              array: array
+                                            },
+                                            {acc, effects} ->
       case array do
         nil ->
           # Scalar assignment
@@ -756,7 +778,7 @@ defmodule JustBash.Interpreter.Executor do
           # Expand variable references in associative array subscripts
           # e.g. arr[$key] should store as arr[expanded_key]
           resolved_name = expand_assignment_subscript(acc, name)
-          %{acc | env: Map.put(acc.env, resolved_name, expanded_value)}
+          {%{acc | env: Map.put(acc.env, resolved_name, expanded_value)}, effects ++ pending}
 
         elements when is_list(elements) ->
           # Array assignment: arr=(a b c) or arr=($(echo "a b c"))
@@ -789,7 +811,7 @@ defmodule JustBash.Interpreter.Executor do
           first_element = Map.get(env, "#{name}[0]", "")
           env = Map.put(env, name, first_element)
 
-          %{acc | env: env}
+          {%{acc | env: env}, effects}
       end
     end)
   end
@@ -834,12 +856,15 @@ defmodule JustBash.Interpreter.Executor do
     end
   end
 
-  # Apply pending variable assignments from expansions like ${VAR:=default} or $((x++))
+  # Apply pending variable assignments from expansions like ${VAR:=default} or
+  # $((x++)). Command-substitution traces travel in the same list — see
+  # `Expansion.take_substitutions/1` — but assign nothing.
   defp apply_pending_assignments(bash, []), do: bash
 
-  defp apply_pending_assignments(bash, assignments) do
-    Enum.reduce(assignments, bash, fn {name, value}, acc ->
-      %{acc | env: Map.put(acc.env, name, value)}
+  defp apply_pending_assignments(bash, effects) do
+    Enum.reduce(effects, bash, fn
+      {:substitution, _stderr, _code}, acc -> acc
+      {name, value}, acc -> %{acc | env: Map.put(acc.env, name, value)}
     end)
   end
 
