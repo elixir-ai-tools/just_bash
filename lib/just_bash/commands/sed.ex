@@ -199,7 +199,22 @@ defmodule JustBash.Commands.Sed do
     end
   end
 
+  # POSIX reads the trailing slash in `sed -i s/x/y/ f/` as an assertion that
+  # `f` is a directory, and `FS.resolve_path/2` normalizes it away — so an
+  # in-place edit spelled that way would rewrite the regular file `f`. Real
+  # sed never gets that far: `open("f/")` fails with ENOTDIR before any
+  # editing, leaving the file alone.
   defp process_single_file_in_place(bash, file, commands, opts) do
+    case FS.check_directory_spelling(bash.fs, bash.cwd, file) do
+      {:ok, fs} ->
+        read_and_edit(%{bash | fs: fs}, file, commands, opts)
+
+      {:error, %VFS.Error{} = error} ->
+        {:halt, {:error, "sed: #{file}: #{FS.strerror(error)}\n"}}
+    end
+  end
+
+  defp read_and_edit(bash, file, commands, opts) do
     resolved = FS.resolve_path(bash.cwd, file)
 
     case FS.read_file(bash.fs, resolved) do

@@ -447,6 +447,45 @@ defmodule JustBash.TrailingSlashTest do
       assert {:ok, "F\n", _fs} = read(bash, "/f")
     end
 
+    # $ sed -i s/F/Z/ f/
+    # sed: can't read f/: Not a directory
+    #
+    # Real sed never opens `f/` — `open("f/")` is ENOTDIR — so the file it
+    # would have edited is left alone. (Our diagnostics for sed operands are
+    # spelled `sed: <operand>: <reason>` throughout, GNU's `can't read`
+    # prefix predates this rule and is not what #58 is about.)
+    test "sed -i refuses to edit through a destination spelled as a directory" do
+      {result, bash} = JustBash.exec(bash(), "sed -i 's/F/Z/' /f/")
+
+      assert result.exit_code == 1
+      assert result.stderr == "sed: /f/: Not a directory\n"
+      assert {:ok, "F\n", _fs} = read(bash, "/f")
+    end
+
+    test "sed -i refuses a trailing dot component too" do
+      {result, bash} = JustBash.exec(bash(), "sed -i 's/F/Z/' /f/.")
+
+      assert result.exit_code == 1
+      assert result.stderr == "sed: /f/.: Not a directory\n"
+      assert {:ok, "F\n", _fs} = read(bash, "/f")
+    end
+
+    test "sed -i will not create the file a slash promised would be a directory" do
+      {result, bash} = JustBash.exec(bash(), "sed -i 's/F/Z/' /nope/")
+
+      assert result.exit_code == 1
+      assert result.stderr == "sed: /nope/: No such file or directory\n"
+      refute exists?(bash, "/nope")
+    end
+
+    test "sed -i still edits a file named without the slash" do
+      {result, bash} = JustBash.exec(bash(), "sed -i 's/F/Z/' /f")
+
+      assert result.exit_code == 0
+      assert result.stderr == ""
+      assert {:ok, "Z\n", _fs} = read(bash, "/f")
+    end
+
     # $ touch f/
     # touch: cannot touch 'f/': Not a directory
     test "touch refuses a non-directory spelled as one" do
