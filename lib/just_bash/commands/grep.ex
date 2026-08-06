@@ -98,7 +98,7 @@ defmodule JustBash.Commands.Grep do
 
       case FS.stat(bash.fs, resolved) do
         {:ok, %VFS.Stat{type: :directory}, _fs} ->
-          find_files_recursive(bash.fs, resolved, file)
+          find_files_recursive(bash.fs, resolved, file, bash.interpreter.deadline)
 
         {:ok, _, _fs} ->
           [file]
@@ -113,7 +113,10 @@ defmodule JustBash.Commands.Grep do
   # the descent uses `lstat` and skips every link it meets along the way.
   # (`stat` would resolve them, and a link pointing back into the tree being
   # searched would make the recursion re-enter it — twice over, forever.)
-  defp find_files_recursive(fs, full_path, display_path) do
+  # A whole traversal is one step, so the step counter cannot bound it.
+  defp find_files_recursive(fs, full_path, display_path, deadline) do
+    Limit.check_deadline!(deadline)
+
     case FS.readdir(fs, full_path) do
       {:ok, entries, _fs} ->
         Enum.flat_map(entries, fn entry ->
@@ -122,7 +125,7 @@ defmodule JustBash.Commands.Grep do
 
           case FS.lstat(fs, child_full) do
             {:ok, %VFS.Stat{type: :directory}, _fs} ->
-              find_files_recursive(fs, child_full, child_display)
+              find_files_recursive(fs, child_full, child_display, deadline)
 
             {:ok, %VFS.Stat{type: :symlink}, _fs} ->
               []

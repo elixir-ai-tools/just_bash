@@ -8,7 +8,6 @@ defmodule JustBash.SandboxContractTest do
 
   use ExUnit.Case, async: true
 
-  alias JustBash.FS
   alias JustBash.Limit
 
   # --- Probes ---
@@ -121,6 +120,37 @@ defmodule JustBash.SandboxContractTest do
     end
   end
 
+  describe "exec!/2" do
+    test "arms the wall clock like exec/2" do
+      # Unlike `max_steps`, the wall clock has to be armed, so an entry point
+      # that skips arming silently has no bound at all.
+      bash = probe_bash(limits: [max_wall_ms: 30, max_steps: 10_000_000])
+
+      {elapsed_us, {result, final}} =
+        :timer.tc(fn -> JustBash.exec!(bash, "for i in $(seq 1 100); do spin; done") end)
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "execution wall clock limit exceeded (30 ms)"
+      assert final.interpreter.deadline != nil
+      assert elapsed_us < 300_000
+    end
+
+    test "propagates an interpreter exception rather than containing it" do
+      # The documented difference from `exec/2`: `exec!/2` is the uncontained
+      # entry point. A host running untrusted script text wants `exec/2`.
+      assert catch_error(JustBash.exec!(probe_bash(), "wreck-env; echo $HOME"))
+
+      {result, _bash} = JustBash.exec(probe_bash(), "wreck-env; echo $HOME")
+      assert result.exit_code == 1
+    end
+
+    test "raises on a parse error" do
+      assert_raise RuntimeError, ~r/Parse error/, fn ->
+        JustBash.exec!(JustBash.new(), "echo 'unterminated")
+      end
+    end
+  end
+
   describe "a crashed command reports through composition" do
     # Oracle: GNU bash 3.2/5.x. `cmd | cat`, `echo $(cmd)` and `if cmd; then fi`
     # are all exit 0 — the pipeline reports its last stage, and `if` with no
@@ -218,23 +248,104 @@ defmodule JustBash.SandboxContractTest do
       assert result.stdout == "ok\n"
     end
 
-    test "bounds a traversal, which the step counter charges as a single step" do
-      # `find` never returned through a symlink cycle (#53). The cycle is gone,
-      # but nothing structural stopped the next one — a whole tree walk is one
-      # step, so only the wall clock can bound it.
-      files = for i <- 1..1000, into: %{}, do: {"/tree/#{rem(i, 10)}/#{i}/f.txt", "x"}
-      bash = JustBash.new(files: files, limits: [max_wall_ms: 1, max_steps: 10_000_000])
-
-      {result, _bash} = JustBash.exec(bash, "find /tree")
-
-      assert result.exit_code == 1
-      assert result.stderr =~ "execution wall clock limit exceeded (1 ms)"
-    end
-
     test "rejects a non-positive value like every other bound" do
       assert_raise ArgumentError, ~r/positive integers/, fn ->
         Limit.new(max_wall_ms: 0)
       end
+    end
+  end
+
+  describe "a loop inside a single command" do
+    # The statement loop is never re-entered while one command spins, and a
+    # whole command is one step, so only a deadline checked *inside* the
+    # command's own loop bounds it. This is the shape of the `printf '%b'`
+    # hang (56c74b8) issue #69 cites. Each probe runs under a task so a
+    # regression fails the test instead of hanging the suite.
+    setup do
+      {:ok, bash: JustBash.new(limits: [max_wall_ms: 50, max_steps: 10_000_000])}
+    end
+
+    defp bounded_exec(bash, script) do
+      task = Task.async(fn -> JustBash.exec(bash, script) end)
+
+      case Task.yield(task, 5_000) || Task.shutdown(task, :brutal_kill) do
+        {:ok, {result, _bash}} -> result
+        nil -> flunk("`#{script}` did not terminate within 5s")
+      end
+    end
+
+    test "awk's while loop is bounded", %{bash: bash} do
+      result = bounded_exec(bash, "awk 'BEGIN{while(1){x=x+1}}'")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
+    end
+
+    test "awk's for loop is bounded", %{bash: bash} do
+      result = bounded_exec(bash, "awk 'BEGIN{for(i=0;i>=0;i++){}}'")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
+    end
+
+    test "awk's do-while loop is bounded", %{bash: bash} do
+      result = bounded_exec(bash, "awk 'BEGIN{do{x=x+1}while(1)}'")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
+    end
+
+    test "seq's range walk is bounded", %{bash: bash} do
+      result = bounded_exec(bash, "seq 1 100000000")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
+    end
+
+    test "an awk loop that terminates on its own is untouched", %{bash: bash} do
+      result = bounded_exec(bash, "awk 'BEGIN{for(i=0;i<3;i++){print i}}'")
+
+      assert result.exit_code == 0
+      assert result.stdout == "0\n1\n2\n"
+    end
+  end
+
+  describe "a recursive traversal" do
+    # `find` never returned through a symlink cycle (#53). The cycle is gone,
+    # but nothing structural stopped the next one — a whole tree walk is one
+    # step, so only the wall clock can bound it, and every recursive command
+    # hand-rolls its own descent. Unbounded, these run 300-700 ms on this tree.
+    setup do
+      files = for i <- 1..2000, into: %{}, do: {"/tree/#{rem(i, 20)}/#{i}/f.txt", "hello #{i}"}
+
+      {:ok,
+       files: files,
+       bash: JustBash.new(files: files, limits: [max_wall_ms: 50, max_steps: 10_000_000])}
+    end
+
+    for {command, script} <- [
+          {"find", "find /tree"},
+          {"grep -r", "grep -r hello /tree"},
+          {"du", "du /tree"},
+          {"tree", "tree /tree"},
+          {"cp -r", "cp -r /tree /copy"}
+        ] do
+      test "#{command} is bounded by the wall clock", %{bash: bash} do
+        {elapsed_us, {result, _bash}} =
+          :timer.tc(fn -> JustBash.exec(bash, unquote(script) <> " > /dev/null") end)
+
+        assert result.exit_code == 1
+        assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
+        assert elapsed_us < 300_000
+      end
+    end
+
+    test "a traversal that fits inside the budget is untouched", %{files: files} do
+      bash = JustBash.new(files: files, limits: [max_wall_ms: 30_000])
+      {result, _bash} = JustBash.exec(bash, "find /tree -name f.txt | wc -l")
+
+      assert result.exit_code == 0
+      assert result.stdout == "2000\n"
     end
   end
 
@@ -256,33 +367,22 @@ defmodule JustBash.SandboxContractTest do
     end
   end
 
-  describe "FS.walk/3 deadline" do
-    setup do
-      fs =
-        Enum.reduce(1..20, FS.new(), fn i, acc ->
-          {:ok, acc} = FS.mkdir(acc, "/d/#{i}", parents: true)
-          {:ok, acc} = FS.write_file(acc, "/d/#{i}/f", "x")
-          acc
-        end)
-
-      {:ok, fs: fs}
+  describe "Limit.enforce_deadline/2" do
+    test "passes the enumerable through untouched without a deadline" do
+      assert 1..20 |> Limit.enforce_deadline(nil) |> Enum.count() == 20
     end
 
-    test "walks normally without a deadline", %{fs: fs} do
-      assert fs |> FS.walk("/d") |> Enum.count() == 20
-    end
-
-    test "walks normally with a deadline that has not passed", %{fs: fs} do
+    test "yields every element while the deadline holds" do
       deadline = Limit.deadline(Limit.new(max_wall_ms: 10_000))
-      assert fs |> FS.walk("/d", deadline: deadline) |> Enum.count() == 20
+      assert 1..20 |> Limit.enforce_deadline(deadline) |> Enum.count() == 20
     end
 
-    test "raises once the deadline has passed", %{fs: fs} do
+    test "raises once the deadline has passed" do
       expired = Limit.deadline(Limit.new(max_wall_ms: 1))
       Process.sleep(5)
 
       assert_raise Limit.ExceededError, ~r/wall clock limit exceeded/, fn ->
-        fs |> FS.walk("/d", deadline: expired) |> Enum.to_list()
+        1..20 |> Limit.enforce_deadline(expired) |> Enum.to_list()
       end
     end
   end

@@ -388,21 +388,9 @@ defmodule JustBash do
   """
   @spec exec(t(), String.t()) :: {exec_result(), t()}
   def exec(bash, command) when is_binary(command) do
-    # Reset counters and arm the wall clock only for top-level exec
-    # (not nested eval/source, which run inside the caller's budget)
-    bash =
-      if bash.interpreter.exec_depth == 0 do
-        interpreter =
-          bash.interpreter
-          |> State.reset_counters()
-          |> State.arm_deadline(Limit.deadline(bash.limits))
-
-        %{bash | interpreter: interpreter}
-      else
-        bash
-      end
-
-    do_exec(bash, command)
+    bash
+    |> arm_top_level()
+    |> do_exec(command)
   rescue
     # Containment, not defensive coding. `exec/2` is a trust boundary: it runs
     # untrusted script text on behalf of a host that has no way to interpret an
@@ -416,6 +404,19 @@ defmodule JustBash do
     kind, reason ->
       internal_error(bash, "#{kind}: #{inspect(reason)}")
   end
+
+  # Reset counters and arm the wall clock only for top-level execution; nested
+  # eval/source run inside the caller's budget rather than starting a fresh one.
+  defp arm_top_level(%__MODULE__{interpreter: %{exec_depth: 0}} = bash) do
+    interpreter =
+      bash.interpreter
+      |> State.reset_counters()
+      |> State.arm_deadline(Limit.deadline(bash.limits))
+
+    %{bash | interpreter: interpreter}
+  end
+
+  defp arm_top_level(%__MODULE__{} = bash), do: bash
 
   defp internal_error(bash, detail) do
     stderr = "bash: internal error (#{detail})\n"
@@ -517,7 +518,19 @@ defmodule JustBash do
   end
 
   @doc """
-  Execute a bash command, raising on parse errors.
+  Execute a bash command, raising instead of containing failures.
+
+  Same limits as `exec/2` — including `:max_wall_ms`, which is armed here too,
+  so a script that spins is bounded by both entry points.
+
+  Unlike `exec/2`, this function is *not* a trust boundary. It propagates:
+
+  - a `RuntimeError` for a parse error, where `exec/2` returns exit 2 with a
+    `bash: syntax error: ...` diagnostic; and
+  - any exception raised by the interpreter or by a command, where `exec/2`
+    contains it and returns a shell-shaped result.
+
+  A host running untrusted script text wants `exec/2`.
 
   ## Examples
 
@@ -526,6 +539,8 @@ defmodule JustBash do
   """
   @spec exec!(t(), String.t()) :: {exec_result(), t()}
   def exec!(bash, command) do
+    bash = arm_top_level(bash)
+
     JustBash.Telemetry.session_span(self(), fn ->
       case Parser.parse(command) do
         {:ok, ast} ->

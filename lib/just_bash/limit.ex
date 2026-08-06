@@ -253,8 +253,10 @@ defmodule JustBash.Limit do
   @doc """
   Wrap an enumerable so each element it yields first checks `deadline`.
 
-  Used by `JustBash.FS.walk/3`: a traversal is a single command as far as the
-  step counter is concerned, so without this a pathological tree is unbounded.
+  Used by `JustBash.Commands.Seq`: a whole command is a single step as far as
+  the step counter is concerned, so without this `seq 1 100000000` is
+  unbounded. Commands whose loop is not already an enumerable call
+  `check_deadline!/1` directly instead — see `JustBash.Commands.Find`.
   """
   @spec enforce_deadline(Enumerable.t(), Deadline.t() | nil) :: Enumerable.t()
   def enforce_deadline(enumerable, nil), do: enumerable

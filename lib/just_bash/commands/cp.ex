@@ -322,7 +322,10 @@ defmodule JustBash.Commands.Cp do
   end
 
   defp copy_tree(bash, {src, src_path}, {dest, dest_path}, opts) do
-    case FS.cp(bash.fs, src_path, dest_path, recursive: true) do
+    # A whole tree copy is one step, so the step counter cannot bound it.
+    cp_opts = [recursive: true, deadline: bash.interpreter.deadline]
+
+    case FS.cp(bash.fs, src_path, dest_path, cp_opts) do
       {:ok, fs} ->
         report(%{bash | fs: fs}, {src, src_path}, dest, opts)
 

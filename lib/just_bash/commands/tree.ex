@@ -4,6 +4,7 @@ defmodule JustBash.Commands.Tree do
 
   alias JustBash.Commands.Command
   alias JustBash.FS
+  alias JustBash.Limit
 
   @impl true
   def names, do: ["tree"]
@@ -16,7 +17,8 @@ defmodule JustBash.Commands.Tree do
 
       {:ok, opts} ->
         dirs = if opts.dirs == [], do: ["."], else: opts.dirs
-        ctx = %{fs: bash.fs, opts: opts}
+        # A whole traversal is one step, so the step counter cannot bound it.
+        ctx = %{fs: bash.fs, opts: opts, deadline: bash.interpreter.deadline}
         {output, stderr, dir_count, file_count} = process_directories(ctx, bash.cwd, dirs)
         summary = format_summary(dir_count, file_count, opts.dirs_only)
         exit_code = if stderr != "", do: 1, else: 0
@@ -124,6 +126,7 @@ defmodule JustBash.Commands.Tree do
   end
 
   defp build_entries(ctx, parent_path, entries, prefix, depth) do
+    Limit.check_deadline!(ctx.deadline)
     entries_count = length(entries)
 
     entries

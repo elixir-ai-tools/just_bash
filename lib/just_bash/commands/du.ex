@@ -4,6 +4,7 @@ defmodule JustBash.Commands.Du do
 
   alias JustBash.Commands.Command
   alias JustBash.FS
+  alias JustBash.Limit
 
   @short_flags %{
     ?a => :all_files,
@@ -22,6 +23,8 @@ defmodule JustBash.Commands.Du do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
+        # A whole traversal is one step, so the step counter cannot bound it.
+        opts = %{opts | deadline: bash.interpreter.deadline}
         targets = if opts.files == [], do: ["."], else: opts.files
 
         {output, stderr, grand_total} = process_targets(bash, targets, opts)
@@ -60,7 +63,8 @@ defmodule JustBash.Commands.Du do
       summarize: false,
       grand_total: false,
       max_depth: nil,
-      files: []
+      files: [],
+      deadline: nil
     })
   end
 
@@ -127,6 +131,8 @@ defmodule JustBash.Commands.Du do
   end
 
   defp calculate_dir_size(fs, path, display_path, opts, depth) do
+    Limit.check_deadline!(opts.deadline)
+
     case FS.readdir(fs, path) do
       {:ok, entries, _fs} ->
         {output, dir_size} =

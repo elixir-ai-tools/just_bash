@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Seq do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Limit
 
   @impl true
   def names, do: ["seq"]
@@ -12,19 +13,14 @@ defmodule JustBash.Commands.Seq do
     case args do
       [last] ->
         case Integer.parse(last) do
-          {n, _} ->
-            output = Enum.map_join(1..n, "\n", &to_string/1) <> "\n"
-            {Command.ok(output), bash}
-
-          :error ->
-            {Command.error("seq: invalid argument\n"), bash}
+          {n, _} -> render(bash, 1..n)
+          :error -> {Command.error("seq: invalid argument\n"), bash}
         end
 
       [first, last] ->
         with {f, _} <- Integer.parse(first),
              {l, _} <- Integer.parse(last) do
-          output = Enum.map_join(f..l, "\n", &to_string/1) <> "\n"
-          {Command.ok(output), bash}
+          render(bash, f..l)
         else
           _ -> {Command.error("seq: invalid argument\n"), bash}
         end
@@ -33,9 +29,7 @@ defmodule JustBash.Commands.Seq do
         with {f, _} <- Integer.parse(first),
              {i, _} <- Integer.parse(incr),
              {l, _} <- Integer.parse(last) do
-          range = f..l//i
-          output = Enum.map_join(range, "\n", &to_string/1) <> "\n"
-          {Command.ok(output), bash}
+          render(bash, f..l//i)
         else
           _ -> {Command.error("seq: invalid argument\n"), bash}
         end
@@ -43,5 +37,17 @@ defmodule JustBash.Commands.Seq do
       _ ->
         {Command.error("seq: missing operand\n"), bash}
     end
+  end
+
+  # `seq 1 100000000` is one step and one command, so neither the step counter
+  # nor the interpreter's statement loop can see it. The range is walked under
+  # the wall clock instead.
+  defp render(bash, range) do
+    output =
+      range
+      |> Limit.enforce_deadline(bash.interpreter.deadline)
+      |> Enum.map_join("\n", &to_string/1)
+
+    {Command.ok(output <> "\n"), bash}
   end
 end

@@ -20,7 +20,8 @@ defmodule JustBash.Commands.Awk.Evaluator do
           variables: %{String.t() => String.t()},
           arrays: %{String.t() => map()},
           output: String.t(),
-          exit_code: non_neg_integer() | nil
+          exit_code: non_neg_integer() | nil,
+          deadline: Limit.Deadline.t() | nil
         }
 
   @doc """
@@ -50,7 +51,8 @@ defmodule JustBash.Commands.Awk.Evaluator do
       output: "",
       exit_code: nil,
       file_outputs: %{},
-      bash: Map.get(opts, :bash)
+      bash: Map.get(opts, :bash),
+      deadline: deadline(Map.get(opts, :bash))
     }
 
     state = execute_begin_blocks(state, program.begin_blocks)
@@ -928,8 +930,18 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   # Loop helper functions
+  #
+  # An AWK program is a single shell command, so the interpreter's statement
+  # loop is never re-entered while one runs and the step counter charges the
+  # whole program as one step. These three constructs are the only unbounded
+  # loops in the evaluator, so each iteration checks the wall clock itself.
+
+  defp deadline(%{interpreter: %{deadline: deadline}}), do: deadline
+  defp deadline(_bash), do: nil
 
   defp execute_for_loop(cond_expr, update, body, state) do
+    Limit.check_deadline!(state.deadline)
+
     if truthy?(evaluate_expression(cond_expr, state)) do
       case execute_loop_body(body, state) do
         {:break, new_state} ->
@@ -949,6 +961,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   defp execute_while_loop(cond_expr, body, state) do
+    Limit.check_deadline!(state.deadline)
     {cond_val, state} = evaluate_condition_with_state(cond_expr, state)
 
     if truthy?(cond_val) do
@@ -980,6 +993,8 @@ defmodule JustBash.Commands.Awk.Evaluator do
   end
 
   defp execute_do_while_loop(body, cond_expr, state) do
+    Limit.check_deadline!(state.deadline)
+
     case execute_loop_body(body, state) do
       {:break, new_state} ->
         new_state

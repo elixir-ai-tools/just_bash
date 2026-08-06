@@ -33,7 +33,7 @@ defmodule JustBash.FS do
 
   @type mkdir_opts :: [parents: boolean()]
   @type rm_opts :: [recursive: boolean()]
-  @type cp_opts :: [recursive: boolean()]
+  @type cp_opts :: [recursive: boolean(), deadline: Limit.Deadline.t() | nil]
   @type write_opts :: [mode: non_neg_integer(), mtime: DateTime.t()]
 
   @doc """
@@ -222,21 +222,14 @@ defmodule JustBash.FS do
   end
 
   @doc """
-  See `VFS.walk/3`, plus one option vfs does not have.
+  See `VFS.walk/3`.
 
-  `:deadline` — a `JustBash.Limit.Deadline` (or `nil`). A traversal is a single
-  step as far as the step counter is concerned, so a large or pathological tree
-  is otherwise unbounded; with a deadline, each entry yielded checks the wall
-  clock and raises `JustBash.Limit.ExceededError` once it has passed.
+  This is an unbounded enumeration and no command in `lib/` uses it; a caller
+  that walks an untrusted tree should pipe it through
+  `JustBash.Limit.enforce_deadline/2`, the way `JustBash.Commands.Seq` does.
   """
   @spec walk(t(), String.t(), keyword()) :: Enumerable.t()
-  def walk(fs, root, opts \\ []) do
-    {deadline, walk_opts} = Keyword.pop(opts, :deadline)
-
-    fs
-    |> VFS.walk(root, walk_opts)
-    |> Limit.enforce_deadline(deadline)
-  end
+  defdelegate walk(fs, root, opts \\ []), to: VFS
 
   # ── POSIX extensions (dispatched through JustBash.FS.POSIX) ─────────────
 
@@ -280,6 +273,11 @@ defmodule JustBash.FS do
   resolved through any symlinked components before that test, so a
   destination that only *reaches* the source through a link is caught
   too.
+
+  `:deadline` — a `JustBash.Limit.Deadline` (or `nil`). A recursive copy is a
+  single step as far as the step counter is concerned, so a large tree is
+  otherwise unbounded; with a deadline, each directory descended into checks
+  the wall clock and raises `JustBash.Limit.ExceededError` once it has passed.
   """
   @spec cp(t(), String.t(), String.t(), cp_opts()) :: {:ok, t()} | {:error, Error.t()}
   def cp(fs, src, dest, opts \\ []) do
@@ -477,6 +475,8 @@ defmodule JustBash.FS do
   end
 
   defp cp_children(fs, src_norm, dest_norm, opts) do
+    Limit.check_deadline!(Keyword.get(opts, :deadline))
+
     with {:ok, children, fs} <- readdir(fs, src_norm) do
       Enum.reduce_while(children, {:ok, fs}, fn child, {:ok, acc_fs} ->
         src_child = join_child(src_norm, child)
