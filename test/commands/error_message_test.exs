@@ -58,7 +58,10 @@ defmodule JustBash.Commands.ErrorMessageTest do
     {"stat PATH", @stat_kinds, :stderr, "stat: cannot stat 'PATH': MSG\n"},
     {"chmod 644 PATH", @stat_kinds, :stderr, "chmod: cannot access 'PATH': MSG\n"},
     {"chown u PATH", @stat_kinds, :stderr, "chown: cannot access 'PATH': MSG\n"},
-    {"realpath PATH", @stat_kinds, :stderr, "realpath: PATH: MSG\n"},
+    # Without -e, realpath only requires the *parent* components to exist, so
+    # :enoent on the final component is not an error at all — see below.
+    {"realpath PATH", [:enotdir, :eacces], :stderr, "realpath: PATH: MSG\n"},
+    {"realpath -e PATH", @stat_kinds, :stderr, "realpath: PATH: MSG\n"},
     {"du PATH", @stat_kinds, :stderr, "du: cannot access 'PATH': MSG\n"},
     {"find PATH", @stat_kinds, :stderr, "find: PATH: MSG\n"},
     {"tree PATH", @stat_kinds, :stderr, "tree: PATH: MSG\n"},
@@ -136,6 +139,47 @@ defmodule JustBash.Commands.ErrorMessageTest do
 
       assert result.stdout == ""
       assert result.stderr == "md5sum: /nope: No such file or directory\n"
+      assert result.exit_code == 1
+    end
+  end
+
+  # Verified against coreutils 9.x: `grealpath nope` -> rc=0 and the
+  # canonicalised path; `grealpath nope/deep/x` -> rc=1. The last component is
+  # allowed to be missing; everything before it has to be a directory.
+  describe "realpath without -e" do
+    test "canonicalises a missing final component and exits 0" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "realpath /nope")
+
+      assert result.stdout == "/nope\n"
+      assert result.stderr == ""
+      assert result.exit_code == 0
+    end
+
+    test "errors when an intermediate component is missing" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "realpath /nope/deep/x")
+
+      assert result.stderr == "realpath: /nope/deep/x: No such file or directory\n"
+      assert result.exit_code == 1
+    end
+
+    test "errors when the parent component is not a directory" do
+      {result, _bash} = JustBash.exec(sandbox(:enotdir), "realpath /f/x")
+
+      assert result.stderr == "realpath: /f/x: Not a directory\n"
+      assert result.exit_code == 1
+    end
+
+    test "-m accepts a missing intermediate component too" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "realpath -m /nope/deep/x")
+
+      assert result.stdout == "/nope/deep/x\n"
+      assert result.exit_code == 0
+    end
+
+    test "-e still requires the whole path to exist" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "realpath -e /nope")
+
+      assert result.stderr == "realpath: /nope: No such file or directory\n"
       assert result.exit_code == 1
     end
   end

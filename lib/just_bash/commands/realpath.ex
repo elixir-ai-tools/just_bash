@@ -3,6 +3,14 @@ defmodule JustBash.Commands.Realpath do
   The `realpath` command - print the resolved absolute path.
 
   Resolves `.`, `..`, and symlinks in the virtual filesystem.
+
+  How much of the path has to exist depends on the mode, as in GNU realpath:
+
+    * default — every component *but the last* must resolve to a directory,
+      so `realpath /nope` canonicalises and exits 0 while
+      `realpath /nope/deep/x` does not
+    * `-e` — the whole path must exist
+    * `-m` — nothing has to exist
   """
 
   @behaviour JustBash.Commands.Command
@@ -15,7 +23,7 @@ defmodule JustBash.Commands.Realpath do
 
   @impl true
   def execute(bash, args, _stdin) do
-    {_opts, paths} = parse_args(args)
+    {opts, paths} = parse_args(args)
 
     case paths do
       [] ->
@@ -26,11 +34,11 @@ defmodule JustBash.Commands.Realpath do
           Enum.reduce(paths, {[], [], 0, bash.fs}, fn path, {out, err, code, fs} ->
             resolved = FS.resolve_path(bash.cwd, path)
 
-            case FS.stat(fs, resolved) do
-              {:ok, _stat, fs} ->
+            case check(fs, resolved, opts.mode) do
+              {:ok, fs} ->
                 {[out, resolved, "\n"], err, code, fs}
 
-              {:error, error} ->
+              {:error, error, fs} ->
                 {out, [err, "realpath: ", path, ": ", FS.strerror(error), "\n"], 1, fs}
             end
           end)
@@ -43,12 +51,41 @@ defmodule JustBash.Commands.Realpath do
     end
   end
 
+  defp check(fs, _resolved, :missing), do: {:ok, fs}
+
+  defp check(fs, resolved, :existing) do
+    case FS.stat(fs, resolved) do
+      {:ok, _stat, fs} -> {:ok, fs}
+      {:error, error} -> {:error, error, fs}
+    end
+  end
+
+  # The default mode names the operand in its diagnostic but only requires the
+  # parent to be a directory: `realpath /f/x` on a regular-file `/f` is ENOTDIR
+  # even though `/f` itself stats cleanly.
+  defp check(fs, resolved, :default) do
+    case FS.stat(fs, Path.dirname(resolved)) do
+      {:ok, %VFS.Stat{type: :directory}, fs} -> {:ok, fs}
+      {:ok, _not_a_directory, fs} -> {:error, :enotdir, fs}
+      {:error, error} -> {:error, error, fs}
+    end
+  end
+
   defp parse_args(args) do
-    parse_args(args, %{}, [])
+    parse_args(args, %{mode: :default}, [])
   end
 
   defp parse_args([], opts, paths), do: {opts, Enum.reverse(paths)}
-  # Skip flags like -e, -m, -s, --relative-to, etc.
+
+  defp parse_args([flag | rest], opts, paths)
+       when flag in ["-e", "--canonicalize-existing"],
+       do: parse_args(rest, %{opts | mode: :existing}, paths)
+
+  defp parse_args([flag | rest], opts, paths)
+       when flag in ["-m", "--canonicalize-missing"],
+       do: parse_args(rest, %{opts | mode: :missing}, paths)
+
+  # Skip the flags we do not model yet: -s, --relative-to, …
   defp parse_args(["--" <> _ | rest], opts, paths), do: parse_args(rest, opts, paths)
 
   defp parse_args(["-" <> _ | rest], opts, paths),
