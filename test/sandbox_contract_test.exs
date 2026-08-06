@@ -568,6 +568,87 @@ defmodule JustBash.SandboxContractTest do
     end
   end
 
+  describe "an expansion that generates from a short input" do
+    # A word is one step, so the step counter never sees inside an expansion —
+    # and brace expansion is the one path where a handful of characters names
+    # an arbitrarily large word list. Measured on the pre-fix tree under
+    # `:strict`: `echo {1..100000}` took 18.3 s and `echo {1..1000000}` never
+    # returned. Each probe runs under a task so a regression fails the test
+    # instead of wedging the suite.
+    setup do
+      {:ok, bash: JustBash.new(limits: [max_wall_ms: 50, max_steps: 5_000])}
+    end
+
+    for {label, script} <- [
+          {"a flat range", "echo {1..1000000}"},
+          {"a nested product", "echo {1..300}{1..300}{1..300}"},
+          {"a list crossed with a range", "echo {a,b,c}{1..500000}"},
+          {"a `for` list", "for i in {1..1000000}; do :; done"},
+          {"an array assignment", "a=({1..1000000}); echo ${#a[@]}"}
+        ] do
+      test "#{label} is bounded", %{bash: bash} do
+        result = bounded_exec(bash, unquote(script))
+
+        # Unbounded, each of these is exit 0 with empty stderr — when it
+        # returns at all.
+        assert result.exit_code == 1
+        assert result.stderr =~ "limit exceeded"
+      end
+    end
+
+    test "a range is refused before it is built, not after" do
+      # A range materializes in one go, so counting words as they arrive is too
+      # late — the memory is already spent. `elapsed_us` is what distinguishes
+      # the two: measured, this range costs 880 ms and ~1 GB to build and 0 ms
+      # to measure. The clock gets room it cannot need so cardinality answers.
+      bash = JustBash.new(limits: [max_steps: 100, max_wall_ms: 30_000])
+
+      {elapsed_us, {result, _bash}} =
+        :timer.tc(fn -> JustBash.exec(bash, "echo {1..20000000}") end)
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "word expansion limit exceeded (100 words)"
+      assert elapsed_us < 200_000
+    end
+
+    test "a product of ranges each inside the bound is still counted" do
+      # Neither range is refusable on its own — 50 is well under the cap — so
+      # the 2,500 words their product names are caught only by counting as the
+      # walk produces them. The clock again has room it cannot need.
+      bash = JustBash.new(limits: [max_steps: 100, max_wall_ms: 30_000])
+      {result, _bash} = JustBash.exec(bash, "echo {1..50}{1..50}")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "word expansion limit exceeded (100 words)"
+    end
+
+    test "the wall clock still bounds a word list the cardinality cap allows" do
+      # A million words is inside a ten-million step budget, so cardinality has
+      # nothing to say; only the deadline checked inside the walk stops this.
+      bash = JustBash.new(limits: [max_steps: 10_000_000, max_wall_ms: 50])
+      result = bounded_exec(bash, "echo {1..1000}{1..1000}")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
+    end
+
+    test "an expansion that fits inside the budget is untouched" do
+      bash = JustBash.new(limits: [max_steps: 100, max_wall_ms: 30_000])
+      {result, _bash} = JustBash.exec(bash, "echo {1..5} {a..e} {x,y}{1..3}")
+
+      assert result.exit_code == 0
+      assert result.stdout == "1 2 3 4 5 a b c d e x1 x2 x3 y1 y2 y3\n"
+    end
+
+    test "a word list right at the bound is allowed" do
+      bash = JustBash.new(limits: [max_steps: 100, max_wall_ms: 30_000])
+      {result, _bash} = JustBash.exec(bash, "echo {1..10}{1..10} | wc -w")
+
+      assert result.exit_code == 0
+      assert result.stdout == "100\n"
+    end
+  end
+
   describe "a recursive traversal" do
     # `find` never returned through a symlink cycle (#53). The cycle is gone,
     # but nothing structural stopped the next one — a whole tree walk is one
@@ -586,7 +667,11 @@ defmodule JustBash.SandboxContractTest do
           {"grep -r", "grep -r hello /tree"},
           {"du", "du /tree"},
           {"tree", "tree /tree"},
-          {"cp -r", "cp -r /tree /copy"}
+          {"cp -r", "cp -r /tree /copy"},
+          # Glob expansion descends the tree itself, one directory read per
+          # wildcard segment, and is the one traversal that happens before a
+          # command is even chosen. Unbounded, this one runs ~295 ms.
+          {"glob expansion", "echo /tree/*/*/*"}
         ] do
       test "#{command} is bounded by the wall clock", %{bash: bash} do
         {elapsed_us, {result, _bash}} =

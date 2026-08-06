@@ -9,6 +9,12 @@ defmodule JustBash.Interpreter.Expansion.Glob do
   """
 
   alias JustBash.FS
+  alias JustBash.Limit
+
+  # The filesystem plus the deadline the walk below is answerable to. Bundled
+  # rather than passed separately so every step of the descent carries the
+  # bound without widening five signatures.
+  @typep walk :: {FS.t(), Limit.Deadline.t() | nil}
 
   @doc """
   Check if a string contains glob metacharacters.
@@ -35,7 +41,8 @@ defmodule JustBash.Interpreter.Expansion.Glob do
     base_dir = if is_absolute, do: "/", else: bash.cwd
     prefix = if is_absolute, do: "/", else: ""
 
-    matches = expand_segments(bash.fs, base_dir, prefix, segments, has_trailing_slash)
+    walk = {bash.fs, bash.interpreter.deadline}
+    matches = expand_segments(walk, base_dir, prefix, segments, has_trailing_slash)
 
     if matches == [], do: [pattern], else: Enum.sort(matches)
   end
@@ -55,7 +62,8 @@ defmodule JustBash.Interpreter.Expansion.Glob do
 
   # Recursively expand segments, handling wildcards at any level
   # has_trailing_slash indicates if original pattern ended with /
-  defp expand_segments(_fs, _current_path, prefix, [], has_trailing_slash) do
+  @spec expand_segments(walk(), String.t(), String.t(), [String.t()], boolean()) :: [String.t()]
+  defp expand_segments(_walk, _current_path, prefix, [], has_trailing_slash) do
     # No more segments - return current path if it's not just the prefix
     if prefix == "" or prefix == "/" do
       []
@@ -66,10 +74,10 @@ defmodule JustBash.Interpreter.Expansion.Glob do
     end
   end
 
-  defp expand_segments(fs, current_path, prefix, [segment | rest], has_trailing_slash) do
+  defp expand_segments({fs, _deadline} = walk, current_path, prefix, [segment | rest], slash?) do
     if has_glob_chars?(segment) do
       # This segment has wildcards - expand it
-      expand_wildcard_segment(fs, current_path, prefix, segment, rest, has_trailing_slash)
+      expand_wildcard_segment(walk, current_path, prefix, segment, rest, slash?)
     else
       # No wildcards - just append and continue
       next_path = join_path(current_path, segment)
@@ -77,7 +85,7 @@ defmodule JustBash.Interpreter.Expansion.Glob do
 
       case FS.stat(fs, next_path) do
         {:ok, _, _} ->
-          expand_segments(fs, next_path, next_prefix, rest, has_trailing_slash)
+          expand_segments(walk, next_path, next_prefix, rest, slash?)
 
         {:error, _} ->
           # Path doesn't exist
@@ -86,29 +94,33 @@ defmodule JustBash.Interpreter.Expansion.Glob do
     end
   end
 
-  defp expand_wildcard_segment(fs, current_path, prefix, segment, rest, has_trailing_slash) do
+  defp expand_wildcard_segment({fs, deadline} = walk, current_path, prefix, segment, rest, slash?) do
     regex_pattern = glob_pattern_to_regex(segment)
 
     with {:ok, regex} <- Regex.compile("^" <> regex_pattern <> "$"),
          {:ok, entries, _fs} <- FS.readdir(fs, current_path) do
-      matching = Enum.filter(entries, &matches_pattern?(&1, regex, segment))
-
-      Enum.flat_map(matching, fn entry ->
-        expand_matched_entry(fs, current_path, prefix, entry, rest, has_trailing_slash)
+      # A directory read is the unit of work this descent multiplies, so the
+      # deadline is checked per matched entry — the same treatment `find` and
+      # `grep -r` get. A whole glob is one step, so nothing else bounds it.
+      entries
+      |> Enum.filter(&matches_pattern?(&1, regex, segment))
+      |> Limit.enforce_deadline(deadline)
+      |> Enum.flat_map(fn entry ->
+        expand_matched_entry(walk, current_path, prefix, entry, rest, slash?)
       end)
     else
       _ -> []
     end
   end
 
-  defp expand_matched_entry(fs, current_path, prefix, entry, rest, has_trailing_slash) do
+  defp expand_matched_entry({fs, _deadline} = walk, current_path, prefix, entry, rest, slash?) do
     next_path = join_path(current_path, entry)
     next_prefix = join_prefix(prefix, entry)
 
     if rest == [] do
-      finalize_match(fs, next_path, next_prefix, has_trailing_slash)
+      finalize_match(fs, next_path, next_prefix, slash?)
     else
-      continue_expansion(fs, next_path, next_prefix, rest, has_trailing_slash)
+      continue_expansion(walk, next_path, next_prefix, rest, slash?)
     end
   end
 
@@ -124,10 +136,10 @@ defmodule JustBash.Interpreter.Expansion.Glob do
     end
   end
 
-  defp continue_expansion(fs, path, prefix, rest, has_trailing_slash) do
+  defp continue_expansion({fs, _deadline} = walk, path, prefix, rest, has_trailing_slash) do
     case FS.stat(fs, path) do
       {:ok, %VFS.Stat{type: :directory}, _fs} ->
-        expand_segments(fs, path, prefix, rest, has_trailing_slash)
+        expand_segments(walk, path, prefix, rest, has_trailing_slash)
 
       _ ->
         []

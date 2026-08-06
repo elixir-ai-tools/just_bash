@@ -36,6 +36,10 @@ defmodule JustBash.Limit do
   that burns wall clock without doing countable work — the shape both of this
   project's historical hangs took. Nested `eval`/`source` run inside the
   top-level call's budget rather than starting a fresh one.
+
+  `:max_steps` does double duty: a whole word is one step no matter what it
+  expands into, so it is also the cap on how many words a single word may
+  expand into — see `check_expansion_words!/2`.
   """
 
   defmodule ExceededError do
@@ -45,6 +49,7 @@ defmodule JustBash.Limit do
     ## Kinds
 
     - `:step_limit` — too many computation steps
+    - `:expansion_limit` — one word expanded into too many words
     - `:output_limit` — stdout + stderr exceeded byte cap
     - `:file_size_limit` — single file write exceeded byte cap
     - `:regex_pattern_limit` — regex pattern string too large
@@ -171,6 +176,34 @@ defmodule JustBash.Limit do
     end
 
     %{bash | interpreter: %{interp | step_count: count}}
+  end
+
+  @doc """
+  Bound how many words one word may expand into. Raises `ExceededError` if exceeded.
+
+  The step counter cannot see this: a word is a single step regardless of the
+  size of the list it names, so `{1..1000000}` — twelve characters — is one
+  step and a million words. That is counted work, not merely slow work, so the
+  bound is `:max_steps` rather than the wall clock; the clock is checked
+  alongside it so a budget large enough to permit the list still cannot be
+  spent entirely on building it.
+
+  Call this with the running count as the list is produced, not with the
+  finished list's length — the point is to refuse before the memory is spent.
+  """
+  @spec check_expansion_words!(JustBash.t(), non_neg_integer()) :: :ok
+  def check_expansion_words!(%{limits: nil}, _count), do: :ok
+
+  def check_expansion_words!(%{limits: limits}, count) do
+    if count > limits.max_steps do
+      raise ExceededError,
+        kind: :expansion_limit,
+        message: "word expansion limit exceeded (#{limits.max_steps} words)",
+        limit: limits.max_steps,
+        actual: count
+    end
+
+    :ok
   end
 
   @doc "Track output bytes. Raises `ExceededError` if limit is reached."

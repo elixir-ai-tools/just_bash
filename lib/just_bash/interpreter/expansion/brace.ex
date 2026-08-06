@@ -5,10 +5,19 @@ defmodule JustBash.Interpreter.Expansion.Brace do
   Handles:
   - List expansion: {a,b,c}
   - Range expansion: {1..10}, {a..z}, {1..10..2}
+
+  ## Bounds
+
+  This is the one expansion whose output size is not bounded by anything the
+  input already holds: `{1..1000000}` is twelve characters, and nesting
+  multiplies. The word list is therefore produced under two bounds — the
+  cardinality cap of `Limit.check_expansion_words!/2` and the wall clock — both
+  applied as each word is produced rather than after the list exists.
   """
 
   alias JustBash.AST
   alias JustBash.Interpreter.Expansion
+  alias JustBash.Limit
 
   @typedoc "Pending variable assignments from expansions"
   @type pending_assignments :: Expansion.pending_assignments()
@@ -31,24 +40,35 @@ defmodule JustBash.Interpreter.Expansion.Brace do
   @spec expand_with_brace(JustBash.t(), [AST.word_part()]) ::
           {[String.t()], pending_assignments()}
   def expand_with_brace(bash, parts) do
+    {_count, words, assigns} = expand_into(bash, parts, {0, [], []})
+    {Enum.reverse(words), Enum.reverse(assigns)}
+  end
+
+  # One accumulator is threaded through the whole cartesian walk instead of
+  # each level concatenating its children's results. That keeps the walk linear
+  # in the number of words rather than quadratic — `echo {1..100000}` was 18 s
+  # before — and, more importantly, gives the bounds a single place that sees
+  # every word at the moment it is produced.
+  defp expand_into(bash, parts, {count, words, assigns} = acc) do
     case find_brace_expansion(parts) do
       nil ->
-        {expanded, assignments} = Expansion.expand_word_parts(bash, parts)
-        {[expanded], assignments}
+        Limit.check_deadline!(bash)
+        count = count + 1
+        Limit.check_expansion_words!(bash, count)
+        {word, new_assigns} = Expansion.expand_word_parts(bash, parts)
+        {count, [word | words], prepend_reversed(new_assigns, assigns)}
 
       {prefix_parts, brace_exp, suffix_parts} ->
-        expanded_items = expand_brace_items(bash, brace_exp.items)
-
-        {words, all_assigns} =
-          Enum.reduce(expanded_items, {[], []}, fn item, {words_acc, assigns_acc} ->
-            new_parts = prefix_parts ++ [%AST.Literal{value: item}] ++ suffix_parts
-            {new_words, new_assigns} = expand_with_brace(bash, new_parts)
-            {words_acc ++ new_words, assigns_acc ++ new_assigns}
-          end)
-
-        {words, all_assigns}
+        bash
+        |> expand_brace_items(brace_exp.items)
+        |> Enum.reduce(acc, fn item, item_acc ->
+          new_parts = prefix_parts ++ [%AST.Literal{value: item}] ++ suffix_parts
+          expand_into(bash, new_parts, item_acc)
+        end)
     end
   end
+
+  defp prepend_reversed(new, assigns), do: Enum.reduce(new, assigns, &[&1 | &2])
 
   @doc """
   Expand brace expansion items (words and ranges).
@@ -61,6 +81,9 @@ defmodule JustBash.Interpreter.Expansion.Brace do
         words
 
       {:range, start_val, end_val, step} ->
+        # A range is the one item that materializes its whole list in one go,
+        # so it is measured before it is built.
+        Limit.check_expansion_words!(bash, range_size(start_val, end_val, step))
         expand_range(start_val, end_val, step)
     end)
   end
@@ -98,6 +121,28 @@ defmodule JustBash.Interpreter.Expansion.Brace do
   end
 
   # Private helpers
+
+  # How long `expand_range/3` would make the list, without making it. Mirrors
+  # that function's clauses exactly, including its "empty when the step runs
+  # the wrong way" case; anything it would reject outright is left for it to
+  # reject.
+  defp range_size(start_val, end_val, step)
+       when is_integer(start_val) and is_integer(end_val) do
+    step = step || if start_val <= end_val, do: 1, else: -1
+
+    if (step > 0 and start_val <= end_val) or (step < 0 and start_val >= end_val) do
+      div(abs(end_val - start_val), abs(step)) + 1
+    else
+      0
+    end
+  end
+
+  defp range_size(start_val, end_val, step)
+       when is_binary(start_val) and is_binary(end_val) do
+    range_size(:binary.first(start_val), :binary.first(end_val), step)
+  end
+
+  defp range_size(_start_val, _end_val, _step), do: 0
 
   defp find_brace_expansion(parts) do
     find_brace_expansion_loop(parts, [])
