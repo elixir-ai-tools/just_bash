@@ -485,7 +485,8 @@ defmodule JustBash.Commands.FileInfoTest do
       bash = JustBash.new()
       {result, _} = JustBash.exec(bash, "md5sum /nonexistent")
       assert result.exit_code == 1
-      assert result.stdout =~ "No such file"
+      assert result.stdout == ""
+      assert result.stderr =~ "No such file"
     end
   end
 

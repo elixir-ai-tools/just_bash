@@ -41,9 +41,7 @@ defmodule JustBash.Commands.ErrorMessageTest do
     {"shasum PATH", :stderr, "shasum: PATH: MSG\n"},
     {"diff PATH PATH", :stderr, "diff: PATH: MSG\n"},
     {"source PATH", :stderr, "bash: source: PATH: MSG\n"},
-    # md5sum writes its diagnostic to stdout. That is a separate bug from the
-    # message text, so it is recorded here rather than quietly corrected.
-    {"md5sum PATH", :stdout, "md5sum: PATH: MSG\n"}
+    {"md5sum PATH", :stderr, "md5sum: PATH: MSG\n"}
   ]
 
   # Commands that only inspect metadata. A directory is a perfectly good answer
@@ -114,6 +112,33 @@ defmodule JustBash.Commands.ErrorMessageTest do
         assert Map.fetch!(result, unquote(stream)) == fill(unquote(template), kind)
         assert result.exit_code != 0
       end
+    end
+  end
+
+  describe "a diagnostic never lands in a data stream" do
+    test "md5sum keeps the checksum stream free of its own error" do
+      # `md5sum a b > sums.txt` has to produce a checksum file, not a checksum
+      # file with a diagnostic wedged into it as a malformed line.
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "md5sum /f /nope")
+
+      assert result.stdout == "764efa883dda1e11db47671c4a3bbd9e  /f\n"
+      assert result.stderr == "md5sum: /nope: No such file or directory\n"
+      assert result.exit_code == 1
+    end
+
+    test "md5sum's error is silenced by 2>/dev/null" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "md5sum /nope 2>/dev/null")
+
+      assert result.stdout == ""
+      assert result.exit_code == 1
+    end
+
+    test "md5sum -c reports a checksum file it cannot read" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "md5sum -c /nope")
+
+      assert result.stdout == ""
+      assert result.stderr == "md5sum: /nope: No such file or directory\n"
+      assert result.exit_code == 1
     end
   end
 
