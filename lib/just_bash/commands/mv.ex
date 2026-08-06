@@ -24,10 +24,12 @@ defmodule JustBash.Commands.Mv do
 
     # bash stats the source, then the destination, and only then asks whether
     # the two name the same file — so a missing source is reported ahead of
-    # anything the destination is wrong about.
-    with :ok <- distinct(src_resolved, dest, dest_final),
-         {:ok, src_type} <- source_type(bash, src, src_resolved),
-         :ok <- destination_directory(bash, {src, src_type}, dest) do
+    # anything the destination is wrong about, and a destination whose
+    # spelling does not hold is reported ahead of the comparison it would
+    # otherwise take part in.
+    with {:ok, src_type} <- source_type(bash, src, src_resolved),
+         :ok <- destination_directory(bash, {src, src_type}, dest),
+         :ok <- distinct(src_resolved, dest_final) do
       rename(bash, {src, src_resolved}, {dest, dest_shown, dest_final})
     else
       {:error, message} -> {Command.error(message), bash}
@@ -52,12 +54,17 @@ defmodule JustBash.Commands.Mv do
     end
   end
 
-  # `a.md/` names no file at all when `a.md` is a regular file, so a trailing
-  # slash keeps the destination from being a second spelling of the source:
-  # `destination_directory/4` reports it instead.
-  defp distinct(src_resolved, dest, dest_final) do
-    if FS.normalize_path(src_resolved) == FS.normalize_path(dest_final) and
-         not FS.directory_spelling?(dest) do
+  # Once the destination's spelling has been held to its promise, a
+  # destination that lands back on the source *is* the source, however it was
+  # spelled: `d/`, `d/.` and `d/../d/` all name the directory the source
+  # already sits in. Checked against GNU coreutils 9.11:
+  #
+  #     $ mv d/keep d/   mv: 'd/keep' and 'd/keep' are the same file
+  #
+  # (`a.md/` never reaches here — `destination_directory/3` reports it, which
+  # is why this asks nothing about the spelling.)
+  defp distinct(src_resolved, dest_final) do
+    if FS.normalize_path(src_resolved) == FS.normalize_path(dest_final) do
       {:error, "mv: '#{src_resolved}' and '#{dest_final}' are the same file\n"}
     else
       :ok

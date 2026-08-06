@@ -225,6 +225,55 @@ defmodule JustBash.TrailingSlashTest do
     end
   end
 
+  # A destination that resolves back to the source is the source, however the
+  # directory holding it was spelled — the slash does not turn the refusal
+  # into a silent exit-0 no-op. GNU coreutils 9.11, in a scratch directory:
+  #
+  #     $ mv d/keep d        mv: 'd/keep' and 'd/keep' are the same file
+  #     $ mv d/keep d/       mv: 'd/keep' and 'd/keep' are the same file
+  #     $ mv d/keep d/.      mv: 'd/keep' and 'd/./keep' are the same file
+  #     $ mv d/keep d/../d/  mv: 'd/keep' and 'd/../d/keep' are the same file
+  #     $ cd d && mv keep .  mv: 'keep' and './keep' are the same file
+  #     $ cd d && mv keep ./ mv: 'keep' and './keep' are the same file
+  #
+  # GNU names each side the way the operand was written; we name both by where
+  # they resolved, which is what `mv` did before this rule existed. The
+  # refusal — and the untouched file — is what #58 is about.
+  describe "mv onto a destination that resolves back to the source" do
+    for {command, same} <- [
+          {"mv /d/keep /d", "/d/keep"},
+          {"mv /d/keep /d/", "/d/keep"},
+          {"mv /d/keep /d/.", "/d/keep"},
+          {"mv /d/keep /d/../d/", "/d/keep"},
+          {"cd /d && mv keep .", "/d/keep"},
+          {"cd /d && mv keep ./", "/d/keep"},
+          {"mv /a.md /", "/a.md"},
+          {"mv /a.md //", "/a.md"}
+        ] do
+      test "`#{command}` is refused rather than doing nothing quietly" do
+        {result, bash} = JustBash.exec(bash(), unquote(command))
+
+        assert result.exit_code == 1
+        assert result.stdout == ""
+
+        assert result.stderr ==
+                 "mv: '#{unquote(same)}' and '#{unquote(same)}' are the same file\n"
+
+        assert {:ok, "K\n", _fs} = read(bash, "/d/keep")
+        assert {:ok, "A\n", _fs} = read(bash, "/a.md")
+      end
+    end
+
+    # $ mv nope.md nope.md
+    # mv: cannot stat 'nope.md': No such file or directory
+    test "a missing source is reported before the two names are compared" do
+      {result, _bash} = JustBash.exec(bash(), "mv /nope.md /nope.md")
+
+      assert result.exit_code == 1
+      assert result.stderr == "mv: cannot stat '/nope.md': No such file or directory\n"
+    end
+  end
+
   # A `..` component makes the same demand a trailing slash does: the kernel
   # can only walk up out of a directory. `FS.resolve_path/2` collapses it
   # lexically — `/f/..` becomes `/`, a directory whatever `/f` is — so the
