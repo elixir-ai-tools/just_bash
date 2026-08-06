@@ -21,6 +21,7 @@ defmodule JustBash.FlagParser do
         boolean: [:a, :l, :v, :r],
         value: [:n, :d],
         integer: [:n],
+        value_labels: %{n: "number of lines"},
         defaults: %{a: false, l: false, v: false, r: false, n: 10, d: nil}
       }
 
@@ -40,6 +41,8 @@ defmodule JustBash.FlagParser do
   - `:multi_value` - Value flags that accumulate a list instead of overwriting
   - `:integer` - Value flags whose value is a count. Only these are converted;
     everything else stays a string, so `sort -t 1` is the delimiter `"1"`
+  - `:value_labels` - What an `:integer` flag counts, as GNU names it in
+    `invalid number of lines: 'abc'`. Required for every `:integer` flag
   """
 
   @type flag_spec :: %{
@@ -48,10 +51,14 @@ defmodule JustBash.FlagParser do
           :defaults => map(),
           optional(:aliases) => map(),
           optional(:multi_value) => [atom()],
-          optional(:integer) => [atom()]
+          optional(:integer) => [atom()],
+          optional(:value_labels) => %{atom() => String.t()}
         }
 
-  @type error :: {:unknown_flag, String.t()} | {:missing_value, String.t()}
+  @type error ::
+          {:unknown_flag, String.t()}
+          | {:missing_value, String.t()}
+          | {:invalid_value, String.t(), String.t()}
 
   @type parse_result :: {:ok, map(), [String.t()]} | {:error, error()}
 
@@ -63,11 +70,12 @@ defmodule JustBash.FlagParser do
   - `remaining_args` is a list of non-flag arguments
 
   Returns `{:error, reason}` for the first argument that is flag-shaped but not
-  in the spec, or for a value flag with nothing after it.
+  in the spec, for a value flag with nothing after it, and for a value declared
+  `:integer` that is not a number.
 
   ## Examples
 
-      iex> spec = %{boolean: [:a, :l], value: [:n], integer: [:n], defaults: %{a: false, l: false, n: 10}}
+      iex> spec = %{boolean: [:a, :l], value: [:n], integer: [:n], value_labels: %{n: "number of lines"}, defaults: %{a: false, l: false, n: 10}}
       iex> FlagParser.parse(["-a", "-n", "5", "file.txt"], spec)
       {:ok, %{a: true, l: false, n: 5}, ["file.txt"]}
 
@@ -98,6 +106,9 @@ defmodule JustBash.FlagParser do
 
       iex> FlagParser.format_error("sort", {:unknown_flag, "--nope"}, "")
       "sort: unrecognized option '--nope'\\n"
+
+      iex> FlagParser.format_error("head", {:invalid_value, "number of lines", "abc"}, "")
+      "head: invalid number of lines: 'abc'\\n"
   """
   @spec format_error(String.t(), error(), String.t()) :: String.t()
   def format_error(command, {:unknown_flag, "--" <> _ = flag}, usage),
@@ -111,6 +122,10 @@ defmodule JustBash.FlagParser do
 
   def format_error(command, {:missing_value, flag}, usage),
     do: "#{command}: option requires an argument -- '#{flag}'\n" <> usage
+
+  # GNU prints no `Try --help` line for a bad count, so neither do we.
+  def format_error(command, {:invalid_value, label, value}, _usage),
+    do: "#{command}: invalid #{label}: '#{value}'\n"
 
   defp do_parse([], _spec, flags, rest) do
     {:ok, flags, Enum.reverse(rest)}
@@ -199,11 +214,15 @@ defmodule JustBash.FlagParser do
   end
 
   defp take_cluster_value(flag_atom, _char, attached, remaining, spec, flags) do
-    {:ok, put_flag(flags, flag_atom, parse_value(attached, flag_atom, spec), spec), remaining}
+    with {:ok, value} <- parse_value(attached, flag_atom, spec) do
+      {:ok, put_flag(flags, flag_atom, value, spec), remaining}
+    end
   end
 
   defp take_value(flag_atom, _flag_str, [raw | rest], spec, flags) do
-    {:ok, put_flag(flags, flag_atom, parse_value(raw, flag_atom, spec), spec), rest}
+    with {:ok, value} <- parse_value(raw, flag_atom, spec) do
+      {:ok, put_flag(flags, flag_atom, value, spec), rest}
+    end
   end
 
   defp take_value(_flag_atom, flag_str, [], _spec, _flags) do
@@ -232,13 +251,26 @@ defmodule JustBash.FlagParser do
   end
 
   # Only a flag declared `:integer` is a count. Coercing every value that looks
-  # like one made `sort -t 1` a delimiter of `1` rather than `"1"`.
+  # like one made `sort -t 1` a delimiter of `1` rather than `"1"`; handing back
+  # a count that is not a number made `head -n abc` raise out of `Enum.take/2`.
   defp parse_value(value, flag_atom, spec) do
-    with true <- flag_atom in Map.get(spec, :integer, []),
-         {num, ""} <- Integer.parse(value) do
-      num
+    if flag_atom in Map.get(spec, :integer, []) do
+      parse_count(value, flag_atom, spec)
     else
-      _ -> value
+      {:ok, value}
     end
+  end
+
+  defp parse_count(value, flag_atom, spec) do
+    case Integer.parse(value) do
+      {count, ""} -> {:ok, count}
+      _ -> {:error, {:invalid_value, value_label(flag_atom, spec), value}}
+    end
+  end
+
+  # A spec that declares `:integer` without saying what is being counted cannot
+  # word the error, and that is a bug in the spec, not in the input.
+  defp value_label(flag_atom, spec) do
+    spec |> Map.fetch!(:value_labels) |> Map.fetch!(flag_atom)
   end
 end

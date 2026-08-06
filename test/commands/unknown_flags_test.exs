@@ -232,6 +232,60 @@ defmodule JustBash.Commands.UnknownFlagsTest do
     end
   end
 
+  # `head -n abc` used to reach Enum.take/2 with a binary and raise a
+  # FunctionClauseError straight out of JustBash.exec/2, and `head -c xy`
+  # quietly printed the whole file. A flag declared :integer is a count.
+  describe "a count that is not a number" do
+    test "head rejects a non-numeric line count the way GNU words it" do
+      {result, _} = JustBash.exec(bash(), "head -n abc /f.txt")
+
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr == "head: invalid number of lines: 'abc'\n"
+    end
+
+    # `-nq` is `-n q`: an unimplemented head flag clustered after a value flag
+    # is that flag's argument, and it is not a number.
+    test "head rejects a cluster whose attached count is not a number" do
+      {result, _} = JustBash.exec(bash(), "head -nq /f.txt")
+
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr == "head: invalid number of lines: 'q'\n"
+    end
+
+    test "head rejects an empty count" do
+      {result, _} = JustBash.exec(bash(), "head -n '' /f.txt")
+
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr == "head: invalid number of lines: ''\n"
+    end
+
+    test "head rejects a non-numeric byte count instead of printing everything" do
+      {result, _} = JustBash.exec(bash(), "head -c xy /f.txt")
+
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr == "head: invalid number of bytes: 'xy'\n"
+    end
+
+    test "tail rejects a non-numeric line count" do
+      {result, _} = JustBash.exec(bash(), "tail -n abc /f.txt")
+
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr == "tail: invalid number of lines: 'abc'\n"
+    end
+
+    test "a count that is a number is still a count" do
+      {result, _} = JustBash.exec(bash(), "head -n 2 /f.txt")
+
+      assert result.exit_code == 0
+      assert result.stdout == "a\nb\n"
+    end
+  end
+
   describe "flag values are not coerced" do
     # `parse_value/1` used to turn every integer-looking value into an integer,
     # so `sort -t 1` handed String.split/2 the number 1 and crashed the shell.

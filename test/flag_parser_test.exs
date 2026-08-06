@@ -213,10 +213,25 @@ defmodule JustBash.FlagParserTest do
       assert {:ok, %{c: 12}, []} = FlagParser.parse(["-c12"], spec)
     end
 
-    test "leaves a non-numeric value alone even when declared :integer" do
-      spec = %{boolean: [], value: [:c], integer: [:c], defaults: %{c: nil}}
+    # Handing the string back to a caller that just declared the flag numeric
+    # is how `head -n abc` reached Enum.take/2 and raised out of exec/2.
+    test "rejects a value declared :integer that is not a number" do
+      spec = %{
+        boolean: [],
+        value: [:c],
+        integer: [:c],
+        value_labels: %{c: "number of bytes"},
+        defaults: %{c: nil}
+      }
 
-      assert {:ok, %{c: "all"}, []} = FlagParser.parse(["-c", "all"], spec)
+      assert {:error, {:invalid_value, "number of bytes", "all"}} =
+               FlagParser.parse(["-c", "all"], spec)
+
+      assert {:error, {:invalid_value, "number of bytes", "12x"}} =
+               FlagParser.parse(["-c12x"], spec)
+
+      assert {:error, {:invalid_value, "number of bytes", ""}} =
+               FlagParser.parse(["-c", ""], spec)
     end
 
     test "accumulates multi-value flags as strings" do
@@ -243,6 +258,15 @@ defmodule JustBash.FlagParserTest do
 
       assert FlagParser.format_error("head", {:missing_value, "--lines"}, "") ==
                "head: option '--lines' requires an argument\n"
+    end
+
+    # GNU prints no `Try --help` line for a bad count, so neither do we.
+    test "words a bad count the way GNU does" do
+      assert FlagParser.format_error(
+               "head",
+               {:invalid_value, "number of lines", "abc"},
+               "usage\n"
+             ) == "head: invalid number of lines: 'abc'\n"
     end
   end
 end

@@ -10,6 +10,7 @@ defmodule JustBash.Commands.Head do
     boolean: [],
     value: [:n, :c],
     integer: [:n, :c],
+    value_labels: %{n: "number of lines", c: "number of bytes"},
     defaults: %{n: 10, c: nil}
   }
 
