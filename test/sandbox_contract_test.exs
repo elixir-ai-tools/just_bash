@@ -63,6 +63,15 @@ defmodule JustBash.SandboxContractTest do
     end
   end
 
+  # A telemetry handler is global, so other async modules hit it too; only the
+  # commands this module drives are forwarded to the waiting test.
+  def forward_exception(event, measurements, %{command: command} = metadata, test_pid)
+      when command in ["cat", "boom", "echo"] do
+    send(test_pid, {:telemetry, event, measurements, metadata})
+  end
+
+  def forward_exception(_event, _measurements, _metadata, _test_pid), do: :ok
+
   defp probe_bash(opts \\ []) do
     JustBash.new(
       [commands: %{"boom" => Boom, "wreck" => Wreck, "wreck-env" => WreckEnv, "spin" => Spin}] ++
@@ -188,14 +197,8 @@ defmodule JustBash.SandboxContractTest do
       :telemetry.attach(
         handler,
         [:just_bash, :command, :exception],
-        fn event, measurements, metadata, _config ->
-          # Other async modules share this global handler; only forward the
-          # commands this module drives.
-          if metadata.command in ["cat", "boom", "echo"] do
-            send(test_pid, {:telemetry, event, measurements, metadata})
-          end
-        end,
-        nil
+        &__MODULE__.forward_exception/4,
+        test_pid
       )
 
       on_exit(fn -> :telemetry.detach(handler) end)
