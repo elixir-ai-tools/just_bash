@@ -163,6 +163,21 @@ defmodule JustBash.CLI.BuilderTest do
       end
     end
 
+    test "raises naming a duplicated flag-spec key as a duplicate, not as unknown" do
+      err =
+        assert_raise ArgumentError, fn ->
+          CLI.command("x",
+            flags: [n: [type: :integer, type: :string]],
+            run: fn i -> {ok(), i.bash} end
+          )
+        end
+
+      message = Exception.message(err)
+
+      assert message =~ "duplicate flag option :type"
+      refute message =~ "unknown flag option"
+    end
+
     test "accepts a flag :aliases list and keeps :long canonical" do
       cmd =
         CLI.command("x",

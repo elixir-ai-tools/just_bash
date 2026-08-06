@@ -954,14 +954,35 @@ defmodule JustBash.CLI do
   end
 
   defp validate_flag_keys!(name, flag_name, spec) do
-    case Keyword.keys(spec) -- @flag_spec_keys do
-      [] ->
+    validate_spec_keys!(
+      "command #{inspect(name)} flag #{inspect(flag_name)}",
+      "flag option",
+      Keyword.keys(spec),
+      @flag_spec_keys
+    )
+  end
+
+  # The unknown/duplicate key guard shared by every spec the builder accepts. Both failures
+  # are the same silent drop: an unrecognized key is never read, so a typo (or an imagined
+  # feature) behaves exactly like a key that works, and a duplicated key is dropped by
+  # `Keyword` access, which returns only the first value. `Enum.uniq/1` before the subtraction
+  # matters because list subtraction removes one occurrence per element — without it a legally
+  # duplicated *valid* key survives and gets reported as unknown, in a message that lists it
+  # as valid in the same sentence.
+  defp validate_spec_keys!(context, label, keys, allowed) do
+    unique = Enum.uniq(keys)
+
+    case {unique -- allowed, keys -- unique} do
+      {[], []} ->
         :ok
 
-      [unknown | _rest] ->
+      {[unknown | _rest], _duplicates} ->
         raise ArgumentError,
-              "command #{inspect(name)} flag #{inspect(flag_name)}: unknown flag option " <>
-                "#{inspect(unknown)}; valid options are #{inspect(@flag_spec_keys)}"
+              "#{context}: unknown #{label} #{inspect(unknown)}; " <>
+                "valid options are #{inspect(allowed)}"
+
+      {[], [duplicate | _rest]} ->
+        raise ArgumentError, "#{context}: duplicate #{label} #{inspect(duplicate)}"
     end
   end
 
