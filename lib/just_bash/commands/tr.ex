@@ -27,7 +27,16 @@ defmodule JustBash.Commands.Tr do
   end
 
   defp parse_args([], %{sets: []} = _opts) do
-    {:error, "tr: missing operand\n"}
+    {:error, "tr: missing operand\n" <> @try_help}
+  end
+
+  # One set is enough to delete or squeeze, but translating needs somewhere to
+  # translate to. Falling through to `run/2`'s catch-all answered with empty
+  # output at exit 0 - the failure this command's flag handling exists to stop.
+  defp parse_args([], %{delete: false, squeeze: false, sets: [set]}) do
+    {:error,
+     "tr: missing operand after '#{set}'\n" <>
+       "Two strings must be given when translating.\n" <> @try_help}
   end
 
   defp parse_args([], opts) do

@@ -230,6 +230,37 @@ defmodule JustBash.Commands.UnknownFlagsTest do
       assert result.exit_code == 0
       assert result.stdout == "a_b\n"
     end
+
+    # Translating needs two sets. One set and no -d/-s used to fall past every
+    # `run/2` head into the catch-all that answers "", so `tr -- -d` reported
+    # success with the input silently dropped - the failure this file exists
+    # to keep out.
+    test "one set with nothing to translate to is a missing operand" do
+      {result, _} = JustBash.exec(bash(), "echo abc | tr -- -d")
+
+      assert result.exit_code == 1
+      assert result.stdout == ""
+
+      assert result.stderr ==
+               "tr: missing operand after '-d'\n" <>
+                 "Two strings must be given when translating.\n" <>
+                 "Try 'tr --help' for more information.\n"
+    end
+
+    test "one ordinary set with nothing to translate to is a missing operand" do
+      {result, _} = JustBash.exec(bash(), "echo abc | tr x")
+
+      assert result.exit_code == 1
+      assert result.stdout == ""
+      assert result.stderr =~ "tr: missing operand after 'x'\n"
+    end
+
+    test "one set is enough when it is being deleted" do
+      {result, _} = JustBash.exec(bash(), "echo abc | tr -d b")
+
+      assert result.exit_code == 0
+      assert result.stdout == "ac\n"
+    end
   end
 
   # `head -n abc` used to reach Enum.take/2 with a binary and raise a
