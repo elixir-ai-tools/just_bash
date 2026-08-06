@@ -447,7 +447,9 @@ defmodule JustBash.SandboxContractTest do
       assert result.exit_code == 1
       assert result.stderr =~ "execution wall clock limit exceeded (30 ms)"
       assert final.interpreter.step_count < 10_000_000
-      assert elapsed_us < 2_000_000
+      # On the order of the bound it guards, not 66x it: a deadline that fired
+      # sixty times late must not pass.
+      assert elapsed_us < 300_000
     end
 
     test "a script that finishes inside the budget is untouched" do
@@ -459,21 +461,44 @@ defmodule JustBash.SandboxContractTest do
     end
 
     test "the deadline is rearmed for each top-level exec" do
-      bash = probe_bash(limits: [max_wall_ms: 200])
+      # Six execs of ~55 ms against a 200 ms budget. Each one on its own is
+      # comfortably inside the budget, so the run only stays green if every
+      # exec starts a fresh one — arming once and never refreshing runs out
+      # partway through.
+      bash = probe_bash(limits: [max_wall_ms: 200, max_steps: 10_000_000])
 
-      {result, bash} = JustBash.exec(bash, "spin; spin; echo one")
-      assert result.stdout == "one\n"
+      Enum.reduce(1..6, bash, fn i, bash ->
+        {result, bash} = JustBash.exec(bash, "spin; spin; spin; spin; spin; echo #{i}")
 
-      {result, _bash} = JustBash.exec(bash, "spin; spin; echo two")
-      assert result.stdout == "two\n"
+        assert result.exit_code == 0, "exec #{i}: #{result.stderr}"
+        assert result.stdout == "#{i}\n"
+        bash
+      end)
+    end
+
+    test "each exec's deadline is a later instant than the previous one's" do
+      # The structural half of the same guarantee, immune to how fast the
+      # machine is: rearming must move `at_ms` forward.
+      bash = probe_bash(limits: [max_wall_ms: 5_000])
+
+      {_result, first} = JustBash.exec(bash, "echo one")
+      Process.sleep(5)
+      {_result, second} = JustBash.exec(first, "echo two")
+
+      assert second.interpreter.deadline.at_ms > first.interpreter.deadline.at_ms
     end
 
     test "limits: false disables the wall clock too" do
       bash = probe_bash(limits: false)
-      {result, _bash} = JustBash.exec(bash, "spin; echo ok")
+      {result, bash} = JustBash.exec(bash, "spin; echo ok")
 
       assert result.exit_code == 0
       assert result.stdout == "ok\n"
+      # Structural, because 10 ms of work passes under any non-degenerate
+      # budget: `Limit.deadline(nil)` must not quietly hand back a
+      # default-budget deadline.
+      assert bash.limits == nil
+      assert bash.interpreter.deadline == nil
     end
 
     test "rejects a non-positive value like every other bound" do
