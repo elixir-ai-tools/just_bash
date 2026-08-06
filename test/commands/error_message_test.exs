@@ -9,6 +9,13 @@ defmodule JustBash.Commands.ErrorMessageTest do
   filesystem and the error kinds a path can fail with, enumerated rather than
   written one at a time — the point of #70 is that a matrix nobody wrote by
   hand is where the divergences hide.
+
+  Operand arity is part of that cross product. `head`, `tail` and `wc` each
+  have a single-file arm and a reduce over several files, and `sha256sum` and
+  `shasum` have a third arm behind `-c`; with every row pinned to one operand,
+  five of the sites this sweep exists to fix could be reverted with the suite
+  still green. Rows that name two operands, or a checksum file, are there to
+  reach them.
   """
   use ExUnit.Case, async: true
 
@@ -70,7 +77,24 @@ defmodule JustBash.Commands.ErrorMessageTest do
     {"cp PATH /dest", @stat_kinds, :stderr, "cp: cannot stat 'PATH': MSG\n"},
     {"file PATH", @stat_kinds, :stdout, "PATH: cannot open (MSG)\n"},
     # -b suppresses the filename prefix, not the reason.
-    {"file -b PATH", @stat_kinds, :stdout, "cannot open (MSG)\n"}
+    {"file -b PATH", @stat_kinds, :stdout, "cannot open (MSG)\n"},
+
+    # Operand arity is an axis of this matrix, not a constant. head, tail and
+    # wc each have a single-file arm and a reduce over several files, and the
+    # sweep changed both; a one-operand invocation can never reach the second.
+    {"head PATH /f", @stat_kinds, :stderr, "head: cannot open 'PATH' for reading: MSG\n"},
+    {"head PATH /f", [:eisdir], :stderr, "head: error reading 'PATH': MSG\n"},
+    {"tail PATH /f", @stat_kinds, :stderr, "tail: cannot open 'PATH' for reading: MSG\n"},
+    {"tail PATH /f", [:eisdir], :stderr, "tail: error reading 'PATH': MSG\n"},
+    {"wc PATH /f", @read_kinds, :stderr, "wc: PATH: MSG\n"},
+
+    # -c is a third arm again: one site for the checksum file itself, another
+    # for each target it names.
+    {"sha256sum -c PATH", @read_kinds, :stderr, "sha256sum: PATH: MSG\n"},
+    {"shasum -c PATH", @read_kinds, :stderr, "shasum: PATH: MSG\n"},
+    {"echo '0  PATH' > /sums; sha256sum -c /sums", @read_kinds, :stderr,
+     "sha256sum: PATH: MSG\n"},
+    {"echo '0  PATH' > /sums; shasum -c /sums", @read_kinds, :stderr, "shasum: PATH: MSG\n"}
   ]
 
   @strerror %{
