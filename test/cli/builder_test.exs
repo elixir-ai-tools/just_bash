@@ -255,6 +255,33 @@ defmodule JustBash.CLI.BuilderTest do
       end
     end
 
+    test "raises when two flags claim the same long form" do
+      assert_raise ArgumentError, ~r/long form "--dup" collides/, fn ->
+        CLI.command("x",
+          flags: [a: [type: :string, long: "--dup"], b: [type: :string, long: "--dup"]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises when two flag names derive the same long form" do
+      assert_raise ArgumentError, ~r/long form "--dry-run" collides/, fn ->
+        CLI.command("x",
+          flags: [dry_run: [type: :boolean], "dry-run": [type: :boolean]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
+    test "raises when two flags claim the same short form" do
+      assert_raise ArgumentError, ~r/short form "-x" collides/, fn ->
+        CLI.command("x",
+          flags: [a: [type: :boolean, short: "-x"], b: [type: :boolean, short: "-x"]],
+          run: fn i -> {ok(), i.bash} end
+        )
+      end
+    end
+
     test "raises on flags that are not a keyword list" do
       assert_raise ArgumentError, ~r/:flags must be a keyword list/, fn ->
         CLI.command("x", flags: %{not: :keyword}, run: fn i -> {ok(), i.bash} end)

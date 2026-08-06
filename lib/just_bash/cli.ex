@@ -53,7 +53,9 @@ defmodule JustBash.CLI do
       so the default could never apply).
     * a `:default` must be a member of `:values` when both are given (the enum check only
       runs on flags the user actually provides, so an out-of-range default would slip past it).
-    * an alias must start with `--` and may not collide with another flag's long form or alias.
+    * an alias must start with `--`, and no two flags may share a long form, an alias, or a
+      short form — the parser indexes them into one map, so a collision would silently bind
+      the wrong flag.
 
   ## Flag aliases
 
@@ -909,7 +911,7 @@ defmodule JustBash.CLI do
         {flag_name, spec}
       end)
 
-    validate_alias_collisions!(name, flags)
+    validate_flag_collisions!(name, flags)
     flags
   end
 
@@ -995,27 +997,42 @@ defmodule JustBash.CLI do
             "strings, got: #{inspect(other)}"
   end
 
-  # Two flags claiming the same long form would resolve to whichever the parser indexed last,
-  # silently binding the wrong flag. Aliases make that easy to do by accident, so every alias
-  # must be distinct from every long form and every other alias on the command.
-  defp validate_alias_collisions!(name, flags) do
-    longs = for {_flag_name, spec} <- flags, spec[:long], do: spec[:long]
-    aliased = for {flag_name, spec} <- flags, form <- spec[:aliases] || [], do: {flag_name, form}
+  # Two flags claiming the same spelling would resolve to whichever the parser indexed last
+  # (`build_flag_maps/1` is a last-write-wins reduce), silently binding the wrong flag. Every
+  # long form and alias on a command must therefore be distinct from each other, and every
+  # short form distinct from every other short form. Longs go first so a collision between a
+  # long form and an alias is reported against the alias, which is the form that moved.
+  defp validate_flag_collisions!(name, flags) do
+    longs = for {flag_name, spec} <- flags, spec[:long], do: {flag_name, :long, spec[:long]}
+    shorts = for {flag_name, spec} <- flags, spec[:short], do: {flag_name, :short, spec[:short]}
 
-    do_validate_alias_collisions!(name, aliased, longs)
+    aliased =
+      for {flag_name, spec} <- flags, form <- spec[:aliases] || [], do: {flag_name, :alias, form}
+
+    do_validate_flag_collisions!(name, longs ++ aliased, [])
+    do_validate_flag_collisions!(name, shorts, [])
   end
 
-  defp do_validate_alias_collisions!(_name, [], _taken), do: :ok
+  defp do_validate_flag_collisions!(_name, [], _taken), do: :ok
 
-  defp do_validate_alias_collisions!(name, [{flag_name, form} | rest], taken) do
+  defp do_validate_flag_collisions!(name, [{flag_name, kind, form} | rest], taken) do
     if form in taken do
       raise ArgumentError,
-            "command #{inspect(name)} flag #{inspect(flag_name)}: alias #{inspect(form)} " <>
-              "collides with an existing flag long form or alias"
+            "command #{inspect(name)} flag #{inspect(flag_name)}: " <>
+              collision_message(kind, form)
     end
 
-    do_validate_alias_collisions!(name, rest, [form | taken])
+    do_validate_flag_collisions!(name, rest, [form | taken])
   end
+
+  defp collision_message(:long, form),
+    do: "long form #{inspect(form)} collides with an existing flag long form or alias"
+
+  defp collision_message(:alias, form),
+    do: "alias #{inspect(form)} collides with an existing flag long form or alias"
+
+  defp collision_message(:short, form),
+    do: "short form #{inspect(form)} collides with an existing flag short form"
 
   defp validate_default_in_values!(name, flag_name, spec) do
     with {:ok, default} <- Keyword.fetch(spec, :default),
