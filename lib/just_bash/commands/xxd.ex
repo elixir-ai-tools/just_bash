@@ -56,7 +56,7 @@ defmodule JustBash.Commands.Xxd do
 
     case FS.read_file(bash.fs, resolved) do
       {:ok, c, fs} -> {:ok, c, %{bash | fs: fs}}
-      {:error, _} -> {:error, "xxd: #{file}: No such file or directory\n"}
+      {:error, error} -> {:error, "xxd: #{file}: #{FS.strerror(error)}\n"}
     end
   end
 

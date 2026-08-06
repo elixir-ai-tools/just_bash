@@ -109,7 +109,7 @@ defmodule JustBash.Commands.Mv do
         {Command.ok(), %{bash | fs: new_fs}}
 
       {:error, %VFS.Error{kind: :enoent}} ->
-        {Command.error("mv: cannot stat '#{src}': No such file or directory\n"), bash}
+        {Command.error("mv: cannot stat '#{src}': #{FS.strerror(:enoent)}\n"), bash}
 
       {:error, %VFS.Error{kind: :eisdir}} ->
         {Command.error("mv: cannot overwrite directory '#{dest}' with non-directory\n"), bash}

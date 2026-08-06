@@ -99,7 +99,7 @@ defmodule JustBash.Commands.Base64 do
 
     case FS.read_file(fs, resolved) do
       {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
-      {:error, _} -> {:halt, {:error, "base64: #{file}: No such file or directory\n"}}
+      {:error, error} -> {:halt, {:error, "base64: #{file}: #{FS.strerror(error)}\n"}}
     end
   end
 

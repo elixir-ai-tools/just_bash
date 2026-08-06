@@ -46,8 +46,8 @@ defmodule JustBash.Commands.File do
         line = format_success_line(opts, file, type_info)
         {acc_out <> line, acc_code, fs}
 
-      {:error, _} ->
-        line = format_error_line(opts, file)
+      {:error, error} ->
+        line = format_error_line(opts, file, error)
         {acc_out <> line, 1, fs}
     end
   end
@@ -65,11 +65,11 @@ defmodule JustBash.Commands.File do
     if opts.brief, do: "#{result}\n", else: "#{file}: #{result}\n"
   end
 
-  defp format_error_line(opts, file) do
+  defp format_error_line(opts, file, error) do
     if opts.brief do
       "cannot open\n"
     else
-      "#{file}: cannot open (No such file or directory)\n"
+      "#{file}: cannot open (#{FS.strerror(error)})\n"
     end
   end
 
@@ -132,12 +132,12 @@ defmodule JustBash.Commands.File do
           {:ok, content, fs} ->
             {:ok, detect_content_type(content, filename), fs}
 
-          {:error, _} ->
-            {:error, :read_error}
+          {:error, error} ->
+            {:error, error}
         end
 
-      {:error, _} ->
-        {:error, :not_found}
+      {:error, error} ->
+        {:error, error}
     end
   end
 

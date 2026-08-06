@@ -664,8 +664,8 @@ defmodule JustBash do
       {:ok, script, fs} ->
         exec(%{bash | fs: fs}, script)
 
-      {:error, _reason} ->
-        error_msg = "#{path}: No such file or directory\n"
+      {:error, error} ->
+        error_msg = "#{path}: #{FS.strerror(error)}\n"
         {%{stdout: "", stderr: error_msg, exit_code: 1, env: bash.env}, bash}
     end
   end

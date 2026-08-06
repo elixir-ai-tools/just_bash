@@ -187,11 +187,11 @@ defmodule JustBash.Commands.Ln do
   end
 
   defp handle_link_result(_bash, {:error, %VFS.Error{kind: :enoent}}, target, _link_name, _opts) do
-    {:error, "ln: failed to access '#{target}': No such file or directory\n"}
+    {:error, "ln: failed to access '#{target}': #{FS.strerror(:enoent)}\n"}
   end
 
   defp handle_link_result(_bash, {:error, :enoent}, target, _link_name, _opts) do
-    {:error, "ln: failed to access '#{target}': No such file or directory\n"}
+    {:error, "ln: failed to access '#{target}': #{FS.strerror(:enoent)}\n"}
   end
 
   defp handle_link_result(_bash, {:error, %VFS.Error{kind: :eacces}}, target, _link_name, _opts) do

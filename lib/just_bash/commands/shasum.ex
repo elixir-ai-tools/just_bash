@@ -66,8 +66,8 @@ defmodule JustBash.Commands.Shasum do
             hash = :crypto.hash(algorithm, content) |> Base.encode16(case: :lower)
             {out <> "#{hash}  #{file}\n", err, code, new_fs}
 
-          {:error, _} ->
-            {out, err <> "shasum: #{file}: No such file or directory\n", 1, fs}
+          {:error, error} ->
+            {out, err <> "shasum: #{file}: #{FS.strerror(error)}\n", 1, fs}
         end
       end)
 
@@ -83,8 +83,8 @@ defmodule JustBash.Commands.Shasum do
           {:ok, content, new_fs} ->
             verify_checksum_file(bash, algorithm, content, out, err, code, new_fs)
 
-          {:error, _} ->
-            {out, err <> "shasum: #{file}: No such file or directory\n", 1, fs}
+          {:error, error} ->
+            {out, err <> "shasum: #{file}: #{FS.strerror(error)}\n", 1, fs}
         end
       end)
 
@@ -117,8 +117,8 @@ defmodule JustBash.Commands.Shasum do
           do: {o <> "#{trimmed}: OK\n", e, c, new_fs},
           else: {o <> "#{trimmed}: FAILED\n", e, 1, new_fs}
 
-      {:error, _} ->
-        {o, e <> "shasum: #{trimmed}: No such file or directory\n", 1, f}
+      {:error, error} ->
+        {o, e <> "shasum: #{trimmed}: #{FS.strerror(error)}\n", 1, f}
     end
   end
 end

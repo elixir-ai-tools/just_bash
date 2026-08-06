@@ -52,8 +52,8 @@ defmodule JustBash.Commands.Sha256sum do
             hash = :crypto.hash(:sha256, content) |> Base.encode16(case: :lower)
             {out <> "#{hash}  #{file}\n", err, code, new_fs}
 
-          {:error, _} ->
-            {out, err <> "sha256sum: #{file}: No such file or directory\n", 1, fs}
+          {:error, error} ->
+            {out, err <> "sha256sum: #{file}: #{FS.strerror(error)}\n", 1, fs}
         end
       end)
 
@@ -69,8 +69,8 @@ defmodule JustBash.Commands.Sha256sum do
           {:ok, content, new_fs} ->
             verify_checksum_file(bash, content, out, err, code, new_fs)
 
-          {:error, _} ->
-            {out, err <> "sha256sum: #{file}: No such file or directory\n", 1, fs}
+          {:error, error} ->
+            {out, err <> "sha256sum: #{file}: #{FS.strerror(error)}\n", 1, fs}
         end
       end)
 
@@ -110,8 +110,8 @@ defmodule JustBash.Commands.Sha256sum do
           do: {o <> "#{trimmed}: OK\n", e, c, new_fs},
           else: {o <> "#{trimmed}: FAILED\n", e, 1, new_fs}
 
-      {:error, _} ->
-        {o, e <> "#{cmd_name}: #{trimmed}: No such file or directory\n", 1, f}
+      {:error, error} ->
+        {o, e <> "#{cmd_name}: #{trimmed}: #{FS.strerror(error)}\n", 1, f}
     end
   end
 end

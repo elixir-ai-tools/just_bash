@@ -95,7 +95,7 @@ defmodule JustBash.Commands.Jq do
 
     case FS.read_file(bash.fs, resolved) do
       {:ok, content, fs} -> {:ok, content, %{bash | fs: fs}}
-      {:error, _} -> {:error, "jq: #{file}: No such file or directory\n"}
+      {:error, error} -> {:error, "jq: #{file}: #{FS.strerror(error)}\n"}
     end
   end
 

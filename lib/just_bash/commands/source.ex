@@ -28,20 +28,12 @@ defmodule JustBash.Commands.Source do
           {:ok, content, fs} ->
             execute_script_content(%{bash | fs: fs}, content)
 
-          {:error, %VFS.Error{kind: :enoent}} ->
+          {:error, error} ->
             {%{
                stdout: "",
-               stderr: "bash: source: #{filename}: No such file or directory\n",
+               stderr: "bash: source: #{filename}: #{FS.strerror(error)}\n",
                exit_code: 1
              }, bash}
-
-          {:error, %VFS.Error{kind: :eisdir}} ->
-            {%{stdout: "", stderr: "bash: source: #{filename}: Is a directory\n", exit_code: 1},
-             bash}
-
-          {:error, _reason} ->
-            {%{stdout: "", stderr: "bash: source: #{filename}: cannot read\n", exit_code: 1},
-             bash}
         end
     end
   end

@@ -55,8 +55,8 @@ defmodule JustBash.Commands.Head do
             body = take_content(content, mode)
             {[header <> body | out_acc], err_acc, code, fs}
 
-          {:error, _} ->
-            err = "head: cannot open '#{file}' for reading: No such file or directory\n"
+          {:error, error} ->
+            err = "head: cannot open '#{file}' for reading: #{FS.strerror(error)}\n"
             {out_acc, [err | err_acc], 1, fs}
         end
       end)
@@ -75,9 +75,8 @@ defmodule JustBash.Commands.Head do
         output = take_content(content, mode)
         {Command.ok(output), %{bash | fs: fs}}
 
-      {:error, _} ->
-        {Command.error("head: cannot open '#{file}' for reading: No such file or directory\n"),
-         bash}
+      {:error, error} ->
+        {Command.error("head: cannot open '#{file}' for reading: #{FS.strerror(error)}\n"), bash}
     end
   end
 

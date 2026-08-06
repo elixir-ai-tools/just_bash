@@ -23,9 +23,6 @@ defmodule JustBash.Commands.Rm do
           {:error, %VFS.Error{kind: :enoent}} when flags.f ->
             {err_acc, code_acc, fs_acc}
 
-          {:error, %VFS.Error{kind: :enoent}} ->
-            {err_acc <> "rm: cannot remove '#{path}': No such file or directory\n", 1, fs_acc}
-
           {:error, %VFS.Error{} = error} ->
             {err_acc <> "rm: cannot remove '#{path}': #{FS.strerror(error)}\n", 1, fs_acc}
         end

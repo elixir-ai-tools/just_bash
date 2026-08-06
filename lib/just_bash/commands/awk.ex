@@ -177,7 +177,7 @@ defmodule JustBash.Commands.Awk do
 
         case FS.read_file(fs, resolved) do
           {:ok, content, fs} -> {:cont, {:ok, acc ++ [{resolved, content}], fs}}
-          {:error, _} -> {:halt, {:error, "awk: #{file}: No such file or directory\n"}}
+          {:error, error} -> {:halt, {:error, "awk: #{file}: #{FS.strerror(error)}\n"}}
         end
       end)
 

@@ -191,7 +191,7 @@ defmodule JustBash.Commands.Cp do
   end
 
   defp copy_one(bash, "", _dest, _opts),
-    do: {Command.error("cp: cannot stat '': No such file or directory\n"), bash}
+    do: {Command.error("cp: cannot stat '': #{FS.strerror(:enoent)}\n"), bash}
 
   defp copy_one(bash, src, "", opts), do: empty_dest(bash, src, opts)
 
@@ -425,13 +425,13 @@ defmodule JustBash.Commands.Cp do
   end
 
   defp empty_dest_error(:directory, %Options{mode: :recursive}),
-    do: Command.error("cp: cannot create directory '': No such file or directory\n")
+    do: Command.error("cp: cannot create directory '': #{FS.strerror(:enoent)}\n")
 
   defp empty_dest_error(:directory, %Options{mode: :shallow}),
     do: Command.error("cp: -r not specified; omitting directory ''\n")
 
   defp empty_dest_error(:file, _opts),
-    do: Command.error("cp: cannot create regular file '': No such file or directory\n")
+    do: Command.error("cp: cannot create regular file '': #{FS.strerror(:enoent)}\n")
 
   # The destination of a copy into a directory, spelled the way bash spells it
   # in messages: the directory operand with the source's basename appended. The

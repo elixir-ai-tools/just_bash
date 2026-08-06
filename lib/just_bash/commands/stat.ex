@@ -44,8 +44,13 @@ defmodule JustBash.Commands.Stat do
     {acc_out <> out, acc_err, acc_has_err, fs}
   end
 
-  defp accumulate_stat_result({:error, _}, file, _format, {acc_out, acc_err, _acc_has_err, fs}) do
-    err = "stat: cannot stat '#{file}': No such file or directory\n"
+  defp accumulate_stat_result(
+         {:error, error},
+         file,
+         _format,
+         {acc_out, acc_err, _acc_has_err, fs}
+       ) do
+    err = "stat: cannot stat '#{file}': #{FS.strerror(error)}\n"
     {acc_out, acc_err <> err, true, fs}
   end
 

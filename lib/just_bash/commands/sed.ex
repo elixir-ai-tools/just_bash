@@ -176,8 +176,8 @@ defmodule JustBash.Commands.Sed do
             output = Executor.execute(content, commands, opts.silent)
             {:cont, {:ok, acc <> output, fs}}
 
-          {:error, _} ->
-            {:halt, {:error, "sed: #{file}: No such file or directory\n"}}
+          {:error, error} ->
+            {:halt, {:error, "sed: #{file}: #{FS.strerror(error)}\n"}}
         end
       end)
 
@@ -221,8 +221,8 @@ defmodule JustBash.Commands.Sed do
       {:ok, content, fs} ->
         write_processed_content(%{bash | fs: fs}, resolved, file, content, commands, opts)
 
-      {:error, _} ->
-        {:halt, {:error, "sed: #{file}: No such file or directory\n"}}
+      {:error, error} ->
+        {:halt, {:error, "sed: #{file}: #{FS.strerror(error)}\n"}}
     end
   end
 

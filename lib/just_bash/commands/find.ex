@@ -161,8 +161,8 @@ defmodule JustBash.Commands.Find do
         children = find_children(fs, full_path, display_path, stat, opts, depth)
         {:ok, current ++ children}
 
-      {:error, _} ->
-        {:error, "find: #{display_path}: No such file or directory\n"}
+      {:error, error} ->
+        {:error, "find: #{display_path}: #{FS.strerror(error)}\n"}
     end
   end
 

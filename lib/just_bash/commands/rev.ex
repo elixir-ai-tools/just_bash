@@ -35,7 +35,7 @@ defmodule JustBash.Commands.Rev do
 
       case FS.read_file(fs, resolved) do
         {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
-        {:error, _} -> {:halt, {:error, "rev: #{file}: No such file or directory\n"}}
+        {:error, error} -> {:halt, {:error, "rev: #{file}: #{FS.strerror(error)}\n"}}
       end
     end)
   end

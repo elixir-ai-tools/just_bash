@@ -114,8 +114,8 @@ defmodule JustBash.Commands.Du do
       {:ok, %VFS.Stat{size: size}, _fs} ->
         calculate_file_size(size, display_path, opts, depth)
 
-      {:error, _} ->
-        {:error, "du: cannot access '#{display_path}': No such file or directory\n"}
+      {:error, error} ->
+        {:error, "du: cannot access '#{display_path}': #{FS.strerror(error)}\n"}
     end
   end
 

@@ -24,8 +24,8 @@ defmodule JustBash.Commands.Diff do
             {result, _} = compare_contents(content1, content2, file1, file2, opts)
             {result, bash}
           else
-            {:error, file} ->
-              {%{stdout: "", stderr: "diff: #{file}: No such file or directory\n", exit_code: 2},
+            {:error, {file, error}} ->
+              {%{stdout: "", stderr: "diff: #{file}: #{FS.strerror(error)}\n", exit_code: 2},
                bash}
           end
         end
@@ -91,7 +91,7 @@ defmodule JustBash.Commands.Diff do
 
     case FS.read_file(bash.fs, resolved) do
       {:ok, content, fs} -> {:ok, content, %{bash | fs: fs}}
-      {:error, _} -> {:error, file}
+      {:error, error} -> {:error, {file, error}}
     end
   end
 

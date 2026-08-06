@@ -35,8 +35,8 @@ defmodule JustBash.Commands.Wc do
         output = format_output(content, file, flags)
         {Command.ok(output), %{bash | fs: fs}}
 
-      {:error, _} ->
-        {Command.error("wc: #{file}: No such file or directory\n"), bash}
+      {:error, error} ->
+        {Command.error("wc: #{file}: #{FS.strerror(error)}\n"), bash}
     end
   end
 
@@ -62,8 +62,8 @@ defmodule JustBash.Commands.Wc do
             line = format_output(content, file, flags)
             {[line | out_acc], new_totals, err_acc, code, fs}
 
-          {:error, _} ->
-            err = "wc: #{file}: No such file or directory\n"
+          {:error, error} ->
+            err = "wc: #{file}: #{FS.strerror(error)}\n"
             {out_acc, totals, [err | err_acc], 1, fs}
         end
       end)

@@ -43,7 +43,7 @@ defmodule JustBash.Commands.Od do
 
     case FS.read_file(bash.fs, resolved) do
       {:ok, c, fs} -> {:ok, c, %{bash | fs: fs}}
-      {:error, _} -> {:error, "od: #{file}: No such file or directory\n"}
+      {:error, error} -> {:error, "od: #{file}: #{FS.strerror(error)}\n"}
     end
   end
 

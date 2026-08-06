@@ -48,8 +48,8 @@ defmodule JustBash.Commands.Chown do
           {:ok, _, new_fs} ->
             {err, code, new_fs}
 
-          {:error, _} ->
-            {err <> "chown: cannot access '#{path}': No such file or directory\n", 1, fs}
+          {:error, error} ->
+            {err <> "chown: cannot access '#{path}': #{FS.strerror(error)}\n", 1, fs}
         end
       end)
 

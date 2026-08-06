@@ -122,8 +122,8 @@ defmodule JustBash.Commands.Paste do
       {:ok, content, fs} ->
         {:ok, split_lines(content), fs, stdin_idx}
 
-      {:error, _} ->
-        {:error, "paste: #{file}: No such file or directory\n"}
+      {:error, error} ->
+        {:error, "paste: #{file}: #{FS.strerror(error)}\n"}
     end
   end
 

@@ -60,8 +60,8 @@ defmodule JustBash.Commands.Md5sum do
             hash = md5(content)
             {acc_out <> "#{hash}  #{file}\n", acc_code}
 
-          {:error, _} ->
-            {acc_out <> "md5sum: #{file}: No such file or directory\n", 1}
+          {:error, error} ->
+            {acc_out <> "md5sum: #{file}: #{FS.strerror(error)}\n", 1}
         end
       end)
 

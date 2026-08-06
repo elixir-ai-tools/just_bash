@@ -90,8 +90,8 @@ defmodule JustBash.Commands.Tree do
       {:ok, _stat, _fs} ->
         {:ok, "#{display_path}\n", 0, 1}
 
-      {:error, _} ->
-        {:error, "tree: #{display_path}: No such file or directory\n"}
+      {:error, error} ->
+        {:error, "tree: #{display_path}: #{FS.strerror(error)}\n"}
     end
   end
 

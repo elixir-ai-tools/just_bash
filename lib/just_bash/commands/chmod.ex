@@ -50,8 +50,8 @@ defmodule JustBash.Commands.Chmod do
           {:ok, _, new_fs} ->
             {err, code, new_fs}
 
-          {:error, _} ->
-            {err <> "chmod: cannot access '#{path}': No such file or directory\n", 1, fs}
+          {:error, error} ->
+            {err <> "chmod: cannot access '#{path}': #{FS.strerror(error)}\n", 1, fs}
         end
       end)
 

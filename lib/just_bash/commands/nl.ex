@@ -161,7 +161,7 @@ defmodule JustBash.Commands.Nl do
 
       case FS.read_file(fs, resolved) do
         {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
-        {:error, _} -> {:halt, {:error, "nl: #{file}: No such file or directory\n"}}
+        {:error, error} -> {:halt, {:error, "nl: #{file}: #{FS.strerror(error)}\n"}}
       end
     end)
   end

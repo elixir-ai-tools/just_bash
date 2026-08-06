@@ -30,8 +30,8 @@ defmodule JustBash.Commands.Realpath do
               {:ok, _stat, fs} ->
                 {[out, resolved, "\n"], err, code, fs}
 
-              {:error, _} ->
-                {out, [err, "realpath: ", path, ": No such file or directory\n"], 1, fs}
+              {:error, error} ->
+                {out, [err, "realpath: ", path, ": ", FS.strerror(error), "\n"], 1, fs}
             end
           end)
 

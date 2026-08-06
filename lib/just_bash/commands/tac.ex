@@ -35,7 +35,7 @@ defmodule JustBash.Commands.Tac do
 
       case FS.read_file(fs, resolved) do
         {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
-        {:error, _} -> {:halt, {:error, "tac: #{file}: No such file or directory\n"}}
+        {:error, error} -> {:halt, {:error, "tac: #{file}: #{FS.strerror(error)}\n"}}
       end
     end)
   end

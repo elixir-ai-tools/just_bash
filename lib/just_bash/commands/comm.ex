@@ -95,7 +95,7 @@ defmodule JustBash.Commands.Comm do
 
     case FS.read_file(fs, resolved) do
       {:ok, content, fs} -> {:ok, content, fs}
-      {:error, _} -> {:error, "comm: #{file}: No such file or directory\n"}
+      {:error, error} -> {:error, "comm: #{file}: #{FS.strerror(error)}\n"}
     end
   end
 

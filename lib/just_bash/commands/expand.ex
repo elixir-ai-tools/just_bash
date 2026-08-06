@@ -117,7 +117,7 @@ defmodule JustBash.Commands.Expand do
 
       case FS.read_file(fs, resolved) do
         {:ok, data, fs} -> {:cont, {:ok, acc <> data, fs}}
-        {:error, _} -> {:halt, {:error, "expand: #{file}: No such file or directory\n"}}
+        {:error, error} -> {:halt, {:error, "expand: #{file}: #{FS.strerror(error)}\n"}}
       end
     end)
   end
