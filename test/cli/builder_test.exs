@@ -428,5 +428,155 @@ defmodule JustBash.CLI.BuilderTest do
     end
   end
 
+  # The builder's key allowlists are load-bearing in the *strict* direction: any key missing
+  # from one turns a spec that works today into a build-time raise, and nothing else in the
+  # suite would notice — dropping `:transform` from the flag list left the whole suite green
+  # while breaking every downstream CLI that uses it. These tests enumerate each list rather
+  # than sampling it: every key is exercised positively, and the builder's own "valid options
+  # are" list is pinned to the enumeration, so a key added or dropped on either side goes red.
+  describe "spec key allowlists" do
+    @flag_spec_keys [
+      :type,
+      :short,
+      :long,
+      :aliases,
+      :default,
+      :required,
+      :values,
+      :transform,
+      :doc
+    ]
+
+    @command_opt_keys [
+      :doc,
+      :commands,
+      :run,
+      :flags,
+      :args,
+      :examples,
+      :validate,
+      :allow_unknown_flags,
+      :visible?,
+      :on_missing_subcommand
+    ]
+
+    @cli_opt_keys [:doc, :commands, :aliases, :on_missing_subcommand]
+
+    @arg_spec_keys [:name, :doc, :required, :variadic]
+
+    test "every flag-spec key is accepted on its own" do
+      for key <- @flag_spec_keys do
+        spec = Keyword.put([type: :string], key, flag_spec_value(key))
+
+        assert %Command{} =
+                 CLI.command("x", flags: [n: spec], run: fn i -> {ok(), i.bash} end),
+               "flag-spec key #{inspect(key)} was rejected by the builder"
+      end
+    end
+
+    test "a flag spec carrying every key at once is accepted" do
+      # :required and :default are mutually exclusive by design, so each variant drops the
+      # other; between them the two specs cover the whole allowlist.
+      for dropped <- [:default, :required] do
+        spec = for key <- @flag_spec_keys -- [dropped], do: {key, flag_spec_value(key)}
+
+        assert %Command{} = CLI.command("x", flags: [n: spec], run: fn i -> {ok(), i.bash} end)
+      end
+    end
+
+    test "the builder reports exactly the enumerated flag-spec keys as valid" do
+      err =
+        assert_raise ArgumentError, fn ->
+          CLI.command("x", flags: [n: [nope: 1]], run: fn i -> {ok(), i.bash} end)
+        end
+
+      assert Exception.message(err) =~ "valid options are #{inspect(@flag_spec_keys)}"
+    end
+
+    test "every command option is accepted, on a leaf or on a group" do
+      leaf_opts = [
+        doc: "leaf doc",
+        run: fn i -> {ok(), i.bash} end,
+        flags: [verbose: [type: :boolean]],
+        args: [%{name: :path}],
+        examples: ["x go /tmp"],
+        validate: fn _inv -> :ok end,
+        allow_unknown_flags: true,
+        visible?: fn _bash -> true end
+      ]
+
+      group_opts = [
+        doc: "group doc",
+        commands: [CLI.command("child", run: fn i -> {ok(), i.bash} end)],
+        visible?: fn _bash -> true end,
+        on_missing_subcommand: :help
+      ]
+
+      assert Enum.sort(Enum.uniq(Keyword.keys(leaf_opts) ++ Keyword.keys(group_opts))) ==
+               Enum.sort(@command_opt_keys)
+
+      assert %Command{} = CLI.command("go", leaf_opts)
+      assert %Command{} = CLI.command("pr", group_opts)
+    end
+
+    test "the builder reports exactly the enumerated command options as valid" do
+      err =
+        assert_raise ArgumentError, fn ->
+          CLI.command("go", nope: 1, run: fn i -> {ok(), i.bash} end)
+        end
+
+      assert Exception.message(err) =~ "valid options are #{inspect(@command_opt_keys)}"
+    end
+
+    test "every CLI option is accepted at once" do
+      opts = [
+        doc: "Acme toolkit",
+        commands: [CLI.command("go", run: fn i -> {ok(), i.bash} end)],
+        aliases: ["ac"],
+        on_missing_subcommand: :help
+      ]
+
+      assert Enum.sort(Keyword.keys(opts)) == Enum.sort(@cli_opt_keys)
+      assert %CLI{name: "acme"} = CLI.new("acme", opts)
+    end
+
+    test "the builder reports exactly the enumerated CLI options as valid" do
+      err = assert_raise ArgumentError, fn -> CLI.new("acme", nope: 1) end
+
+      assert Exception.message(err) =~ "valid options are #{inspect(@cli_opt_keys)}"
+    end
+
+    test "every positional argument key is accepted at once" do
+      spec = %{name: :path, doc: "a path", required: true, variadic: true}
+
+      assert Enum.sort(Map.keys(spec)) == Enum.sort(@arg_spec_keys)
+
+      cmd = CLI.command("go", args: [spec], run: fn i -> {ok(), i.bash} end)
+
+      assert [%{name: :path, doc: "a path", required: true, variadic: true}] = cmd.args
+    end
+
+    test "the builder reports exactly the enumerated positional argument keys as valid" do
+      err =
+        assert_raise ArgumentError, fn ->
+          CLI.command("go", args: [%{name: :path, nope: 1}], run: fn i -> {ok(), i.bash} end)
+        end
+
+      assert Exception.message(err) =~ "valid options are #{inspect(@arg_spec_keys)}"
+    end
+  end
+
+  # A representative value for each flag-spec key. Kept as a function rather than a module
+  # attribute because `:transform` holds a function capture, which cannot be escaped into one.
+  defp flag_spec_value(:type), do: :integer
+  defp flag_spec_value(:short), do: "-n"
+  defp flag_spec_value(:long), do: "--enum"
+  defp flag_spec_value(:aliases), do: ["--alias-form"]
+  defp flag_spec_value(:default), do: "a"
+  defp flag_spec_value(:required), do: true
+  defp flag_spec_value(:values), do: ["a", "b"]
+  defp flag_spec_value(:transform), do: &String.upcase/1
+  defp flag_spec_value(:doc), do: "a doc string"
+
   defp ok, do: %{stdout: "", stderr: "", exit_code: 0}
 end
