@@ -1,6 +1,8 @@
 defmodule JustBash.Commands.TextProcessingTest do
   use ExUnit.Case, async: true
 
+  alias JustBash.FS.Memory
+
   describe "cat command" do
     test "cat reads file content" do
       bash = JustBash.new(files: %{"/test.txt" => "hello world"})
@@ -943,17 +945,27 @@ defmodule JustBash.Commands.TextProcessingTest do
     # is `cannot read:`, while a directory - which opens fine and only fails
     # once sort reads it - is `read failed:`. Collapsing both onto the ENOENT
     # wording told the caller a path that exists does not, which is a worse
-    # answer than the exit code alone. Checked against GNU coreutils 9 gsort;
-    # the whole table is asserted at once so a fourth error kind cannot arrive
-    # wearing the wrong template.
+    # answer than the exit code alone. Checked against GNU coreutils 9 gsort.
+    #
+    # "Every way" is asserted, not claimed: the test below this one derives
+    # the set of error kinds from the compiled beams and fails unless each
+    # one is either a row here or listed in @kinds_read_file_cannot_return
+    # with the reason it cannot reach sort. Hand-counting is what let :eloop
+    # go missing from a table whose whole point was to be closed.
     @unreadable_operands [
       {:enoent, "/nope", "sort: cannot read: /nope: No such file or directory\n"},
       {:eisdir, "/d", "sort: read failed: /d: Is a directory\n"},
-      {:enotdir, "/file.txt/sub", "sort: cannot read: /file.txt/sub: Not a directory\n"}
+      {:enotdir, "/file.txt/sub", "sort: cannot read: /file.txt/sub: Not a directory\n"},
+      {:eloop, "/loopa", "sort: cannot read: /loopa: Too many levels of symbolic links\n"}
     ]
+
+    # A two-hop cycle. Resolution bounces /loopa -> /loopb -> /loopa until the
+    # symlink budget is spent, which is the only way an operand reaches :eloop.
+    @symlink_cycle "ln -s /loopb /loopa; ln -s /loopa /loopb"
 
     test "an operand sort cannot read is named with the reason it could not be read" do
       bash = JustBash.new(files: %{"/file.txt" => "b\na\n", "/d/inner" => "x\n"})
+      {_, bash} = JustBash.exec(bash, @symlink_cycle)
 
       observed =
         Map.new(@unreadable_operands, fn {kind, path, _} ->
@@ -964,6 +976,48 @@ defmodule JustBash.Commands.TextProcessingTest do
       expected = Map.new(@unreadable_operands, fn {kind, _, msg} -> {kind, {2, "", msg}} end)
 
       assert observed == expected
+    end
+
+    # The kinds that exist but cannot come back from `FS.read_file/2`, each
+    # with what does produce it. Listed rather than dropped: an absent kind
+    # is indistinguishable from a kind nobody thought about.
+    @kinds_read_file_cannot_return %{
+      eexist: "mkdir/symlink/link refusing a name that is already taken",
+      enotempty: "rmdir on a directory that still has entries",
+      eacces: "Memory.link/3 hard-linking a non-file; no read path consults mode bits",
+      erofs: "a read-only mount, which this FS has no way to declare",
+      enotsup: "the POSIX shim's symlink/link stubs on backends that have neither",
+      einval:
+        "readlink on a non-symlink, and the backend's one computed-kind Error.new/2, " <>
+          "which forwards a VFS.StreamOptions rejection - read_file/2 passes no options",
+      exdev: "a rename that crosses a mount boundary",
+      eio: "strerror names it for completeness; no backend here constructs it"
+    }
+
+    test "the unreadable-operand table accounts for every error kind that exists" do
+      backend = VFS.Mountable.impl_for!(Memory.new(%{}))
+      constructed = Enum.flat_map([Memory, backend], &error_new_kind_arguments/1)
+
+      # Every `Error.new/2` in the backend names its kind literally but one:
+      # `stream_read/3` forwards whatever `VFS.StreamOptions` rejected, which is
+      # the `:einval` @kinds_read_file_cannot_return excuses. A second such call
+      # site would be a kind reading the beam cannot see, so it fails here
+      # rather than quietly shrinking what the rest of this test checks.
+      assert Enum.count(constructed, &(&1 == :computed_at_runtime)) == 1
+
+      universe =
+        MapSet.new(strerror_kinds() ++ Enum.reject(constructed, &(&1 == :computed_at_runtime)))
+
+      tabled = MapSet.new(@unreadable_operands, fn {kind, _, _} -> kind end)
+      accounted = MapSet.new(Map.keys(@kinds_read_file_cannot_return))
+
+      assert MapSet.disjoint?(tabled, accounted),
+             "a kind cannot be both exercised and excused: " <>
+               inspect(MapSet.intersection(tabled, accounted))
+
+      assert MapSet.union(tabled, accounted) == universe,
+             "unaccounted: #{inspect(MapSet.difference(universe, MapSet.union(tabled, accounted)))}, " <>
+               "stale: #{inspect(MapSet.difference(MapSet.union(tabled, accounted), universe))}"
     end
   end
 
@@ -1406,5 +1460,51 @@ defmodule JustBash.Commands.TextProcessingTest do
       assert result.exit_code == 1
       assert result.stderr =~ "invalid tab size"
     end
+  end
+
+  # Two derivations of "the error kinds that exist", both read out of the
+  # compiled beams rather than transcribed, so neither can drift silently:
+  # the kinds `FS.strerror/1` has a message for, and the kinds the memory
+  # backend constructs. Adding a clause to either shows up as a failing
+  # assertion in "the unreadable-operand table accounts for every error kind
+  # that exists" instead of as a row nobody noticed was missing.
+
+  # The literal atoms in `FS.strerror/1`'s clause heads. The `%Error{}` head
+  # and the `is_atom/1` catch-all are not literals and drop out.
+  defp strerror_kinds do
+    for {:function, _anno, :strerror, 1, clauses} <- abstract_code(JustBash.FS),
+        {:clause, _clause_anno, [{:atom, _atom_anno, kind}], _guards, _body} <- clauses,
+        do: kind
+  end
+
+  # Every first argument `module` hands `VFS.Error.new/2`: the atom itself
+  # where the call names its kind literally, `:computed_at_runtime` where it
+  # forwards a value.
+  defp error_new_kind_arguments(module) do
+    module |> abstract_code() |> collect_error_new_kinds()
+  end
+
+  defp collect_error_new_kinds(
+         {:call, _anno, {:remote, _, {:atom, _, VFS.Error}, {:atom, _, :new}}, [kind | rest]}
+       ) do
+    [kind_argument(kind) | collect_error_new_kinds(rest)]
+  end
+
+  defp collect_error_new_kinds(forms) when is_list(forms),
+    do: Enum.flat_map(forms, &collect_error_new_kinds/1)
+
+  defp collect_error_new_kinds(form) when is_tuple(form),
+    do: form |> Tuple.to_list() |> collect_error_new_kinds()
+
+  defp collect_error_new_kinds(_leaf), do: []
+
+  defp kind_argument({:atom, _anno, kind}), do: kind
+  defp kind_argument(_forwarded), do: :computed_at_runtime
+
+  defp abstract_code(module) do
+    {:ok, {_module, [abstract_code: {:raw_abstract_v1, forms}]}} =
+      module |> :code.which() |> :beam_lib.chunks([:abstract_code])
+
+    forms
   end
 end
