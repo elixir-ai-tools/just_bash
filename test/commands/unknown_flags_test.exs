@@ -406,19 +406,29 @@ defmodule JustBash.Commands.UnknownFlagsTest do
     # whole, so a new command cannot join the registry without being classified
     # and a command cannot change category unnoticed.
     #
-    #   :strict   - non-zero exit with a diagnostic on stderr. What every
-    #               option-parsing command should do.
-    #   :quiet    - non-zero exit with no diagnostic. These three parse no
-    #               options at all; bash is equally silent.
-    #   :operand  - exit 0 is correct: bash also treats the argument as data.
-    #               `echo -Z` prints `-Z`, `test -Z` is a non-empty string.
-    #   :absorbed - STILL WRONG. Exits 0 with the flag ignored, exactly the way
-    #               `sort -Q` did. These are the hand-rolled `parse_args`
-    #               commands that issue #68 explicitly defers migrating onto
-    #               FlagParser (migrating first would have spread the bug, not
-    #               fixed it). Listed by name so the list can only shrink.
+    #   :strict    - non-zero exit, nothing on stdout, and a diagnostic that
+    #                names the *option*. What every option-parsing command
+    #                should do, and the only category that certifies the fix:
+    #                a non-zero exit alone does not, because `ls -Z`, `head -Z`,
+    #                `tail -Z` and `cp -Z` all exited non-zero before this
+    #                change too - by demoting the flag and then failing to open
+    #                the file it named.
+    #   :misblamed - STILL WRONG. Non-zero exit, but the diagnostic is about a
+    #                file the flag was turned into rather than about the flag.
+    #                `cat -Z /f.txt` says `cat: -Z: No such file or directory`
+    #                and prints the file anyway; GNU says
+    #                `cat: invalid option -- 'Z'` and prints nothing.
+    #   :quiet     - non-zero exit with no diagnostic. These three parse no
+    #                options at all; bash is equally silent.
+    #   :operand   - exit 0 is correct: bash also treats the argument as data.
+    #                `echo -Z` prints `-Z`, `test -Z` is a non-empty string.
+    #   :absorbed  - STILL WRONG. Exits 0 with the flag ignored, exactly the way
+    #                `sort -Q` did. These are the hand-rolled `parse_args`
+    #                commands that issue #68 explicitly defers migrating onto
+    #                FlagParser (migrating first would have spread the bug, not
+    #                fixed it). Listed by name so the list can only shrink.
     @classification %{
-      "." => :strict,
+      "." => :misblamed,
       ":" => :operand,
       "[" => :absorbed,
       "arch" => :absorbed,
@@ -426,15 +436,15 @@ defmodule JustBash.Commands.UnknownFlagsTest do
       "base64" => :strict,
       "basename" => :absorbed,
       "break" => :absorbed,
-      "cat" => :strict,
-      "cd" => :strict,
-      "chmod" => :strict,
-      "chown" => :strict,
+      "cat" => :misblamed,
+      "cd" => :misblamed,
+      "chmod" => :misblamed,
+      "chown" => :misblamed,
       "comm" => :strict,
-      "command" => :strict,
+      "command" => :misblamed,
       "continue" => :absorbed,
       "cp" => :strict,
-      "curl" => :strict,
+      "curl" => :misblamed,
       "cut" => :strict,
       "date" => :strict,
       "declare" => :absorbed,
@@ -443,51 +453,51 @@ defmodule JustBash.Commands.UnknownFlagsTest do
       "du" => :strict,
       "echo" => :operand,
       "env" => :strict,
-      "eval" => :strict,
+      "eval" => :misblamed,
       "exit" => :quiet,
       "expand" => :strict,
       "export" => :absorbed,
       "false" => :quiet,
       "file" => :strict,
-      "find" => :strict,
+      "find" => :misblamed,
       "fold" => :strict,
-      "getopts" => :strict,
+      "getopts" => :misblamed,
       "grep" => :strict,
       "head" => :strict,
       "hostname" => :absorbed,
       "id" => :absorbed,
-      "jq" => :strict,
-      "ln" => :strict,
+      "jq" => :misblamed,
+      "ln" => :misblamed,
       "local" => :absorbed,
       "ls" => :strict,
-      "markdown" => :strict,
-      "md" => :strict,
+      "markdown" => :misblamed,
+      "md" => :misblamed,
       "md5sum" => :strict,
       "mkdir" => :absorbed,
       "mktemp" => :absorbed,
-      "mv" => :strict,
+      "mv" => :misblamed,
       "nl" => :strict,
       "nproc" => :absorbed,
-      "od" => :strict,
+      "od" => :misblamed,
       "paste" => :strict,
       "printenv" => :absorbed,
       "printf" => :absorbed,
       "pwd" => :absorbed,
       "read" => :quiet,
       "readlink" => :strict,
-      "realpath" => :strict,
+      "realpath" => :misblamed,
       "return" => :absorbed,
       "rev" => :absorbed,
-      "rm" => :strict,
+      "rm" => :misblamed,
       "sed" => :strict,
-      "seq" => :strict,
+      "seq" => :misblamed,
       "set" => :strict,
-      "sha256sum" => :strict,
-      "shasum" => :strict,
-      "shift" => :strict,
+      "sha256sum" => :misblamed,
+      "shasum" => :misblamed,
+      "shift" => :misblamed,
       "sleep" => :absorbed,
       "sort" => :strict,
-      "source" => :strict,
+      "source" => :misblamed,
       "stat" => :strict,
       "tac" => :absorbed,
       "tail" => :strict,
@@ -495,20 +505,20 @@ defmodule JustBash.Commands.UnknownFlagsTest do
       "test" => :operand,
       "touch" => :absorbed,
       "tr" => :strict,
-      "trap" => :strict,
+      "trap" => :misblamed,
       "tree" => :strict,
       "true" => :operand,
-      "type" => :strict,
+      "type" => :misblamed,
       "typeset" => :absorbed,
       "uname" => :absorbed,
       "uniq" => :strict,
       "unset" => :absorbed,
-      "wc" => :strict,
-      "wget" => :strict,
+      "wc" => :misblamed,
+      "wget" => :misblamed,
       "which" => :strict,
       "whoami" => :absorbed,
       "xargs" => :strict,
-      "xxd" => :strict,
+      "xxd" => :misblamed,
       "yes" => :operand
     }
 
@@ -533,6 +543,15 @@ defmodule JustBash.Commands.UnknownFlagsTest do
       end
     end
 
+    # Every command the seven FlagParser callers cover has to be :strict, and
+    # naming them here means the matrix cannot certify the fix by accident:
+    # four of these exited non-zero before the fix as well.
+    test "every command on the shared flag parser rejects the flag itself" do
+      for name <- ~w(cp grep head ls sort tail uniq tr) do
+        assert @classification[name] == :strict
+      end
+    end
+
     # :operand and :absorbed are the same observation - the command exits 0 -
     # and differ only in whether that is correct. The distinction is carried by
     # the table above so that fixing an :absorbed command forces an edit here.
@@ -550,14 +569,23 @@ defmodule JustBash.Commands.UnknownFlagsTest do
       end
     end
 
+    # A non-zero exit is not evidence that the flag was rejected: demoting it to
+    # a filename and failing to open that file exits non-zero too, and leaves
+    # the command's real output on stdout. Only a command that says nothing on
+    # stdout and names the option in its diagnostic has actually rejected it.
     defp probe(name, flag) do
       {result, _} = JustBash.exec(bash(), "#{name} #{flag}")
 
       cond do
         result.exit_code == 0 -> :exit_zero
         result.stderr == "" -> :quiet
-        true -> :strict
+        rejected_the_option?(result) -> :strict
+        true -> :misblamed
       end
+    end
+
+    defp rejected_the_option?(result) do
+      result.stdout == "" and result.stderr =~ ~r/(invalid|unrecognized|illegal) option/
     end
   end
 end
