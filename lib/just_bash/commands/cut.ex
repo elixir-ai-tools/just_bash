@@ -15,9 +15,9 @@ defmodule JustBash.Commands.Cut do
         {Command.error(msg), bash}
 
       {:ok, opts} ->
-        {content, fs} = get_content(bash, opts.files, stdin)
+        {content, errors, exit_code, fs} = get_content(bash, opts.files, stdin)
         output = process_content(content, opts)
-        {Command.ok(output), %{bash | fs: fs}}
+        {Command.result(output, errors, exit_code), %{bash | fs: fs}}
     end
   end
 
@@ -79,15 +79,17 @@ defmodule JustBash.Commands.Cut do
     parse_args(rest, %{opts | files: opts.files ++ [file]})
   end
 
-  defp get_content(bash, [], stdin), do: {stdin, bash.fs}
+  defp get_content(bash, [], stdin), do: {stdin, "", 0, bash.fs}
 
+  # GNU cut names the operand it could not read, keeps going with the rest, and
+  # exits 1.
   defp get_content(bash, files, _stdin) do
-    Enum.reduce(files, {"", bash.fs}, fn file, {acc, fs} ->
+    Enum.reduce(files, {"", "", 0, bash.fs}, fn file, {acc, err, code, fs} ->
       resolved = FS.resolve_path(bash.cwd, file)
 
       case FS.read_file(fs, resolved) do
-        {:ok, content, fs} -> {acc <> content, fs}
-        {:error, _} -> {acc, fs}
+        {:ok, content, fs} -> {acc <> content, err, code, fs}
+        {:error, error} -> {acc, err <> "cut: #{file}: #{FS.strerror(error)}\n", 1, fs}
       end
     end)
   end

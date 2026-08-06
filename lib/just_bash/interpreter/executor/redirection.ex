@@ -85,23 +85,31 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   end
 
   @doc """
-  Extract heredoc or here-string content as stdin.
-  Returns `{stdin_content, non_heredoc_redirections}`.
+  Extract heredoc, here-string or `< file` content as stdin.
+
+  Returns `{:ok, stdin_content, non_heredoc_redirections}`, or `{:error,
+  result}` when a `< file` target cannot be opened. The shell opens that
+  target itself, so — like the write side in `preflight/2` — a failure is the
+  shell's to report and the command never runs.
   """
   @spec extract_heredoc_stdin(JustBash.t(), [AST.Redirection.t()]) ::
-          {String.t() | nil, [AST.Redirection.t()]}
+          {:ok, String.t() | nil, [AST.Redirection.t()]} | {:error, result()}
   def extract_heredoc_stdin(bash, redirections) do
-    stdin_content = extract_stdin_content(bash, redirections)
+    case extract_stdin_content(bash, redirections) do
+      {:error, path, error} ->
+        {:error, %{stdout: "", stderr: "bash: #{path}: #{FS.strerror(error)}\n", exit_code: 1}}
 
-    non_heredoc_redirs =
-      Enum.reject(redirections, fn
-        %AST.Redirection{operator: :<<<} -> true
-        %AST.Redirection{operator: :"<<", target: %AST.HereDoc{}} -> true
-        %AST.Redirection{operator: :<} -> true
-        _ -> false
-      end)
+      stdin_content ->
+        non_heredoc_redirs =
+          Enum.reject(redirections, fn
+            %AST.Redirection{operator: :<<<} -> true
+            %AST.Redirection{operator: :"<<", target: %AST.HereDoc{}} -> true
+            %AST.Redirection{operator: :<} -> true
+            _ -> false
+          end)
 
-    {stdin_content, non_heredoc_redirs}
+        {:ok, stdin_content, non_heredoc_redirs}
+    end
   end
 
   # --- Private Functions ---
@@ -405,8 +413,17 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     resolved = FS.resolve_path(bash.cwd, path)
 
     case FS.read_file(bash.fs, resolved) do
-      {:ok, content, _fs} -> content
-      {:error, _} -> ""
+      {:ok, content, _fs} ->
+        content
+
+      # `open(2)` on a directory succeeds, so bash runs the command and the
+      # *command* fails on its own read — `cat: stdin: Is a directory`. That
+      # is not a shell-level diagnostic, and this model has no seam for it.
+      {:error, %VFS.Error{kind: :eisdir}} ->
+        ""
+
+      {:error, error} ->
+        {:error, path, error}
     end
   end
 

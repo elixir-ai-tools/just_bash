@@ -28,20 +28,30 @@ defmodule JustBash.Commands.Uniq do
   end
 
   defp uniq(bash, flags, files, stdin) do
-    {content, fs} =
-      case files do
-        [] ->
-          {stdin, bash.fs}
+    case get_content(bash, files, stdin) do
+      {:error, message} -> {Command.error(message), bash}
+      {:ok, content, fs} -> uniq_content(bash, content, flags, fs)
+    end
+  end
 
-        [file | _] ->
-          resolved = FS.resolve_path(bash.cwd, file)
+  defp get_content(bash, [], stdin), do: {:ok, stdin, bash.fs}
 
-          case FS.read_file(bash.fs, resolved) do
-            {:ok, c, fs} -> {c, fs}
-            {:error, _} -> {"", bash.fs}
-          end
-      end
+  defp get_content(bash, [file | _], _stdin) do
+    resolved = FS.resolve_path(bash.cwd, file)
 
+    case FS.read_file(bash.fs, resolved) do
+      {:ok, content, fs} -> {:ok, content, fs}
+      {:error, error} -> {:error, read_error(file, error)}
+    end
+  end
+
+  # GNU uniq words the failure differently once the open has succeeded.
+  defp read_error(file, %VFS.Error{kind: :eisdir}),
+    do: "uniq: error reading '#{file}': Is a directory\n"
+
+  defp read_error(file, error), do: "uniq: #{file}: #{FS.strerror(error)}\n"
+
+  defp uniq_content(bash, content, flags, fs) do
     lines = String.split(content, "\n", trim: true)
 
     output =

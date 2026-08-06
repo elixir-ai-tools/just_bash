@@ -349,10 +349,10 @@ defmodule JustBash.Interpreter.Executor do
         %AST.For{variable: variable, words: words, body: body, redirections: redirs},
         _stdin
       ) do
-    {_redir_stdin, non_stdin_redirs} = Redirection.extract_heredoc_stdin(bash, redirs)
-
-    with_redirections(bash, non_stdin_redirs, fn bash ->
-      Loop.execute_for(bash, variable, words, body, &execute_body/2)
+    with_stdin(bash, redirs, fn _redir_stdin, non_stdin_redirs ->
+      with_redirections(bash, non_stdin_redirs, fn bash ->
+        Loop.execute_for(bash, variable, words, body, &execute_body/2)
+      end)
     end)
   end
 
@@ -361,11 +361,10 @@ defmodule JustBash.Interpreter.Executor do
         %AST.While{condition: condition, body: body, redirections: redirs},
         stdin
       ) do
-    {redir_stdin, non_stdin_redirs} = Redirection.extract_heredoc_stdin(bash, redirs)
-    effective_stdin = redir_stdin || stdin
-
-    with_redirections(bash, non_stdin_redirs, fn bash ->
-      Loop.execute_while(bash, condition, body, effective_stdin, &execute_body/2)
+    with_stdin(bash, redirs, fn redir_stdin, non_stdin_redirs ->
+      with_redirections(bash, non_stdin_redirs, fn bash ->
+        Loop.execute_while(bash, condition, body, redir_stdin || stdin, &execute_body/2)
+      end)
     end)
   end
 
@@ -374,11 +373,10 @@ defmodule JustBash.Interpreter.Executor do
         %AST.Until{condition: condition, body: body, redirections: redirs},
         stdin
       ) do
-    {redir_stdin, non_stdin_redirs} = Redirection.extract_heredoc_stdin(bash, redirs)
-    effective_stdin = redir_stdin || stdin
-
-    with_redirections(bash, non_stdin_redirs, fn bash ->
-      Loop.execute_until(bash, condition, body, effective_stdin, &execute_body/2)
+    with_stdin(bash, redirs, fn redir_stdin, non_stdin_redirs ->
+      with_redirections(bash, non_stdin_redirs, fn bash ->
+        Loop.execute_until(bash, condition, body, redir_stdin || stdin, &execute_body/2)
+      end)
     end)
   end
 
@@ -460,12 +458,11 @@ defmodule JustBash.Interpreter.Executor do
       |> Expansion.take_substitutions()
 
     # Extract heredoc content as stdin if present
-    {heredoc_stdin, non_heredoc_redirs} = Redirection.extract_heredoc_stdin(temp_bash, redirs)
-    effective_stdin = heredoc_stdin || stdin
-
     {result, new_bash} =
-      with_redirections(temp_bash, non_heredoc_redirs, fn temp_bash ->
-        invoke_command(temp_bash, cmd_name, expanded_args, effective_stdin)
+      with_stdin(temp_bash, redirs, fn heredoc_stdin, non_heredoc_redirs ->
+        with_redirections(temp_bash, non_heredoc_redirs, fn temp_bash ->
+          invoke_command(temp_bash, cmd_name, expanded_args, heredoc_stdin || stdin)
+        end)
       end)
 
     {%{result | stderr: expansion_stderr <> result.stderr}, new_bash}
@@ -573,6 +570,20 @@ defmodule JustBash.Interpreter.Executor do
 
       {:error, result, bash} ->
         {result, bash}
+    end
+  end
+
+  # `< file` is the read side of the same rule: the shell opens the target, so
+  # a target it cannot open is the shell's diagnostic and the body never runs.
+  @spec with_stdin(
+          JustBash.t(),
+          [AST.Redirection.t()],
+          (String.t() | nil, [AST.Redirection.t()] -> {result(), JustBash.t()})
+        ) :: {result(), JustBash.t()}
+  defp with_stdin(bash, redirections, fun) do
+    case Redirection.extract_heredoc_stdin(bash, redirections) do
+      {:ok, stdin, rest} -> fun.(stdin, rest)
+      {:error, result} -> {result, bash}
     end
   end
 

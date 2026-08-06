@@ -98,12 +98,12 @@ defmodule JustBash.Commands.Grep do
     show_filename =
       flags.with_filename or (length(expanded_files) > 1 and not flags.no_filename)
 
-    {results, any_match, fs} =
-      Enum.reduce(expanded_files, {[], false, bash.fs}, fn file, {acc, had_match, fs} ->
-        process_file(bash, fs, file, regex, flags, show_filename, acc, had_match)
+    {results, any_match, errors, fs} =
+      Enum.reduce(expanded_files, {[], false, "", bash.fs}, fn file, acc ->
+        process_file(bash, file, regex, flags, show_filename, acc)
       end)
 
-    build_files_result(%{bash | fs: fs}, results, any_match, flags)
+    build_files_result(%{bash | fs: fs}, results, any_match, errors, flags)
   end
 
   # Expand files recursively when -r flag is set
@@ -163,7 +163,7 @@ defmodule JustBash.Commands.Grep do
   defp join_path("/", entry), do: "/#{entry}"
   defp join_path(path, entry), do: "#{path}/#{entry}"
 
-  defp process_file(bash, fs, file, regex, flags, show_filename, acc, had_match) do
+  defp process_file(bash, file, regex, flags, show_filename, {acc, had_match, errors, fs}) do
     resolved = FS.resolve_path(bash.cwd, file)
 
     case FS.read_file(fs, resolved) do
@@ -172,10 +172,10 @@ defmodule JustBash.Commands.Grep do
         lines = process_content(content, regex, flags, prefix)
         matched = lines != []
         result = format_file_result(file, prefix, lines, matched, flags)
-        {if(result, do: [result | acc], else: acc), had_match or matched, fs}
+        {if(result, do: [result | acc], else: acc), had_match or matched, errors, fs}
 
-      {:error, _} ->
-        {acc, had_match, fs}
+      {:error, error} ->
+        {acc, had_match, errors <> "grep: #{file}: #{FS.strerror(error)}\n", fs}
     end
   end
 
@@ -189,17 +189,25 @@ defmodule JustBash.Commands.Grep do
     end
   end
 
-  defp build_files_result(bash, results, any_match, flags) do
-    exit_code = if any_match, do: 0, else: 1
+  defp build_files_result(bash, results, any_match, errors, flags) do
+    exit_code = files_exit_code(any_match, errors != "", flags.q)
 
     if flags.q do
-      {Command.result("", "", exit_code), bash}
+      {Command.result("", errors, exit_code), bash}
     else
       output = results |> Enum.reverse() |> Enum.join("\n")
       output = if output != "", do: output <> "\n", else: ""
-      {Command.result(output, "", exit_code), bash}
+      {Command.result(output, errors, exit_code), bash}
     end
   end
+
+  # "the exit status is 0 if a line is selected, 1 if no lines were selected,
+  # and 2 if an error occurred. However, if -q is used and a line is selected,
+  # the exit status is 0 even if an error occurred."
+  defp files_exit_code(true, _errored, true), do: 0
+  defp files_exit_code(_any_match, true, _quiet), do: 2
+  defp files_exit_code(true, false, _quiet), do: 0
+  defp files_exit_code(false, false, _quiet), do: 1
 
   defp execute_with_stdin(bash, pattern, stdin, flags) do
     regex = compile_pattern(bash, pattern, flags)

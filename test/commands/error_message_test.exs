@@ -94,7 +94,27 @@ defmodule JustBash.Commands.ErrorMessageTest do
     {"shasum -c PATH", @read_kinds, :stderr, "shasum: PATH: MSG\n"},
     {"echo '0  PATH' > /sums; sha256sum -c /sums", @read_kinds, :stderr,
      "sha256sum: PATH: MSG\n"},
-    {"echo '0  PATH' > /sums; shasum -c /sums", @read_kinds, :stderr, "shasum: PATH: MSG\n"}
+    {"echo '0  PATH' > /sums; shasum -c /sums", @read_kinds, :stderr, "shasum: PATH: MSG\n"},
+
+    # These five printed nothing at all, which is why grepping for the wrong
+    # message did not reach them. `sort report.txt | head -5` against a
+    # mistyped path is an empty exit-0 result an agent cannot tell from an
+    # empty file.
+    {"sort PATH", @stat_kinds, :stderr, "sort: cannot read: PATH: MSG\n"},
+    {"sort PATH", [:eisdir], :stderr, "sort: read failed: PATH: MSG\n"},
+    {"cut -f1 PATH", @read_kinds, :stderr, "cut: PATH: MSG\n"},
+    {"cut -f1 PATH /f", @read_kinds, :stderr, "cut: PATH: MSG\n"},
+    {"uniq PATH", @stat_kinds, :stderr, "uniq: PATH: MSG\n"},
+    {"uniq PATH", [:eisdir], :stderr, "uniq: error reading 'PATH': MSG\n"},
+    {"grep x PATH", @read_kinds, :stderr, "grep: PATH: MSG\n"},
+    {"grep hi PATH /f", @read_kinds, :stderr, "grep: PATH: MSG\n"},
+
+    # `<` is opened by the shell, so the shell reports it and the command
+    # never runs. :eisdir is absent because `open(2)` on a directory succeeds
+    # — bash runs the command and the command fails on read, with its own name
+    # in the message, which this model does not reach.
+    {"cat < PATH", @stat_kinds, :stderr, "bash: PATH: MSG\n"},
+    {"wc -l < PATH", @stat_kinds, :stderr, "bash: PATH: MSG\n"}
   ]
 
   @strerror %{
@@ -164,6 +184,62 @@ defmodule JustBash.Commands.ErrorMessageTest do
       assert result.stdout == ""
       assert result.stderr == "md5sum: /nope: No such file or directory\n"
       assert result.exit_code == 1
+    end
+  end
+
+  describe "a read that fails is never mistaken for an empty file" do
+    test "sort exits 2 the way GNU sort does" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "sort /nope")
+
+      assert result.exit_code == 2
+    end
+
+    test "cut keeps the files it could read and still exits 1" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "cut -f1 /f /nope")
+
+      assert result.stdout == "hi\n"
+      assert result.exit_code == 1
+    end
+
+    test "grep exits 2 on a read failure even when another file matched" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "grep hi /f /nope")
+
+      assert result.stdout == "/f:hi\n"
+      assert result.exit_code == 2
+    end
+
+    test "grep -q still exits 0 when a line was selected" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "grep -q hi /f /nope")
+
+      assert result.stdout == ""
+      assert result.stderr == "grep: /nope: No such file or directory\n"
+      assert result.exit_code == 0
+    end
+
+    test "a failed < redirect stops the command from running" do
+      # `wc -l < /nope` used to print a fabricated 0 — the sharpest form of the
+      # bug, because the number looks like an answer.
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "wc -l < /nope")
+
+      assert result.stdout == ""
+      assert result.stderr == "bash: /nope: No such file or directory\n"
+      assert result.exit_code == 1
+    end
+
+    test "a loop redirected from a file it cannot open does not run either" do
+      {result, _bash} =
+        JustBash.exec(sandbox(:enoent), "while read line; do echo ran; done < /nope")
+
+      assert result.stdout == ""
+      assert result.stderr == "bash: /nope: No such file or directory\n"
+      assert result.exit_code == 1
+    end
+
+    test "a heredoc is unaffected" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "cat <<< hello")
+
+      assert result.stdout == "hello\n"
+      assert result.exit_code == 0
     end
   end
 
