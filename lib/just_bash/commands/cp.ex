@@ -148,7 +148,18 @@ defmodule JustBash.Commands.Cp do
   # not what bash does with it.
   defp dest_kind(bash, ""), do: {:error, VFS.Error.new(:enoent, path: ""), bash}
 
+  # A destination is only a directory the copy may land inside once its
+  # spelling holds: `f/..` resolves to a directory but names nothing when `f`
+  # is a regular file, so it goes to `copy_one/4` as spelled and is reported
+  # there rather than gaining the source's basename.
   defp dest_kind(bash, dest) do
+    case FS.check_directory_spelling(bash.fs, bash.cwd, dest) do
+      {:ok, fs} -> stat_dest(%{bash | fs: fs}, dest)
+      {:error, %VFS.Error{} = error} -> {:error, error, bash}
+    end
+  end
+
+  defp stat_dest(bash, dest) do
     case FS.stat(bash.fs, FS.resolve_path(bash.cwd, dest)) do
       {:ok, %VFS.Stat{type: :directory}, fs} -> {:ok, :directory, %{bash | fs: fs}}
       {:ok, %VFS.Stat{}, fs} -> {:ok, :other, %{bash | fs: fs}}
@@ -194,8 +205,8 @@ defmodule JustBash.Commands.Cp do
 
   # A destination spelled as a directory that is not one names nothing to leave
   # alone, so `-n` does not get to keep it: the copy goes on to report it.
-  defp keep_or_copy(bash, src, {dest, dest_path} = dest_pair, %Options{clobber: :never} = opts) do
-    case FS.check_directory_spelling(bash.fs, dest, dest_path) do
+  defp keep_or_copy(bash, src, {dest, _dest_path} = dest_pair, %Options{clobber: :never} = opts) do
+    case FS.check_directory_spelling(bash.fs, bash.cwd, dest) do
       {:ok, fs} -> keep_or_clobber(%{bash | fs: fs}, src, dest_pair, opts)
       {:error, %VFS.Error{}} -> copy_resolved(bash, src, dest_pair, opts)
     end
@@ -236,7 +247,7 @@ defmodule JustBash.Commands.Cp do
   #     $ cp a.md f/     cp: cannot stat 'f/': Not a directory
   #     $ cp a.md nope/  cp: cannot create regular file 'nope/': No such file …
   defp copy_file(bash, {src, src_path}, {dest, dest_path}, opts) do
-    case FS.check_directory_spelling(bash.fs, dest, dest_path) do
+    case FS.check_directory_spelling(bash.fs, bash.cwd, dest) do
       {:ok, fs} ->
         fs
         |> FS.cp(src_path, dest_path)
@@ -297,8 +308,8 @@ defmodule JustBash.Commands.Cp do
   # A recursive copy creates the directory a trailing slash promises, so
   # `cp -r d nope/` is fine and only a destination that is already something
   # else is refused — which bash words as a failed stat of the operand.
-  defp copy_dir(bash, src, {dest, dest_path} = dest_pair, %Options{mode: :recursive} = opts) do
-    case FS.check_directory_spelling(bash.fs, dest, dest_path) do
+  defp copy_dir(bash, src, {dest, _dest_path} = dest_pair, %Options{mode: :recursive} = opts) do
+    case FS.check_directory_spelling(bash.fs, bash.cwd, dest) do
       {:ok, fs} ->
         copy_tree(%{bash | fs: fs}, src, dest_pair, opts)
 

@@ -148,16 +148,17 @@ defmodule JustBash.Interpreter.Executor.Redirection do
   #     $ echo hi > nope/  bash: nope/: No such file or directory
   defp open_file(bash, mode, target_path, resolved) do
     if FS.directory_spelling?(target_path) do
-      {:error, target_path, directory_target(bash, resolved), bash}
+      {:error, target_path, directory_target(bash, target_path, resolved), bash}
     else
       open_resolved(bash, mode, target_path, resolved)
     end
   end
 
-  defp directory_target(bash, resolved) do
-    case FS.stat(bash.fs, resolved) do
-      {:ok, %VFS.Stat{type: :directory}, _fs} -> VFS.Error.new(:eisdir, path: resolved)
-      {:ok, %VFS.Stat{}, _fs} -> VFS.Error.new(:enotdir, path: resolved)
+  # A spelling that holds is a directory, which is the one thing a redirection
+  # may not open; a spelling that does not says why it does not.
+  defp directory_target(bash, target_path, resolved) do
+    case FS.check_directory_spelling(bash.fs, bash.cwd, target_path) do
+      {:ok, _fs} -> VFS.Error.new(:eisdir, path: resolved)
       {:error, %VFS.Error{} = error} -> error
     end
   end

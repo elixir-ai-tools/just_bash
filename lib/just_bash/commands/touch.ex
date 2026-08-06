@@ -29,7 +29,7 @@ defmodule JustBash.Commands.Touch do
   defp touch_file(cwd, path, {fs_acc, err_acc, code_acc}) do
     resolved = FS.resolve_path(cwd, path)
 
-    case FS.check_directory_spelling(fs_acc, path, resolved) do
+    case FS.check_directory_spelling(fs_acc, cwd, path) do
       {:ok, fs_acc} -> touch_resolved(fs_acc, resolved, path, err_acc, code_acc)
       {:error, %VFS.Error{} = error} -> {fs_acc, err_acc <> touch_failed(path, error), 1}
     end

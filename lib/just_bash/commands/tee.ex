@@ -59,7 +59,7 @@ defmodule JustBash.Commands.Tee do
         {acc_fs, acc_stderr, acc_code}
       else
         resolved = FS.resolve_path(cwd, file)
-        write_single_file(acc_fs, resolved, file, content, append, acc_stderr, acc_code)
+        write_single_file(acc_fs, {cwd, resolved}, file, content, append, acc_stderr, acc_code)
       end
     end)
   end
@@ -71,8 +71,8 @@ defmodule JustBash.Commands.Tee do
   #
   #     $ echo x | tee f/     tee: f/: Not a directory
   #     $ echo x | tee nope/  tee: nope/: No such file or directory
-  defp write_single_file(fs, resolved, file, content, append, acc_stderr, acc_code) do
-    case FS.check_directory_spelling(fs, file, resolved) do
+  defp write_single_file(fs, {cwd, resolved}, file, content, append, acc_stderr, acc_code) do
+    case FS.check_directory_spelling(fs, cwd, file) do
       {:ok, fs} ->
         write_below_parent(fs, resolved, file, content, append, acc_stderr, acc_code)
 

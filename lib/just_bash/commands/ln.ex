@@ -31,7 +31,7 @@ defmodule JustBash.Commands.Ln do
     # against GNU coreutils 9.11:
     #
     #     $ ln -s a.md f/  ln: failed to create symbolic link 'f/': Not a directory
-    case FS.check_directory_spelling(bash.fs, link_name, link_path) do
+    case FS.check_directory_spelling(bash.fs, bash.cwd, link_name) do
       {:ok, fs} ->
         linked(%{bash | fs: fs}, target, link_path, link_name, opts)
 

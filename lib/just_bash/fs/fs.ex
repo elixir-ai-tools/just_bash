@@ -110,18 +110,25 @@ defmodule JustBash.FS do
 
   An empty operand names nothing at all, which is a different complaint.
   """
+  @directory_components ["", ".", ".."]
+
   @spec directory_spelling?(String.t()) :: boolean()
   def directory_spelling?(""), do: false
 
   def directory_spelling?(path) do
     last = path |> String.split("/") |> List.last()
-    last in ["", ".", ".."]
+    last in @directory_components
   end
 
   @doc """
-  Hold a path to what its spelling promised: `{:ok, fs}` unless `spelling`
-  demands a directory (see `directory_spelling?/1`) and `resolved` — the path
-  it resolved to — is not one.
+  Hold `spelling` — a path as an operand wrote it, read relative to `base` —
+  to what its spelling promised: `{:ok, fs}` unless it demands a directory
+  (see `directory_spelling?/1`) and what it demands it of is not one.
+
+  What it demands it of is the last component the spelling names outright, not
+  where `resolve_path/2` says the whole thing lands: `..` is collapsed
+  lexically, so `/f/..` resolves to `/` — a directory whatever `/f` is — while
+  the kernel cannot walk up out of the regular file `/f` at all.
 
   The error is the one `stat("f/")` itself gives: `:enotdir` when something
   that is not a directory is already there, naming the operand as the caller
@@ -130,11 +137,30 @@ defmodule JustBash.FS do
   — a recursive copy, say — can ignore.
   """
   @spec check_directory_spelling(t(), String.t(), String.t()) :: {:ok, t()} | {:error, Error.t()}
-  def check_directory_spelling(fs, spelling, resolved) do
+  def check_directory_spelling(fs, base, spelling) do
     if directory_spelling?(spelling) do
-      require_directory(fs, spelling, resolved)
+      require_directory(fs, spelling, asserted_directory(base, spelling))
     else
       {:ok, fs}
+    end
+  end
+
+  # The path `spelling` asserts is a directory: everything before the run of
+  # `/`, `.` and `..` components trailing it. Holding that one path is enough
+  # — every component the run walks through afterwards is an ancestor of it,
+  # and an ancestor of a directory is a directory. A spelling that names
+  # nothing else (`/`, `.`, `..`) asserts only about where it resolved.
+  defp asserted_directory(base, spelling) do
+    named =
+      spelling
+      |> String.split("/")
+      |> Enum.reverse()
+      |> Enum.drop_while(&(&1 in @directory_components))
+      |> Enum.reverse()
+
+    case named do
+      [] -> resolve_path(base, spelling)
+      components -> resolve_path(base, Enum.join(components, "/"))
     end
   end
 

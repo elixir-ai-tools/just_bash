@@ -225,6 +225,63 @@ defmodule JustBash.TrailingSlashTest do
     end
   end
 
+  # A `..` component makes the same demand a trailing slash does: the kernel
+  # can only walk up out of a directory. `FS.resolve_path/2` collapses it
+  # lexically — `/f/..` becomes `/`, a directory whatever `/f` is — so the
+  # demand is made about the last component the operand names outright.
+  # GNU coreutils 9.11 / bash 5:
+  #
+  #     $ touch f/..         touch: cannot touch 'f/..': Not a directory
+  #     $ touch nope/..      touch: cannot touch 'nope/..': No such file or directory
+  #     $ touch f/x/..       touch: cannot touch 'f/x/..': Not a directory
+  #     $ cp a.md f/..       cp: cannot stat 'f/..': Not a directory
+  #     $ cp a.md nope/..    cp: cannot create regular file 'nope/..': No such file …
+  #     $ mv a.md f/..       mv: cannot stat 'f/..': Not a directory
+  #     $ mv d f/..          mv: cannot stat 'f/..': Not a directory
+  #     $ echo hi > f/..     bash: f/..: Not a directory
+  #     $ echo x | tee f/..  tee: f/..: Not a directory
+  #     $ ln -s a.md f/..    ln: failed to create symbolic link 'f/..': Not a directory
+  describe "a .. component demands a directory the way a trailing slash does" do
+    for {command, message} <- [
+          {"touch /f/..", "touch: cannot touch '/f/..': Not a directory\n"},
+          {"touch /nope/..", "touch: cannot touch '/nope/..': No such file or directory\n"},
+          {"touch /f/x/..", "touch: cannot touch '/f/x/..': Not a directory\n"},
+          {"cp /a.md /f/..", "cp: cannot stat '/f/..': Not a directory\n"},
+          {"cp /a.md /nope/..",
+           "cp: cannot create regular file '/nope/..': No such file or directory\n"},
+          {"mv /a.md /f/..", "mv: cannot stat '/f/..': Not a directory\n"},
+          {"mv /d /f/..", "mv: cannot stat '/f/..': Not a directory\n"},
+          {"echo hi > /f/..", "bash: /f/..: Not a directory\n"},
+          {"echo hi | tee /f/..", "tee: /f/..: Not a directory\n"},
+          {"ln -s /a.md /f/..", "ln: failed to create symbolic link '/f/..': Not a directory\n"}
+        ] do
+      test "`#{command}` is refused" do
+        {result, bash} = JustBash.exec(bash(), unquote(command))
+
+        assert result.exit_code == 1
+        assert result.stderr == unquote(message)
+        assert {:ok, "F\n", _fs} = read(bash, "/f")
+        assert {:ok, "A\n", _fs} = read(bash, "/a.md")
+        assert {:ok, "K\n", _fs} = read(bash, "/d/keep")
+      end
+    end
+
+    # $ touch d/..   (exits 0: `d` really is a directory)
+    test "a .. hanging off a real directory is accepted" do
+      {result, _bash} = JustBash.exec(bash(), "touch /d/..")
+
+      assert result.exit_code == 0
+      assert result.stderr == ""
+    end
+
+    test "a bare .. is accepted: the cwd is a directory" do
+      {result, _bash} = JustBash.exec(bash(), "cd /d && touch ..")
+
+      assert result.exit_code == 0
+      assert result.stderr == ""
+    end
+  end
+
   describe "output redirection to a target spelled as a directory" do
     # $ cat a.md > f/
     # bash: f/: Not a directory
@@ -397,21 +454,43 @@ defmodule JustBash.TrailingSlashTest do
 
   describe "FS.check_directory_spelling/3" do
     test "passes a path that makes no demand" do
-      assert {:ok, _fs} = FS.check_directory_spelling(fs(), "/f", "/f")
+      assert {:ok, _fs} = FS.check_directory_spelling(fs(), "/", "/f")
     end
 
     test "passes a directory" do
-      assert {:ok, _fs} = FS.check_directory_spelling(fs(), "/d/", "/d")
+      assert {:ok, _fs} = FS.check_directory_spelling(fs(), "/", "/d/")
     end
 
     test "returns :enotdir for a non-directory, naming the operand as spelled" do
       assert {:error, %VFS.Error{kind: :enotdir, path: "/f/"}} =
-               FS.check_directory_spelling(fs(), "/f/", "/f")
+               FS.check_directory_spelling(fs(), "/", "/f/")
     end
 
     test "returns the error stat gave for a path that is not there" do
       assert {:error, %VFS.Error{kind: :enoent}} =
-               FS.check_directory_spelling(fs(), "/nope/", "/nope")
+               FS.check_directory_spelling(fs(), "/", "/nope/")
+    end
+
+    test "resolves a relative spelling against the base" do
+      assert {:ok, _fs} = FS.check_directory_spelling(fs(), "/d", "../d/")
+
+      assert {:error, %VFS.Error{kind: :enotdir, path: "../f/"}} =
+               FS.check_directory_spelling(fs(), "/d", "../f/")
+    end
+
+    # `resolve_path/2` collapses `..` lexically, so the demand is made about
+    # the last component the spelling names outright — `/f` for `/f/..`, not
+    # the `/` that `/f/..` resolves to.
+    test "a trailing .. demands the component it hangs off, not where it lands" do
+      assert {:error, %VFS.Error{kind: :enotdir, path: "/f/.."}} =
+               FS.check_directory_spelling(fs(), "/", "/f/..")
+
+      assert {:error, %VFS.Error{kind: :enoent}} =
+               FS.check_directory_spelling(fs(), "/", "/nope/..")
+
+      assert {:ok, _fs} = FS.check_directory_spelling(fs(), "/", "/d/..")
+      assert {:ok, _fs} = FS.check_directory_spelling(fs(), "/d", "..")
+      assert {:ok, _fs} = FS.check_directory_spelling(fs(), "/d", ".")
     end
   end
 end

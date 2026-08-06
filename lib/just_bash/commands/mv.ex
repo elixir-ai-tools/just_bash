@@ -27,7 +27,7 @@ defmodule JustBash.Commands.Mv do
     # anything the destination is wrong about.
     with :ok <- distinct(src_resolved, dest, dest_final),
          {:ok, src_type} <- source_type(bash, src, src_resolved),
-         :ok <- destination_directory(bash, {src, src_type}, dest, dest_resolved) do
+         :ok <- destination_directory(bash, {src, src_type}, dest) do
       rename(bash, {src, src_resolved}, {dest, dest_shown, dest_final})
     else
       {:error, message} -> {Command.error(message), bash}
@@ -82,8 +82,8 @@ defmodule JustBash.Commands.Mv do
   #     $ mv a.md f/     mv: cannot stat 'f/': Not a directory
   #     $ mv a.md nope/  mv: cannot move 'a.md' to 'nope/': No such file …
   #     $ mv src nope/   (renames the directory)
-  defp destination_directory(bash, {src, src_type}, dest, dest_resolved) do
-    case FS.check_directory_spelling(bash.fs, dest, dest_resolved) do
+  defp destination_directory(bash, {src, src_type}, dest) do
+    case FS.check_directory_spelling(bash.fs, bash.cwd, dest) do
       {:ok, _fs} -> :ok
       {:error, %VFS.Error{kind: :enoent}} when src_type == :directory -> :ok
       {:error, %VFS.Error{} = error} -> {:error, dest_error(src, dest, error)}
