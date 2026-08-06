@@ -437,14 +437,41 @@ defmodule JustBash.TrailingSlashTest do
     end
 
     # `-f` unlinks the destination before linking, so the check has to come
-    # first: GNU words this one "failed to access 'f/'", but the file it must
-    # not delete is the point.
+    # first — the file it must not delete is the point. GNU lstats the
+    # destination under `--force` and reports *that* failure instead:
+    #
+    #     $ ln -sf a.md f/  ln: failed to access 'f/': Not a directory
+    #     $ ln -f  a.md f/  ln: failed to access 'f/': Not a directory
     test "ln -sf does not remove the file it may not link over" do
       {result, bash} = JustBash.exec(bash(), "ln -sf /a.md /f/")
 
       assert result.exit_code == 1
-      assert result.stderr =~ "Not a directory"
+      assert result.stderr == "ln: failed to access '/f/': Not a directory\n"
       assert {:ok, "F\n", _fs} = read(bash, "/f")
+    end
+
+    test "ln -f reports the same failed access without -s" do
+      {result, bash} = JustBash.exec(bash(), "ln -f /a.md /f/")
+
+      assert result.exit_code == 1
+      assert result.stderr == "ln: failed to access '/f/': Not a directory\n"
+      assert {:ok, "F\n", _fs} = read(bash, "/f")
+    end
+
+    # $ ln -sf a.md nope/
+    # ln: failed to create symbolic link 'nope/': No such file or directory
+    #
+    # Nothing is there to lstat, so `--force` has nothing to report and the
+    # create it goes on to attempt is what fails.
+    test "ln -sf onto a missing destination still reports the failed create" do
+      {result, bash} = JustBash.exec(bash(), "ln -sf /a.md /nope/")
+
+      assert result.exit_code == 1
+
+      assert result.stderr ==
+               "ln: failed to create symbolic link '/nope/': No such file or directory\n"
+
+      refute exists?(bash, "/nope")
     end
 
     # $ sed -i s/F/Z/ f/

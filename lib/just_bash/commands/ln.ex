@@ -36,9 +36,24 @@ defmodule JustBash.Commands.Ln do
         linked(%{bash | fs: fs}, target, link_path, link_name, opts)
 
       {:error, %VFS.Error{} = error} ->
-        {Command.error(create_failed(link_name, error, opts)), bash}
+        {Command.error(spelling_failed(link_name, error, opts)), bash}
     end
   end
+
+  # `--force` lstats the destination before unlinking it, and reports *that*
+  # failure rather than the create it never attempts. `:enoent` is not a
+  # failed lstat — there is simply nothing to unlink — so the create goes
+  # ahead and fails under its own wording. GNU coreutils 9.11:
+  #
+  #     $ ln -s  a.md f/     ln: failed to create symbolic link 'f/': Not a directory
+  #     $ ln -sf a.md f/     ln: failed to access 'f/': Not a directory
+  #     $ ln -f  a.md f/     ln: failed to access 'f/': Not a directory
+  #     $ ln -sf a.md nope/  ln: failed to create symbolic link 'nope/': No such file …
+  defp spelling_failed(link_name, %VFS.Error{kind: kind} = error, %{force: true})
+       when kind != :enoent,
+       do: "ln: failed to access '#{link_name}': #{FS.strerror(error)}\n"
+
+  defp spelling_failed(link_name, error, opts), do: create_failed(link_name, error, opts)
 
   defp linked(bash, target, link_path, link_name, opts) do
     case create_link(bash, target, link_path, link_name, opts) do
