@@ -942,7 +942,7 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp execute_for_loop(cond_expr, update, body, state) do
     Limit.check_deadline!(state.deadline)
 
-    if truthy?(evaluate_expression(cond_expr, state)) do
+    if for_condition_true?(cond_expr, state) do
       case execute_loop_body(body, state) do
         {:break, new_state} ->
           new_state
@@ -958,6 +958,15 @@ defmodule JustBash.Commands.Awk.Evaluator do
     else
       state
     end
+  end
+
+  # POSIX awk / gawk: an omitted for-condition is a constant true. The parser
+  # stores that as nil; evaluating it as an unknown expression produced ""
+  # (falsy), so for(;;) never entered the body.
+  defp for_condition_true?(nil, _state), do: true
+
+  defp for_condition_true?(cond_expr, state) do
+    truthy?(evaluate_expression(cond_expr, state))
   end
 
   defp execute_while_loop(cond_expr, body, state) do

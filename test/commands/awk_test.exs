@@ -725,6 +725,25 @@ defmodule JustBash.Commands.AwkTest do
       assert result.stdout == "1\n2\n3\n"
     end
 
+    # POSIX/gawk: an omitted for-condition is a constant true. Evaluating the
+    # missing expression as the empty string made for(;;) a silent no-op.
+    test "empty for(;;) condition is true and the body runs" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+
+      {result, _} =
+        JustBash.exec(bash, "awk 'BEGIN{n=0; for(;;){n++; if(n>3) break}; print n}'")
+
+      assert result.stdout == "4\n"
+      assert result.exit_code == 0
+    end
+
+    test "for(i=0;i<n;i++) still counts from zero" do
+      bash = JustBash.new(files: %{"/data.txt" => "x\n"})
+      {result, _} = JustBash.exec(bash, "awk 'BEGIN{n=3; for(i=0;i<n;i++)print i}'")
+      assert result.stdout == "0\n1\n2\n"
+      assert result.exit_code == 0
+    end
+
     test "for loop with compound body" do
       bash = JustBash.new(files: %{"/data.txt" => "x\n"})
 
