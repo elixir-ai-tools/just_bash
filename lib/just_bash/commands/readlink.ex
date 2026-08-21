@@ -83,8 +83,6 @@ defmodule JustBash.Commands.Readlink do
   end
 
   @dialyzer {:nowarn_function, do_resolve_path: 3}
-  defp do_resolve_path(_fs, {:error, %VFS.Error{}}, _seen), do: {:error, :enoent}
-
   defp do_resolve_path(fs, path, seen) do
     if MapSet.member?(seen, path) do
       {:ok, path}
@@ -96,8 +94,10 @@ defmodule JustBash.Commands.Readlink do
   defp resolve_path_uncached(fs, path, seen) do
     case FS.readlink(fs, path) do
       {:ok, target, fs} ->
-        new_path = resolve_target(path, target)
-        do_resolve_path(fs, new_path, MapSet.put(seen, path))
+        case resolve_target(path, target) do
+          {:error, %VFS.Error{}} -> {:error, :enoent}
+          new_path -> do_resolve_path(fs, new_path, MapSet.put(seen, path))
+        end
 
       {:error, _} ->
         {:ok, path}
