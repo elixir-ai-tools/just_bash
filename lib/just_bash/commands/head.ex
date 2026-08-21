@@ -102,12 +102,16 @@ defmodule JustBash.Commands.Head do
     format_head_output(content, n)
   end
 
-  defp format_head_output(content, n) do
-    lines = String.split(content, "\n")
-    output = lines |> Enum.take(n) |> Enum.join("\n")
+  # GNU head prints through the nth newline, or the whole file when there
+  # aren't that many. String.split/2 leaves an empty piece after a
+  # terminating newline; taking it and then appending "\n" again was the
+  # extra blank line on the default count (and any -n larger than the file).
+  defp format_head_output(_content, n) when n <= 0, do: ""
 
-    if String.ends_with?(content, "\n") or length(lines) <= n,
-      do: output <> "\n",
-      else: output
+  defp format_head_output(content, n) do
+    case content |> :binary.matches("\n") |> Enum.at(n - 1) do
+      {offset, 1} -> binary_part(content, 0, offset + 1)
+      nil -> content
+    end
   end
 end
