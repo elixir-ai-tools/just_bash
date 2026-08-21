@@ -19,11 +19,11 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   @type result :: %{stdout: String.t(), stderr: String.t(), exit_code: non_neg_integer()}
 
-  # The one path the shell services itself instead of opening in the
-  # filesystem. Both directions have to name the same set: `> /dev/null`
-  # discards, so `< /dev/null` reads empty. Otherwise `cmd < /dev/null` — the
-  # standard way to hand a command a closed stdin — reports a missing file for
-  # a target that was never meant to be one.
+  # The one path the shell discards on the write side instead of opening in
+  # the filesystem. The read side (`< /dev/null`) and every command operand
+  # go through `JustBash.FS`, which services the same path as a special file.
+  # Both layers have to name the same set: `> /dev/null` discards, so
+  # `< /dev/null` and `cat /dev/null` read empty.
   @null_device "/dev/null"
 
   @typedoc """
@@ -440,10 +440,8 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     nil
   end
 
-  # `< /dev/null` is the read side of `> /dev/null`: the shell services it
-  # without touching the filesystem, and the command gets an empty stdin.
-  defp read_stdin_target(@null_device, _bash), do: ""
-
+  # `< /dev/null` is the read side of `> /dev/null`. The filesystem layer
+  # services that path as a special file, so the ordinary read is empty.
   defp read_stdin_target(path, bash) do
     resolved = FS.resolve_path(bash.cwd, path)
 

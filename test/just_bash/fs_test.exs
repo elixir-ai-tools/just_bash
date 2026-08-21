@@ -795,4 +795,66 @@ defmodule JustBash.FSTest do
                FS.link(fs, "/a/f.txt", "/b/g")
     end
   end
+
+  describe "special files" do
+    # `/dev/null` is not stored in the memory backend. Resolution consults a
+    # special-file table so the read side, the write side and the operand
+    # side agree — issue #78.
+    test "read_file of /dev/null is empty" do
+      fs = FS.new()
+      assert {:ok, "", _fs} = FS.read_file(fs, "/dev/null")
+      assert {:ok, "", _fs} = FS.read_file(fs, "/dev/./null")
+    end
+
+    test "write_file to /dev/null discards without persisting" do
+      fs = FS.new()
+      assert {:ok, fs} = FS.write_file(fs, "/dev/null", "secret")
+      assert {:ok, "", _fs} = FS.read_file(fs, "/dev/null")
+    end
+
+    test "append_file to /dev/null discards without persisting" do
+      fs = FS.new()
+      assert {:ok, fs} = FS.append_file(fs, "/dev/null", "secret")
+      assert {:ok, "", _fs} = FS.read_file(fs, "/dev/null")
+    end
+
+    test "exists? and stat see /dev/null" do
+      fs = FS.new()
+      assert {true, fs} = FS.exists?(fs, "/dev/null")
+      assert {:ok, %VFS.Stat{type: :regular, size: 0}, _fs} = FS.stat(fs, "/dev/null")
+      assert {:ok, %VFS.Stat{type: :regular, size: 0}, _fs} = FS.lstat(fs, "/dev/null")
+    end
+
+    test "/dev is a directory holding null" do
+      fs = FS.new()
+      assert {true, fs} = FS.exists?(fs, "/dev")
+      assert {:ok, %VFS.Stat{type: :directory}, fs} = FS.stat(fs, "/dev")
+      assert {:ok, entries, _fs} = FS.readdir(fs, "/dev")
+      assert "null" in Enum.to_list(entries)
+    end
+
+    test "readdir of / includes dev" do
+      fs = FS.new()
+      {:ok, entries, _fs} = FS.readdir(fs, "/")
+      assert "dev" in Enum.to_list(entries)
+    end
+
+    test "cp from /dev/null writes an empty destination" do
+      fs = FS.new(%{"/out" => "old"})
+      assert {:ok, fs} = FS.cp(fs, "/dev/null", "/out")
+      assert {:ok, "", _fs} = FS.read_file(fs, "/out")
+    end
+
+    test "removing /dev/null is refused" do
+      fs = FS.new()
+      assert {:error, %VFS.Error{kind: :eacces}} = FS.rm(fs, "/dev/null")
+      assert {true, _fs} = FS.exists?(fs, "/dev/null")
+    end
+
+    test "a path merely containing dev/null is still a path" do
+      fs = FS.new()
+      assert {:error, %VFS.Error{kind: :enoent}} = FS.read_file(fs, "/nope/dev/null")
+      assert {false, _fs} = FS.exists?(fs, "/nope/dev/null")
+    end
+  end
 end

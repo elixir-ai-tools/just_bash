@@ -285,12 +285,12 @@ defmodule JustBash.RedirectPreflightTest do
       assert result.stdout == "OR\n"
     end
 
-    test "> /dev/null still discards without touching the filesystem" do
+    test "> /dev/null still discards stdout" do
       {result, b} = JustBash.exec(bash(), "echo hi > /dev/null")
 
       assert result.exit_code == 0
       assert result.stdout == ""
-      refute exists?(b, "/dev/null")
+      assert exists?(b, "/dev/null")
     end
 
     test "2>&1 still folds stderr into stdout" do
