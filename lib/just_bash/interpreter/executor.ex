@@ -881,6 +881,7 @@ defmodule JustBash.Interpreter.Executor do
             end
 
           acc = apply_pending_assignments(acc, pending)
+          Limit.check_value_size!(acc, expanded_value)
           # Expand variable references in associative array subscripts
           # e.g. arr[$key] should store as arr[expanded_key]
           resolved_name = expand_assignment_subscript(acc, name)
@@ -909,6 +910,7 @@ defmodule JustBash.Interpreter.Executor do
             expanded_values
             |> Enum.with_index()
             |> Enum.reduce(env, fn {value, idx}, env_acc ->
+              Limit.check_value_size!(acc, value)
               key = "#{name}[#{idx}]"
               Map.put(env_acc, key, value)
             end)
@@ -969,8 +971,12 @@ defmodule JustBash.Interpreter.Executor do
 
   defp apply_pending_assignments(bash, effects) do
     Enum.reduce(effects, bash, fn
-      {:substitution, _stderr, _code}, acc -> acc
-      {name, value}, acc -> %{acc | env: Map.put(acc.env, name, value)}
+      {:substitution, _stderr, _code}, acc ->
+        acc
+
+      {name, value}, acc ->
+        Limit.check_value_size!(acc, value)
+        %{acc | env: Map.put(acc.env, name, value)}
     end)
   end
 

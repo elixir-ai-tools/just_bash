@@ -90,6 +90,22 @@ defmodule JustBash.Limit.ResourceExhaustionTest do
     end
   end
 
+  describe "memory exhaustion via variables" do
+    test "exponential string doubling is bounded by value size" do
+      bash = strict_bash(max_value_bytes: 500)
+      {result, _} = JustBash.exec(bash, "v=abc; while true; do v=${v}${v}; done")
+      assert result.exit_code == 1
+      assert result.stderr =~ "value size limit"
+    end
+
+    test "a normal-size assignment still succeeds" do
+      bash = strict_bash(max_value_bytes: 500)
+      {result, _} = JustBash.exec(bash, "v=hello; echo $v")
+      assert result.exit_code == 0
+      assert result.stdout == "hello\n"
+    end
+  end
+
   describe "memory exhaustion via filesystem" do
     test "write oversized file" do
       bash = strict_bash(max_file_bytes: 100)

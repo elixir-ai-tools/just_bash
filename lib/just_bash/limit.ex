@@ -3,8 +3,8 @@ defmodule JustBash.Limit do
   Production resource limits for JustBash execution.
 
   Prevents untrusted scripts from exhausting memory or CPU by enforcing
-  hard caps on computation steps, output size, file size, regex patterns,
-  execution nesting depth, and elapsed wall clock time.
+  hard caps on computation steps, output size, file size, value size, regex
+  patterns, execution nesting depth, and elapsed wall clock time.
 
   ## Usage
 
@@ -27,6 +27,7 @@ defmodule JustBash.Limit do
   | `:max_steps` | 10_000 | 100_000 | 1_000_000 |
   | `:max_output_bytes` | 65_536 | 1_048_576 | 10_485_760 |
   | `:max_file_bytes` | 65_536 | 1_048_576 | 10_485_760 |
+  | `:max_value_bytes` | 65_536 | 1_048_576 | 10_485_760 |
   | `:max_regex_pattern_bytes` | 10_000 | 10_000 | 10_000 |
   | `:max_exec_depth` | 128 | 128 | 128 |
   | `:max_wall_ms` | 1_000 | 5_000 | 30_000 |
@@ -40,6 +41,13 @@ defmodule JustBash.Limit do
   `:max_steps` does double duty: a whole word is one step no matter what it
   expands into, so it is also the cap on how many words a single word may
   expand into — see `check_expansion_words!/2`.
+
+  `:max_value_bytes` bounds a single expanded value. A step like
+  `v=${v}${v}` doubles a binary with no other bound seeing inside it, so
+  without this cap the wall clock cannot fire until that allocation
+  finishes. Call `concat!/3` (or `check_value_size!/2` with a byte count)
+  before the memory is spent, the way `check_expansion_words!/2` is called
+  as a word list is produced.
   """
 
   defmodule ExceededError do
@@ -52,6 +60,7 @@ defmodule JustBash.Limit do
     - `:expansion_limit` — one word expanded into too many words
     - `:output_limit` — stdout + stderr exceeded byte cap
     - `:file_size_limit` — single file write exceeded byte cap
+    - `:value_size_limit` — a single expanded value exceeded byte cap
     - `:regex_pattern_limit` — regex pattern string too large
     - `:exec_depth_limit` — eval/source nesting too deep
     - `:wall_clock_limit` — a single `JustBash.exec/2` ran too long
@@ -80,6 +89,7 @@ defmodule JustBash.Limit do
     :max_steps,
     :max_output_bytes,
     :max_file_bytes,
+    :max_value_bytes,
     :max_regex_pattern_bytes,
     :max_exec_depth,
     :max_wall_ms
@@ -88,6 +98,7 @@ defmodule JustBash.Limit do
     :max_steps,
     :max_output_bytes,
     :max_file_bytes,
+    :max_value_bytes,
     :max_regex_pattern_bytes,
     :max_exec_depth,
     :max_wall_ms
@@ -97,6 +108,7 @@ defmodule JustBash.Limit do
           max_steps: pos_integer(),
           max_output_bytes: pos_integer(),
           max_file_bytes: pos_integer(),
+          max_value_bytes: pos_integer(),
           max_regex_pattern_bytes: pos_integer(),
           max_exec_depth: pos_integer(),
           max_wall_ms: pos_integer()
@@ -110,6 +122,7 @@ defmodule JustBash.Limit do
     max_steps: 100_000,
     max_output_bytes: 1_048_576,
     max_file_bytes: 1_048_576,
+    max_value_bytes: 1_048_576,
     max_regex_pattern_bytes: 10_000,
     max_exec_depth: 128,
     max_wall_ms: 5_000
@@ -128,6 +141,7 @@ defmodule JustBash.Limit do
       | max_steps: 10_000,
         max_output_bytes: 65_536,
         max_file_bytes: 65_536,
+        max_value_bytes: 65_536,
         max_wall_ms: 1_000
     }
 
@@ -137,6 +151,7 @@ defmodule JustBash.Limit do
       | max_steps: 1_000_000,
         max_output_bytes: 10_485_760,
         max_file_bytes: 10_485_760,
+        max_value_bytes: 10_485_760,
         max_wall_ms: 30_000
     }
 
@@ -204,6 +219,25 @@ defmodule JustBash.Limit do
     end
 
     :ok
+  end
+
+  @doc """
+  Concatenate two binaries, raising `ExceededError` if the result would
+  exceed `:max_value_bytes`.
+
+  The check is on the sum of the sizes, so the oversized result is never
+  allocated — a single `v=${v}${v}` of a multi-gigabyte value is the hole
+  this closes. Call this as word parts are joined, not with the finished
+  binary.
+  """
+  @spec concat!(JustBash.t(), binary(), binary()) :: binary()
+  def concat!(%{limits: nil}, left, right) when is_binary(left) and is_binary(right) do
+    left <> right
+  end
+
+  def concat!(bash, left, right) when is_binary(left) and is_binary(right) do
+    check_value_size!(bash, byte_size(left) + byte_size(right))
+    left <> right
   end
 
   @doc "Track output bytes. Raises `ExceededError` if limit is reached."
@@ -322,6 +356,31 @@ defmodule JustBash.Limit do
         kind: :file_size_limit,
         message: "file size limit exceeded (#{limits.max_file_bytes} bytes)",
         limit: limits.max_file_bytes,
+        actual: size
+    end
+
+    :ok
+  end
+
+  @doc """
+  Check a value's size before keeping it. Raises `ExceededError` if too large.
+
+  Accepts the data binary, or a byte count so callers can refuse a
+  concatenation before it is built — see `concat!/3`.
+  """
+  @spec check_value_size!(JustBash.t(), String.t() | non_neg_integer()) :: :ok
+  def check_value_size!(%{limits: nil}, _data), do: :ok
+
+  def check_value_size!(bash, data) when is_binary(data) do
+    check_value_size!(bash, byte_size(data))
+  end
+
+  def check_value_size!(%{limits: limits}, size) when is_integer(size) do
+    if size > limits.max_value_bytes do
+      raise ExceededError,
+        kind: :value_size_limit,
+        message: "value size limit exceeded (#{limits.max_value_bytes} bytes)",
+        limit: limits.max_value_bytes,
         actual: size
     end
 
