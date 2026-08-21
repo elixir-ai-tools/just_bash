@@ -19,8 +19,16 @@ defmodule JustBash.Commands.Cd do
         {[path | _], []} -> path
       end
 
-    resolved = FS.resolve_path(bash.cwd, target)
+    case FS.resolve_path(bash.cwd, target) do
+      {:error, :enoent} ->
+        {Command.error("bash: cd: #{target}: #{FS.strerror(:enoent)}\n"), bash}
 
+      resolved ->
+        stat_and_enter(bash, target, resolved, args)
+    end
+  end
+
+  defp stat_and_enter(bash, target, resolved, args) do
     case FS.stat(bash.fs, resolved) do
       {:ok, %{type: :directory}, fs} ->
         new_env =

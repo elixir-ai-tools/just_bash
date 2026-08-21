@@ -84,6 +84,10 @@ defmodule JustBash.Commands.Tee do
   # tee does not create missing parent directories, so an absent parent is
   # reported instead of being conjured up; a parent that exists but is not
   # a directory is ENOTDIR, as the kernel would report it.
+  defp write_below_parent(fs, {:error, :enoent}, file, _content, _append, acc_stderr, _acc_code) do
+    {fs, acc_stderr <> "tee: #{file}: #{FS.strerror(:enoent)}\n", 1}
+  end
+
   defp write_below_parent(fs, resolved, file, content, append, acc_stderr, acc_code) do
     parent = Path.dirname(resolved)
 

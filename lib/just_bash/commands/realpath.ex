@@ -52,6 +52,8 @@ defmodule JustBash.Commands.Realpath do
     end
   end
 
+  defp check(fs, {:error, :enoent}, _mode), do: {:error, :enoent, fs}
+
   defp check(fs, _resolved, :missing), do: {:ok, fs}
 
   defp check(fs, resolved, :existing) do

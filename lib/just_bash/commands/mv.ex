@@ -43,6 +43,11 @@ defmodule JustBash.Commands.Mv do
 
   # A destination that already exists as a directory receives the source under
   # its own basename; anything else is the name the move lands under.
+  defp destination(fs, {:error, :enoent}, dest, dest_resolved), do: {dest_resolved, dest, fs}
+
+  defp destination(fs, _src_resolved, dest, {:error, :enoent} = dest_resolved),
+    do: {dest_resolved, dest, fs}
+
   defp destination(fs, src_resolved, dest, dest_resolved) do
     case FS.stat(fs, dest_resolved) do
       {:ok, %VFS.Stat{type: :directory}, fs} ->
@@ -68,13 +73,16 @@ defmodule JustBash.Commands.Mv do
   #
   # (`a.md/` never reaches here — `destination_directory/3` reports it, which
   # is why this asks nothing about the spelling.)
-  defp distinct(src_resolved, dest_final) do
+  defp distinct(src_resolved, dest_final)
+       when is_binary(src_resolved) and is_binary(dest_final) do
     if FS.normalize_path(src_resolved) == FS.normalize_path(dest_final) do
       {:error, "mv: '#{src_resolved}' and '#{dest_final}' are the same file\n"}
     else
       :ok
     end
   end
+
+  defp distinct(_src_resolved, _dest_final), do: :ok
 
   defp source_type(bash, src, src_resolved) do
     case FS.lstat(bash.fs, src_resolved) do
@@ -97,7 +105,7 @@ defmodule JustBash.Commands.Mv do
   defp destination_directory(bash, {src, src_type}, dest) do
     case FS.check_directory_spelling(bash.fs, bash.cwd, dest) do
       {:ok, _fs} -> :ok
-      {:error, %VFS.Error{kind: :enoent}} when src_type == :directory -> :ok
+      {:error, %VFS.Error{kind: :enoent}} when src_type == :directory and dest != "" -> :ok
       {:error, %VFS.Error{} = error} -> {:error, dest_error(src, dest, error)}
     end
   end
