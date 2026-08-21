@@ -47,8 +47,6 @@ defmodule JustBash.Commands.Xxd do
 
   defp parse_args([file | rest], opts), do: parse_args(rest, %{opts | file: file})
 
-  defp to_int(n) when is_integer(n), do: n
-
   defp to_int(n) do
     case Integer.parse(n) do
       {i, _} -> i
