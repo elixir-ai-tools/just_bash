@@ -8,22 +8,26 @@ defmodule JustBash.LimitTest do
       limits = Limit.new(:default)
       assert limits.max_steps == 100_000
       assert limits.max_output_bytes == 1_048_576
+      assert limits.max_value_bytes == 1_048_576
     end
 
     test "strict preset" do
       limits = Limit.new(:strict)
       assert limits.max_steps == 10_000
+      assert limits.max_value_bytes == 65_536
     end
 
     test "relaxed preset" do
       limits = Limit.new(:relaxed)
       assert limits.max_steps == 1_000_000
+      assert limits.max_value_bytes == 10_485_760
     end
 
     test "custom keyword list merges with defaults" do
       limits = Limit.new(max_steps: 42)
       assert limits.max_steps == 42
       assert limits.max_output_bytes == 1_048_576
+      assert limits.max_value_bytes == 1_048_576
     end
 
     test "false disables limits" do
@@ -40,6 +44,47 @@ defmodule JustBash.LimitTest do
       assert_raise ArgumentError, ~r/positive integers/, fn ->
         Limit.new(max_steps: 0)
       end
+    end
+  end
+
+  describe "Limit.concat!/3" do
+    test "concatenates when the result fits" do
+      bash = JustBash.new(limits: [max_value_bytes: 10])
+      assert Limit.concat!(bash, "hello", "wor") == "hellowor"
+    end
+
+    test "allows a result right at the bound" do
+      bash = JustBash.new(limits: [max_value_bytes: 10])
+      assert Limit.concat!(bash, "hello", "world") == "helloworld"
+    end
+
+    test "raises without concatenating when the sum would exceed the bound" do
+      bash = JustBash.new(limits: [max_value_bytes: 10])
+
+      assert_raise Limit.ExceededError, ~r/value size limit exceeded \(10 bytes\)/, fn ->
+        Limit.concat!(bash, "hello", "world!")
+      end
+    end
+
+    test "is a no-op bound when limits are disabled" do
+      bash = JustBash.new(limits: false)
+      assert Limit.concat!(bash, "hello", "world") == "helloworld"
+    end
+  end
+
+  describe "Limit.check_value_size!/2" do
+    test "accepts a byte count so callers can refuse before allocating" do
+      bash = JustBash.new(limits: [max_value_bytes: 10])
+      assert Limit.check_value_size!(bash, 10) == :ok
+
+      assert_raise Limit.ExceededError, ~r/value size limit exceeded \(10 bytes\)/, fn ->
+        Limit.check_value_size!(bash, 11)
+      end
+    end
+
+    test "passes when limits are disabled" do
+      bash = JustBash.new(limits: false)
+      assert Limit.check_value_size!(bash, 1_000_000) == :ok
     end
   end
 
@@ -132,6 +177,29 @@ defmodule JustBash.LimitTest do
       bash = JustBash.new(limits: [max_file_bytes: 1000])
       {result, _bash} = JustBash.exec(bash, ~s(echo "hello" > /tmp/small.txt))
       assert result.exit_code == 0
+    end
+  end
+
+  describe "value size limit" do
+    test "stops execution when an assignment would exceed the bound" do
+      bash = JustBash.new(limits: [max_value_bytes: 10])
+      {result, _bash} = JustBash.exec(bash, ~s(v=abcdefghijk; echo "$v"))
+      assert result.exit_code == 1
+      assert result.stderr =~ "value size limit exceeded (10 bytes)"
+    end
+
+    test "allows an assignment right at the bound" do
+      bash = JustBash.new(limits: [max_value_bytes: 8])
+      {result, _bash} = JustBash.exec(bash, ~s(v=12345678; echo "$v"))
+      assert result.exit_code == 0
+      assert result.stdout == "12345678\n"
+    end
+
+    test "a normal-size assignment is untouched" do
+      bash = JustBash.new(limits: [max_value_bytes: 1_000])
+      {result, _bash} = JustBash.exec(bash, "v=hello; echo $v")
+      assert result.exit_code == 0
+      assert result.stdout == "hello\n"
     end
   end
 

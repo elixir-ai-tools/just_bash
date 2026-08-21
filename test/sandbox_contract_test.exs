@@ -656,6 +656,55 @@ defmodule JustBash.SandboxContractTest do
     end
   end
 
+  describe "a value that grows from a short input" do
+    # Deadline checks sit between statements. One `v=${v}${v}` doubles a binary
+    # with no size cap, so the next check cannot fire until that allocation
+    # finishes — measured at ~2.4–2.9× `max_wall_ms` on a 1s budget, and the
+    # overrun grows with the value. `max_value_bytes` refuses before the
+    # concat, the way `check_expansion_words!/2` refuses before a range is
+    # built. Each probe runs under a task so a regression fails the test
+    # instead of OOMing the suite.
+    setup do
+      {:ok,
+       bash: JustBash.new(limits: [max_value_bytes: 1_000, max_wall_ms: 5_000, max_steps: 10_000])}
+    end
+
+    test "string doubling is refused before a huge allocation", %{bash: bash} do
+      {elapsed_us, result} =
+        bounded_exec_timed(bash, "v=abc; while true; do v=${v}${v}; done")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "value size limit exceeded (1000 bytes)"
+      # Unbounded, this is the GB-scale concat that overran `max_wall_ms` by
+      # ~3×. Under a 1_000-byte cap it must finish on the order of a few
+      # doublings, not a wall-clock budget.
+      assert elapsed_us < 200_000
+    end
+
+    test "unquoted doubling is the same hole", %{bash: bash} do
+      result = bounded_exec(bash, "v=abc; while true; do v=$v$v; done")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "value size limit exceeded (1000 bytes)"
+    end
+
+    test "a normal-size assignment is untouched" do
+      bash = JustBash.new(limits: [max_value_bytes: 1_000])
+      result = bounded_exec(bash, "v=hello; v=${v}${v}; echo $v")
+
+      assert result.exit_code == 0
+      assert result.stdout == "hellohello\n"
+    end
+
+    test "limits: false leaves doubling unbounded by value size" do
+      bash = JustBash.new(limits: false)
+      result = bounded_exec(bash, "v=ab; v=${v}${v}; v=${v}${v}; echo ${#v}")
+
+      assert result.exit_code == 0
+      assert result.stdout == "8\n"
+    end
+  end
+
   describe "a recursive traversal" do
     # `find` never returned through a symlink cycle (#53). The cycle is gone,
     # but nothing structural stopped the next one — a whole tree walk is one

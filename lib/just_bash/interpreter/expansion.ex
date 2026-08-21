@@ -14,6 +14,7 @@ defmodule JustBash.Interpreter.Expansion do
   alias JustBash.Interpreter.Expansion.Brace
   alias JustBash.Interpreter.Expansion.Glob
   alias JustBash.Interpreter.Expansion.Parameter
+  alias JustBash.Limit
 
   defmodule UnsetVariableError do
     @moduledoc "Raised when accessing an unset variable with set -u"
@@ -61,7 +62,7 @@ defmodule JustBash.Interpreter.Expansion do
         {expanded, new_assigns} = expand_part(current_bash, part)
         # Apply new assignments to bash so subsequent parts see them
         new_bash = apply_assignments_to_bash(current_bash, new_assigns)
-        {acc <> expanded, new_bash, assigns ++ new_assigns}
+        {Limit.concat!(current_bash, acc, expanded), new_bash, assigns ++ new_assigns}
       end)
 
     {result, assignments}
@@ -102,8 +103,12 @@ defmodule JustBash.Interpreter.Expansion do
 
   defp apply_assignments_to_bash(bash, effects) do
     Enum.reduce(effects, bash, fn
-      {:substitution, _stderr, _code}, acc -> acc
-      {name, value}, acc -> %{acc | env: Map.put(acc.env, name, value)}
+      {:substitution, _stderr, _code}, acc ->
+        acc
+
+      {name, value}, acc ->
+        Limit.check_value_size!(acc, value)
+        %{acc | env: Map.put(acc.env, name, value)}
     end)
   end
 
@@ -431,7 +436,12 @@ defmodule JustBash.Interpreter.Expansion do
         has_unquoted_glob = has_unquoted_glob?(parts)
         expanded_segments = Enum.map(parts, &expand_for_loop_part(bash, &1, ifs))
         needs_ifs_split = Enum.any?(expanded_segments, fn {_, split?} -> split? end)
-        combined = Enum.map_join(expanded_segments, "", fn {str, _} -> str end)
+
+        combined =
+          Enum.reduce(expanded_segments, "", fn {str, _}, acc ->
+            Limit.concat!(bash, acc, str)
+          end)
+
         results = maybe_split_on_ifs(combined, ifs, needs_ifs_split)
         maybe_expand_globs(bash, results, has_unquoted_glob)
     end
