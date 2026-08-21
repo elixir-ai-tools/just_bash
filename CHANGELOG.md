@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0](https://github.com/elixir-ai-tools/just_bash/compare/v0.3.0...v1.0.0) (2026-08-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* JustBash.Fs and JustBash.Fs.InMemoryFs are replaced by JustBash.FS / JustBash.FS.Memory with vfs-shaped returns ({:ok, payload, fs} on reads, %VFS.Error{} on failure, %VFS.Stat{} from stat). Bash-level script behavior is unchanged.
+
+### Features
+
+* add JustBash.CLI for namespaced subcommand tools ([#39](https://github.com/elixir-ai-tools/just_bash/issues/39)) ([2761adf](https://github.com/elixir-ai-tools/just_bash/commit/2761adf6ba25a46b4c294f5cc75b663de45bb5b4))
+* add put_context/3 and get_context/3 accessors ([#41](https://github.com/elixir-ai-tools/just_bash/issues/41)) ([2c6e6b7](https://github.com/elixir-ai-tools/just_bash/commit/2c6e6b70ea914b66f3f620ed25d69abb7887c4ec))
+* **cli:** address consumer feedback from issue [#38](https://github.com/elixir-ai-tools/just_bash/issues/38) ([#43](https://github.com/elixir-ai-tools/just_bash/issues/43)) ([7d84244](https://github.com/elixir-ai-tools/just_bash/commit/7d84244af91435d0b3a9c1419ae68d55019222fc))
+* replace the filesystem layer with the vfs library ([#44](https://github.com/elixir-ai-tools/just_bash/issues/44)) ([1da1db8](https://github.com/elixir-ai-tools/just_bash/commit/1da1db8a99491e9d0b7810fc9f84570be4e71c2f))
+
+
+### Bug Fixes
+
+* /dev/null exists as a filesystem node so operands agree with redirects ([#78](https://github.com/elixir-ai-tools/just_bash/issues/78)) ([#93](https://github.com/elixir-ai-tools/just_bash/issues/93)) ([8619ada](https://github.com/elixir-ai-tools/just_bash/commit/8619ada80d20d406e179279246e35d6c82a23fd9))
+* a CLI flag rejects unknown spec keys and accepts extra long spellings ([#71](https://github.com/elixir-ai-tools/just_bash/issues/71)) ([83af599](https://github.com/elixir-ai-tools/just_bash/commit/83af5993b90e21cb09fcd72738e5d78e948a0c8b))
+* a command whose redirect fails does not run at all ([#60](https://github.com/elixir-ai-tools/just_bash/issues/60)) ([025673c](https://github.com/elixir-ai-tools/just_bash/commit/025673c2bdc5f594766eaec33df461c309925a0c))
+* a flag a command does not implement is an error, not a filename ([#72](https://github.com/elixir-ai-tools/just_bash/issues/72)) ([9aab27a](https://github.com/elixir-ai-tools/just_bash/commit/9aab27adeff8a50ce31c678a11d5b685aafe4037))
+* a trailing slash on a destination requires a directory instead of overwriting the file it names ([#75](https://github.com/elixir-ai-tools/just_bash/issues/75)) ([5de39ef](https://github.com/elixir-ai-tools/just_bash/commit/5de39ef62dafd69837c5eeb05ecf766d739f6ca6))
+* awk's empty for(;;) condition is true, matching gawk ([#87](https://github.com/elixir-ai-tools/just_bash/issues/87)) ([ca5c918](https://github.com/elixir-ai-tools/just_bash/commit/ca5c9182af690f48b75ad813c4dd99499298297f))
+* bound value size so doubling cannot blow past max_wall_ms ([#85](https://github.com/elixir-ai-tools/just_bash/issues/85)) ([55c0f50](https://github.com/elixir-ai-tools/just_bash/commit/55c0f50551b094fe5a995699a0a665cb7bb4973c)), closes [#77](https://github.com/elixir-ai-tools/just_bash/issues/77)
+* cp into a directory, and make cp -r actually copy ([#57](https://github.com/elixir-ai-tools/just_bash/issues/57)) ([7d73837](https://github.com/elixir-ai-tools/just_bash/commit/7d738370c306188e90baa6da56ca77c71b24c22e))
+* date implements %F and -I instead of emitting them literally ([#63](https://github.com/elixir-ai-tools/just_bash/issues/63)) ([274e86b](https://github.com/elixir-ai-tools/just_bash/commit/274e86b476613d8c20a0a5e8cece190237d1f30a))
+* date rejects unknown arguments instead of returning today at exit 0 ([#66](https://github.com/elixir-ai-tools/just_bash/issues/66)) ([fd2bb2c](https://github.com/elixir-ai-tools/just_bash/commit/fd2bb2c2bb4bae18412dfa65f39db1fd08bf8362))
+* exec/2 returns a shell result instead of raising, and always terminates ([#73](https://github.com/elixir-ai-tools/just_bash/issues/73)) ([3b9be0d](https://github.com/elixir-ai-tools/just_bash/commit/3b9be0d73a78cd6b14abddfa30f7f7730b2a9cc3))
+* grep BRE alternation, missing-path exit code, and flag-level did-you-mean ([#84](https://github.com/elixir-ai-tools/just_bash/issues/84)) ([3d2c625](https://github.com/elixir-ai-tools/just_bash/commit/3d2c625ca78027118f9fb118c8ca4ec1ab03fbd6))
+* head default line count no longer emits a trailing blank line ([#91](https://github.com/elixir-ai-tools/just_bash/issues/91)) ([1bcda6b](https://github.com/elixir-ai-tools/just_bash/commit/1bcda6b2587d4ec889176a9c2b6968517a0328d8))
+* honour `--` as end-of-options for file-operand commands ([#89](https://github.com/elixir-ai-tools/just_bash/issues/89)) ([b5477c3](https://github.com/elixir-ai-tools/just_bash/commit/b5477c3d4a2d61d7fa06d81b721b785e1299ae13))
+* mkdir and rm report backend errors instead of crashing the exec ([#48](https://github.com/elixir-ai-tools/just_bash/issues/48)) ([dffd5dd](https://github.com/elixir-ai-tools/just_bash/commit/dffd5dd78be24dc96598fa4ca2d91955fddfe809))
+* printf %b support and no-progress guard against format-recycle hangs ([#50](https://github.com/elixir-ai-tools/just_bash/issues/50)) ([56c74b8](https://github.com/elixir-ai-tools/just_bash/commit/56c74b82dae9bb72008c62cb47d530a284a30191))
+* replace retired earmark runtime dependency with mdex ([#55](https://github.com/elixir-ai-tools/just_bash/issues/55)) ([ce86847](https://github.com/elixir-ai-tools/just_bash/commit/ce8684706d5b04cbacdebea1f8c860d729584ebc)), closes [#54](https://github.com/elixir-ai-tools/just_bash/issues/54)
+* shasum -c and sha256sum -c read checksums from stdin ([#88](https://github.com/elixir-ai-tools/just_bash/issues/88)) ([cdddddc](https://github.com/elixir-ai-tools/just_bash/commit/cdddddc093b4fd6dee8be63739ae047dec7295b5))
+* tac does not invent a newline on an unterminated last record ([#92](https://github.com/elixir-ai-tools/just_bash/issues/92)) ([6c92a44](https://github.com/elixir-ai-tools/just_bash/commit/6c92a4406d08dacf2f1de8452b9cbbc318b69304))
+* writing through a regular file is ENOTDIR, not unreachable state ([#56](https://github.com/elixir-ai-tools/just_bash/issues/56)) ([1633cdc](https://github.com/elixir-ai-tools/just_bash/commit/1633cdcf48919756123da7d3e1198093596d4037))
+
 ## [0.3.0](https://github.com/elixir-ai-tools/just_bash/compare/v0.2.0...v0.3.0) (2026-04-14)
 
 
