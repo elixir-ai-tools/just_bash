@@ -104,6 +104,7 @@ defmodule JustBash.Commands.TextProcessingTest do
       bash = JustBash.new(files: %{"/empty.txt" => ""})
       {result, _} = JustBash.exec(bash, "head /empty.txt")
       assert result.exit_code == 0
+      assert result.stdout == ""
     end
 
     test "head with multiple files shows headers" do
@@ -116,6 +117,57 @@ defmodule JustBash.Commands.TextProcessingTest do
       assert result.stdout =~ "line1a"
       assert result.stdout =~ "==> /b.txt <=="
       assert result.stdout =~ "line1b"
+    end
+
+    # GNU head of a short file is the file itself. `x=$(head f)` strips the
+    # extra trailing newline before anyone sees it; byte-compare stdout.
+    test "head of a one-line file does not emit a trailing blank line" do
+      bash = JustBash.new(files: %{"/f" => "x\n"})
+      {result, _} = JustBash.exec(bash, "head /f")
+      assert result.exit_code == 0
+      assert result.stdout == "x\n"
+    end
+
+    test "head of stdin does not emit a trailing blank line" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo x | head")
+      assert result.exit_code == 0
+      assert result.stdout == "x\n"
+    end
+
+    test "head -n1 of a one-line file still matches GNU" do
+      bash = JustBash.new(files: %{"/f" => "x\n"})
+      {result, _} = JustBash.exec(bash, "head -n1 /f")
+      assert result.exit_code == 0
+      assert result.stdout == "x\n"
+    end
+
+    test "head -n2 of a one-line file does not emit a trailing blank line" do
+      bash = JustBash.new(files: %{"/f" => "x\n"})
+      {result, _} = JustBash.exec(bash, "head -n2 /f")
+      assert result.exit_code == 0
+      assert result.stdout == "x\n"
+    end
+
+    test "head of a file without a trailing newline does not add one" do
+      bash = JustBash.new(files: %{"/f" => "x"})
+      {result, _} = JustBash.exec(bash, "head /f")
+      assert result.exit_code == 0
+      assert result.stdout == "x"
+    end
+
+    test "head default multi-file headers do not insert extra blank lines" do
+      bash = JustBash.new(files: %{"/f" => "x\n", "/g" => "hi\n"})
+      {result, _} = JustBash.exec(bash, "head /f /g")
+      assert result.exit_code == 0
+      assert result.stdout == "==> /f <==\nx\n\n==> /g <==\nhi\n"
+    end
+
+    test "head -n1 multi-file headers still match GNU" do
+      bash = JustBash.new(files: %{"/f" => "x\n", "/g" => "hi\n"})
+      {result, _} = JustBash.exec(bash, "head -n1 /f /g")
+      assert result.exit_code == 0
+      assert result.stdout == "==> /f <==\nx\n\n==> /g <==\nhi\n"
     end
 
     test "head -c N outputs first N bytes from file" do
@@ -224,6 +276,30 @@ defmodule JustBash.Commands.TextProcessingTest do
       assert result.stdout =~ "line2a"
       assert result.stdout =~ "==> /b.txt <=="
       assert result.stdout =~ "line2b"
+    end
+
+    # Tail splits with trim: true, so the default count does not double-count a
+    # terminating newline the way head did. Byte-compare so a rewrite cannot
+    # grow the same hole.
+    test "tail of a one-line file does not emit a trailing blank line" do
+      bash = JustBash.new(files: %{"/f" => "x\n"})
+      {result, _} = JustBash.exec(bash, "tail /f")
+      assert result.exit_code == 0
+      assert result.stdout == "x\n"
+    end
+
+    test "tail of stdin does not emit a trailing blank line" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "echo x | tail")
+      assert result.exit_code == 0
+      assert result.stdout == "x\n"
+    end
+
+    test "tail default multi-file headers do not insert extra blank lines" do
+      bash = JustBash.new(files: %{"/f" => "x\n", "/g" => "hi\n"})
+      {result, _} = JustBash.exec(bash, "tail /f /g")
+      assert result.exit_code == 0
+      assert result.stdout == "==> /f <==\nx\n\n==> /g <==\nhi\n"
     end
 
     test "tail -c N outputs last N bytes from file" do
