@@ -298,8 +298,9 @@ defmodule JustBash.Interpreter.Executor.Conditional do
   end
 
   defp same_file?(bash, path1, path2) do
-    resolved1 = FS.resolve_path(bash.cwd, path1)
-    resolved2 = FS.resolve_path(bash.cwd, path2)
-    resolved1 == resolved2
+    case {FS.resolve_path(bash.cwd, path1), FS.resolve_path(bash.cwd, path2)} do
+      {resolved, resolved} when is_binary(resolved) -> true
+      _ -> false
+    end
   end
 end

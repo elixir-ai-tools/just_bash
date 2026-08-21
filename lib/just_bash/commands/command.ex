@@ -33,7 +33,7 @@ defmodule JustBash.Commands.Command do
   @doc """
   Resolve a path relative to the current working directory.
   """
-  @spec resolve_path(bash(), String.t()) :: String.t()
+  @spec resolve_path(bash(), String.t()) :: FS.resolved()
   def resolve_path(bash, path) do
     FS.resolve_path(bash.cwd, path)
   end

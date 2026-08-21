@@ -69,6 +69,8 @@ defmodule JustBash.Commands.Readlink do
     parse_args(rest, %{opts | files: opts.files ++ [file]})
   end
 
+  defp process_file(_fs, {:error, %VFS.Error{}}, _original, _canonicalize), do: {:error, :enoent}
+
   defp process_file(fs, path, _original, false) do
     case FS.readlink(fs, path) do
       {:ok, target, _fs} -> {:ok, target}
@@ -92,8 +94,10 @@ defmodule JustBash.Commands.Readlink do
   defp resolve_path_uncached(fs, path, seen) do
     case FS.readlink(fs, path) do
       {:ok, target, fs} ->
-        new_path = resolve_target(path, target)
-        do_resolve_path(fs, new_path, MapSet.put(seen, path))
+        case resolve_target(path, target) do
+          {:error, %VFS.Error{}} -> {:error, :enoent}
+          new_path -> do_resolve_path(fs, new_path, MapSet.put(seen, path))
+        end
 
       {:error, _} ->
         {:ok, path}
