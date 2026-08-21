@@ -193,6 +193,26 @@ defmodule JustBash.Commands.StdinOperandTest do
       assert {%{stdout: "4\n3\n2\n1\n"}, _} = JustBash.exec(bash, piped <> "tac /b -")
     end
 
+    # `tac n a` is still `tac n; tac a`. The unterminated last record of n
+    # stays without a separator, so it glues to a's first reversed record.
+    # Bytes pinned against /usr/bin/tac on this host.
+    test "tac two-file unterminated last line matches GNU record split" do
+      bash = JustBash.new(files: %{"/n" => "1\n2", "/a" => "1\n2\n"})
+
+      assert {%{stdout: "21\n2\n1\n"}, _} = JustBash.exec(bash, "tac /n /a")
+      assert {%{stdout: "2\n1\n21\n"}, _} = JustBash.exec(bash, "tac /a /n")
+    end
+
+    # GNU rev reverses each operand on its own and concatenates. Concatenating
+    # first then reversing glues the unterminated last line of n to the first
+    # line of a and reverses them as one record.
+    test "rev reverses each operand on its own, including unterminated last lines" do
+      bash = JustBash.new(files: %{"/n" => "ab\ncd", "/a" => "ef\ngh\n"})
+
+      assert {%{stdout: "ba\ndcfe\nhg\n"}, _} = JustBash.exec(bash, "rev /n /a")
+      assert {%{stdout: "fe\nhg\nba\ndc"}, _} = JustBash.exec(bash, "rev /a /n")
+    end
+
     test "an operand after `--` is a path, dash and all" do
       bash = JustBash.new(files: %{"/-f" => "12\n34\n"})
 

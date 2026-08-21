@@ -1254,6 +1254,54 @@ defmodule JustBash.Commands.TextProcessingTest do
       assert result.exit_code == 1
       assert result.stderr =~ "No such file"
     end
+
+    # GNU tac reverses records, and a record is text up to and including its
+    # separator. An unterminated last record carries no newline, so reversing
+    # "1\n2" is "2" then "1\n" — "21\n" — not a split-and-rejoin that
+    # manufactures a separator. Bytes pinned against /usr/bin/tac.
+    test "tac of an unterminated last line does not invent a newline" do
+      bash = JustBash.new(files: %{"/n" => "1\n2"})
+      {result, _} = JustBash.exec(bash, "tac /n")
+      assert result.exit_code == 0
+      assert result.stdout == "21\n"
+    end
+
+    test "tac of stdin without a trailing newline matches the file case" do
+      bash = JustBash.new()
+      {result, _} = JustBash.exec(bash, "printf '1\\n2' | tac")
+      assert result.exit_code == 0
+      assert result.stdout == "21\n"
+    end
+
+    test "tac of a single unterminated line does not invent a newline" do
+      bash = JustBash.new(files: %{"/only" => "only"})
+      {result, _} = JustBash.exec(bash, "tac /only")
+      assert result.exit_code == 0
+      assert result.stdout == "only"
+    end
+
+    test "tac of terminated input still reverses lines" do
+      bash = JustBash.new(files: %{"/a" => "1\n2\n"})
+      {result, _} = JustBash.exec(bash, "tac /a")
+      assert result.exit_code == 0
+      assert result.stdout == "2\n1\n"
+    end
+
+    test "tac | tac of terminated input restores the original bytes" do
+      bash = JustBash.new(files: %{"/a" => "1\n2\n"})
+      {result, _} = JustBash.exec(bash, "tac /a | tac")
+      assert result.exit_code == 0
+      assert result.stdout == "1\n2\n"
+    end
+
+    # GNU itself does not restore "1\n2": the missing separator is gone after
+    # the first reverse, so the second tac sees the single record "21\n".
+    test "tac | tac of unterminated input matches GNU" do
+      bash = JustBash.new(files: %{"/n" => "1\n2"})
+      {result, _} = JustBash.exec(bash, "tac /n | tac")
+      assert result.exit_code == 0
+      assert result.stdout == "21\n"
+    end
   end
 
   describe "rev command" do
@@ -1286,6 +1334,15 @@ defmodule JustBash.Commands.TextProcessingTest do
       {result, _} = JustBash.exec(bash, "rev /nonexistent")
       assert result.exit_code == 1
       assert result.stderr =~ "No such file"
+    end
+
+    # Single-file rev already keeps an unterminated last line. Pin the bytes
+    # so a later split-and-rejoin cannot invent a separator the way tac did.
+    test "rev of an unterminated last line does not invent a newline" do
+      bash = JustBash.new(files: %{"/n" => "ab\ncd"})
+      {result, _} = JustBash.exec(bash, "rev /n")
+      assert result.exit_code == 0
+      assert result.stdout == "ba\ndc"
     end
   end
 

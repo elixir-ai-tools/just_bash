@@ -25,7 +25,7 @@ defmodule JustBash.Commands.Tac do
     |> defaults_to_stdin()
     |> Enum.reduce_while({:ok, [], bash.fs}, fn file, {:ok, acc, fs} ->
       case StdinOperand.read(fs, bash.cwd, file, stdin) do
-        {:ok, data, fs} -> {:cont, {:ok, [reverse_lines(data) | acc], fs}}
+        {:ok, data, fs} -> {:cont, {:ok, [reverse_records(data) | acc], fs}}
         {:error, error} -> {:halt, {:error, read_error(file, error)}}
       end
     end)
@@ -48,20 +48,29 @@ defmodule JustBash.Commands.Tac do
   defp read_error(file, error),
     do: "tac: failed to open '#{file}' for reading: #{FS.strerror(error)}\n"
 
-  defp reverse_lines(content) do
-    lines = String.split(content, "\n", trim: false)
-
-    lines =
-      if List.last(lines) == "" do
-        List.delete_at(lines, -1)
-      else
-        lines
-      end
-
-    if lines == [] do
-      ""
-    else
-      Enum.reverse(lines) |> Enum.join("\n") |> Kernel.<>("\n")
-    end
+  # GNU tac reverses records, not newline-split lines. A record is the text
+  # up to and including its separator; an unterminated last record carries
+  # none. Split-and-rejoin manufactured a separator `"1\n2"` never had.
+  defp reverse_records(content) do
+    content
+    |> records()
+    |> Enum.reverse()
+    |> IO.iodata_to_binary()
   end
+
+  defp records(content) do
+    content
+    |> String.split("\n", trim: false)
+    |> attach_separators()
+  end
+
+  defp attach_separators([""]), do: []
+
+  defp attach_separators(parts) do
+    {last, rest} = List.pop_at(parts, -1)
+    rest |> Enum.map(&(&1 <> "\n")) |> attach_last(last)
+  end
+
+  defp attach_last(terminated, ""), do: terminated
+  defp attach_last(terminated, last) when is_binary(last), do: terminated ++ [last]
 end
