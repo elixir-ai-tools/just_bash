@@ -45,8 +45,8 @@ defmodule JustBash.Commands.Uniq do
   end
 
   # GNU uniq words the failure differently once the open has succeeded.
-  defp read_error(file, %VFS.Error{kind: :eisdir}),
-    do: "uniq: error reading '#{file}': Is a directory\n"
+  defp read_error(file, %VFS.Error{kind: :eisdir} = error),
+    do: "uniq: error reading '#{file}': #{FS.strerror(error)}\n"
 
   defp read_error(file, error), do: "uniq: #{file}: #{FS.strerror(error)}\n"
 

@@ -42,8 +42,8 @@ defmodule JustBash.Commands.Tac do
 
   # GNU tac `open(2)`s a directory successfully and only fails at `read(2)`,
   # so EISDIR gets a template of its own rather than the open-failure one.
-  defp read_error(file, %VFS.Error{kind: :eisdir}),
-    do: "tac: #{file}: read error: Is a directory\n"
+  defp read_error(file, %VFS.Error{kind: :eisdir} = error),
+    do: "tac: #{file}: read error: #{FS.strerror(error)}\n"
 
   defp read_error(file, error),
     do: "tac: failed to open '#{file}' for reading: #{FS.strerror(error)}\n"
