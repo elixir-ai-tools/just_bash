@@ -13,8 +13,8 @@ defmodule JustBash.EmptyPathTest do
 
   describe "FS.resolve_path/2" do
     test "an empty pathname is ENOENT, not the base" do
-      assert FS.resolve_path("/home/user", "") == {:error, :enoent}
-      assert FS.resolve_path("/", "") == {:error, :enoent}
+      assert {:error, %VFS.Error{kind: :enoent, path: ""}} = FS.resolve_path("/home/user", "")
+      assert {:error, %VFS.Error{kind: :enoent, path: ""}} = FS.resolve_path("/", "")
     end
 
     test "a real relative path still resolves against the base" do

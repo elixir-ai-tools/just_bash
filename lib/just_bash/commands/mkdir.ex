@@ -90,7 +90,7 @@ defmodule JustBash.Commands.Mkdir do
     |> Enum.scan(&Path.join(&2, &1))
   end
 
-  defp non_directory?(_fs, {:error, :enoent}), do: false
+  defp non_directory?(_fs, {:error, %VFS.Error{}}), do: false
 
   defp non_directory?(fs, resolved) do
     match?({:ok, %VFS.Stat{type: type}, _fs} when type != :directory, FS.stat(fs, resolved))

@@ -69,7 +69,7 @@ defmodule JustBash.Commands.Readlink do
     parse_args(rest, %{opts | files: opts.files ++ [file]})
   end
 
-  defp process_file(_fs, {:error, :enoent}, _original, _canonicalize), do: {:error, :enoent}
+  defp process_file(_fs, {:error, %VFS.Error{}}, _original, _canonicalize), do: {:error, :enoent}
 
   defp process_file(fs, path, _original, false) do
     case FS.readlink(fs, path) do
@@ -83,7 +83,7 @@ defmodule JustBash.Commands.Readlink do
   end
 
   @dialyzer {:nowarn_function, do_resolve_path: 3}
-  defp do_resolve_path(_fs, {:error, :enoent}, _seen), do: {:error, :enoent}
+  defp do_resolve_path(_fs, {:error, %VFS.Error{}}, _seen), do: {:error, :enoent}
 
   defp do_resolve_path(fs, path, seen) do
     if MapSet.member?(seen, path) do

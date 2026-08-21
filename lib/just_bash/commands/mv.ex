@@ -43,9 +43,9 @@ defmodule JustBash.Commands.Mv do
 
   # A destination that already exists as a directory receives the source under
   # its own basename; anything else is the name the move lands under.
-  defp destination(fs, {:error, :enoent}, dest, dest_resolved), do: {dest_resolved, dest, fs}
+  defp destination(fs, {:error, %VFS.Error{}}, dest, dest_resolved), do: {dest_resolved, dest, fs}
 
-  defp destination(fs, _src_resolved, dest, {:error, :enoent} = dest_resolved),
+  defp destination(fs, _src_resolved, dest, {:error, %VFS.Error{}} = dest_resolved),
     do: {dest_resolved, dest, fs}
 
   defp destination(fs, src_resolved, dest, dest_resolved) do

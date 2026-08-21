@@ -73,10 +73,11 @@ defmodule JustBash.FS do
   # `resolve_path/2` is the one place that says so.
 
   @typedoc """
-  A path `resolve_path/2` produced: an absolute string, or `{:error, :enoent}`
-  when the operand was the empty pathname.
+  A path `resolve_path/2` produced: an absolute string, or
+  `{:error, %VFS.Error{kind: :enoent}}` when the operand was the empty
+  pathname.
   """
-  @type resolved :: String.t() | {:error, :enoent}
+  @type resolved :: String.t() | {:error, Error.t()}
 
   @doc """
   Normalize a filesystem path. Relative input is rooted at `/`.
@@ -111,7 +112,7 @@ defmodule JustBash.FS do
   the working directory. POSIX is the other way: `open("")` is `ENOENT`.
   """
   @spec resolve_path(String.t(), String.t()) :: resolved()
-  def resolve_path(_base, ""), do: {:error, :enoent}
+  def resolve_path(_base, ""), do: empty_operand_error()
   def resolve_path(_base, "/" <> _ = path), do: normalize_path(path)
   def resolve_path(base, path), do: VPath.join(normalize_path(base), path)
 
@@ -188,8 +189,8 @@ defmodule JustBash.FS do
 
   @doc "See `VFS.read_file/2`."
   @spec read_file(t(), resolved()) :: {:ok, binary(), t()} | {:error, Error.t()}
-  def read_file(_fs, path) when path == "" or path == {:error, :enoent},
-    do: empty_operand_error()
+  def read_file(_fs, ""), do: empty_operand_error()
+  def read_file(_fs, {:error, %Error{}} = error), do: error
 
   def read_file(fs, path) do
     case special(path) do
@@ -203,8 +204,8 @@ defmodule JustBash.FS do
           {:ok, Enumerable.t(), t()} | {:error, Error.t()}
   def stream_read(fs, path, opts \\ [])
 
-  def stream_read(_fs, path, _opts) when path == "" or path == {:error, :enoent},
-    do: empty_operand_error()
+  def stream_read(_fs, "", _opts), do: empty_operand_error()
+  def stream_read(_fs, {:error, %Error{}} = error, _opts), do: error
 
   def stream_read(fs, path, opts) do
     case special(path) do
@@ -218,8 +219,8 @@ defmodule JustBash.FS do
           {:ok, t()} | {:error, Error.t()}
   def write_file(fs, path, content, opts \\ [])
 
-  def write_file(_fs, path, _content, _opts) when path == "" or path == {:error, :enoent},
-    do: empty_operand_error()
+  def write_file(_fs, "", _content, _opts), do: empty_operand_error()
+  def write_file(_fs, {:error, %Error{}} = error, _content, _opts), do: error
 
   def write_file(fs, path, content, opts) do
     case special(path) do
@@ -230,7 +231,8 @@ defmodule JustBash.FS do
 
   @doc "See `VFS.exists?/2`."
   @spec exists?(t(), resolved()) :: {boolean(), t()}
-  def exists?(fs, path) when path == "" or path == {:error, :enoent}, do: {false, fs}
+  def exists?(fs, ""), do: {false, fs}
+  def exists?(fs, {:error, %Error{}}), do: {false, fs}
 
   def exists?(fs, path) do
     case special(path) do
@@ -241,7 +243,8 @@ defmodule JustBash.FS do
 
   @doc "See `VFS.stat/2`. Follows symlinks."
   @spec stat(t(), resolved()) :: {:ok, VFS.Stat.t(), t()} | {:error, Error.t()}
-  def stat(_fs, path) when path == "" or path == {:error, :enoent}, do: empty_operand_error()
+  def stat(_fs, ""), do: empty_operand_error()
+  def stat(_fs, {:error, %Error{}} = error), do: error
 
   def stat(fs, path) do
     case special(path) do
@@ -252,7 +255,8 @@ defmodule JustBash.FS do
 
   @doc "See `VFS.readdir/2`."
   @spec readdir(t(), resolved()) :: {:ok, Enumerable.t(), t()} | {:error, Error.t()}
-  def readdir(_fs, path) when path == "" or path == {:error, :enoent}, do: empty_operand_error()
+  def readdir(_fs, ""), do: empty_operand_error()
+  def readdir(_fs, {:error, %Error{}} = error), do: error
 
   def readdir(fs, path) do
     case special(path) do
@@ -275,8 +279,8 @@ defmodule JustBash.FS do
   @spec mkdir(t(), resolved(), mkdir_opts()) :: {:ok, t()} | {:error, Error.t()}
   def mkdir(fs, path, opts \\ [])
 
-  def mkdir(_fs, path, _opts) when path == "" or path == {:error, :enoent},
-    do: empty_operand_error()
+  def mkdir(_fs, "", _opts), do: empty_operand_error()
+  def mkdir(_fs, {:error, %Error{}} = error, _opts), do: error
 
   def mkdir(fs, path, opts) do
     # The 0.3 option was `recursive:`; silently ignoring it would make
@@ -297,8 +301,8 @@ defmodule JustBash.FS do
   @spec rm(t(), resolved(), rm_opts()) :: {:ok, t()} | {:error, Error.t()}
   def rm(fs, path, opts \\ [])
 
-  def rm(_fs, path, _opts) when path == "" or path == {:error, :enoent},
-    do: empty_operand_error()
+  def rm(_fs, "", _opts), do: empty_operand_error()
+  def rm(_fs, {:error, %Error{}} = error, _opts), do: error
 
   def rm(fs, path, opts) do
     # The 0.3 option was `force:`; silently ignoring it would surface as
@@ -329,7 +333,8 @@ defmodule JustBash.FS do
 
   @doc "Get stat information without following symlinks."
   @spec lstat(t(), resolved()) :: {:ok, VFS.Stat.t(), t()} | {:error, Error.t()}
-  def lstat(_fs, path) when path == "" or path == {:error, :enoent}, do: empty_operand_error()
+  def lstat(_fs, ""), do: empty_operand_error()
+  def lstat(_fs, {:error, %Error{}} = error), do: error
 
   def lstat(fs, path) do
     case special(path) do
@@ -340,7 +345,8 @@ defmodule JustBash.FS do
 
   @doc "Read the target of a symbolic link."
   @spec readlink(t(), resolved()) :: {:ok, String.t(), t()} | {:error, Error.t()}
-  def readlink(_fs, path) when path == "" or path == {:error, :enoent}, do: empty_operand_error()
+  def readlink(_fs, ""), do: empty_operand_error()
+  def readlink(_fs, {:error, %Error{}} = error), do: error
 
   def readlink(fs, path) do
     case special(path) do
@@ -351,8 +357,8 @@ defmodule JustBash.FS do
 
   @doc "Create a symbolic link at `link_path` pointing to `target`."
   @spec symlink(t(), String.t(), resolved()) :: {:ok, t()} | {:error, Error.t()}
-  def symlink(_fs, _target, path) when path == "" or path == {:error, :enoent},
-    do: empty_operand_error()
+  def symlink(_fs, _target, ""), do: empty_operand_error()
+  def symlink(_fs, _target, {:error, %Error{}} = error), do: error
 
   def symlink(fs, target, link_path) do
     case special(link_path) do
@@ -363,11 +369,10 @@ defmodule JustBash.FS do
 
   @doc "Create a hard link."
   @spec link(t(), resolved(), resolved()) :: {:ok, t()} | {:error, Error.t()}
-  def link(_fs, path, _new_path) when path == "" or path == {:error, :enoent},
-    do: empty_operand_error()
-
-  def link(_fs, _existing_path, path) when path == "" or path == {:error, :enoent},
-    do: empty_operand_error()
+  def link(_fs, "", _new_path), do: empty_operand_error()
+  def link(_fs, {:error, %Error{}} = error, _new_path), do: error
+  def link(_fs, _existing_path, ""), do: empty_operand_error()
+  def link(_fs, _existing_path, {:error, %Error{}} = error), do: error
 
   def link(fs, existing_path, new_path) do
     case {special(existing_path), special(new_path)} do
@@ -379,8 +384,8 @@ defmodule JustBash.FS do
 
   @doc "Change file/directory permissions."
   @spec chmod(t(), resolved(), non_neg_integer()) :: {:ok, t()} | {:error, Error.t()}
-  def chmod(_fs, path, _mode) when path == "" or path == {:error, :enoent},
-    do: empty_operand_error()
+  def chmod(_fs, "", _mode), do: empty_operand_error()
+  def chmod(_fs, {:error, %Error{}} = error, _mode), do: error
 
   def chmod(fs, path, mode) do
     case special(path) do
@@ -391,8 +396,8 @@ defmodule JustBash.FS do
 
   @doc "Append content to a file, creating it if it doesn't exist."
   @spec append_file(t(), resolved(), binary()) :: {:ok, t()} | {:error, Error.t()}
-  def append_file(_fs, path, _content) when path == "" or path == {:error, :enoent},
-    do: empty_operand_error()
+  def append_file(_fs, "", _content), do: empty_operand_error()
+  def append_file(_fs, {:error, %Error{}} = error, _content), do: error
 
   def append_file(fs, path, content) do
     case special(path) do
@@ -426,11 +431,10 @@ defmodule JustBash.FS do
   @spec cp(t(), resolved(), resolved(), cp_opts()) :: {:ok, t()} | {:error, Error.t()}
   def cp(fs, src, dest, opts \\ [])
 
-  def cp(_fs, src, _dest, _opts) when src == "" or src == {:error, :enoent},
-    do: empty_operand_error()
-
-  def cp(_fs, _src, dest, _opts) when dest == "" or dest == {:error, :enoent},
-    do: empty_operand_error()
+  def cp(_fs, "", _dest, _opts), do: empty_operand_error()
+  def cp(_fs, {:error, %Error{}} = error, _dest, _opts), do: error
+  def cp(_fs, _src, "", _opts), do: empty_operand_error()
+  def cp(_fs, _src, {:error, %Error{}} = error, _opts), do: error
 
   def cp(fs, src, dest, opts) do
     src_norm = normalize_path(src)
@@ -474,8 +478,10 @@ defmodule JustBash.FS do
   `cp/4`) rather than looping.
   """
   @spec mv(t(), resolved(), resolved()) :: {:ok, t()} | {:error, Error.t()}
-  def mv(_fs, src, _dest) when src == "" or src == {:error, :enoent}, do: empty_operand_error()
-  def mv(_fs, _src, dest) when dest == "" or dest == {:error, :enoent}, do: empty_operand_error()
+  def mv(_fs, "", _dest), do: empty_operand_error()
+  def mv(_fs, {:error, %Error{}} = error, _dest), do: error
+  def mv(_fs, _src, ""), do: empty_operand_error()
+  def mv(_fs, _src, {:error, %Error{}} = error), do: error
 
   def mv(fs, src, dest) do
     src_norm = normalize_path(src)
@@ -537,7 +543,7 @@ defmodule JustBash.FS do
 
   # The stat behind `check_directory_spelling/3`. The error names the operand
   # as it was spelled, since that spelling is what the caller reports.
-  defp require_directory(_fs, spelling, {:error, :enoent}),
+  defp require_directory(_fs, spelling, {:error, %Error{}}),
     do: {:error, Error.new(:enoent, path: spelling)}
 
   defp require_directory(fs, spelling, resolved) do
@@ -590,7 +596,7 @@ defmodule JustBash.FS do
         case readlink(fs, candidate) do
           {:ok, target, fs} ->
             case resolve_path(parent, target) do
-              {:error, :enoent} ->
+              {:error, %Error{}} ->
                 {lexical, fs}
 
               resolved ->

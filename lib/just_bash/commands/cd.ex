@@ -20,8 +20,8 @@ defmodule JustBash.Commands.Cd do
       end
 
     case FS.resolve_path(bash.cwd, target) do
-      {:error, :enoent} ->
-        {Command.error("bash: cd: #{target}: #{FS.strerror(:enoent)}\n"), bash}
+      {:error, %VFS.Error{} = error} ->
+        {Command.error("bash: cd: #{target}: #{FS.strerror(error)}\n"), bash}
 
       resolved ->
         stat_and_enter(bash, target, resolved, args)

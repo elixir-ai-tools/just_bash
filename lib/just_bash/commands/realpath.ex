@@ -52,7 +52,7 @@ defmodule JustBash.Commands.Realpath do
     end
   end
 
-  defp check(fs, {:error, :enoent}, _mode), do: {:error, :enoent, fs}
+  defp check(fs, {:error, %VFS.Error{} = error}, _mode), do: {:error, error, fs}
 
   defp check(fs, _resolved, :missing), do: {:ok, fs}
 
