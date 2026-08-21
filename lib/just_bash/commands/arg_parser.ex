@@ -63,7 +63,14 @@ defmodule JustBash.Commands.ArgParser do
   # Parser context struct to reduce function arity
   defmodule Context do
     @moduledoc false
-    defstruct [:short_map, :long_map, :command, :allow_unknown, :collect_unknown]
+    defstruct [
+      :short_map,
+      :long_map,
+      :command,
+      :allow_unknown,
+      :collect_unknown,
+      :on_unknown_flag
+    ]
   end
 
   @doc """
@@ -82,6 +89,11 @@ defmodule JustBash.Commands.ArgParser do
       `{:ok, opts, positional, extra}`. Positionals stay out of `extra`, so a host can
       forward the raw `extra` tokens to a backend whose flags aren't known at definition
       time. `--flag=value` is forwarded as a single token.
+    * `:on_unknown_flag` — a `(flag_name :: String.t() -> String.t() | nil)` called with the
+      bare flag (no `=value`) when it would otherwise be a hard error. A non-nil return is
+      appended to the "unknown option" message, e.g. to point at a sibling command that
+      declares the same flag. Never called in `:allow_unknown`/`:collect_unknown` mode,
+      since there the flag isn't an error at all.
   """
   @spec parse([String.t()], flags_spec(), keyword()) ::
           {:ok, map(), [String.t()]}
@@ -97,7 +109,8 @@ defmodule JustBash.Commands.ArgParser do
       long_map: long_map,
       command: Keyword.get(opts, :command, ""),
       allow_unknown: Keyword.get(opts, :allow_unknown, false),
-      collect_unknown: collect_unknown
+      collect_unknown: collect_unknown,
+      on_unknown_flag: Keyword.get(opts, :on_unknown_flag)
     }
 
     # Parse into a map of only the flags that were actually provided, so we can
@@ -243,7 +256,7 @@ defmodule JustBash.Commands.ArgParser do
     cond do
       ctx.collect_unknown -> parse_loop(args, ctx, opts, positional, [arg | extra])
       ctx.allow_unknown -> parse_loop(args, ctx, opts, [arg | positional], extra)
-      true -> {:error, format_unknown_error(ctx.command, arg)}
+      true -> {:error, format_unknown_error(ctx, arg)}
     end
   end
 
@@ -260,7 +273,7 @@ defmodule JustBash.Commands.ArgParser do
         parse_loop(args, ctx, opts, [flag | positional], extra)
 
       true ->
-        {:error, format_unknown_error(ctx.command, flag)}
+        {:error, format_unknown_error(ctx, flag)}
     end
   end
 
@@ -405,6 +418,26 @@ defmodule JustBash.Commands.ArgParser do
     if String.ends_with?(message, "\n"), do: message, else: message <> "\n"
   end
 
-  defp format_unknown_error("", flag), do: "unknown option: #{flag}\n"
-  defp format_unknown_error(cmd, flag), do: "#{cmd}: unknown option: #{flag}\n"
+  # `raw_flag` may carry a `=value` suffix (the `--flag=value` self-contained form); the
+  # sibling lookup needs the bare flag name, but the message still echoes what the caller
+  # actually typed.
+  defp format_unknown_error(ctx, raw_flag) do
+    base =
+      case ctx.command do
+        "" -> "unknown option: #{raw_flag}\n"
+        cmd -> "#{cmd}: unknown option: #{raw_flag}\n"
+      end
+
+    flag_name = raw_flag |> String.split("=", parts: 2) |> List.first()
+
+    case unknown_flag_hint(ctx, flag_name) do
+      nil -> base
+      hint -> String.trim_trailing(base, "\n") <> " — #{hint}\n"
+    end
+  end
+
+  defp unknown_flag_hint(%Context{on_unknown_flag: nil}, _flag), do: nil
+
+  defp unknown_flag_hint(%Context{on_unknown_flag: fun}, flag) when is_function(fun, 1),
+    do: fun.(flag)
 end

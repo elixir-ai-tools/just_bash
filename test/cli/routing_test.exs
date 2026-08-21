@@ -157,6 +157,93 @@ defmodule JustBash.CLI.RoutingTest do
     end
   end
 
+  describe "flag-level did-you-mean" do
+    test "an unknown long flag declared by a sibling leaf names it" do
+      result = run("acme pr open 1 --report 5")
+      assert result.exit_code == 2
+      assert result.stderr =~ "unknown option: --report — did you mean 'acme pr review'?"
+    end
+
+    test "an unknown short flag declared by a sibling leaf names it" do
+      result = run("acme pr open 1 -v")
+      assert result.exit_code == 2
+      assert result.stderr =~ "unknown option: -v — did you mean 'acme pr review'?"
+    end
+
+    test "an unknown flag no sibling declares gets no suggestion" do
+      result = run("acme pr open 1 --bogus x")
+      assert result.exit_code == 2
+      assert result.stderr =~ "unknown option: --bogus\n"
+      refute result.stderr =~ "did you mean"
+    end
+
+    test "a flag declared by a leaf in a different group is not suggested" do
+      # `--report` belongs to `pr review`; `product list` is a sibling of `product`, not of
+      # `pr review`, so the group-scoped lookup must not reach across groups.
+      result = run("acme product list --report 5")
+      assert result.exit_code == 2
+      assert result.stderr =~ "unknown option: --report\n"
+      refute result.stderr =~ "did you mean"
+    end
+
+    # `--verbose`, `--json` and `--force` are routinely declared by several leaves in one
+    # group. The hint's whole claim to confidence is that an exact declaration match names
+    # *the* command the caller wanted — which only holds while the match is unique.
+    defp ambiguous_cli do
+      leaf = fn name ->
+        CLI.command(name,
+          doc: "Emit #{name}",
+          flags: [verbose: [type: :boolean, short: "-v"]],
+          run: fn inv -> {Command.ok("#{name}\n"), inv.bash} end
+        )
+      end
+
+      CLI.new("dol",
+        commands: [
+          CLI.command("log",
+            doc: "Logging",
+            commands: [
+              leaf.("metric"),
+              leaf.("event"),
+              CLI.command("tail",
+                doc: "Tail the log",
+                run: fn inv -> {Command.ok("tail\n"), inv.bash} end
+              )
+            ]
+          )
+        ]
+      )
+    end
+
+    defp run_ambiguous(script) do
+      bash = JustBash.new(commands: %{"dol" => ambiguous_cli()})
+      {result, _bash} = JustBash.exec(bash, script)
+      result
+    end
+
+    test "an unknown flag several siblings declare gets no suggestion" do
+      result = run_ambiguous("dol log tail --verbose")
+      assert result.exit_code == 2
+      assert result.stderr =~ "unknown option: --verbose\n"
+      refute result.stderr =~ "did you mean"
+    end
+
+    test "an unknown short flag several siblings declare gets no suggestion" do
+      result = run_ambiguous("dol log tail -v")
+      assert result.exit_code == 2
+      assert result.stderr =~ "unknown option: -v\n"
+      refute result.stderr =~ "did you mean"
+    end
+
+    test "a sole declaring sibling is still named when the group has other leaves" do
+      # The uniqueness check must not suppress the hint whenever a group is merely large.
+      result = run_ambiguous("dol log metric --bogus")
+      assert result.exit_code == 2
+      assert result.stderr =~ "unknown option: --bogus\n"
+      refute result.stderr =~ "did you mean"
+    end
+  end
+
   describe "passthrough flags" do
     defp passthrough_cli do
       CLI.new("acme",

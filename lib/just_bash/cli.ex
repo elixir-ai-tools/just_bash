@@ -685,7 +685,7 @@ defmodule JustBash.CLI do
   defp dispatch_leaf(cli, %Command{} = leaf, path, rest, bash, stdin) do
     label = command_label(cli, path)
 
-    with {:ok, flags, positional, extra} <- parse_leaf_args(leaf, rest, label),
+    with {:ok, flags, positional, extra} <- parse_leaf_args(cli, leaf, path, rest, label),
          :ok <- validate_positionals(leaf.args, positional, label),
          invocation = build_invocation(leaf, flags, positional, extra, bash, stdin, path),
          :ok <- run_validate(leaf, invocation) do
@@ -699,15 +699,63 @@ defmodule JustBash.CLI do
   # Parse a leaf's flags, normalizing to a 4-tuple so the caller is uniform. A leaf that
   # opts into `allow_unknown_flags` collects undeclared flags into `extra`; otherwise `extra`
   # is always empty.
-  defp parse_leaf_args(%Command{allow_unknown_flags: true} = leaf, rest, label) do
-    ArgParser.parse(rest, leaf.flags, command: label, collect_unknown: true)
+  defp parse_leaf_args(cli, %Command{allow_unknown_flags: true} = leaf, path, rest, label) do
+    ArgParser.parse(rest, leaf.flags,
+      command: label,
+      collect_unknown: true,
+      on_unknown_flag: &sibling_flag_hint(cli, path, &1)
+    )
   end
 
-  defp parse_leaf_args(%Command{} = leaf, rest, label) do
-    case ArgParser.parse(rest, leaf.flags, command: label) do
+  defp parse_leaf_args(cli, %Command{} = leaf, path, rest, label) do
+    opts = [command: label, on_unknown_flag: &sibling_flag_hint(cli, path, &1)]
+
+    case ArgParser.parse(rest, leaf.flags, opts) do
       {:ok, flags, positional} -> {:ok, flags, positional, []}
       {:error, _} = err -> err
     end
+  end
+
+  # A leaf rejecting an undeclared flag is one hop from the fix when a sibling command in
+  # the same group declares that exact flag — e.g. `dol log metric --weight` when `dol log
+  # weight` is the leaf that takes `--weight`. This is not fuzzy matching like
+  # `Help.unknown_subcommand/4`'s Jaro suggestion: the flag either is or isn't declared
+  # elsewhere in the group, so an exact declaration match is the whole signal — as long as
+  # that match is unique. `--verbose`, `--json` and `--force` are routinely declared by
+  # several leaves in one group, and there the first sibling in declaration order carries
+  # no more information than any other; a confidently-worded pointer at an arbitrary one
+  # is worse than none, so an ambiguous match yields no hint.
+  #
+  # Lives here (rather than in `ArgParser`) because only the CLI tree has a notion of
+  # "sibling commands in the same group" — `ArgParser.parse/3` only ever sees one leaf's
+  # flag spec, threaded in through the `:on_unknown_flag` hook.
+  defp sibling_flag_hint(cli, path, flag) do
+    current_name = List.last(path)
+    group_path = Enum.drop(path, -1)
+
+    cli.commands
+    |> resolve_group_commands(group_path)
+    |> Enum.reject(&(&1.name == current_name or Command.group?(&1)))
+    |> Enum.filter(&flag_declared?(&1.flags, flag))
+    |> case do
+      [%Command{name: name}] -> "did you mean '#{command_label(cli, group_path ++ [name])}'?"
+      _ambiguous_or_none -> nil
+    end
+  end
+
+  defp resolve_group_commands(commands, []), do: commands
+
+  defp resolve_group_commands(commands, [name | rest]) do
+    case Enum.find(commands, &(&1.name == name)) do
+      %Command{commands: children} -> resolve_group_commands(children, rest)
+      nil -> []
+    end
+  end
+
+  defp flag_declared?(flags, flag) do
+    Enum.any?(flags, fn {_name, spec} ->
+      flag == spec[:short] or flag == spec[:long] or flag in (spec[:aliases] || [])
+    end)
   end
 
   defp build_invocation(_leaf, flags, positional, extra, bash, stdin, path) do

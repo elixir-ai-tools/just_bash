@@ -208,8 +208,20 @@ defmodule JustBash.Commands.ErrorMessageTest do
       assert result.exit_code == 2
     end
 
-    test "grep -q still exits 0 when a line was selected" do
+    # `-q` exits "immediately ... if any match is found", so the operands after the
+    # first matching one are never opened and their errors never reported. Which
+    # errors survive is therefore ordering-dependent, and both orders are recorded
+    # against real grep in the fixture corpus.
+    test "grep -q stops at the first match, so a later unreadable file is never named" do
       {result, _bash} = JustBash.exec(sandbox(:enoent), "grep -q hi /f /nope")
+
+      assert result.stdout == ""
+      assert result.stderr == ""
+      assert result.exit_code == 0
+    end
+
+    test "grep -q still exits 0 when a line was selected after a read failure" do
+      {result, _bash} = JustBash.exec(sandbox(:enoent), "grep -q hi /nope /f")
 
       assert result.stdout == ""
       assert result.stderr == "grep: /nope: No such file or directory\n"
