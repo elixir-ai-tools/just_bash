@@ -77,6 +77,46 @@ defmodule JustBash.Commands.NewBuiltinsTest do
       expected = :crypto.hash(:sha256, "data") |> Base.encode16(case: :lower)
       assert String.trim(result.stdout) == expected
     end
+
+    # `-c` must not resolve `-` as a path, and a missing operand is stdin,
+    # not a silent exit 0 after verifying nothing. GNU/BSD `sha256sum -c`
+    # reads checksum lines from stdin in both cases.
+    test "-c - reads checksum lines from stdin, not a path named -" do
+      {result, _} = check_sha256("-c -")
+
+      assert result.stdout == "/f: OK\n"
+      assert result.stderr == ""
+      assert result.exit_code == 0
+    end
+
+    test "-c with no operand reads checksum lines from stdin" do
+      {result, _} = check_sha256("-c")
+
+      assert result.stdout == "/f: OK\n"
+      assert result.stderr == ""
+      assert result.exit_code == 0
+    end
+
+    test "-c still verifies a checksum file operand" do
+      content = "hello"
+      hash = sha256(content)
+
+      bash = JustBash.new(files: %{"/f" => content, "/sums" => "#{hash}  /f\n"})
+      {result, _} = JustBash.exec(bash, "sha256sum -c /sums")
+
+      assert result.stdout == "/f: OK\n"
+      assert result.stderr == ""
+      assert result.exit_code == 0
+    end
+
+    test "-c - reports FAILED and exits 1 on a mismatch" do
+      hash = sha256("hello")
+      bash = JustBash.new(files: %{"/f" => "world"})
+      {result, _} = JustBash.exec(bash, "printf '#{hash}  /f\\n' | sha256sum -c -")
+
+      assert result.stdout =~ "/f: FAILED"
+      assert result.exit_code == 1
+    end
   end
 
   describe "shasum" do
@@ -99,6 +139,43 @@ defmodule JustBash.Commands.NewBuiltinsTest do
       {result, _} = JustBash.exec(bash, "shasum -a 256 /f.txt | cut -d' ' -f1")
       expected = :crypto.hash(:sha256, "data") |> Base.encode16(case: :lower)
       assert String.trim(result.stdout) == expected
+    end
+
+    test "-c - reads checksum lines from stdin, not a path named -" do
+      {result, _} = check_shasum("-c -")
+
+      assert result.stdout == "/f: OK\n"
+      assert result.stderr == ""
+      assert result.exit_code == 0
+    end
+
+    test "-c with no operand reads checksum lines from stdin" do
+      {result, _} = check_shasum("-c")
+
+      assert result.stdout == "/f: OK\n"
+      assert result.stderr == ""
+      assert result.exit_code == 0
+    end
+
+    test "-c still verifies a checksum file operand" do
+      content = "hello"
+      hash = sha1(content)
+
+      bash = JustBash.new(files: %{"/f" => content, "/sums" => "#{hash}  /f\n"})
+      {result, _} = JustBash.exec(bash, "shasum -c /sums")
+
+      assert result.stdout == "/f: OK\n"
+      assert result.stderr == ""
+      assert result.exit_code == 0
+    end
+
+    test "-c - reports FAILED and exits 1 on a mismatch" do
+      hash = sha1("hello")
+      bash = JustBash.new(files: %{"/f" => "world"})
+      {result, _} = JustBash.exec(bash, "printf '#{hash}  /f\\n' | shasum -c -")
+
+      assert result.stdout =~ "/f: FAILED"
+      assert result.exit_code == 1
     end
   end
 
@@ -297,5 +374,22 @@ defmodule JustBash.Commands.NewBuiltinsTest do
       {result, _} = JustBash.exec(bash, "yes no | head -2")
       assert result.stdout == "no\nno\n"
     end
+  end
+
+  defp sha256(content), do: :crypto.hash(:sha256, content) |> Base.encode16(case: :lower)
+  defp sha1(content), do: :crypto.hash(:sha, content) |> Base.encode16(case: :lower)
+
+  defp check_sha256(args) do
+    content = "hello"
+    hash = sha256(content)
+    bash = JustBash.new(files: %{"/f" => content})
+    JustBash.exec(bash, "printf '#{hash}  /f\\n' | sha256sum #{args}")
+  end
+
+  defp check_shasum(args) do
+    content = "hello"
+    hash = sha1(content)
+    bash = JustBash.new(files: %{"/f" => content})
+    JustBash.exec(bash, "printf '#{hash}  /f\\n' | shasum #{args}")
   end
 end

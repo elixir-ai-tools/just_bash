@@ -18,16 +18,19 @@ defmodule JustBash.Commands.Sha256sum do
   def execute(bash, args, stdin) do
     {opts, files} = parse_args(args)
 
+    files = defaults_to_stdin(files)
+
     if opts.check do
-      check_checksums(bash, files)
+      check_checksums(bash, files, stdin)
     else
-      hash_files(bash, defaults_to_stdin(files), stdin)
+      hash_files(bash, files, stdin)
     end
   end
 
-  # No operand at all is the same request as a lone `-`, and one `-` among
-  # several files is still that operand: `sha256sum - f` hashes both,
-  # labelling the first `-`.
+  # No operand at all is the same request as a lone `-`, for hashing and for
+  # `-c`. One `-` among several files is still that operand: `sha256sum - f`
+  # hashes both, labelling the first `-`; `sha256sum -c -` reads checksum
+  # lines from stdin, not a path named `-`.
   defp defaults_to_stdin([]), do: ["-"]
   defp defaults_to_stdin(files), do: files
 
@@ -59,12 +62,10 @@ defmodule JustBash.Commands.Sha256sum do
     {Command.result(stdout, stderr, exit_code), %{bash | fs: fs}}
   end
 
-  defp check_checksums(bash, files) do
+  defp check_checksums(bash, files, stdin) do
     {stdout, stderr, exit_code, fs} =
       Enum.reduce(files, {"", "", 0, bash.fs}, fn file, {out, err, code, fs} ->
-        resolved = FS.resolve_path(bash.cwd, file)
-
-        case FS.read_file(fs, resolved) do
+        case StdinOperand.read(fs, bash.cwd, file, stdin) do
           {:ok, content, new_fs} ->
             verify_checksum_file(bash, content, out, err, code, new_fs)
 
