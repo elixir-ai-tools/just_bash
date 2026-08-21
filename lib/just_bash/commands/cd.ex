@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Cd do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -11,10 +12,11 @@ defmodule JustBash.Commands.Cd do
   @impl true
   def execute(bash, args, _stdin) do
     target =
-      case args do
-        [] -> Map.get(bash.env, "HOME", "/")
-        ["-"] -> Map.get(bash.env, "OLDPWD", bash.cwd)
-        [path | _] -> path
+      case StdinOperand.split_end_of_options(args) do
+        {_before, [path | _]} -> path
+        {[], []} -> Map.get(bash.env, "HOME", "/")
+        {["-"], []} -> Map.get(bash.env, "OLDPWD", bash.cwd)
+        {[path | _], []} -> path
       end
 
     resolved = FS.resolve_path(bash.cwd, target)

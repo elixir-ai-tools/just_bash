@@ -191,7 +191,23 @@ defmodule JustBash.Commands.Jq do
     end
   end
 
-  defp parse_args(args), do: parse_args(args, default_opts())
+  defp parse_args(args), do: parse_args_with_end_of_options(args)
+
+  defp parse_args_with_end_of_options(args) do
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+
+    with {:ok, opts} <- parse_args(option_args, default_opts()) do
+      attach_jq_operands(opts, extra)
+    end
+  end
+
+  defp attach_jq_operands(opts, []), do: {:ok, opts}
+  defp attach_jq_operands(%{file: nil} = opts, [file]), do: {:ok, %{opts | file: file}}
+
+  defp attach_jq_operands(%{filter: "."} = opts, [filter, file]),
+    do: {:ok, %{opts | filter: filter, file: file}}
+
+  defp attach_jq_operands(_opts, _), do: {:error, "jq: too many arguments\n"}
 
   defp default_opts do
     %{

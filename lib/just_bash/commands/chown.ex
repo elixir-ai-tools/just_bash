@@ -9,6 +9,7 @@ defmodule JustBash.Commands.Chown do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -28,7 +29,9 @@ defmodule JustBash.Commands.Chown do
   end
 
   defp parse_args(args) do
-    parse_args(args, %{recursive: false}, [])
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+    {opts, pos} = parse_args(option_args, %{recursive: false}, [])
+    {opts, pos ++ extra}
   end
 
   defp parse_args([], opts, pos), do: {opts, Enum.reverse(pos)}

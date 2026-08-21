@@ -23,13 +23,18 @@ defmodule JustBash.Commands.Cut do
   end
 
   defp parse_args(args) do
-    parse_args(args, %{
-      delimiter: "\t",
-      field_spec: nil,
-      char_spec: nil,
-      suppress_no_delim: false,
-      files: []
-    })
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+
+    with {:ok, opts} <-
+           parse_args(option_args, %{
+             delimiter: "\t",
+             field_spec: nil,
+             char_spec: nil,
+             suppress_no_delim: false,
+             files: []
+           }) do
+      {:ok, %{opts | files: opts.files ++ extra}}
+    end
   end
 
   defp parse_args([], opts) do

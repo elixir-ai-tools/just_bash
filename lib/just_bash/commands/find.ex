@@ -63,6 +63,8 @@ defmodule JustBash.Commands.Find do
 
   defp parse_args([], opts), do: {:ok, opts}
 
+  defp parse_args(["--" | rest], opts), do: parse_args(rest, opts)
+
   defp parse_args(["-name", pattern | rest], opts) do
     parse_args(rest, %{opts | name: pattern})
   end

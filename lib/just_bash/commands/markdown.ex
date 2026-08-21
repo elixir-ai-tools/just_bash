@@ -18,6 +18,7 @@ defmodule JustBash.Commands.Markdown do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -106,13 +107,22 @@ defmodule JustBash.Commands.Markdown do
   end
 
   defp parse_args(args) do
-    parse_args(args, %{
-      file: nil,
-      gfm: true,
-      breaks: false,
-      smartypants: false,
-      help: false
-    })
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+
+    with {:ok, opts} <-
+           parse_args(option_args, %{
+             file: nil,
+             gfm: true,
+             breaks: false,
+             smartypants: false,
+             help: false
+           }) do
+      case {opts.file, extra} do
+        {_file, []} -> {:ok, opts}
+        {nil, [file | _]} -> {:ok, %{opts | file: file}}
+        {_file, _} -> {:ok, opts}
+      end
+    end
   end
 
   defp parse_args([], opts), do: {:ok, opts}

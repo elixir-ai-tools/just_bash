@@ -16,6 +16,7 @@ defmodule JustBash.Commands.Realpath do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -72,7 +73,9 @@ defmodule JustBash.Commands.Realpath do
   end
 
   defp parse_args(args) do
-    parse_args(args, %{mode: :default}, [])
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+    {opts, paths} = parse_args(option_args, %{mode: :default}, [])
+    {opts, paths ++ extra}
   end
 
   defp parse_args([], opts, paths), do: {opts, Enum.reverse(paths)}

@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Tree do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
   alias JustBash.Limit
 
@@ -38,13 +39,18 @@ defmodule JustBash.Commands.Tree do
   end
 
   defp parse_args(args) do
-    parse_args(args, %{
-      show_hidden: false,
-      dirs_only: false,
-      max_depth: nil,
-      full_path: false,
-      dirs: []
-    })
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+
+    with {:ok, opts} <-
+           parse_args(option_args, %{
+             show_hidden: false,
+             dirs_only: false,
+             max_depth: nil,
+             full_path: false,
+             dirs: []
+           }) do
+      {:ok, %{opts | dirs: opts.dirs ++ extra}}
+    end
   end
 
   defp parse_args([], opts), do: {:ok, opts}

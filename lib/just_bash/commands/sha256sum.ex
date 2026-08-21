@@ -35,7 +35,9 @@ defmodule JustBash.Commands.Sha256sum do
   defp defaults_to_stdin(files), do: files
 
   defp parse_args(args) do
-    parse_args(args, %{check: false}, [])
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+    {opts, files} = parse_args(option_args, %{check: false}, [])
+    {opts, files ++ extra}
   end
 
   defp parse_args([], opts, files), do: {opts, Enum.reverse(files)}

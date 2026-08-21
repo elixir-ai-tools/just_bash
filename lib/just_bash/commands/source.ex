@@ -8,6 +8,7 @@ defmodule JustBash.Commands.Source do
 
   @behaviour JustBash.Commands.Command
 
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
   alias JustBash.Interpreter.Executor
   alias JustBash.Parser
@@ -17,7 +18,7 @@ defmodule JustBash.Commands.Source do
 
   @impl true
   def execute(bash, args, _stdin) do
-    case args do
+    case StdinOperand.drop_end_of_options(args) do
       [] ->
         {%{stdout: "", stderr: "bash: source: filename argument required\n", exit_code: 2}, bash}
 
