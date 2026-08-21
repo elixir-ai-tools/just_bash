@@ -12,9 +12,8 @@ defmodule JustBash.Commands.StdinOperandTest do
       exit, which is worse — a pipeline under `set -e` now dies.
 
     * `/dev/null`, which the write side of redirection already special-cases
-      (`classify_redirection/3`) but the read side did not. `cmd < /dev/null`
-      is the standard way to close a command's stdin, and it started aborting
-      the command.
+      (`classify_redirection/3`). The filesystem layer now services the same
+      path as a special file, so `cmd < /dev/null` and `cmd /dev/null` agree.
 
   The `-` rows are checked against the same command reading a real file with
   the same bytes, rather than against a literal transcript: the invariant is
@@ -248,9 +247,9 @@ defmodule JustBash.Commands.StdinOperandTest do
     end
 
     test "the read side agrees with the write side about which paths are special" do
-      # `> /dev/null` discards without touching the filesystem; `< /dev/null`
-      # has to be the same set of paths, or the two disagree about what a path
-      # even is.
+      # `> /dev/null` discards; `< /dev/null` has to be the same set of paths,
+      # or the two disagree about what a path even is. The filesystem layer
+      # now holds that set, so the operand `cat /dev/null` agrees too.
       {result, _bash} =
         JustBash.exec(sandbox(), "echo hi > /dev/null; echo rc=$?; cat < /dev/null; echo rc=$?")
 

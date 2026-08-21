@@ -15,7 +15,9 @@ defmodule JustBash.FS do
   - **Core operations** delegate to `VFS` and follow vfs conventions:
     reads return `{:ok, payload, fs}` (thread the updated `fs` forward —
     lazy backends cache on read), mutations return `{:ok, fs}`, and all
-    errors are `%VFS.Error{}` structs.
+    errors are `%VFS.Error{}` structs. Paths in `JustBash.FS.Special`
+    (`/dev/null`, and the `/dev` directory that holds it) are answered
+    here before any backend is consulted.
   - **POSIX extensions** (`lstat/2`, `symlink/3`, `readlink/2`, `link/3`,
     `chmod/3`, `append_file/3`) dispatch through `JustBash.FS.POSIX`,
     degrading gracefully on backends without them.
@@ -25,6 +27,7 @@ defmodule JustBash.FS do
 
   alias JustBash.FS.Memory
   alias JustBash.FS.POSIX
+  alias JustBash.FS.Special
   alias JustBash.Limit
   alias VFS.Error
   alias VFS.Path, as: VPath
@@ -165,33 +168,73 @@ defmodule JustBash.FS do
     end
   end
 
-  # ── core operations (delegated to VFS) ───────────────────────────────────
+  # ── core operations (delegated to VFS, special files first) ──────────────
 
   @doc "See `VFS.read_file/2`."
   @spec read_file(t(), String.t()) :: {:ok, binary(), t()} | {:error, Error.t()}
-  defdelegate read_file(fs, path), to: VFS
+  def read_file(fs, path) do
+    case special(path) do
+      {:ok, kind, normalized} -> Special.read_file(fs, kind, normalized)
+      :none -> VFS.read_file(fs, path)
+    end
+  end
 
   @doc "See `VFS.stream_read/3`."
   @spec stream_read(t(), String.t(), keyword()) ::
           {:ok, Enumerable.t(), t()} | {:error, Error.t()}
-  defdelegate stream_read(fs, path, opts \\ []), to: VFS
+  def stream_read(fs, path, opts \\ []) do
+    case special(path) do
+      {:ok, kind, normalized} -> Special.stream_read(fs, kind, normalized, opts)
+      :none -> VFS.stream_read(fs, path, opts)
+    end
+  end
 
   @doc "See `VFS.write_file/4`. The default backend honors `:mode` and `:mtime` opts."
   @spec write_file(t(), String.t(), binary(), write_opts()) ::
           {:ok, t()} | {:error, Error.t()}
-  defdelegate write_file(fs, path, content, opts \\ []), to: VFS
+  def write_file(fs, path, content, opts \\ []) do
+    case special(path) do
+      {:ok, kind, normalized} -> Special.write_file(fs, kind, normalized, content)
+      :none -> VFS.write_file(fs, path, content, opts)
+    end
+  end
 
   @doc "See `VFS.exists?/2`."
   @spec exists?(t(), String.t()) :: {boolean(), t()}
-  defdelegate exists?(fs, path), to: VFS
+  def exists?(fs, path) do
+    case special(path) do
+      {:ok, kind, _normalized} -> Special.exists?(fs, kind)
+      :none -> VFS.exists?(fs, path)
+    end
+  end
 
   @doc "See `VFS.stat/2`. Follows symlinks."
   @spec stat(t(), String.t()) :: {:ok, VFS.Stat.t(), t()} | {:error, Error.t()}
-  defdelegate stat(fs, path), to: VFS
+  def stat(fs, path) do
+    case special(path) do
+      {:ok, kind, normalized} -> Special.stat(fs, kind, normalized)
+      :none -> VFS.stat(fs, path)
+    end
+  end
 
   @doc "See `VFS.readdir/2`."
   @spec readdir(t(), String.t()) :: {:ok, Enumerable.t(), t()} | {:error, Error.t()}
-  defdelegate readdir(fs, path), to: VFS
+  def readdir(fs, path) do
+    case special(path) do
+      {:ok, kind, normalized} ->
+        {entries, fs} = backend_entries(fs, path)
+        Special.readdir(fs, kind, normalized, entries)
+
+      :none ->
+        case VFS.readdir(fs, path) do
+          {:ok, entries, fs} ->
+            {:ok, Special.merge_children(normalize_path(path), Enum.to_list(entries)), fs}
+
+          error ->
+            error
+        end
+    end
+  end
 
   @doc "See `VFS.mkdir/3`. Pass `parents: true` for `mkdir -p` behavior."
   @spec mkdir(t(), String.t(), mkdir_opts()) :: {:ok, t()} | {:error, Error.t()}
@@ -204,7 +247,10 @@ defmodule JustBash.FS do
               "See UPGRADING.md."
     end
 
-    VFS.mkdir(fs, path, opts)
+    case special(path) do
+      {:ok, kind, normalized} -> Special.mkdir(fs, kind, normalized, opts)
+      :none -> VFS.mkdir(fs, path, opts)
+    end
   end
 
   @doc "See `VFS.rm/3`. Pass `recursive: true` to remove directory trees."
@@ -218,7 +264,10 @@ defmodule JustBash.FS do
               "{:error, %VFS.Error{kind: :enoent}} at the call site instead. See UPGRADING.md."
     end
 
-    VFS.rm(fs, path, opts)
+    case special(path) do
+      {:ok, kind, normalized} -> Special.rm(kind, normalized)
+      :none -> VFS.rm(fs, path, opts)
+    end
   end
 
   @doc """
@@ -235,27 +284,58 @@ defmodule JustBash.FS do
 
   @doc "Get stat information without following symlinks."
   @spec lstat(t(), String.t()) :: {:ok, VFS.Stat.t(), t()} | {:error, Error.t()}
-  defdelegate lstat(fs, path), to: POSIX
+  def lstat(fs, path) do
+    case special(path) do
+      {:ok, kind, normalized} -> Special.stat(fs, kind, normalized)
+      :none -> POSIX.lstat(fs, path)
+    end
+  end
 
   @doc "Read the target of a symbolic link."
   @spec readlink(t(), String.t()) :: {:ok, String.t(), t()} | {:error, Error.t()}
-  defdelegate readlink(fs, path), to: POSIX
+  def readlink(fs, path) do
+    case special(path) do
+      {:ok, kind, normalized} -> Special.readlink(kind, normalized)
+      :none -> POSIX.readlink(fs, path)
+    end
+  end
 
   @doc "Create a symbolic link at `link_path` pointing to `target`."
   @spec symlink(t(), String.t(), String.t()) :: {:ok, t()} | {:error, Error.t()}
-  defdelegate symlink(fs, target, link_path), to: POSIX
+  def symlink(fs, target, link_path) do
+    case special(link_path) do
+      {:ok, _kind, normalized} -> Special.refuse_create(normalized)
+      :none -> POSIX.symlink(fs, target, link_path)
+    end
+  end
 
   @doc "Create a hard link."
   @spec link(t(), String.t(), String.t()) :: {:ok, t()} | {:error, Error.t()}
-  defdelegate link(fs, existing_path, new_path), to: POSIX
+  def link(fs, existing_path, new_path) do
+    case {special(existing_path), special(new_path)} do
+      {{:ok, kind, normalized}, _} -> Special.refuse_link(kind, normalized)
+      {:none, {:ok, _kind, normalized}} -> Special.refuse_create(normalized)
+      {:none, :none} -> POSIX.link(fs, existing_path, new_path)
+    end
+  end
 
   @doc "Change file/directory permissions."
   @spec chmod(t(), String.t(), non_neg_integer()) :: {:ok, t()} | {:error, Error.t()}
-  defdelegate chmod(fs, path, mode), to: POSIX
+  def chmod(fs, path, mode) do
+    case special(path) do
+      {:ok, kind, _normalized} -> Special.chmod(fs, kind)
+      :none -> POSIX.chmod(fs, path, mode)
+    end
+  end
 
   @doc "Append content to a file, creating it if it doesn't exist."
   @spec append_file(t(), String.t(), binary()) :: {:ok, t()} | {:error, Error.t()}
-  defdelegate append_file(fs, path, content), to: POSIX
+  def append_file(fs, path, content) do
+    case special(path) do
+      {:ok, kind, normalized} -> Special.append_file(fs, kind, normalized, content)
+      :none -> POSIX.append_file(fs, path, content)
+    end
+  end
 
   # ── compositions ─────────────────────────────────────────────────────────
 
@@ -359,6 +439,24 @@ defmodule JustBash.FS do
   def strerror(kind) when is_atom(kind), do: to_string(kind)
 
   # ── private ──────────────────────────────────────────────────────────────
+
+  defp special(path) do
+    normalized = normalize_path(path)
+
+    case Special.lookup(normalized) do
+      {:ok, kind} -> {:ok, kind, normalized}
+      :none -> :none
+    end
+  end
+
+  # A special directory may not exist in any backend; missing is empty, not
+  # an error, so `/dev` still lists `null` on a fresh `FS.new/0`.
+  defp backend_entries(fs, path) do
+    case VFS.readdir(fs, path) do
+      {:ok, entries, fs} -> {Enum.to_list(entries), fs}
+      {:error, _} -> {[], fs}
+    end
+  end
 
   # The stat behind `check_directory_spelling/3`. The error names the operand
   # as it was spelled, since that spelling is what the caller reports.
