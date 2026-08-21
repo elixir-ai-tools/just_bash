@@ -552,6 +552,13 @@ defmodule JustBash.SandboxContractTest do
       assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
     end
 
+    test "awk's empty for(;;) is a loop, not a no-op, and is still bounded", %{bash: bash} do
+      result = bounded_exec(bash, "awk 'BEGIN{for(;;){x=x+1}}'")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
+    end
+
     test "awk's do-while loop is bounded", %{bash: bash} do
       result = bounded_exec(bash, "awk 'BEGIN{do{x=x+1}while(1)}'")
 
