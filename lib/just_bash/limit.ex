@@ -43,11 +43,12 @@ defmodule JustBash.Limit do
   expand into — see `check_expansion_words!/2`.
 
   `:max_value_bytes` bounds a single expanded value. A step like
-  `v=${v}${v}` doubles a binary with no other bound seeing inside it, so
-  without this cap the wall clock cannot fire until that allocation
-  finishes. Call `concat!/3` (or `check_value_size!/2` with a byte count)
-  before the memory is spent, the way `check_expansion_words!/2` is called
-  as a word list is produced.
+  `v=${v}${v}` doubles a binary with no other bound seeing inside it, and
+  `${v//a/$r}` can grow a value by the product of two already-capped
+  binaries, so without this cap the wall clock cannot fire until that
+  allocation finishes. Call `concat!/3` or `replace!/5` (or
+  `check_value_size!/2` with a byte count) before the memory is spent, the
+  way `check_expansion_words!/2` is called as a word list is produced.
   """
 
   defmodule ExceededError do
@@ -240,6 +241,29 @@ defmodule JustBash.Limit do
     left <> right
   end
 
+  @doc """
+  Replace matches of `regex` in `str` with `replacement`, raising
+  `ExceededError` if the result would exceed `:max_value_bytes`.
+
+  The check is on the projected size from match lengths, so the oversized
+  result is never allocated — a single `${v//a/$r}` of cap-sized `v` and
+  `r` is the hole this closes. Call this instead of `Regex.replace/4`.
+  """
+  @spec replace!(JustBash.t(), Regex.t(), binary(), binary(), keyword()) :: binary()
+  def replace!(bash, regex, str, replacement, opts \\ [])
+
+  def replace!(%{limits: nil}, %Regex{} = regex, str, replacement, opts)
+      when is_binary(str) and is_binary(replacement) and is_list(opts) do
+    Regex.replace(regex, str, replacement, opts)
+  end
+
+  def replace!(bash, %Regex{} = regex, str, replacement, opts)
+      when is_binary(str) and is_binary(replacement) and is_list(opts) do
+    global = Keyword.get(opts, :global, true)
+    check_replace_size!(bash, str, regex, replacement, global)
+    Regex.replace(regex, str, replacement, opts)
+  end
+
   @doc "Track output bytes. Raises `ExceededError` if limit is reached."
   @spec track_output!(JustBash.t(), non_neg_integer()) :: JustBash.t()
   def track_output!(%{interpreter: interp} = bash, new_bytes) do
@@ -366,7 +390,8 @@ defmodule JustBash.Limit do
   Check a value's size before keeping it. Raises `ExceededError` if too large.
 
   Accepts the data binary, or a byte count so callers can refuse a
-  concatenation before it is built — see `concat!/3`.
+  concatenation or replacement before it is built — see `concat!/3` and
+  `replace!/5`.
   """
   @spec check_value_size!(JustBash.t(), String.t() | non_neg_integer()) :: :ok
   def check_value_size!(%{limits: nil}, _data), do: :ok
@@ -422,5 +447,74 @@ defmodule JustBash.Limit do
     end
 
     :ok
+  end
+
+  # Project the size of a Regex.replace/4 before it runs, aborting as soon as
+  # the running total exceeds the cap so `${v//a/$r}` of cap-sized inputs
+  # cannot spend the wall clock (or the VM) building a terabyte-scale binary.
+  defp check_replace_size!(bash, str, regex, replacement, global) do
+    str_size = byte_size(str)
+    rep_size = byte_size(replacement)
+
+    cheap_upper =
+      if global do
+        str_size + (str_size + 1) * rep_size
+      else
+        str_size + rep_size
+      end
+
+    if cheap_upper <= bash.limits.max_value_bytes do
+      :ok
+    else
+      check_value_size!(
+        bash,
+        projected_replace_size(str, regex, replacement, global, bash.limits.max_value_bytes)
+      )
+    end
+  end
+
+  defp projected_replace_size(str, regex, replacement, global, max_bytes) do
+    do_projected_replace_size(
+      str,
+      Regex.re_pattern(regex),
+      byte_size(replacement),
+      global,
+      0,
+      byte_size(str),
+      max_bytes
+    )
+  end
+
+  defp do_projected_replace_size(_str, _re, _rep_size, _global, _offset, projected, max_bytes)
+       when projected > max_bytes,
+       do: projected
+
+  defp do_projected_replace_size(str, _re, _rep_size, _global, offset, projected, _max_bytes)
+       when offset > byte_size(str),
+       do: projected
+
+  defp do_projected_replace_size(str, re, rep_size, global, offset, projected, max_bytes) do
+    case :re.run(str, re, [{:capture, :first, :index}, {:offset, offset}]) do
+      :nomatch ->
+        projected
+
+      {:match, [{start, len} | _]} ->
+        next_projected = projected - len + rep_size
+        next_offset = start + max(len, 1)
+
+        if global do
+          do_projected_replace_size(
+            str,
+            re,
+            rep_size,
+            global,
+            next_offset,
+            next_projected,
+            max_bytes
+          )
+        else
+          next_projected
+        end
+    end
   end
 end

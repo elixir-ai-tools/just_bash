@@ -104,6 +104,19 @@ defmodule JustBash.Limit.ResourceExhaustionTest do
       assert result.exit_code == 0
       assert result.stdout == "hello\n"
     end
+
+    test "global pattern replacement of a doubled value is bounded" do
+      bash = strict_bash(max_value_bytes: 500)
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          "v=a; r=a; for i in {1..8}; do v=${v}${v}; r=${r}${r}; done; v=${v//a/$r}"
+        )
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "value size limit"
+    end
   end
 
   describe "memory exhaustion via filesystem" do
