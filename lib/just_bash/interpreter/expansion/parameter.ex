@@ -311,11 +311,7 @@ defmodule JustBash.Interpreter.Expansion.Parameter do
     result =
       case Regex.compile(regex_pattern) do
         {:ok, regex} ->
-          if all do
-            Regex.replace(regex, str, replacement, global: true)
-          else
-            Regex.replace(regex, str, replacement, global: false)
-          end
+          Limit.replace!(bash, regex, str, replacement, global: all)
 
         {:error, _} ->
           str

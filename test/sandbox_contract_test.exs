@@ -710,6 +710,42 @@ defmodule JustBash.SandboxContractTest do
       assert result.exit_code == 0
       assert result.stdout == "8\n"
     end
+
+    test "global pattern replacement is refused before a huge allocation" do
+      # #85 bounded `v=${v}${v}`. `${v//a/$r}` still allocates first:
+      # `Regex.replace/4` runs, then `concat!` sees the finished binary.
+      # 15 doublings sit `v` and `r` at the 32_768-byte cap; unbounded, the
+      # replace is |v| * |r| = 1 GiB and (measured) ~700 ms. concat! cannot
+      # refuse until that allocation finishes.
+      bash =
+        JustBash.new(limits: [max_value_bytes: 32_768, max_wall_ms: 30_000, max_steps: 10_000])
+
+      {elapsed_us, result} =
+        bounded_exec_timed(
+          bash,
+          "v=a; r=a; for i in {1..15}; do v=${v}${v}; r=${r}${r}; done; v=${v//a/$r}"
+        )
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "value size limit exceeded (32768 bytes)"
+      assert elapsed_us < 200_000
+    end
+
+    test "a single pattern replacement that would grow past the cap is refused" do
+      bash = JustBash.new(limits: [max_value_bytes: 10])
+      result = bounded_exec(bash, "v=aaa; echo ${v/a/XXXXXXXXXXXX}")
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "value size limit exceeded (10 bytes)"
+    end
+
+    test "a normal-size pattern replacement is untouched" do
+      bash = JustBash.new(limits: [max_value_bytes: 1_000])
+      result = bounded_exec(bash, ~s(v="hello hello"; echo "${v/hello/hi}" "${v//hello/hi}"))
+
+      assert result.exit_code == 0
+      assert result.stdout == "hi hello hi hi\n"
+    end
   end
 
   describe "a recursive traversal" do

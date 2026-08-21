@@ -72,6 +72,44 @@ defmodule JustBash.LimitTest do
     end
   end
 
+  describe "Limit.replace!/5" do
+    test "replaces when the result fits" do
+      bash = JustBash.new(limits: [max_value_bytes: 10])
+      assert Limit.replace!(bash, ~r/a/, "aaa", "X", global: true) == "XXX"
+    end
+
+    test "allows a result right at the bound" do
+      bash = JustBash.new(limits: [max_value_bytes: 9])
+      assert Limit.replace!(bash, ~r/a/, "aaa", "XXX", global: true) == "XXXXXXXXX"
+    end
+
+    test "raises without replacing when a global replace would exceed the bound" do
+      bash = JustBash.new(limits: [max_value_bytes: 10])
+
+      assert_raise Limit.ExceededError, ~r/value size limit exceeded \(10 bytes\)/, fn ->
+        Limit.replace!(bash, ~r/a/, "aaa", "XXXX", global: true)
+      end
+    end
+
+    test "raises without replacing when a single replace would exceed the bound" do
+      bash = JustBash.new(limits: [max_value_bytes: 10])
+
+      assert_raise Limit.ExceededError, ~r/value size limit exceeded \(10 bytes\)/, fn ->
+        Limit.replace!(bash, ~r/a/, "aaa", "XXXXXXXXXXXX", global: false)
+      end
+    end
+
+    test "does not refuse a non-matching replace of a cap-sized haystack" do
+      bash = JustBash.new(limits: [max_value_bytes: 10])
+      assert Limit.replace!(bash, ~r/z/, "aaaaaaaaaa", "XXXX", global: true) == "aaaaaaaaaa"
+    end
+
+    test "is a no-op bound when limits are disabled" do
+      bash = JustBash.new(limits: false)
+      assert Limit.replace!(bash, ~r/a/, "aaa", "XXXX", global: true) == "XXXXXXXXXXXX"
+    end
+  end
+
   describe "Limit.check_value_size!/2" do
     test "accepts a byte count so callers can refuse before allocating" do
       bash = JustBash.new(limits: [max_value_bytes: 10])
