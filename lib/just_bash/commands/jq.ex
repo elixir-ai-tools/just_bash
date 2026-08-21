@@ -196,15 +196,17 @@ defmodule JustBash.Commands.Jq do
   defp parse_args_with_end_of_options(args) do
     {option_args, extra} = StdinOperand.split_end_of_options(args)
 
-    with {:ok, opts} <- parse_args(option_args, default_opts()) do
-      attach_jq_operands(opts, extra)
+    with {:ok, opts, leftover} <- parse_args(option_args, default_opts()) do
+      # `--` only ends options. Leftover tokens from before `--` plus everything
+      # after it are the same positionals GNU jq uses: filter, then file.
+      attach_jq_operands(opts, leftover ++ extra)
     end
   end
 
   defp attach_jq_operands(opts, []), do: {:ok, opts}
-  defp attach_jq_operands(%{file: nil} = opts, [file]), do: {:ok, %{opts | file: file}}
+  defp attach_jq_operands(opts, [filter]), do: {:ok, %{opts | filter: filter}}
 
-  defp attach_jq_operands(%{filter: "."} = opts, [filter, file]),
+  defp attach_jq_operands(opts, [filter, file]),
     do: {:ok, %{opts | filter: filter, file: file}}
 
   defp attach_jq_operands(_opts, _), do: {:error, "jq: too many arguments\n"}
@@ -226,9 +228,9 @@ defmodule JustBash.Commands.Jq do
     }
   end
 
-  defp parse_args([], opts), do: {:ok, opts}
+  defp parse_args([], opts), do: {:ok, opts, []}
 
-  defp parse_args(["--help" | _], opts), do: {:ok, %{opts | help: true}}
+  defp parse_args(["--help" | _], opts), do: {:ok, %{opts | help: true}, []}
 
   defp parse_args(["-r" | rest], opts), do: parse_args(rest, %{opts | raw_output: true})
   defp parse_args(["--raw-output" | rest], opts), do: parse_args(rest, %{opts | raw_output: true})
@@ -284,17 +286,7 @@ defmodule JustBash.Commands.Jq do
     {:error, "jq: Unknown option: #{flag}\n"}
   end
 
-  defp parse_args([filter | rest], opts) do
-    if opts.filter == "." do
-      case rest do
-        [file] -> {:ok, %{opts | filter: filter, file: file}}
-        [] -> {:ok, %{opts | filter: filter}}
-        _ -> {:error, "jq: too many arguments\n"}
-      end
-    else
-      {:ok, %{opts | file: filter}}
-    end
-  end
+  defp parse_args(positionals, opts), do: {:ok, opts, positionals}
 
   defp help_text do
     """

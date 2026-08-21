@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Find do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
   alias JustBash.Limit
 
@@ -47,23 +48,26 @@ defmodule JustBash.Commands.Find do
   end
 
   defp parse_args(args) do
-    parse_args(args, %{
-      paths: [],
-      name: nil,
-      iname: nil,
-      type: nil,
-      maxdepth: nil,
-      mindepth: nil,
-      empty: false,
-      print0: false,
-      exec_cmd: nil,
-      deadline: nil
-    })
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+
+    with {:ok, opts} <-
+           parse_args(option_args, %{
+             paths: [],
+             name: nil,
+             iname: nil,
+             type: nil,
+             maxdepth: nil,
+             mindepth: nil,
+             empty: false,
+             print0: false,
+             exec_cmd: nil,
+             deadline: nil
+           }) do
+      {:ok, %{opts | paths: opts.paths ++ extra}}
+    end
   end
 
   defp parse_args([], opts), do: {:ok, opts}
-
-  defp parse_args(["--" | rest], opts), do: parse_args(rest, opts)
 
   defp parse_args(["-name", pattern | rest], opts) do
     parse_args(rest, %{opts | name: pattern})

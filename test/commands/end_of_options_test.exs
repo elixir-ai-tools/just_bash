@@ -240,6 +240,93 @@ defmodule JustBash.Commands.EndOfOptionsTest do
     end
   end
 
+  # Issue #90: find kept parsing predicates after `--`, and jq treated the
+  # first extra token as a file. `--` ends options; what follows is operands.
+  describe "find -- treats the remainder as paths" do
+    test "find -- -foo searches a path named -foo, not a predicate" do
+      bash = JustBash.new(files: %{"/-foo/x" => "x\n"}, cwd: "/")
+      {result, _} = JustBash.exec(bash, "find -- -foo")
+
+      assert result.exit_code == 0
+      assert result.stderr == ""
+      refute result.stderr =~ "unknown predicate"
+      assert result.stdout =~ "-foo"
+      assert result.stdout =~ "x"
+    end
+
+    test "find -- -foo does not raise from exec/2 when the path is missing" do
+      {result, _} = JustBash.exec(JustBash.new(), "find -- -foo")
+
+      assert result.exit_code != 0
+      assert result.stderr =~ "No such file"
+      refute result.stderr =~ "unknown predicate"
+      refute result.stderr =~ "crashed"
+    end
+  end
+
+  describe "jq -- keeps the filter as a positional, not a file" do
+    test "jq -- . applies the identity filter to stdin" do
+      {result, _} = JustBash.exec(JustBash.new(), ~S[printf '{"k":1}\n' | jq -- .])
+
+      assert result.exit_code == 0
+      assert result.stderr == ""
+      refute result.stderr =~ "No such file"
+      assert result.stdout =~ "\"k\""
+    end
+
+    test "jq -- . does not raise from exec/2" do
+      {result, _} = JustBash.exec(JustBash.new(), "jq -- .")
+
+      # Empty stdin is valid JSON-enough for the identity filter; the contract
+      # is only that the host gets a result back.
+      assert is_integer(result.exit_code)
+      refute result.stderr =~ "crashed"
+    end
+
+    test "jq . -- FILE still reads the file after an explicit filter" do
+      {result, _} = JustBash.exec(sandbox(), "jq . -- /j.json")
+
+      assert result.exit_code == 0
+      assert result.stderr == ""
+      assert result.stdout =~ "\"k\""
+    end
+  end
+
+  describe "additional -- placements" do
+    test "-- as the only argument is not opened as a file" do
+      {cat, _} = JustBash.exec(sandbox(), "printf hello | cat --")
+      assert cat.exit_code == 0
+      assert cat.stdout == "hello"
+      refute cat.stderr =~ "--"
+
+      {find, _} = JustBash.exec(sandbox(), "cd /d; find --")
+      assert find.exit_code == 0
+      assert find.stdout =~ "."
+      refute find.stderr =~ "unknown predicate"
+
+      {jq, _} = JustBash.exec(sandbox(), ~S[printf '{"k":1}\n' | jq --])
+      assert jq.exit_code == 0
+      assert jq.stdout =~ "\"k\""
+    end
+
+    test "a file named -- is readable after --" do
+      bash = JustBash.new(files: %{"/--" => "dashdash\n"}, cwd: "/")
+      {result, _} = JustBash.exec(bash, "cat -- --")
+
+      assert result.exit_code == 0
+      assert result.stderr == ""
+      assert result.stdout == "dashdash\n"
+    end
+
+    test "-- between two operands does not consume either operand" do
+      {result, _} = JustBash.exec(sandbox(), "cat /f -- /g")
+
+      assert result.exit_code == 0
+      assert result.stderr == ""
+      assert result.stdout == @content <> @other
+    end
+  end
+
   defp sandbox do
     JustBash.new(
       files: %{
