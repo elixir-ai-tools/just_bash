@@ -69,13 +69,18 @@ defmodule JustBash.Commands.Sed do
   end
 
   defp parse_args(args) do
-    parse_args(args, %{
-      scripts: [],
-      files: [],
-      silent: false,
-      in_place: false,
-      extended_regex: false
-    })
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+
+    with {:ok, opts} <-
+           parse_args(option_args, %{
+             scripts: [],
+             files: [],
+             silent: false,
+             in_place: false,
+             extended_regex: false
+           }) do
+      {:ok, %{opts | files: opts.files ++ extra}}
+    end
   end
 
   defp parse_args([], opts), do: {:ok, opts}

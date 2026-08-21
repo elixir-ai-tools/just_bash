@@ -3,14 +3,19 @@ defmodule JustBash.Commands.Mv do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
   def names, do: ["mv"]
 
   @impl true
-  def execute(bash, [src, dest], _stdin), do: move(bash, src, dest)
-  def execute(bash, _args, _stdin), do: {Command.error("mv: missing file operand\n"), bash}
+  def execute(bash, args, _stdin) do
+    case StdinOperand.drop_end_of_options(args) do
+      [src, dest] -> move(bash, src, dest)
+      _ -> {Command.error("mv: missing file operand\n"), bash}
+    end
+  end
 
   defp move(bash, src, dest) do
     src_resolved = FS.resolve_path(bash.cwd, src)

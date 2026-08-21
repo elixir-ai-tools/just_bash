@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Xxd do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -10,11 +11,15 @@ defmodule JustBash.Commands.Xxd do
 
   @impl true
   def execute(bash, args, stdin) do
-    case parse_args(args, %{cols: 16, len: nil, seek: 0, plain: false, file: nil}) do
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+
+    case parse_args(option_args, %{cols: 16, len: nil, seek: 0, plain: false, file: nil}) do
       {:error, msg} ->
         {Command.error(msg), bash}
 
       {:ok, opts} ->
+        opts = if extra == [], do: opts, else: %{opts | file: List.last(extra)}
+
         case read_input(bash, opts.file, stdin) do
           {:ok, data, bash} ->
             data = slice(data, opts.seek, opts.len)

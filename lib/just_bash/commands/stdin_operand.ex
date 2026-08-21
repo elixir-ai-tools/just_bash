@@ -44,10 +44,52 @@ defmodule JustBash.Commands.StdinOperand do
   fewer input than it was given and still exits 0.
   """
   @spec operands([String.t()]) :: [String.t()]
-  def operands(args), do: do_operands(args, [])
+  def operands(args) do
+    {before, extra} = split_end_of_options(args)
+    keep_dash_operands(before) ++ extra
+  end
+
+  @doc """
+  Split `args` at the first `--`.
+
+  Returns `{before, extra}` where `extra` is everything after `--` and must
+  not be parsed as options. A second `--` is an operand named `--`. When `--`
+  is absent, `extra` is `[]` and `before` is `args`.
+
+  Hand-rolled parsers call this once at their entry point, parse flags from
+  `before`, and append `extra` as file operands — the same `--` stop
+  `FlagParser` and `operands/1` already implement:
+
+      {option_args, extra} = StdinOperand.split_end_of_options(args)
+      with {:ok, opts} <- parse_flags(option_args, defaults) do
+        {:ok, %{opts | files: opts.files ++ extra}}
+      end
+  """
+  @spec split_end_of_options([String.t()]) :: {[String.t()], [String.t()]}
+  def split_end_of_options(args) do
+    case Enum.split_while(args, &(&1 != "--")) do
+      {before, ["--" | extra]} -> {before, extra}
+      {before, []} -> {before, []}
+    end
+  end
+
+  @doc """
+  Drop the first `--` and keep every other argument, including ones that
+  look like flags.
+
+  For a command that does not parse options, arguments on either side of
+  `--` are operands. Concatenating them is the POSIX reading of `--` as a
+  marker rather than a filename. After `--`, a second `--` stays an operand.
+  """
+  @spec drop_end_of_options([String.t()]) :: [String.t()]
+  def drop_end_of_options(args) do
+    {before, extra} = split_end_of_options(args)
+    before ++ extra
+  end
+
+  defp keep_dash_operands(args), do: do_operands(args, [])
 
   defp do_operands([], acc), do: Enum.reverse(acc)
-  defp do_operands(["--" | rest], acc), do: Enum.reverse(acc, rest)
   defp do_operands([@dash | rest], acc), do: do_operands(rest, [@dash | acc])
   defp do_operands([@dash <> _ | rest], acc), do: do_operands(rest, acc)
   defp do_operands([operand | rest], acc), do: do_operands(rest, [operand | acc])

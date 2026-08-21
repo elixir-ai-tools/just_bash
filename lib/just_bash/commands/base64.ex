@@ -41,7 +41,11 @@ defmodule JustBash.Commands.Base64 do
   defp build_result({:error, msg}, bash), do: {Command.error(msg), bash}
 
   defp parse_args(args) do
-    parse_args(args, %{decode: false, wrap: 76, files: []})
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+
+    with {:ok, opts} <- parse_args(option_args, %{decode: false, wrap: 76, files: []}) do
+      {:ok, %{opts | files: opts.files ++ extra}}
+    end
   end
 
   defp parse_args([], opts), do: {:ok, opts}

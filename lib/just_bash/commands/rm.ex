@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Rm do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -31,7 +32,11 @@ defmodule JustBash.Commands.Rm do
     {Command.result("", stderr, exit_code), %{bash | fs: new_fs}}
   end
 
-  defp parse_flags(args), do: parse_flags(args, %{r: false, f: false}, [])
+  defp parse_flags(args) do
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+    {flags, paths} = parse_flags(option_args, %{r: false, f: false}, [])
+    {flags, paths ++ extra}
+  end
 
   defp parse_flags(["-r" | rest], flags, paths),
     do: parse_flags(rest, %{flags | r: true}, paths)

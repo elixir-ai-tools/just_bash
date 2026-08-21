@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Du do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
   alias JustBash.Limit
 
@@ -57,15 +58,20 @@ defmodule JustBash.Commands.Du do
   end
 
   defp parse_args(args) do
-    parse_args(args, %{
-      all_files: false,
-      human_readable: false,
-      summarize: false,
-      grand_total: false,
-      max_depth: nil,
-      files: [],
-      deadline: nil
-    })
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+
+    with {:ok, opts} <-
+           parse_args(option_args, %{
+             all_files: false,
+             human_readable: false,
+             summarize: false,
+             grand_total: false,
+             max_depth: nil,
+             files: [],
+             deadline: nil
+           }) do
+      {:ok, %{opts | files: opts.files ++ extra}}
+    end
   end
 
   defp parse_args([], opts), do: {:ok, opts}

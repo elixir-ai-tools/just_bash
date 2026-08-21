@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Mkdir do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -97,7 +98,11 @@ defmodule JustBash.Commands.Mkdir do
     "mkdir: cannot create directory '#{path}': #{FS.strerror(error)}\n"
   end
 
-  defp parse_flags(args), do: parse_flags(args, %{p: false}, [])
+  defp parse_flags(args) do
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+    {flags, paths} = parse_flags(option_args, %{p: false}, [])
+    {flags, paths ++ extra}
+  end
 
   defp parse_flags(["-p" | rest], flags, paths),
     do: parse_flags(rest, %{flags | p: true}, paths)

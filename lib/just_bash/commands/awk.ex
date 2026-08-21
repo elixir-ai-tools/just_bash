@@ -90,12 +90,17 @@ defmodule JustBash.Commands.Awk do
   end
 
   defp parse_args(args) do
-    parse_args(args, %{
-      program: nil,
-      files: [],
-      field_separator: " ",
-      variables: %{}
-    })
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+
+    with {:ok, opts} <-
+           parse_args(option_args, %{
+             program: nil,
+             files: [],
+             field_separator: " ",
+             variables: %{}
+           }) do
+      {:ok, %{opts | files: opts.files ++ extra}}
+    end
   end
 
   defp parse_args([], opts) do

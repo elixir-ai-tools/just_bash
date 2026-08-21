@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Cat do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -10,6 +11,8 @@ defmodule JustBash.Commands.Cat do
 
   @impl true
   def execute(bash, args, stdin) do
+    args = StdinOperand.drop_end_of_options(args)
+
     if args == [] and stdin != "" do
       {Command.ok(stdin), bash}
     else

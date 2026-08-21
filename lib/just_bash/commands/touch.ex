@@ -3,6 +3,7 @@ defmodule JustBash.Commands.Touch do
   @behaviour JustBash.Commands.Command
 
   alias JustBash.Commands.Command
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -11,7 +12,9 @@ defmodule JustBash.Commands.Touch do
   @impl true
   def execute(bash, args, _stdin) do
     {new_fs, stderr, exit_code} =
-      Enum.reduce(args, {bash.fs, "", 0}, fn path, acc ->
+      args
+      |> StdinOperand.drop_end_of_options()
+      |> Enum.reduce({bash.fs, "", 0}, fn path, acc ->
         touch_file(bash.cwd, path, acc)
       end)
 

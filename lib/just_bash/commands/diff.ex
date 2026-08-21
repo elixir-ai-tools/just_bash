@@ -2,6 +2,7 @@ defmodule JustBash.Commands.Diff do
   @moduledoc "The `diff` command - compare files line by line."
   @behaviour JustBash.Commands.Command
 
+  alias JustBash.Commands.StdinOperand
   alias JustBash.FS
 
   @impl true
@@ -33,13 +34,18 @@ defmodule JustBash.Commands.Diff do
   end
 
   defp parse_args(args) do
-    parse_args(args, %{
-      unified: false,
-      brief: false,
-      report_same: false,
-      ignore_case: false,
-      files: []
-    })
+    {option_args, extra} = StdinOperand.split_end_of_options(args)
+
+    with {:ok, opts} <-
+           parse_args(option_args, %{
+             unified: false,
+             brief: false,
+             report_same: false,
+             ignore_case: false,
+             files: []
+           }) do
+      {:ok, %{opts | files: opts.files ++ extra}}
+    end
   end
 
   defp parse_args([], opts), do: {:ok, opts}
