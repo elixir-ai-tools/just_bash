@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug Fixes
 
 * honour `--` as end-of-options for file-operand commands ([#83](https://github.com/elixir-ai-tools/just_bash/issues/83))
+* head default line count no longer emits a trailing blank line ([#80](https://github.com/elixir-ai-tools/just_bash/issues/80))
 
 ## [0.1.0] - 2026-01-11
 
