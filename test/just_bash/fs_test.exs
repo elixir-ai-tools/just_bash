@@ -282,6 +282,7 @@ defmodule JustBash.FSTest do
     end
 
     test "does not sort a directory that has no special children" do
+      # The backend yields a Stream so VFS does not sort the listing first.
       fs =
         VFS.new()
         |> VFS.mount("/data", %OrderedReaddirBackend{entries: ["z", "a", "m"]})
