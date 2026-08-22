@@ -58,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * head default line count no longer emits a trailing blank line ([#80](https://github.com/elixir-ai-tools/just_bash/issues/80))
 * tac no longer invents a newline on an unterminated last record ([#82](https://github.com/elixir-ai-tools/just_bash/issues/82))
 * `/dev/null` exists as a filesystem node, so operands agree with redirects ([#78](https://github.com/elixir-ai-tools/just_bash/issues/78))
+* `FS.readdir/2` only uniq-sorts directories that contribute special children, and write redirects to `/dev/./null` skip the file-size cap ([#94](https://github.com/elixir-ai-tools/just_bash/issues/94))
 
 ## [0.1.0] - 2026-01-11
 
