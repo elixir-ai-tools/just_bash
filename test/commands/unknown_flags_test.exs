@@ -8,8 +8,6 @@ defmodule JustBash.Commands.UnknownFlagsTest do
   """
   use ExUnit.Case, async: true
 
-  alias JustBash.Commands.Registry
-
   defp bash, do: JustBash.new(files: %{"/f.txt" => "a\nb\nc\n"})
 
   describe "commands sharing JustBash.FlagParser" do
@@ -398,194 +396,23 @@ defmodule JustBash.Commands.UnknownFlagsTest do
     end
   end
 
-  describe "the whole registry" do
-    @probe_flags ["--jb-not-a-flag", "-Z"]
+  # Registry-wide unknown-flag coverage lives in `flags_matrix`
+  # (`mix bash_fixtures.gen flags`). That suite lists every
+  # `Commands.Registry` name × {--jb-not-a-flag, -Z}, records real
+  # bash/coreutils stderr+rc, and fails if a new command is unclassified.
+  # This file keeps the FlagParser unit tests from #68 — exact wording,
+  # clusters, --help — rather than a second classification table.
 
-    # Every name in `Commands.Registry`, classified by what it does with a flag
-    # it does not implement. The table is compared to observed behaviour as a
-    # whole, so a new command cannot join the registry without being classified
-    # and a command cannot change category unnoticed.
-    #
-    #   :strict    - non-zero exit, nothing on stdout, and a diagnostic that
-    #                names the *option*. What every option-parsing command
-    #                should do, and the only category that certifies the fix:
-    #                a non-zero exit alone does not, because `ls -Z`, `head -Z`,
-    #                `tail -Z` and `cp -Z` all exited non-zero before this
-    #                change too - by demoting the flag and then failing to open
-    #                the file it named.
-    #   :misblamed - STILL WRONG. Non-zero exit, but the diagnostic is about a
-    #                file the flag was turned into rather than about the flag.
-    #                `cat -Z /f.txt` says `cat: -Z: No such file or directory`
-    #                and prints the file anyway; GNU says
-    #                `cat: invalid option -- 'Z'` and prints nothing.
-    #   :quiet     - non-zero exit with no diagnostic. These three parse no
-    #                options at all; bash is equally silent.
-    #   :operand   - exit 0 is correct: bash also treats the argument as data.
-    #                `echo -Z` prints `-Z`, `test -Z` is a non-empty string.
-    #   :absorbed  - STILL WRONG. Exits 0 with the flag ignored, exactly the way
-    #                `sort -Q` did. These are the hand-rolled `parse_args`
-    #                commands that issue #68 explicitly defers migrating onto
-    #                FlagParser (migrating first would have spread the bug, not
-    #                fixed it). Listed by name so the list can only shrink.
-    @classification %{
-      "." => :misblamed,
-      ":" => :operand,
-      "[" => :absorbed,
-      "arch" => :absorbed,
-      "awk" => :absorbed,
-      "base64" => :strict,
-      "basename" => :absorbed,
-      "break" => :absorbed,
-      "cat" => :misblamed,
-      "cd" => :misblamed,
-      "chmod" => :misblamed,
-      "chown" => :misblamed,
-      "comm" => :strict,
-      "command" => :misblamed,
-      "continue" => :absorbed,
-      "cp" => :strict,
-      "curl" => :misblamed,
-      "cut" => :strict,
-      "date" => :strict,
-      "declare" => :absorbed,
-      "diff" => :strict,
-      "dirname" => :absorbed,
-      "du" => :strict,
-      "echo" => :operand,
-      "env" => :strict,
-      "eval" => :misblamed,
-      "exit" => :quiet,
-      "expand" => :strict,
-      "export" => :absorbed,
-      "false" => :quiet,
-      "file" => :strict,
-      "find" => :misblamed,
-      "fold" => :strict,
-      "getopts" => :misblamed,
-      "grep" => :strict,
-      "head" => :strict,
-      "hostname" => :absorbed,
-      "id" => :absorbed,
-      "jq" => :misblamed,
-      "ln" => :misblamed,
-      "local" => :absorbed,
-      "ls" => :strict,
-      "markdown" => :misblamed,
-      "md" => :misblamed,
-      "md5sum" => :strict,
-      "mkdir" => :absorbed,
-      "mktemp" => :absorbed,
-      "mv" => :misblamed,
-      "nl" => :strict,
-      "nproc" => :absorbed,
-      "od" => :misblamed,
-      "paste" => :strict,
-      "printenv" => :absorbed,
-      "printf" => :absorbed,
-      "pwd" => :absorbed,
-      "read" => :quiet,
-      "readlink" => :strict,
-      "realpath" => :misblamed,
-      "return" => :absorbed,
-      "rev" => :absorbed,
-      "rm" => :misblamed,
-      "sed" => :strict,
-      "seq" => :misblamed,
-      "set" => :strict,
-      "sha256sum" => :misblamed,
-      "shasum" => :misblamed,
-      "shift" => :misblamed,
-      "sleep" => :absorbed,
-      "sort" => :strict,
-      "source" => :misblamed,
-      "stat" => :strict,
-      "tac" => :absorbed,
-      "tail" => :strict,
-      "tee" => :strict,
-      "test" => :operand,
-      "touch" => :absorbed,
-      "tr" => :strict,
-      "trap" => :misblamed,
-      "tree" => :strict,
-      "true" => :operand,
-      "type" => :misblamed,
-      "typeset" => :absorbed,
-      "uname" => :absorbed,
-      "uniq" => :strict,
-      "unset" => :absorbed,
-      "wc" => :misblamed,
-      "wget" => :misblamed,
-      "which" => :strict,
-      "whoami" => :absorbed,
-      "xargs" => :strict,
-      "xxd" => :misblamed,
-      "yes" => :operand
-    }
-
-    test "no command silently accepts a flag it does not implement" do
-      observed = Map.new(Registry.list(), fn name -> {name, classify(name)} end)
-      expected = Map.new(@classification, fn {name, kind} -> {name, observable(kind)} end)
-
-      assert observed == expected
-    end
-
-    # A diagnostic nobody can attribute is barely better than none, so a
-    # rejection has to name the program it came from.
-    test "a rejecting command names itself in the diagnostic" do
-      for {name, :strict} <- @classification, flag <- @probe_flags do
-        {result, _} = JustBash.exec(bash(), "#{name} #{flag}")
-        module = Registry.get(name)
-        canonical = hd(module.names())
-
-        assert String.starts_with?(result.stderr, ["bash: ", "#{name}: ", "#{canonical}: "]),
-               "#{name} #{flag} exited #{result.exit_code} with unattributable stderr " <>
-                 inspect(result.stderr)
-      end
-    end
-
-    # Every command the seven FlagParser callers cover has to be :strict, and
-    # naming them here means the matrix cannot certify the fix by accident:
-    # four of these exited non-zero before the fix as well.
-    test "every command on the shared flag parser rejects the flag itself" do
+  describe "the shared flag parser still rejects the flag itself" do
+    test "every FlagParser command is :strict on an unknown short flag" do
       for name <- ~w(cp grep head ls sort tail uniq tr) do
-        assert @classification[name] == :strict
+        {result, _} = JustBash.exec(bash(), "#{name} -Q")
+
+        assert result.exit_code != 0, "#{name} -Q exited 0"
+        assert result.stdout == ""
+        assert result.stderr =~ ~r/(invalid|unrecognized|illegal) option/
+        assert String.starts_with?(result.stderr, ["#{name}: ", "bash: "])
       end
-    end
-
-    # :operand and :absorbed are the same observation - the command exits 0 -
-    # and differ only in whether that is correct. The distinction is carried by
-    # the table above so that fixing an :absorbed command forces an edit here.
-    defp observable(:operand), do: :exit_zero
-    defp observable(:absorbed), do: :exit_zero
-    defp observable(other), do: other
-
-    defp classify(name) do
-      @probe_flags
-      |> Enum.map(&probe(name, &1))
-      |> Enum.uniq()
-      |> case do
-        [single] -> single
-        both -> both
-      end
-    end
-
-    # A non-zero exit is not evidence that the flag was rejected: demoting it to
-    # a filename and failing to open that file exits non-zero too, and leaves
-    # the command's real output on stdout. Only a command that says nothing on
-    # stdout and names the option in its diagnostic has actually rejected it.
-    defp probe(name, flag) do
-      {result, _} = JustBash.exec(bash(), "#{name} #{flag}")
-
-      cond do
-        result.exit_code == 0 -> :exit_zero
-        result.stderr == "" -> :quiet
-        rejected_the_option?(result) -> :strict
-        true -> :misblamed
-      end
-    end
-
-    defp rejected_the_option?(result) do
-      result.stdout == "" and result.stderr =~ ~r/(invalid|unrecognized|illegal) option/
     end
   end
 end

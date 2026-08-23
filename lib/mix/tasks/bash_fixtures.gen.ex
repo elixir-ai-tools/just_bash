@@ -29,6 +29,10 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       mix bash_fixtures varop_matrix   # record what real bash does
       mix test --only suite:varop_matrix
 
+      mix bash_fixtures.gen flags      # write the matrix
+      mix bash_fixtures flags_matrix   # record what real bash does
+      mix test --only suite:flags_matrix
+
   Generated suites are named `<matrix>_matrix` and are safe to regenerate: the
   digest in `JustBash.Fixtures` is content-derived, so a case that did not change
   keeps its recording.
@@ -61,6 +65,15 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       plus `foofoo` where shortest vs longest or first vs all would otherwise
       hide) so one value cannot hide the bug. Suite `varop_matrix`. See #70
       item 2.
+    * `flags` — `cmd --jb-not-a-flag` and `cmd -Z` for every name in
+      `Commands.Registry`. The default assertion is non-zero exit and
+      usage-bearing stderr (never exit 0). Commands that legitimately treat
+      the token as an operand (`echo`), accept GNU `-Z` (SELinux, `diff -Z`,
+      `grep -Z`, `curl -Z`), or have no GNU twin (`markdown`/`md`) are still
+      generated and named with a reason — never silently omitted. Suite
+      `flags_matrix`. This is the registry-wide unknown-flag probe from #70
+      item 2; `unknown_flags_test.exs` keeps the FlagParser unit tests from
+      #68 rather than a second classification table.
 
   A list of conversions and a list of flags are each easy to write down. The
   cross of the two is where the bugs live and is what nobody enumerates by hand:
@@ -75,17 +88,19 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       mix bash_fixtures.gen printf       # one matrix
       mix bash_fixtures.gen test         # one matrix
       mix bash_fixtures.gen varop        # one matrix
+      mix bash_fixtures.gen flags        # one matrix
       mix bash_fixtures.gen --dry-run    # report counts, write nothing
   """
 
   use Mix.Task
 
+  alias JustBash.Commands.Registry
   alias JustBash.Fixtures
   alias Mix.Tasks.BashFixtures
 
   @shortdoc "Generate enumerated fixture matrices"
 
-  @matrices ["date", "printf", "test", "varop"]
+  @matrices ["date", "printf", "test", "varop", "flags"]
 
   @doc false
   def cases_for(name), do: build(name)
@@ -408,6 +423,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
   defp build("printf"), do: printf_cases()
   defp build("test"), do: test_cases()
   defp build("varop"), do: varop_cases()
+  defp build("flags"), do: flags_cases()
 
   defp date_cases do
     Enum.concat([
@@ -1880,6 +1896,284 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       name in @shortest_star_names -> @shortest_star_gap
       true -> nil
     end
+  end
+
+  # ---------------------------------------------------------------------------
+  # flags — registry-wide unknown-flag probe
+  #
+  # The alphabet is every name in Commands.Registry × {--jb-not-a-flag, -Z}.
+  # A new Registry command must be classified below or `mix bash_fixtures.gen
+  # flags` fails — the same completeness rule as end_of_options_test.exs.
+  #
+  # The probe's default claim is "non-zero exit, usage-bearing stderr, never
+  # exit 0". Commands that legitimately treat the token as data, accept GNU
+  # `-Z`, or have no twin are still generated; the reason lives here so an
+  # omit cannot hide as a pass.
+  #
+  # Gaps are assigned after recording, never by omitting a cell. Marking a
+  # gap must not change the digest — the reason lives in opts.
+  # ---------------------------------------------------------------------------
+
+  @flags_probes ["--jb-not-a-flag", "-Z"]
+
+  # Every Registry name. The value is why this command is classified rather
+  # than omitted: a probe that bash refuses, an operand that both engines
+  # print, a GNU `-Z` that is a real flag, or a JustBash-only command.
+  @flags_classifications %{
+    "." => "bash source builtin: unknown flag is invalid option + usage",
+    ":" => "alias of true; ignores operands and exits 0",
+    "[" => "missing ] is a usage-bearing syntax error; not the operand form of test",
+    "arch" => "probe: coreutils refuse an unknown flag",
+    "awk" => "probe: gawk refuses an unknown flag",
+    "base64" => "probe: coreutils refuse an unknown flag",
+    "basename" => "probe: coreutils refuse an unknown flag",
+    "break" => "bash ignores the token and warns only meaningful in a loop at exit 0",
+    "cat" => "probe: coreutils refuse an unknown flag",
+    "cd" => "probe: bash builtin refuses an unknown flag + usage",
+    "chmod" => "probe: coreutils refuse an unknown flag",
+    "chown" => "probe: coreutils refuse an unknown flag",
+    "comm" => "probe: coreutils refuse an unknown flag",
+    "command" => "probe: bash builtin refuses an unknown flag + usage",
+    "continue" => "bash ignores the token and warns only meaningful in a loop at exit 0",
+    "cp" => "GNU -Z is SELinux context of the copy; --jb-not-a-flag is refused",
+    "curl" => "GNU -Z is --parallel; --jb-not-a-flag is unknown",
+    "cut" => "probe: coreutils refuse an unknown flag",
+    "date" => "probe: coreutils refuse an unknown flag",
+    "declare" => "probe: bash builtin refuses an unknown flag + usage",
+    "diff" => "GNU -Z ignores trailing whitespace; --jb-not-a-flag is refused",
+    "dirname" => "probe: coreutils refuse an unknown flag",
+    "du" => "probe: coreutils refuse an unknown flag",
+    "echo" => "operand: writes arguments; -Z and --jb-not-a-flag are data at exit 0",
+    "env" => "probe: coreutils refuse an unknown flag",
+    "eval" => "probe: bash builtin refuses an unknown flag + usage",
+    "exit" => "bash wants a numeric status; the token is not a flag",
+    "expand" => "probe: coreutils refuse an unknown flag",
+    "export" => "probe: bash builtin refuses an unknown flag + usage",
+    "false" => "ignores operands and exits 1 with no diagnostic",
+    "file" => "GNU -Z tries to uncompress; --jb-not-a-flag is refused",
+    "find" => "probe: GNU find reports an unknown predicate",
+    "fold" => "probe: coreutils refuse an unknown flag",
+    "getopts" => "probe: bash builtin refuses an unknown flag + usage",
+    "grep" => "GNU -Z is --null; --jb-not-a-flag is refused",
+    "head" => "probe: coreutils refuse an unknown flag",
+    "hostname" => "probe: hostname refuses an unknown flag + usage",
+    "id" => "GNU -Z is SELinux context; --jb-not-a-flag is refused",
+    "jq" => "probe: jq refuses an unknown flag",
+    "ln" => "probe: coreutils refuse an unknown flag",
+    "local" => "bash errors can only be used in a function before flag parsing",
+    "ls" => "GNU -Z prints SELinux context (empty dir so the listing is deterministic)",
+    "markdown" => "JustBash-only; bash has no markdown",
+    "md" => "alias of markdown; bash has no md",
+    "md5sum" => "probe: coreutils refuse an unknown flag",
+    "mkdir" => "GNU -Z is SELinux context of the directory; --jb-not-a-flag is refused",
+    "mktemp" => "probe: coreutils refuse an unknown flag",
+    "mv" => "GNU -Z is SELinux context of the rename; --jb-not-a-flag is refused",
+    "nl" => "probe: coreutils refuse an unknown flag",
+    "nproc" => "probe: coreutils refuse an unknown flag",
+    "od" => "probe: coreutils refuse an unknown flag",
+    "paste" => "probe: coreutils refuse an unknown flag",
+    "printenv" => "probe: coreutils refuse an unknown flag",
+    "printf" => "probe: bash builtin refuses an unknown flag + usage",
+    "pwd" => "probe: bash builtin refuses an unknown flag + usage",
+    "read" => "probe: bash builtin refuses an unknown flag + usage",
+    "readlink" => "probe: coreutils refuse an unknown flag",
+    "realpath" => "probe: coreutils refuse an unknown flag",
+    "return" => "bash wants a numeric status; the token is not a flag",
+    "rev" => "probe: util-linux refuse an unknown flag",
+    "rm" => "probe: coreutils refuse an unknown flag",
+    "sed" => "probe: GNU sed refuses an unknown flag + usage",
+    "seq" => "probe: coreutils refuse an unknown flag",
+    "set" => "probe: bash builtin refuses an unknown flag + usage",
+    "sha256sum" => "probe: coreutils refuse an unknown flag",
+    "shasum" => "probe: Perl shasum refuses an unknown flag",
+    "shift" => "bash wants a numeric count; the token is not a flag",
+    "sleep" => "probe: coreutils refuse an unknown flag",
+    "sort" => "probe: coreutils refuse an unknown flag",
+    "source" => "bash source builtin: unknown flag is invalid option + usage",
+    "stat" => "probe: coreutils refuse an unknown flag",
+    "tac" => "probe: coreutils refuse an unknown flag",
+    "tail" => "probe: coreutils refuse an unknown flag",
+    "tee" => "probe: coreutils refuse an unknown flag",
+    "test" => "operand: one-arg test is implicit -n; -Z and --jb-not-a-flag are nonempty",
+    "touch" => "probe: coreutils refuse an unknown flag",
+    "tr" => "probe: coreutils refuse an unknown flag",
+    "trap" => "probe: bash builtin refuses an unknown flag + usage",
+    "tree" => "probe: tree refuses an unknown flag + usage",
+    "true" => "ignores operands and exits 0",
+    "type" => "probe: bash builtin refuses an unknown flag + usage",
+    "typeset" => "probe: bash builtin refuses an unknown flag + usage",
+    "uname" => "probe: coreutils refuse an unknown flag",
+    "uniq" => "probe: coreutils refuse an unknown flag",
+    "unset" => "probe: bash builtin refuses an unknown flag + usage",
+    "wc" => "probe: coreutils refuse an unknown flag",
+    "wget" => "probe: wget refuses an unknown flag + usage",
+    "which" => "probe: which refuses an unknown flag + usage",
+    "whoami" => "probe: coreutils refuse an unknown flag",
+    "xargs" => "probe: findutils refuse an unknown flag",
+    "xxd" => "probe: xxd refuses an unknown flag + usage",
+    "yes" => "GNU yes refuses unknown flags; they are not the string to repeat"
+  }
+
+  # Assigned after recording. A cell that matches is left unmarked even
+  # when a sibling of the same command diverges — marking a match inverts
+  # a passing assertion. Per-flag overrides win over the per-command map.
+  @absorbed_gap "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+  @misblame_gap "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+  @wording_gap "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+  @selinux_z_gap "GNU -Z is a real flag (SELinux context); JustBash rejects -Z as unknown or mishandles it"
+  @gnu_z_gap "GNU -Z is a real flag; JustBash rejects -Z as unknown or mishandles it"
+  @no_gnu_gap "JustBash-only command; bash reports command not found"
+  @quiet_gap "JustBash exits non-zero with no diagnostic; bash writes usage or a required-argument error"
+  @loop_gap "JustBash does not emit bash's only meaningful in a loop warning"
+  @local_gap "JustBash local/declare parses flags outside a function; bash errors can only be used in a function or refuses the option"
+  @numeric_gap "JustBash does not diagnose a non-numeric status/count the way bash does"
+  @yes_gap "JustBash yes treats the flag as the string to repeat; GNU yes refuses unknown flags"
+  @bracket_gap "JustBash [ without a closing ] still evaluates the token; bash exits 2 and diagnoses missing ]"
+
+  # Per-command default, applied to both probes unless overridden.
+  # Filled after the first recording; matching cells stay nil.
+  @flags_command_gaps %{
+    "." => @misblame_gap,
+    "[" => @bracket_gap,
+    "arch" => @absorbed_gap,
+    "awk" => @absorbed_gap,
+    "base64" => @wording_gap,
+    "basename" => @absorbed_gap,
+    "break" => @loop_gap,
+    "cat" => @misblame_gap,
+    "cd" => @misblame_gap,
+    "chmod" => @misblame_gap,
+    "chown" => @misblame_gap,
+    "comm" => @wording_gap,
+    "command" => @misblame_gap,
+    "continue" => @loop_gap,
+    "cut" => @wording_gap,
+    "curl" => @misblame_gap,
+    "date" => @wording_gap,
+    "declare" => @local_gap,
+    "diff" => @wording_gap,
+    "dirname" => @absorbed_gap,
+    "du" => @wording_gap,
+    "env" => @wording_gap,
+    "eval" => @misblame_gap,
+    "expand" => @wording_gap,
+    "exit" => @numeric_gap,
+    "export" => @absorbed_gap,
+    "file" => @wording_gap,
+    "find" => @misblame_gap,
+    "fold" => @wording_gap,
+    "getopts" => @misblame_gap,
+    "hostname" => @absorbed_gap,
+    "id" => @absorbed_gap,
+    "jq" => @misblame_gap,
+    "ln" => @misblame_gap,
+    "local" => @local_gap,
+    "md5sum" => @wording_gap,
+    "markdown" => @no_gnu_gap,
+    "md" => @no_gnu_gap,
+    "mkdir" => @absorbed_gap,
+    "mktemp" => @absorbed_gap,
+    "mv" => @misblame_gap,
+    "nl" => @wording_gap,
+    "nproc" => @absorbed_gap,
+    "od" => @misblame_gap,
+    "paste" => @wording_gap,
+    "printenv" => @absorbed_gap,
+    "printf" => @absorbed_gap,
+    "pwd" => @absorbed_gap,
+    "read" => @quiet_gap,
+    "readlink" => @wording_gap,
+    "realpath" => @misblame_gap,
+    "return" => @numeric_gap,
+    "rev" => @absorbed_gap,
+    "rm" => @misblame_gap,
+    "sed" => @wording_gap,
+    "seq" => @misblame_gap,
+    "set" => @wording_gap,
+    "sha256sum" => @misblame_gap,
+    "shasum" => @misblame_gap,
+    "shift" => @numeric_gap,
+    "sleep" => @absorbed_gap,
+    "source" => @misblame_gap,
+    "stat" => @wording_gap,
+    "tac" => @absorbed_gap,
+    "touch" => @absorbed_gap,
+    "tee" => @wording_gap,
+    "trap" => @misblame_gap,
+    "tree" => @wording_gap,
+    "type" => @misblame_gap,
+    "typeset" => @local_gap,
+    "uname" => @absorbed_gap,
+    "unset" => @absorbed_gap,
+    "wc" => @misblame_gap,
+    "wget" => @misblame_gap,
+    "which" => @wording_gap,
+    "whoami" => @absorbed_gap,
+    "xargs" => @wording_gap,
+    "xxd" => @misblame_gap,
+    "yes" => @yes_gap
+  }
+
+  # Per-flag overrides. GNU `-Z` that is a real option is a different
+  # divergence from `--jb-not-a-flag` on the same command.
+  @flags_gap_overrides %{
+    {"cp", "-Z"} => @selinux_z_gap,
+    {"curl", "-Z"} => @gnu_z_gap,
+    {"diff", "-Z"} => @gnu_z_gap,
+    {"file", "-Z"} => @gnu_z_gap,
+    {"grep", "-Z"} => @gnu_z_gap,
+    {"id", "-Z"} => @selinux_z_gap,
+    {"ls", "-Z"} => @selinux_z_gap,
+    {"mkdir", "-Z"} => @selinux_z_gap,
+    {"mv", "-Z"} => @selinux_z_gap
+  }
+
+  @doc false
+  def flags_classifications, do: @flags_classifications
+
+  defp flags_cases do
+    assert_registry_classified!()
+
+    for name <- flags_names(), flag <- @flags_probes do
+      flags_case(name, flag)
+    end
+  end
+
+  defp flags_names, do: @flags_classifications |> Map.keys() |> Enum.sort()
+
+  defp assert_registry_classified! do
+    classified = flags_names()
+    registry = Registry.list() |> Enum.sort()
+
+    unless classified == registry do
+      Mix.raise("""
+      flags matrix classification does not match Commands.Registry:
+        missing: #{inspect(registry -- classified)}
+        extra: #{inspect(classified -- registry)}
+      """)
+    end
+  end
+
+  defp flags_case(name, flag) do
+    fixture_case(
+      "flags matrix: #{name} #{flag}",
+      flags_script(name, flag),
+      flags_gap(name, flag)
+    )
+  end
+
+  # `ls -Z` lists the current directory under GNU. Pin an empty workdir so
+  # the recording is not the workspace listing.
+  defp flags_script("ls", "-Z") do
+    ~S[D=/tmp/jb_flags_ls; mkdir -p "$D"; LC_ALL=C LANG=C ls -Z "$D"; echo rc=$?]
+  end
+
+  defp flags_script(name, flag) do
+    "LC_ALL=C LANG=C #{name} #{flag}; echo rc=$?"
+  end
+
+  defp flags_gap(name, flag) do
+    Map.get(@flags_gap_overrides, {name, flag}, Map.get(@flags_command_gaps, name))
   end
 
   defp fixture_case(name, script, known_gap) do

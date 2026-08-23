@@ -1,0 +1,1408 @@
+{
+  "cases": [
+    {
+      "content_hash": "8c29f946339dab87",
+      "name": "flags matrix: . --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C . --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "9fdbbb9735809581",
+      "name": "flags matrix: . -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C . -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "b244dcddf9c07964",
+      "name": "flags matrix: : --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C : --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "8a21c7a9e82d063a",
+      "name": "flags matrix: : -Z",
+      "script": "LC_ALL=C LANG=C : -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "cce910e2b4329ff4",
+      "name": "flags matrix: [ --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash [ without a closing ] still evaluates the token; bash exits 2 and diagnoses missing ]"
+      },
+      "script": "LC_ALL=C LANG=C [ --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "f9a5bab5cbe88382",
+      "name": "flags matrix: [ -Z",
+      "opts": {
+        "known_gap": "JustBash [ without a closing ] still evaluates the token; bash exits 2 and diagnoses missing ]"
+      },
+      "script": "LC_ALL=C LANG=C [ -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "6522ab3a9bb3e4f7",
+      "name": "flags matrix: arch --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C arch --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "dc267e4c075a8ead",
+      "name": "flags matrix: arch -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C arch -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "9720e773eb1af481",
+      "name": "flags matrix: awk --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C awk --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "8cbda97754e29556",
+      "name": "flags matrix: awk -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C awk -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "0a2aeaa49ea11402",
+      "name": "flags matrix: base64 --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C base64 --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "ee596a90b2cdfae3",
+      "name": "flags matrix: base64 -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C base64 -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "f80afcdc01efa68a",
+      "name": "flags matrix: basename --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C basename --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "6c9a94316f6c7a5c",
+      "name": "flags matrix: basename -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C basename -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "8d61057f74c9766e",
+      "name": "flags matrix: break --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash does not emit bash's only meaningful in a loop warning"
+      },
+      "script": "LC_ALL=C LANG=C break --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "9bf2712cfeb3d99b",
+      "name": "flags matrix: break -Z",
+      "opts": {
+        "known_gap": "JustBash does not emit bash's only meaningful in a loop warning"
+      },
+      "script": "LC_ALL=C LANG=C break -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "8d27f8303d34d25e",
+      "name": "flags matrix: cat --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C cat --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "931c42f37877e610",
+      "name": "flags matrix: cat -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C cat -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "c806f5e88bb30f72",
+      "name": "flags matrix: cd --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C cd --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "ee52d1333815317d",
+      "name": "flags matrix: cd -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C cd -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "806d3235adf3eda2",
+      "name": "flags matrix: chmod --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C chmod --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "c3f4fa910fef9181",
+      "name": "flags matrix: chmod -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C chmod -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "62c4ed52201d44ea",
+      "name": "flags matrix: chown --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C chown --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "1342dcd3648926a5",
+      "name": "flags matrix: chown -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C chown -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "ff97de54b8215960",
+      "name": "flags matrix: comm --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C comm --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "8eb95ad97877a6e4",
+      "name": "flags matrix: comm -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C comm -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "a1d0bacd29760673",
+      "name": "flags matrix: command --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C command --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "712dde023c924136",
+      "name": "flags matrix: command -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C command -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "c359b9389fff025a",
+      "name": "flags matrix: continue --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash does not emit bash's only meaningful in a loop warning"
+      },
+      "script": "LC_ALL=C LANG=C continue --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "55c777dd61a929b8",
+      "name": "flags matrix: continue -Z",
+      "opts": {
+        "known_gap": "JustBash does not emit bash's only meaningful in a loop warning"
+      },
+      "script": "LC_ALL=C LANG=C continue -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "d75034e2b4d1850a",
+      "name": "flags matrix: cp --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C cp --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "36a451b7c9afcd8c",
+      "name": "flags matrix: cp -Z",
+      "opts": {
+        "known_gap": "GNU -Z is a real flag (SELinux context); JustBash rejects -Z as unknown or mishandles it"
+      },
+      "script": "LC_ALL=C LANG=C cp -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "8264c85f8ffcd1fe",
+      "name": "flags matrix: curl --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C curl --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "7e3ea378d76be00b",
+      "name": "flags matrix: curl -Z",
+      "opts": {
+        "known_gap": "GNU -Z is a real flag; JustBash rejects -Z as unknown or mishandles it"
+      },
+      "script": "LC_ALL=C LANG=C curl -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "48c81c23948cfdb1",
+      "name": "flags matrix: cut --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C cut --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "6bb3b13f1114f84e",
+      "name": "flags matrix: cut -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C cut -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "f0c09a8a8ecf5c75",
+      "name": "flags matrix: date --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C date --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "eda7c90ef168cd79",
+      "name": "flags matrix: date -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C date -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "c4592335e027ec93",
+      "name": "flags matrix: declare --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash local/declare parses flags outside a function; bash errors can only be used in a function or refuses the option"
+      },
+      "script": "LC_ALL=C LANG=C declare --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "aac8829e8e9a69ed",
+      "name": "flags matrix: declare -Z",
+      "opts": {
+        "known_gap": "JustBash local/declare parses flags outside a function; bash errors can only be used in a function or refuses the option"
+      },
+      "script": "LC_ALL=C LANG=C declare -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "f83f1e80925ccf29",
+      "name": "flags matrix: diff --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C diff --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "2273846e7228cf54",
+      "name": "flags matrix: diff -Z",
+      "opts": {
+        "known_gap": "GNU -Z is a real flag; JustBash rejects -Z as unknown or mishandles it"
+      },
+      "script": "LC_ALL=C LANG=C diff -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "0d2dcd2254bfef14",
+      "name": "flags matrix: dirname --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C dirname --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "7fb21f0c98a15979",
+      "name": "flags matrix: dirname -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C dirname -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "4e3c5ec077432534",
+      "name": "flags matrix: du --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C du --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "dda5c66630e4a6cb",
+      "name": "flags matrix: du -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C du -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "738a5a1db2895671",
+      "name": "flags matrix: echo --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C echo --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "b3667c189b932d38",
+      "name": "flags matrix: echo -Z",
+      "script": "LC_ALL=C LANG=C echo -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "86cf314e0ebbccd8",
+      "name": "flags matrix: env --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C env --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "87c049a58961ec1d",
+      "name": "flags matrix: env -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C env -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "99dc084feeb41578",
+      "name": "flags matrix: eval --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C eval --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "0c346639ee4c367f",
+      "name": "flags matrix: eval -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C eval -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "9b30adf19c2828b7",
+      "name": "flags matrix: exit --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash does not diagnose a non-numeric status/count the way bash does"
+      },
+      "script": "LC_ALL=C LANG=C exit --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "aaa7cd9a1b722675",
+      "name": "flags matrix: exit -Z",
+      "opts": {
+        "known_gap": "JustBash does not diagnose a non-numeric status/count the way bash does"
+      },
+      "script": "LC_ALL=C LANG=C exit -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "3c2f567b5d0e67c0",
+      "name": "flags matrix: expand --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C expand --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "80d65f205aba6eb5",
+      "name": "flags matrix: expand -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C expand -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "8ab517d142f2a34d",
+      "name": "flags matrix: export --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C export --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "0c525111b96fb065",
+      "name": "flags matrix: export -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C export -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "f08a76e769f7b68b",
+      "name": "flags matrix: false --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C false --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "d1660d75ad465ad1",
+      "name": "flags matrix: false -Z",
+      "script": "LC_ALL=C LANG=C false -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "0786015a70def26a",
+      "name": "flags matrix: file --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C file --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "d39b6c6db0fc870d",
+      "name": "flags matrix: file -Z",
+      "opts": {
+        "known_gap": "GNU -Z is a real flag; JustBash rejects -Z as unknown or mishandles it"
+      },
+      "script": "LC_ALL=C LANG=C file -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "91dda89cf619b042",
+      "name": "flags matrix: find --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C find --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "f7bb635ba111a5a7",
+      "name": "flags matrix: find -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C find -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "ab40733a4468a002",
+      "name": "flags matrix: fold --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C fold --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "4f59f1858e7a4b38",
+      "name": "flags matrix: fold -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C fold -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "5d56181846eea17e",
+      "name": "flags matrix: getopts --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C getopts --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "64c0dec6297fe61a",
+      "name": "flags matrix: getopts -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C getopts -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "a05fcb2b267719c2",
+      "name": "flags matrix: grep --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C grep --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "f6424691562fe7a0",
+      "name": "flags matrix: grep -Z",
+      "opts": {
+        "known_gap": "GNU -Z is a real flag; JustBash rejects -Z as unknown or mishandles it"
+      },
+      "script": "LC_ALL=C LANG=C grep -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "3cb1edf1663242a3",
+      "name": "flags matrix: head --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C head --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "2d384ed256882204",
+      "name": "flags matrix: head -Z",
+      "script": "LC_ALL=C LANG=C head -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "e57d10a3e345416a",
+      "name": "flags matrix: hostname --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C hostname --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "bc6dff95de1e8a2e",
+      "name": "flags matrix: hostname -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C hostname -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "f244bbf3ded46b33",
+      "name": "flags matrix: id --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C id --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "00fbac6c1dd2a6b3",
+      "name": "flags matrix: id -Z",
+      "opts": {
+        "known_gap": "GNU -Z is a real flag (SELinux context); JustBash rejects -Z as unknown or mishandles it"
+      },
+      "script": "LC_ALL=C LANG=C id -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "58bce440850c781d",
+      "name": "flags matrix: jq --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C jq --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "c5d1fd47ba075dc3",
+      "name": "flags matrix: jq -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C jq -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "99c75f5418539766",
+      "name": "flags matrix: ln --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C ln --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "28d0cbe45a1d5c93",
+      "name": "flags matrix: ln -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C ln -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "222b698d1b8688a4",
+      "name": "flags matrix: local --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash local/declare parses flags outside a function; bash errors can only be used in a function or refuses the option"
+      },
+      "script": "LC_ALL=C LANG=C local --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "c33f71709cb52044",
+      "name": "flags matrix: local -Z",
+      "opts": {
+        "known_gap": "JustBash local/declare parses flags outside a function; bash errors can only be used in a function or refuses the option"
+      },
+      "script": "LC_ALL=C LANG=C local -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "8f70e712ea44d0ad",
+      "name": "flags matrix: ls --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C ls --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "9de0b59f0522db84",
+      "name": "flags matrix: ls -Z",
+      "opts": {
+        "known_gap": "GNU -Z is a real flag (SELinux context); JustBash rejects -Z as unknown or mishandles it"
+      },
+      "script": "D=/tmp/jb_flags_ls; mkdir -p \"$D\"; LC_ALL=C LANG=C ls -Z \"$D\"; echo rc=$?"
+    },
+    {
+      "content_hash": "77d2b5962f2cc2ba",
+      "name": "flags matrix: markdown --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash-only command; bash reports command not found"
+      },
+      "script": "LC_ALL=C LANG=C markdown --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "710190a48ded9de9",
+      "name": "flags matrix: markdown -Z",
+      "opts": {
+        "known_gap": "JustBash-only command; bash reports command not found"
+      },
+      "script": "LC_ALL=C LANG=C markdown -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "daa408d95ab87f8f",
+      "name": "flags matrix: md --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash-only command; bash reports command not found"
+      },
+      "script": "LC_ALL=C LANG=C md --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "a753e9fea918ee8f",
+      "name": "flags matrix: md -Z",
+      "opts": {
+        "known_gap": "JustBash-only command; bash reports command not found"
+      },
+      "script": "LC_ALL=C LANG=C md -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "2e2b716439071ea6",
+      "name": "flags matrix: md5sum --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C md5sum --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "8b85ad48b8a6e5c7",
+      "name": "flags matrix: md5sum -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C md5sum -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "04378694958b9c75",
+      "name": "flags matrix: mkdir --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C mkdir --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "e110a6668cd5da54",
+      "name": "flags matrix: mkdir -Z",
+      "opts": {
+        "known_gap": "GNU -Z is a real flag (SELinux context); JustBash rejects -Z as unknown or mishandles it"
+      },
+      "script": "LC_ALL=C LANG=C mkdir -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "69c70479f4c18e85",
+      "name": "flags matrix: mktemp --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C mktemp --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "d6524d789517e7e2",
+      "name": "flags matrix: mktemp -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C mktemp -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "6eae29972d31ae11",
+      "name": "flags matrix: mv --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C mv --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "77b9e191488f731e",
+      "name": "flags matrix: mv -Z",
+      "opts": {
+        "known_gap": "GNU -Z is a real flag (SELinux context); JustBash rejects -Z as unknown or mishandles it"
+      },
+      "script": "LC_ALL=C LANG=C mv -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "dda020763eb774c8",
+      "name": "flags matrix: nl --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C nl --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "01e036b5867eb414",
+      "name": "flags matrix: nl -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C nl -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "22430f159dd9624e",
+      "name": "flags matrix: nproc --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C nproc --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "705b9cdc2593fe38",
+      "name": "flags matrix: nproc -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C nproc -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "5511a2a87fe6ecad",
+      "name": "flags matrix: od --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C od --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "0d7dbac466fdef72",
+      "name": "flags matrix: od -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C od -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "a13d8bba35d1aaa3",
+      "name": "flags matrix: paste --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C paste --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "ec804b28970e480c",
+      "name": "flags matrix: paste -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C paste -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "4eefe94b27c89243",
+      "name": "flags matrix: printenv --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C printenv --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "198cb53efc7badd9",
+      "name": "flags matrix: printenv -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C printenv -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "5c580a682bc167e7",
+      "name": "flags matrix: printf --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C printf --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "ad6e556cbba16d20",
+      "name": "flags matrix: printf -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C printf -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "0bed639817d884a1",
+      "name": "flags matrix: pwd --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C pwd --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "20684d4868679fa4",
+      "name": "flags matrix: pwd -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C pwd -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "6b061c1881b52ba2",
+      "name": "flags matrix: read --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash exits non-zero with no diagnostic; bash writes usage or a required-argument error"
+      },
+      "script": "LC_ALL=C LANG=C read --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "12db787b6b0d1b65",
+      "name": "flags matrix: read -Z",
+      "opts": {
+        "known_gap": "JustBash exits non-zero with no diagnostic; bash writes usage or a required-argument error"
+      },
+      "script": "LC_ALL=C LANG=C read -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "2a974559bf470f17",
+      "name": "flags matrix: readlink --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C readlink --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "acdf21f44a34c202",
+      "name": "flags matrix: readlink -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C readlink -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "7a0e0149c351d39a",
+      "name": "flags matrix: realpath --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C realpath --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "471ccaa47e71e625",
+      "name": "flags matrix: realpath -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C realpath -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "54542de9851c2103",
+      "name": "flags matrix: return --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash does not diagnose a non-numeric status/count the way bash does"
+      },
+      "script": "LC_ALL=C LANG=C return --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "582e5993a83624ca",
+      "name": "flags matrix: return -Z",
+      "opts": {
+        "known_gap": "JustBash does not diagnose a non-numeric status/count the way bash does"
+      },
+      "script": "LC_ALL=C LANG=C return -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "442ecfc430f3243b",
+      "name": "flags matrix: rev --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C rev --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "19bc9d32b17f3680",
+      "name": "flags matrix: rev -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C rev -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "a19bee7a093e43d9",
+      "name": "flags matrix: rm --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C rm --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "ade74dfc89d89a8a",
+      "name": "flags matrix: rm -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C rm -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "c4d0b19d788f7dca",
+      "name": "flags matrix: sed --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C sed --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "e38d79063bd7d4b7",
+      "name": "flags matrix: sed -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C sed -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "19bcb620821e1d34",
+      "name": "flags matrix: seq --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C seq --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "440b65f8e220b94b",
+      "name": "flags matrix: seq -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C seq -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "e04e58d0474a93a8",
+      "name": "flags matrix: set --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C set --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "35190c70718f7fd5",
+      "name": "flags matrix: set -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C set -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "fee204554f83df8f",
+      "name": "flags matrix: sha256sum --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C sha256sum --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "2c61859cc4e65514",
+      "name": "flags matrix: sha256sum -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C sha256sum -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "46168061a576619a",
+      "name": "flags matrix: shasum --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C shasum --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "a318c5216be49614",
+      "name": "flags matrix: shasum -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C shasum -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "b5dc1230c5ddc7c9",
+      "name": "flags matrix: shift --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash does not diagnose a non-numeric status/count the way bash does"
+      },
+      "script": "LC_ALL=C LANG=C shift --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "bb60b18cdf1ff66a",
+      "name": "flags matrix: shift -Z",
+      "opts": {
+        "known_gap": "JustBash does not diagnose a non-numeric status/count the way bash does"
+      },
+      "script": "LC_ALL=C LANG=C shift -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "578d253f43cd436c",
+      "name": "flags matrix: sleep --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C sleep --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "bac11ed0862d76db",
+      "name": "flags matrix: sleep -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C sleep -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "2207625afdf49a88",
+      "name": "flags matrix: sort --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C sort --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "bac9e8ca927c744b",
+      "name": "flags matrix: sort -Z",
+      "script": "LC_ALL=C LANG=C sort -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "976270b0db470582",
+      "name": "flags matrix: source --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C source --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "27b10b1f9cceee95",
+      "name": "flags matrix: source -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C source -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "209a4d0ca55f2bdd",
+      "name": "flags matrix: stat --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C stat --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "a6205cb88875c4d9",
+      "name": "flags matrix: stat -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C stat -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "5c49dab31fb465b7",
+      "name": "flags matrix: tac --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C tac --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "1857c78bef2652fc",
+      "name": "flags matrix: tac -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C tac -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "25f3c2f6336d8f2a",
+      "name": "flags matrix: tail --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C tail --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "a912c94bfccda44d",
+      "name": "flags matrix: tail -Z",
+      "script": "LC_ALL=C LANG=C tail -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "8c1198eeaf0ba285",
+      "name": "flags matrix: tee --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C tee --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "89dfa88b6963bdd8",
+      "name": "flags matrix: tee -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C tee -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "9f15eb67784953d7",
+      "name": "flags matrix: test --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C test --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "91c3454c66da01d5",
+      "name": "flags matrix: test -Z",
+      "script": "LC_ALL=C LANG=C test -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "991b407415c50094",
+      "name": "flags matrix: touch --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C touch --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "18613896b9b26eac",
+      "name": "flags matrix: touch -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C touch -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "7bd25c99fa6c25c4",
+      "name": "flags matrix: tr --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C tr --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "c5fb221920d91b35",
+      "name": "flags matrix: tr -Z",
+      "script": "LC_ALL=C LANG=C tr -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "9a8726a5ca235d0e",
+      "name": "flags matrix: trap --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C trap --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "4efa32321ce38cd3",
+      "name": "flags matrix: trap -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C trap -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "3594642b30758999",
+      "name": "flags matrix: tree --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C tree --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "b00efc56994f27aa",
+      "name": "flags matrix: tree -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C tree -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "98fee787fdd52229",
+      "name": "flags matrix: true --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C true --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "ba8e9b25b65bad17",
+      "name": "flags matrix: true -Z",
+      "script": "LC_ALL=C LANG=C true -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "f944bf079ab0dc51",
+      "name": "flags matrix: type --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C type --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "efbb88610f20f3c8",
+      "name": "flags matrix: type -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C type -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "a6410187d5603489",
+      "name": "flags matrix: typeset --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash local/declare parses flags outside a function; bash errors can only be used in a function or refuses the option"
+      },
+      "script": "LC_ALL=C LANG=C typeset --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "1e4a824817174dbb",
+      "name": "flags matrix: typeset -Z",
+      "opts": {
+        "known_gap": "JustBash local/declare parses flags outside a function; bash errors can only be used in a function or refuses the option"
+      },
+      "script": "LC_ALL=C LANG=C typeset -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "0096d73a7367cfb0",
+      "name": "flags matrix: uname --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C uname --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "5046c9612e0213c2",
+      "name": "flags matrix: uname -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C uname -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "0a4f167ecd414001",
+      "name": "flags matrix: uniq --jb-not-a-flag",
+      "script": "LC_ALL=C LANG=C uniq --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "c4227a716fcb48fb",
+      "name": "flags matrix: uniq -Z",
+      "script": "LC_ALL=C LANG=C uniq -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "52f98db617b39493",
+      "name": "flags matrix: unset --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C unset --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "3cbac757aec98e64",
+      "name": "flags matrix: unset -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C unset -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "823f2280ae6841a0",
+      "name": "flags matrix: wc --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C wc --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "0ad8a1fe795f3430",
+      "name": "flags matrix: wc -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C wc -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "49d92eafb7fe210f",
+      "name": "flags matrix: wget --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C wget --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "daffc614f64a9c27",
+      "name": "flags matrix: wget -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C wget -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "14edba23874bb151",
+      "name": "flags matrix: which --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C which --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "1f4e1d0b62b8b1f9",
+      "name": "flags matrix: which -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C which -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "4f6fad84e75d32af",
+      "name": "flags matrix: whoami --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C whoami --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "1d97c07337856f39",
+      "name": "flags matrix: whoami -Z",
+      "opts": {
+        "known_gap": "JustBash absorbs the flag as an operand or format and exits 0; bash refuses it"
+      },
+      "script": "LC_ALL=C LANG=C whoami -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "196240c39b7686d9",
+      "name": "flags matrix: xargs --jb-not-a-flag",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C xargs --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "86689a3c74ae8123",
+      "name": "flags matrix: xargs -Z",
+      "opts": {
+        "known_gap": "both refuse the flag; JustBash's diagnostic wording or exit code differs from bash/coreutils"
+      },
+      "script": "LC_ALL=C LANG=C xargs -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "f3d49b8ce55378c0",
+      "name": "flags matrix: xxd --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C xxd --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "2cfa811b48800d4f",
+      "name": "flags matrix: xxd -Z",
+      "opts": {
+        "known_gap": "JustBash treats the flag as a filename or other operand and exits non-zero; bash names the option"
+      },
+      "script": "LC_ALL=C LANG=C xxd -Z; echo rc=$?"
+    },
+    {
+      "content_hash": "87f1d5e751018b2b",
+      "name": "flags matrix: yes --jb-not-a-flag",
+      "opts": {
+        "known_gap": "JustBash yes treats the flag as the string to repeat; GNU yes refuses unknown flags"
+      },
+      "script": "LC_ALL=C LANG=C yes --jb-not-a-flag; echo rc=$?"
+    },
+    {
+      "content_hash": "6368d678d481610d",
+      "name": "flags matrix: yes -Z",
+      "opts": {
+        "known_gap": "JustBash yes treats the flag as the string to repeat; GNU yes refuses unknown flags"
+      },
+      "script": "LC_ALL=C LANG=C yes -Z; echo rc=$?"
+    }
+  ],
+  "suite": "flags_matrix"
+}
