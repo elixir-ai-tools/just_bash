@@ -1507,63 +1507,30 @@ defmodule Mix.Tasks.BashFixtures.Gen do
   # indistinguishable from a correct `-p`, and marking it would invert a
   # passing assertion. The revealing shape carries the gap instead.
   defp test_gap(name) do
-    cond do
-      name in ["test -c (/dev/null)", "test -f (/dev/null)"] ->
-        @devnull_file_gap
-
-      name == "test -s (directory)" ->
-        @dir_size_gap
-
-      name == "test -p (fifo)" ->
-        @setup_or_op_gap
-
-      name in ["test -u (setuid)", "test -g (setgid)", "test -k (sticky)"] ->
-        @setup_or_op_gap
-
-      String.contains?(name, " -nt ") or String.contains?(name, " -ot ") or
-          String.contains?(name, " -ef ") ->
-        file_cmp_gap(name)
-
-      name in [
-        "test -x (regular)",
-        "test -x (empty)",
-        "test -x (unreadable)",
-        "test -x (symlink)",
-        "test -r (unreadable)",
-        "test -w (unreadable)"
-      ] ->
-        @perm_gap
-
-      name == "test -f (trailing-slash file)" ->
-        @slash_file_gap
-
-      name == "test unary -a (regular)" ->
-        @unary_a_gap
-
-      name == "test -a (file-and-dir)" ->
-        @andor_nary_gap
-
-      String.starts_with?(name, "test group ") ->
-        @group_gap
-
-      name in ["[ no-args", "[ missing-closer", "[ extra-after-closer"] ->
-        @bracket_syntax_gap
-
-      name in ["test extra-args", "test too-many"] ->
-        @arity_gap
-
-      name in ["test unknown unary", "test unknown binary"] ->
-        @unknown_op_gap
-
-      int_spelling_gap?(name) ->
-        int_spelling_reason(name)
-
-      name in ["test -O (regular)", "test -G (regular)"] ->
-        @unimpl_unary_gap
-
-      true ->
-        nil
+    case file_shape_gap(name) do
+      :none -> operator_gap(name)
+      gap -> gap
     end
+  end
+
+  defp file_shape_gap(name) do
+    cond do
+      name in ["test -c (/dev/null)", "test -f (/dev/null)"] -> @devnull_file_gap
+      name == "test -s (directory)" -> @dir_size_gap
+      name == "test -f (trailing-slash file)" -> @slash_file_gap
+      setup_shape_gap?(name) -> @setup_or_op_gap
+      file_cmp_name?(name) -> file_cmp_gap(name)
+      true -> :none
+    end
+  end
+
+  defp setup_shape_gap?(name) do
+    name in ["test -p (fifo)", "test -u (setuid)", "test -g (setgid)", "test -k (sticky)"]
+  end
+
+  defp file_cmp_name?(name) do
+    String.contains?(name, " -nt ") or String.contains?(name, " -ot ") or
+      String.contains?(name, " -ef ")
   end
 
   defp file_cmp_gap(name) do
@@ -1574,6 +1541,40 @@ defmodule Mix.Tasks.BashFixtures.Gen do
          "test -ef (hardlink)"
        ] do
       @unimpl_file_cmp_gap
+    else
+      :none
+    end
+  end
+
+  defp operator_gap(name) do
+    cond do
+      perm_gap?(name) -> @perm_gap
+      name == "test unary -a (regular)" -> @unary_a_gap
+      name == "test -a (file-and-dir)" -> @andor_nary_gap
+      String.starts_with?(name, "test group ") -> @group_gap
+      true -> syntax_gap(name)
+    end
+  end
+
+  defp perm_gap?(name) do
+    name in [
+      "test -x (regular)",
+      "test -x (empty)",
+      "test -x (unreadable)",
+      "test -x (symlink)",
+      "test -r (unreadable)",
+      "test -w (unreadable)"
+    ]
+  end
+
+  defp syntax_gap(name) do
+    cond do
+      name in ["[ no-args", "[ missing-closer", "[ extra-after-closer"] -> @bracket_syntax_gap
+      name in ["test extra-args", "test too-many"] -> @arity_gap
+      name in ["test unknown unary", "test unknown binary"] -> @unknown_op_gap
+      int_spelling_gap?(name) -> int_spelling_reason(name)
+      name in ["test -O (regular)", "test -G (regular)"] -> @unimpl_unary_gap
+      true -> nil
     end
   end
 
