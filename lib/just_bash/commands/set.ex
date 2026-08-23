@@ -18,8 +18,17 @@ defmodule JustBash.Commands.Set do
 
   @behaviour JustBash.Commands.Command
 
+  # Names `set -o` / `+o` actually honour. The seto fixture matrix asserts
+  # completeness against this list — a new clause that is not listed here
+  # (or a listed name with no clause) fails generation.
+  @option_names ~w(errexit nounset pipefail)
+
   @impl true
   def names, do: ["set"]
+
+  @doc false
+  @spec option_names() :: [String.t()]
+  def option_names, do: @option_names
 
   @impl true
   def execute(bash, args, _stdin) do

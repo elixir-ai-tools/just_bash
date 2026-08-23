@@ -33,6 +33,10 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       mix bash_fixtures flags_matrix   # record what real bash does
       mix test --only suite:flags_matrix
 
+      mix bash_fixtures.gen seto       # write the matrix
+      mix bash_fixtures seto_matrix    # record what real bash does
+      mix test --only suite:seto_matrix
+
   Generated suites are named `<matrix>_matrix` and are safe to regenerate: the
   digest in `JustBash.Fixtures` is content-derived, so a case that did not change
   keeps its recording.
@@ -74,6 +78,14 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       `flags_matrix`. This is the registry-wide unknown-flag probe from #70
       item 2; `unknown_flags_test.exs` keeps the FlagParser unit tests from
       #68 rather than a second classification table.
+    * `seto` — every POSIX `set -o` name and every extra bash name `set -o`
+      lists, plus unknown names, each asked as `-o` and `+o`. Names
+      `JustBash.Commands.Set.option_names/0` implements are generated
+      unmarked; real names this shell rejects, and names bash itself
+      refuses, are still generated and named with a reason — never silently
+      omitted. Suite `seto_matrix`. This is the `set -o` name alphabet from
+      #70 item 2, not the short-option cluster (`-euo`) or `set -o` with no
+      name (that lists every option).
 
   A list of conversions and a list of flags are each easy to write down. The
   cross of the two is where the bugs live and is what nobody enumerates by hand:
@@ -89,6 +101,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       mix bash_fixtures.gen test         # one matrix
       mix bash_fixtures.gen varop        # one matrix
       mix bash_fixtures.gen flags        # one matrix
+      mix bash_fixtures.gen seto         # one matrix
       mix bash_fixtures.gen --dry-run    # report counts, write nothing
   """
 
@@ -100,7 +113,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
 
   @shortdoc "Generate enumerated fixture matrices"
 
-  @matrices ["date", "printf", "test", "varop", "flags"]
+  @matrices ["date", "printf", "test", "varop", "flags", "seto"]
 
   @doc false
   def cases_for(name), do: build(name)
@@ -424,6 +437,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
   defp build("test"), do: test_cases()
   defp build("varop"), do: varop_cases()
   defp build("flags"), do: flags_cases()
+  defp build("seto"), do: seto_cases()
 
   defp date_cases do
     Enum.concat([
@@ -2174,6 +2188,133 @@ defmodule Mix.Tasks.BashFixtures.Gen do
 
   defp flags_gap(name, flag) do
     Map.get(@flags_gap_overrides, {name, flag}, Map.get(@flags_command_gaps, name))
+  end
+
+  # ---------------------------------------------------------------------------
+  # seto — POSIX/bash `set -o` / `+o` name alphabet
+  #
+  # The alphabet is every name POSIX documents for `set -o`, every extra name
+  # bash's `set -o` listing adds, and a handful of unknown names. Each is
+  # asked as `-o` and as `+o`. This is the name list, not the short-option
+  # cluster (`-euo`) and not `set -o` with no name (that dumps the listing).
+  #
+  # Completeness is `Set.option_names/0`: a name this shell implements must
+  # be in the POSIX/bash alphabet or generation fails, and every such name
+  # is generated. Unsupported real names and unknown names are still
+  # generated; the reason lives here so an omit cannot hide as a pass.
+  #
+  # Gaps are assigned after recording, never by omitting a cell. Marking a
+  # gap must not change the digest — the reason lives in opts.
+  # ---------------------------------------------------------------------------
+
+  # POSIX.1 `set -o` names. Enumerated rather than curated: which of these
+  # JustBash implements is exactly the fact nobody writes down.
+  @seto_posix ~w(
+    allexport
+    errexit
+    ignoreeof
+    monitor
+    noclobber
+    noglob
+    noexec
+    nolog
+    notify
+    nounset
+    verbose
+    vi
+    xtrace
+  )
+
+  # Bash extras that `set -o` lists and POSIX does not. `pipefail` lives
+  # here; it is implemented. The rest are still generated.
+  @seto_bash ~w(
+    braceexpand
+    emacs
+    errtrace
+    functrace
+    hashall
+    histexpand
+    history
+    interactive-comments
+    keyword
+    onecmd
+    physical
+    pipefail
+    posix
+    privileged
+  )
+
+  # Names bash itself refuses. Both engines error; the wording and exit
+  # code are the recorded difference. `ERREXIT` is the case trap — bash
+  # option names are lowercase.
+  @seto_unknown ~w(not-an-option jb-not-an-option ERREXIT)
+
+  @seto_signs ["-o", "+o"]
+
+  @unsupported_name_gap "JustBash rejects this set -o name; bash accepts it"
+  @unknown_name_gap "JustBash names the option in a different word order and exits 1; bash exits 2"
+
+  @doc false
+  def seto_posix, do: @seto_posix
+
+  @doc false
+  def seto_bash, do: @seto_bash
+
+  @doc false
+  def seto_unknown, do: @seto_unknown
+
+  @doc false
+  def seto_supported, do: JustBash.Commands.Set.option_names()
+
+  @doc false
+  def seto_names, do: @seto_posix ++ @seto_bash ++ @seto_unknown
+
+  defp seto_cases do
+    assert_seto_supported_in_alphabet!()
+
+    for name <- seto_names(), sign <- @seto_signs do
+      seto_case(sign, name)
+    end
+  end
+
+  defp assert_seto_supported_in_alphabet! do
+    supported = seto_supported()
+    alphabet = @seto_posix ++ @seto_bash
+    missing = supported -- alphabet
+    extra_posix_bash = alphabet -- Enum.uniq(alphabet)
+
+    unless extra_posix_bash == [] do
+      Mix.raise("seto matrix POSIX/bash alphabet has duplicates: #{inspect(extra_posix_bash)}")
+    end
+
+    unless missing == [] do
+      Mix.raise("""
+      seto matrix alphabet does not include names Set.option_names/0 implements:
+        missing: #{inspect(missing)}
+      """)
+    end
+  end
+
+  defp seto_case(sign, name) do
+    fixture_case(
+      "seto matrix: #{sign} #{name}",
+      seto_script(sign, name),
+      seto_gap(name)
+    )
+  end
+
+  # Quote the name so a future unknown with spaces or a leading dash stays
+  # data. Real names are [a-z-]+ and quoting does not change what bash sees.
+  defp seto_script(sign, name) do
+    "LC_ALL=C LANG=C set #{sign} #{sh_single(name)}; echo rc=$?"
+  end
+
+  defp seto_gap(name) do
+    cond do
+      name in seto_supported() -> nil
+      name in @seto_unknown -> @unknown_name_gap
+      true -> @unsupported_name_gap
+    end
   end
 
   defp fixture_case(name, script, known_gap) do

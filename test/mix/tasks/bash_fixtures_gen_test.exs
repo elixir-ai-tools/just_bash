@@ -297,6 +297,99 @@ defmodule Mix.Tasks.BashFixtures.GenTest do
     end
   end
 
+  describe "seto matrix" do
+    test "enumerates every POSIX and bash set -o name, not a sample" do
+      cases = Gen.cases_for("seto")
+      names = Enum.map(cases, & &1["name"])
+
+      posix = Gen.seto_posix()
+      bash_extra = Gen.seto_bash()
+      unknown = Gen.seto_unknown()
+
+      assert posix ++ bash_extra == Enum.uniq(posix ++ bash_extra)
+      assert length(posix) + length(bash_extra) == 27
+      assert length(cases) == (length(posix) + length(bash_extra) + length(unknown)) * 2
+
+      for opt <- posix ++ bash_extra ++ unknown, sign <- ["-o", "+o"] do
+        assert Enum.any?(names, &(&1 == "seto matrix: #{sign} #{opt}")),
+               "missing #{sign} #{opt}"
+      end
+    end
+
+    test "covers both -o and +o so enable vs disable cannot hide" do
+      names = Gen.cases_for("seto") |> Enum.map(& &1["name"])
+
+      assert Enum.any?(names, &(&1 == "seto matrix: -o errexit"))
+      assert Enum.any?(names, &(&1 == "seto matrix: +o errexit"))
+      assert Enum.any?(names, &(&1 == "seto matrix: -o pipefail"))
+      assert Enum.any?(names, &(&1 == "seto matrix: +o pipefail"))
+      assert Enum.any?(names, &(&1 == "seto matrix: -o noglob"))
+      assert Enum.any?(names, &(&1 == "seto matrix: +o noglob"))
+    end
+
+    test "every Set.option_names/0 name is in the alphabet and generated unmarked" do
+      alias JustBash.Commands.Set
+
+      supported = Set.option_names()
+      alphabet = Gen.seto_posix() ++ Gen.seto_bash()
+      cases = Gen.cases_for("seto")
+
+      assert Enum.sort(Gen.seto_supported()) == Enum.sort(supported)
+      assert supported -- alphabet == []
+      assert "errexit" in supported
+
+      Enum.each(supported, fn name ->
+        for sign <- ["-o", "+o"] do
+          test_case = Enum.find(cases, &(&1["name"] == "seto matrix: #{sign} #{name}"))
+          assert test_case, "missing #{sign} #{name}"
+          refute get_in(test_case, ["opts", "known_gap"]), "#{sign} #{name} was marked a gap"
+        end
+      end)
+    end
+
+    test "records unknown and unsupported names instead of omitting them" do
+      cases = Gen.cases_for("seto")
+      names = Enum.map(cases, & &1["name"])
+
+      assert Enum.any?(names, &(&1 == "seto matrix: -o not-an-option"))
+      assert Enum.any?(names, &(&1 == "seto matrix: +o jb-not-an-option"))
+      assert Enum.any?(names, &(&1 == "seto matrix: -o ERREXIT"))
+      assert Enum.any?(names, &(&1 == "seto matrix: -o noglob"))
+      assert Enum.any?(names, &(&1 == "seto matrix: -o posix"))
+
+      noglob = Enum.find(cases, &(&1["name"] == "seto matrix: -o noglob"))
+      assert noglob["opts"]["known_gap"] =~ "rejects this set -o name"
+
+      unknown = Enum.find(cases, &(&1["name"] == "seto matrix: -o not-an-option"))
+      assert unknown["opts"]["known_gap"] =~ "exits 1"
+    end
+
+    test "every case hashes from its script, not its name or gap" do
+      cases = Gen.cases_for("seto")
+
+      Enum.each(cases, fn test_case ->
+        assert test_case["content_hash"] == JustBash.Fixtures.hash_case(test_case)
+      end)
+    end
+
+    test "known_gap lives in opts and does not change the digest" do
+      cases = Gen.cases_for("seto")
+      gapped = Enum.filter(cases, &get_in(&1, ["opts", "known_gap"]))
+
+      assert length(gapped) > 10
+      assert length(gapped) < length(cases)
+
+      Enum.each(gapped, fn test_case ->
+        reason = test_case["opts"]["known_gap"]
+        assert is_binary(reason)
+        assert String.length(reason) > 10
+
+        assert JustBash.Fixtures.hash_case(test_case) ==
+                 JustBash.Fixtures.hash_case(Map.delete(test_case, "opts"))
+      end)
+    end
+  end
+
   describe "run/1" do
     test "printf --dry-run reports a count and writes nothing" do
       output =
@@ -335,6 +428,16 @@ defmodule Mix.Tasks.BashFixtures.GenTest do
         end)
 
       assert output =~ ~r/flags_matrix: \d+ cases/
+      refute output =~ "wrote"
+    end
+
+    test "seto --dry-run reports a count and writes nothing" do
+      output =
+        ExUnit.CaptureIO.capture_io(fn ->
+          Mix.Task.rerun("bash_fixtures.gen", ["seto", "--dry-run"])
+        end)
+
+      assert output =~ ~r/seto_matrix: \d+ cases/
       refute output =~ "wrote"
     end
 
