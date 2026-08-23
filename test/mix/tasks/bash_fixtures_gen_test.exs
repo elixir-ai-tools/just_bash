@@ -336,7 +336,7 @@ defmodule Mix.Tasks.BashFixtures.GenTest do
 
       assert Enum.sort(Gen.seto_supported()) == Enum.sort(supported)
       assert supported -- alphabet == []
-      assert supported != []
+      assert "errexit" in supported
 
       Enum.each(supported, fn name ->
         for sign <- ["-o", "+o"] do
