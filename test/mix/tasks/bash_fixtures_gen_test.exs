@@ -64,6 +64,80 @@ defmodule Mix.Tasks.BashFixtures.GenTest do
     end
   end
 
+  describe "test matrix" do
+    test "enumerates every operator, not a sample" do
+      cases = Gen.cases_for("test")
+      names = Enum.map(cases, & &1["name"])
+
+      assert length(cases) > 150
+
+      for op <- ~w(-e -f -d -L -h -s -r -w -x -z -n -b -c -p -S -t -u -g -k -G -O -N) do
+        assert Enum.any?(names, &String.contains?(&1, " #{op} ")),
+               "missing unary #{op}"
+      end
+
+      for op <- ~w(= == != < > -eq -ne -lt -le -gt -ge -nt -ot -ef -a -o) do
+        assert Enum.any?(names, &String.contains?(&1, " #{op} ")),
+               "missing binary #{op}"
+      end
+
+      assert Enum.any?(names, &String.contains?(&1, "test ! "))
+      assert Enum.any?(names, &String.contains?(&1, "test group "))
+    end
+
+    test "uses two or more bases so false-vs-missing and 10-vs-9 are visible" do
+      names = Gen.cases_for("test") |> Enum.map(& &1["name"])
+
+      assert Enum.any?(names, &(&1 =~ "test -e (regular)"))
+      assert Enum.any?(names, &(&1 =~ "test -e (missing)"))
+      assert Enum.any?(names, &(&1 =~ "test -L (symlink)"))
+      assert Enum.any?(names, &(&1 =~ "test -L (dangling)"))
+      assert Enum.any?(names, &(&1 =~ "test -z (empty)"))
+      assert Enum.any?(names, &(&1 =~ "test -z (hi)"))
+      assert Enum.any?(names, &(&1 =~ "test -eq (zeros)"))
+      assert Enum.any?(names, &(&1 =~ "test -eq (order)"))
+      assert Enum.any?(names, &(&1 =~ "test -lt (order)"))
+      assert Enum.any?(names, &(&1 =~ "test < (digits)"))
+    end
+
+    test "covers both test and [ for a representative subset" do
+      names = Gen.cases_for("test") |> Enum.map(& &1["name"])
+
+      for fragment <- ["-e (regular)", "-z (empty)", "= (equal)", "-eq (zeros)", "! -z (empty)"] do
+        assert Enum.any?(names, &String.contains?(&1, "test #{fragment}")),
+               "missing test #{fragment}"
+
+        assert Enum.any?(names, &String.contains?(&1, "[ #{fragment}")),
+               "missing [ #{fragment}"
+      end
+    end
+
+    test "every case hashes from its script, not its name or gap" do
+      cases = Gen.cases_for("test")
+
+      Enum.each(cases, fn test_case ->
+        assert test_case["content_hash"] == JustBash.Fixtures.hash_case(test_case)
+      end)
+    end
+
+    test "known_gap lives in opts and does not change the digest" do
+      cases = Gen.cases_for("test")
+      gapped = Enum.filter(cases, &get_in(&1, ["opts", "known_gap"]))
+
+      assert length(gapped) > 10
+      assert length(gapped) < length(cases)
+
+      Enum.each(gapped, fn test_case ->
+        reason = test_case["opts"]["known_gap"]
+        assert is_binary(reason)
+        assert String.length(reason) > 10
+
+        assert JustBash.Fixtures.hash_case(test_case) ==
+                 JustBash.Fixtures.hash_case(Map.delete(test_case, "opts"))
+      end)
+    end
+  end
+
   describe "run/1" do
     test "printf --dry-run reports a count and writes nothing" do
       output =
@@ -72,6 +146,16 @@ defmodule Mix.Tasks.BashFixtures.GenTest do
         end)
 
       assert output =~ ~r/printf_matrix: \d+ cases/
+      refute output =~ "wrote"
+    end
+
+    test "test --dry-run reports a count and writes nothing" do
+      output =
+        ExUnit.CaptureIO.capture_io(fn ->
+          Mix.Task.rerun("bash_fixtures.gen", ["test", "--dry-run"])
+        end)
+
+      assert output =~ ~r/test_matrix: \d+ cases/
       refute output =~ "wrote"
     end
 

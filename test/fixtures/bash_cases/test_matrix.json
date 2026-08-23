@@ -1,0 +1,1367 @@
+{
+  "cases": [
+    {
+      "content_hash": "11b3421a848e08ac",
+      "name": "test matrix: test -e (regular)",
+      "script": "D=/tmp/jb_t_test_e_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-e' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "92a5581a31ec6563",
+      "name": "test matrix: test -e (empty)",
+      "script": "D=/tmp/jb_t_test_e_empty; mkdir -p \"$D\"; printf '' > \"$D/empty\"; LC_ALL=C LANG=C test '-e' \"$D/empty\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ad6839828947579b",
+      "name": "test matrix: test -e (directory)",
+      "script": "D=/tmp/jb_t_test_e_directory; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-e' \"$D/dir\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ede2309f2d5fc45e",
+      "name": "test matrix: test -e (missing)",
+      "script": "D=/tmp/jb_t_test_e_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-e' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a5b476bfd49b8b57",
+      "name": "test matrix: test -e (symlink)",
+      "script": "D=/tmp/jb_t_test_e_symlink; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/target\"; ln -s \"$D/target\" \"$D/link\"; LC_ALL=C LANG=C test '-e' \"$D/link\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e55e8d8bb441cbf3",
+      "name": "test matrix: test -e (dangling)",
+      "script": "D=/tmp/jb_t_test_e_dangling; mkdir -p \"$D\"; ln -s \"$D/nope\" \"$D/dang\"; LC_ALL=C LANG=C test '-e' \"$D/dang\"; echo rc=$?"
+    },
+    {
+      "content_hash": "200f9211d9cdd434",
+      "name": "test matrix: test -f (regular)",
+      "script": "D=/tmp/jb_t_test_f_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-f' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "63e15459fc383322",
+      "name": "test matrix: test -f (empty)",
+      "script": "D=/tmp/jb_t_test_f_empty; mkdir -p \"$D\"; printf '' > \"$D/empty\"; LC_ALL=C LANG=C test '-f' \"$D/empty\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9b25dd243254a423",
+      "name": "test matrix: test -f (directory)",
+      "script": "D=/tmp/jb_t_test_f_directory; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-f' \"$D/dir\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e398c0c75ea0a5f9",
+      "name": "test matrix: test -f (missing)",
+      "script": "D=/tmp/jb_t_test_f_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-f' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "eac31d30ae2917f9",
+      "name": "test matrix: test -f (symlink)",
+      "script": "D=/tmp/jb_t_test_f_symlink; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/target\"; ln -s \"$D/target\" \"$D/link\"; LC_ALL=C LANG=C test '-f' \"$D/link\"; echo rc=$?"
+    },
+    {
+      "content_hash": "aeab59ce19bc2ab5",
+      "name": "test matrix: test -f (dangling)",
+      "script": "D=/tmp/jb_t_test_f_dangling; mkdir -p \"$D\"; ln -s \"$D/nope\" \"$D/dang\"; LC_ALL=C LANG=C test '-f' \"$D/dang\"; echo rc=$?"
+    },
+    {
+      "content_hash": "621c87a9c114ac37",
+      "name": "test matrix: test -d (regular)",
+      "script": "D=/tmp/jb_t_test_d_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-d' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "0f0a1c11700ece26",
+      "name": "test matrix: test -d (empty)",
+      "script": "D=/tmp/jb_t_test_d_empty; mkdir -p \"$D\"; printf '' > \"$D/empty\"; LC_ALL=C LANG=C test '-d' \"$D/empty\"; echo rc=$?"
+    },
+    {
+      "content_hash": "73a33ebd32c3550f",
+      "name": "test matrix: test -d (directory)",
+      "script": "D=/tmp/jb_t_test_d_directory; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-d' \"$D/dir\"; echo rc=$?"
+    },
+    {
+      "content_hash": "8a3e3460bae2bee9",
+      "name": "test matrix: test -d (missing)",
+      "script": "D=/tmp/jb_t_test_d_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-d' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a0d1a87538cee38f",
+      "name": "test matrix: test -d (symlink)",
+      "script": "D=/tmp/jb_t_test_d_symlink; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/target\"; ln -s \"$D/target\" \"$D/link\"; LC_ALL=C LANG=C test '-d' \"$D/link\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9330e1957c7ccb3e",
+      "name": "test matrix: test -d (dangling)",
+      "script": "D=/tmp/jb_t_test_d_dangling; mkdir -p \"$D\"; ln -s \"$D/nope\" \"$D/dang\"; LC_ALL=C LANG=C test '-d' \"$D/dang\"; echo rc=$?"
+    },
+    {
+      "content_hash": "88858fd6ebc9d266",
+      "name": "test matrix: test -L (regular)",
+      "script": "D=/tmp/jb_t_test_l_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-L' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e0ef011968eeaa11",
+      "name": "test matrix: test -L (empty)",
+      "script": "D=/tmp/jb_t_test_l_empty; mkdir -p \"$D\"; printf '' > \"$D/empty\"; LC_ALL=C LANG=C test '-L' \"$D/empty\"; echo rc=$?"
+    },
+    {
+      "content_hash": "282140d314c6538b",
+      "name": "test matrix: test -L (directory)",
+      "script": "D=/tmp/jb_t_test_l_directory; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-L' \"$D/dir\"; echo rc=$?"
+    },
+    {
+      "content_hash": "d72f603cf1a79968",
+      "name": "test matrix: test -L (missing)",
+      "script": "D=/tmp/jb_t_test_l_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-L' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "fa528da0ece73545",
+      "name": "test matrix: test -L (symlink)",
+      "script": "D=/tmp/jb_t_test_l_symlink; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/target\"; ln -s \"$D/target\" \"$D/link\"; LC_ALL=C LANG=C test '-L' \"$D/link\"; echo rc=$?"
+    },
+    {
+      "content_hash": "40bbbe6b44fe5d63",
+      "name": "test matrix: test -L (dangling)",
+      "script": "D=/tmp/jb_t_test_l_dangling; mkdir -p \"$D\"; ln -s \"$D/nope\" \"$D/dang\"; LC_ALL=C LANG=C test '-L' \"$D/dang\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ab073038ea1daad9",
+      "name": "test matrix: test -h (regular)",
+      "script": "D=/tmp/jb_t_test_h_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-h' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "b0d4b541177011e5",
+      "name": "test matrix: test -h (empty)",
+      "script": "D=/tmp/jb_t_test_h_empty; mkdir -p \"$D\"; printf '' > \"$D/empty\"; LC_ALL=C LANG=C test '-h' \"$D/empty\"; echo rc=$?"
+    },
+    {
+      "content_hash": "495d902920d8535b",
+      "name": "test matrix: test -h (directory)",
+      "script": "D=/tmp/jb_t_test_h_directory; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-h' \"$D/dir\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a19f009eee763ba1",
+      "name": "test matrix: test -h (missing)",
+      "script": "D=/tmp/jb_t_test_h_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-h' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "2d2e53000e0101b7",
+      "name": "test matrix: test -h (symlink)",
+      "script": "D=/tmp/jb_t_test_h_symlink; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/target\"; ln -s \"$D/target\" \"$D/link\"; LC_ALL=C LANG=C test '-h' \"$D/link\"; echo rc=$?"
+    },
+    {
+      "content_hash": "8b361d78f30701f3",
+      "name": "test matrix: test -h (dangling)",
+      "script": "D=/tmp/jb_t_test_h_dangling; mkdir -p \"$D\"; ln -s \"$D/nope\" \"$D/dang\"; LC_ALL=C LANG=C test '-h' \"$D/dang\"; echo rc=$?"
+    },
+    {
+      "content_hash": "11deac7055abf6f4",
+      "name": "test matrix: test -s (regular)",
+      "script": "D=/tmp/jb_t_test_s_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-s' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "410f86b5835dbe31",
+      "name": "test matrix: test -s (empty)",
+      "script": "D=/tmp/jb_t_test_s_empty; mkdir -p \"$D\"; printf '' > \"$D/empty\"; LC_ALL=C LANG=C test '-s' \"$D/empty\"; echo rc=$?"
+    },
+    {
+      "content_hash": "bf0a34c272e2b1f9",
+      "name": "test matrix: test -s (directory)",
+      "opts": {
+        "known_gap": "JustBash reports directory size 0 so test -s dir is false; bash directories have nonzero size"
+      },
+      "script": "D=/tmp/jb_t_test_s_directory; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-s' \"$D/dir\"; echo rc=$?"
+    },
+    {
+      "content_hash": "abd9702e8c878b6f",
+      "name": "test matrix: test -s (missing)",
+      "script": "D=/tmp/jb_t_test_s_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-s' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "acfc164595f70781",
+      "name": "test matrix: test -s (symlink)",
+      "script": "D=/tmp/jb_t_test_s_symlink; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/target\"; ln -s \"$D/target\" \"$D/link\"; LC_ALL=C LANG=C test '-s' \"$D/link\"; echo rc=$?"
+    },
+    {
+      "content_hash": "7056c81bc5f5acd8",
+      "name": "test matrix: test -s (dangling)",
+      "script": "D=/tmp/jb_t_test_s_dangling; mkdir -p \"$D\"; ln -s \"$D/nope\" \"$D/dang\"; LC_ALL=C LANG=C test '-s' \"$D/dang\"; echo rc=$?"
+    },
+    {
+      "content_hash": "23b68438875dd537",
+      "name": "test matrix: test -r (regular)",
+      "script": "D=/tmp/jb_t_test_r_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-r' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3d3f1883a0907fa5",
+      "name": "test matrix: test -r (empty)",
+      "script": "D=/tmp/jb_t_test_r_empty; mkdir -p \"$D\"; printf '' > \"$D/empty\"; LC_ALL=C LANG=C test '-r' \"$D/empty\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9e718d38952a0195",
+      "name": "test matrix: test -r (directory)",
+      "script": "D=/tmp/jb_t_test_r_directory; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-r' \"$D/dir\"; echo rc=$?"
+    },
+    {
+      "content_hash": "cdd5d646379170c3",
+      "name": "test matrix: test -r (missing)",
+      "script": "D=/tmp/jb_t_test_r_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-r' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "177204c1b437be16",
+      "name": "test matrix: test -r (symlink)",
+      "script": "D=/tmp/jb_t_test_r_symlink; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/target\"; ln -s \"$D/target\" \"$D/link\"; LC_ALL=C LANG=C test '-r' \"$D/link\"; echo rc=$?"
+    },
+    {
+      "content_hash": "31762eb80293eec2",
+      "name": "test matrix: test -r (dangling)",
+      "script": "D=/tmp/jb_t_test_r_dangling; mkdir -p \"$D\"; ln -s \"$D/nope\" \"$D/dang\"; LC_ALL=C LANG=C test '-r' \"$D/dang\"; echo rc=$?"
+    },
+    {
+      "content_hash": "fed7156d7e5a16fc",
+      "name": "test matrix: test -w (regular)",
+      "script": "D=/tmp/jb_t_test_w_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-w' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "71ac6a9ba114dfef",
+      "name": "test matrix: test -w (empty)",
+      "script": "D=/tmp/jb_t_test_w_empty; mkdir -p \"$D\"; printf '' > \"$D/empty\"; LC_ALL=C LANG=C test '-w' \"$D/empty\"; echo rc=$?"
+    },
+    {
+      "content_hash": "45cf496d750ee74d",
+      "name": "test matrix: test -w (directory)",
+      "script": "D=/tmp/jb_t_test_w_directory; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-w' \"$D/dir\"; echo rc=$?"
+    },
+    {
+      "content_hash": "0e8a9e4353b22073",
+      "name": "test matrix: test -w (missing)",
+      "script": "D=/tmp/jb_t_test_w_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-w' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "650d110a272278ed",
+      "name": "test matrix: test -w (symlink)",
+      "script": "D=/tmp/jb_t_test_w_symlink; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/target\"; ln -s \"$D/target\" \"$D/link\"; LC_ALL=C LANG=C test '-w' \"$D/link\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ce33e9e15343d34f",
+      "name": "test matrix: test -w (dangling)",
+      "script": "D=/tmp/jb_t_test_w_dangling; mkdir -p \"$D\"; ln -s \"$D/nope\" \"$D/dang\"; LC_ALL=C LANG=C test '-w' \"$D/dang\"; echo rc=$?"
+    },
+    {
+      "content_hash": "838dae058ef8faa4",
+      "name": "test matrix: test -x (regular)",
+      "opts": {
+        "known_gap": "JustBash -r/-w/-x are existence checks; bash tests the corresponding permission bit"
+      },
+      "script": "D=/tmp/jb_t_test_x_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-x' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ec8330383441a979",
+      "name": "test matrix: test -x (empty)",
+      "opts": {
+        "known_gap": "JustBash -r/-w/-x are existence checks; bash tests the corresponding permission bit"
+      },
+      "script": "D=/tmp/jb_t_test_x_empty; mkdir -p \"$D\"; printf '' > \"$D/empty\"; LC_ALL=C LANG=C test '-x' \"$D/empty\"; echo rc=$?"
+    },
+    {
+      "content_hash": "364dd47d82c8c94b",
+      "name": "test matrix: test -x (directory)",
+      "script": "D=/tmp/jb_t_test_x_directory; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-x' \"$D/dir\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f507fb6d6f41f162",
+      "name": "test matrix: test -x (missing)",
+      "script": "D=/tmp/jb_t_test_x_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-x' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "aba04df94af81416",
+      "name": "test matrix: test -x (symlink)",
+      "opts": {
+        "known_gap": "JustBash -r/-w/-x are existence checks; bash tests the corresponding permission bit"
+      },
+      "script": "D=/tmp/jb_t_test_x_symlink; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/target\"; ln -s \"$D/target\" \"$D/link\"; LC_ALL=C LANG=C test '-x' \"$D/link\"; echo rc=$?"
+    },
+    {
+      "content_hash": "5beefe2a9d3262f5",
+      "name": "test matrix: test -x (dangling)",
+      "script": "D=/tmp/jb_t_test_x_dangling; mkdir -p \"$D\"; ln -s \"$D/nope\" \"$D/dang\"; LC_ALL=C LANG=C test '-x' \"$D/dang\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e51e8152f985100c",
+      "name": "test matrix: test -x (executable)",
+      "script": "D=/tmp/jb_t_test_x_executable; mkdir -p \"$D\"; printf 'echo hi\\n' > \"$D/exe\"; chmod +x \"$D/exe\"; LC_ALL=C LANG=C test '-x' \"$D/exe\"; echo rc=$?"
+    },
+    {
+      "content_hash": "2c921fbb38c035f2",
+      "name": "test matrix: test -r (unreadable)",
+      "opts": {
+        "known_gap": "JustBash -r/-w/-x are existence checks; bash tests the corresponding permission bit"
+      },
+      "script": "D=/tmp/jb_t_test_r_unreadable; mkdir -p \"$D\"; printf 'x\\n' > \"$D/noread\"; chmod 000 \"$D/noread\"; LC_ALL=C LANG=C test '-r' \"$D/noread\"; echo rc=$?"
+    },
+    {
+      "content_hash": "56a3c534d6ec69c9",
+      "name": "test matrix: test -w (unreadable)",
+      "opts": {
+        "known_gap": "JustBash -r/-w/-x are existence checks; bash tests the corresponding permission bit"
+      },
+      "script": "D=/tmp/jb_t_test_w_unreadable; mkdir -p \"$D\"; printf 'x\\n' > \"$D/noread\"; chmod 000 \"$D/noread\"; LC_ALL=C LANG=C test '-w' \"$D/noread\"; echo rc=$?"
+    },
+    {
+      "content_hash": "b97853606a19ee14",
+      "name": "test matrix: test -x (unreadable)",
+      "opts": {
+        "known_gap": "JustBash -r/-w/-x are existence checks; bash tests the corresponding permission bit"
+      },
+      "script": "D=/tmp/jb_t_test_x_unreadable; mkdir -p \"$D\"; printf 'x\\n' > \"$D/noread\"; chmod 000 \"$D/noread\"; LC_ALL=C LANG=C test '-x' \"$D/noread\"; echo rc=$?"
+    },
+    {
+      "content_hash": "cbe7e1106e55c694",
+      "name": "test matrix: test -e (enotdir)",
+      "script": "D=/tmp/jb_t_test_e_enotdir; mkdir -p \"$D\"; printf 'x\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-e' \"$D/file/x\"; echo rc=$?"
+    },
+    {
+      "content_hash": "6dcf0122666f68e5",
+      "name": "test matrix: test -d (trailing-slash dir)",
+      "script": "D=/tmp/jb_t_test_d_trailing_slash_dir; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-d' \"$D/dir/\"; echo rc=$?"
+    },
+    {
+      "content_hash": "93233f733c518628",
+      "name": "test matrix: test -f (trailing-slash file)",
+      "opts": {
+        "known_gap": "JustBash treats a trailing slash on a regular file as the file; bash requires a directory"
+      },
+      "script": "D=/tmp/jb_t_test_f_trailing_slash_file; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-f' \"$D/file/\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e189ff7b668fe41c",
+      "name": "test matrix: test -e (/dev/null)",
+      "script": "LC_ALL=C LANG=C test '-e' '/dev/null'; echo rc=$?"
+    },
+    {
+      "content_hash": "b8bea7ca6b34090c",
+      "name": "test matrix: test -f (/dev/null)",
+      "opts": {
+        "known_gap": "JustBash types /dev/null as a regular file; bash reports it as a character device"
+      },
+      "script": "LC_ALL=C LANG=C test '-f' '/dev/null'; echo rc=$?"
+    },
+    {
+      "content_hash": "dabb9258afcdcf48",
+      "name": "test matrix: test -c (/dev/null)",
+      "opts": {
+        "known_gap": "JustBash types /dev/null as a regular file; bash reports it as a character device"
+      },
+      "script": "LC_ALL=C LANG=C test '-c' '/dev/null'; echo rc=$?"
+    },
+    {
+      "content_hash": "5cb615164044977b",
+      "name": "test matrix: test -s (/dev/null)",
+      "script": "LC_ALL=C LANG=C test '-s' '/dev/null'; echo rc=$?"
+    },
+    {
+      "content_hash": "eb8f9220be60ae26",
+      "name": "test matrix: test -b (regular)",
+      "script": "D=/tmp/jb_t_test_b_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-b' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "81a339f342aac124",
+      "name": "test matrix: test -b (missing)",
+      "script": "D=/tmp/jb_t_test_b_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-b' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "506bb46b925e5140",
+      "name": "test matrix: test -c (regular)",
+      "script": "D=/tmp/jb_t_test_c_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-c' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "0b5a5dce9dbaac05",
+      "name": "test matrix: test -c (missing)",
+      "script": "D=/tmp/jb_t_test_c_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-c' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "fc7a473b867eeca7",
+      "name": "test matrix: test -p (regular)",
+      "script": "D=/tmp/jb_t_test_p_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-p' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "deb43c5cad4571f0",
+      "name": "test matrix: test -p (missing)",
+      "script": "D=/tmp/jb_t_test_p_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-p' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a84760081cdc3dfb",
+      "name": "test matrix: test -S (regular)",
+      "script": "D=/tmp/jb_t_test_s_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-S' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "21cbf3316aff1cee",
+      "name": "test matrix: test -S (missing)",
+      "script": "D=/tmp/jb_t_test_s_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-S' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "2f758b315ef82a82",
+      "name": "test matrix: test -p (fifo)",
+      "opts": {
+        "known_gap": "JustBash cannot construct this operand shape (fifo, setuid, sticky, dated mtime) and/or does not implement the operator"
+      },
+      "script": "D=/tmp/jb_t_test_p_fifo; mkdir -p \"$D\"; mkfifo \"$D/fifo\" 2>/dev/null; LC_ALL=C LANG=C test '-p' \"$D/fifo\"; echo rc=$?"
+    },
+    {
+      "content_hash": "8c46ed8a15e74b02",
+      "name": "test matrix: test -u (regular)",
+      "script": "D=/tmp/jb_t_test_u_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-u' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "fd6cb415f46e1db5",
+      "name": "test matrix: test -g (regular)",
+      "script": "D=/tmp/jb_t_test_g_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-g' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "6ea5112d495ee93c",
+      "name": "test matrix: test -k (regular)",
+      "script": "D=/tmp/jb_t_test_k_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-k' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "0b824b2da8d97f72",
+      "name": "test matrix: test -G (regular)",
+      "opts": {
+        "known_gap": "JustBash test treats this unary operator as unknown and returns 1; bash implements it"
+      },
+      "script": "D=/tmp/jb_t_test_g_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-G' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "4e9bfa3379ce6167",
+      "name": "test matrix: test -O (regular)",
+      "opts": {
+        "known_gap": "JustBash test treats this unary operator as unknown and returns 1; bash implements it"
+      },
+      "script": "D=/tmp/jb_t_test_o_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-O' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "6e6e4dea80432259",
+      "name": "test matrix: test -N (regular)",
+      "script": "D=/tmp/jb_t_test_n_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-N' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "63525aca7f521a01",
+      "name": "test matrix: test -u (setuid)",
+      "opts": {
+        "known_gap": "JustBash cannot construct this operand shape (fifo, setuid, sticky, dated mtime) and/or does not implement the operator"
+      },
+      "script": "D=/tmp/jb_t_test_u_setuid; mkdir -p \"$D\"; printf 'x\\n' > \"$D/suid\"; chmod u+s \"$D/suid\"; LC_ALL=C LANG=C test '-u' \"$D/suid\"; echo rc=$?"
+    },
+    {
+      "content_hash": "dacacc90641e41ae",
+      "name": "test matrix: test -g (setgid)",
+      "opts": {
+        "known_gap": "JustBash cannot construct this operand shape (fifo, setuid, sticky, dated mtime) and/or does not implement the operator"
+      },
+      "script": "D=/tmp/jb_t_test_g_setgid; mkdir -p \"$D\"; printf 'x\\n' > \"$D/sgid\"; chmod g+s \"$D/sgid\"; LC_ALL=C LANG=C test '-g' \"$D/sgid\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f86bf8ccee64d42a",
+      "name": "test matrix: test -k (sticky)",
+      "opts": {
+        "known_gap": "JustBash cannot construct this operand shape (fifo, setuid, sticky, dated mtime) and/or does not implement the operator"
+      },
+      "script": "D=/tmp/jb_t_test_k_sticky; mkdir -p \"$D\"; mkdir -p \"$D/sticky\"; chmod +t \"$D/sticky\"; LC_ALL=C LANG=C test '-k' \"$D/sticky\"; echo rc=$?"
+    },
+    {
+      "content_hash": "693a04e5b4517ea2",
+      "name": "test matrix: test -u (missing)",
+      "script": "D=/tmp/jb_t_test_u_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-u' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c47215d20ed96224",
+      "name": "test matrix: test -O (missing)",
+      "script": "D=/tmp/jb_t_test_o_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-O' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "66a7bcb460ad58a3",
+      "name": "test matrix: test -t (fd 0)",
+      "script": "LC_ALL=C LANG=C test '-t' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "33a726e635831976",
+      "name": "test matrix: test -t (fd 1)",
+      "script": "LC_ALL=C LANG=C test '-t' '1'; echo rc=$?"
+    },
+    {
+      "content_hash": "dc1a48835b46b237",
+      "name": "test matrix: test -t (fd 2)",
+      "script": "LC_ALL=C LANG=C test '-t' '2'; echo rc=$?"
+    },
+    {
+      "content_hash": "2348501715bd7b4e",
+      "name": "test matrix: test -t (fd 99)",
+      "script": "LC_ALL=C LANG=C test '-t' '99'; echo rc=$?"
+    },
+    {
+      "content_hash": "8bf0f2c3e87f1fac",
+      "name": "test matrix: test -t (invalid)",
+      "script": "LC_ALL=C LANG=C test '-t' 'invalid'; echo rc=$?"
+    },
+    {
+      "content_hash": "a497f4d8d77bba87",
+      "name": "test matrix: test -t (one-arg)",
+      "script": "LC_ALL=C LANG=C test '-t'; echo rc=$?"
+    },
+    {
+      "content_hash": "9a79af09920b43ff",
+      "name": "test matrix: test -z (empty)",
+      "script": "LC_ALL=C LANG=C test '-z' ''; echo rc=$?"
+    },
+    {
+      "content_hash": "1396ccb69fda3e5c",
+      "name": "test matrix: test -z (hi)",
+      "script": "LC_ALL=C LANG=C test '-z' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "a1226c2b170b748e",
+      "name": "test matrix: test -z (zero)",
+      "script": "LC_ALL=C LANG=C test '-z' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "7f96d62d662963c8",
+      "name": "test matrix: test -z (space)",
+      "script": "LC_ALL=C LANG=C test '-z' ' '; echo rc=$?"
+    },
+    {
+      "content_hash": "41a92afd8450e342",
+      "name": "test matrix: test -n (empty)",
+      "script": "LC_ALL=C LANG=C test '-n' ''; echo rc=$?"
+    },
+    {
+      "content_hash": "8844d6870cb415f4",
+      "name": "test matrix: test -n (hi)",
+      "script": "LC_ALL=C LANG=C test '-n' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "6c4798873e5ca047",
+      "name": "test matrix: test -n (zero)",
+      "script": "LC_ALL=C LANG=C test '-n' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "a4176f9ad68b94a3",
+      "name": "test matrix: test -n (space)",
+      "script": "LC_ALL=C LANG=C test '-n' ' '; echo rc=$?"
+    },
+    {
+      "content_hash": "a473fe750ae4aa02",
+      "name": "test matrix: test one-arg (empty)",
+      "script": "LC_ALL=C LANG=C test ''; echo rc=$?"
+    },
+    {
+      "content_hash": "bce5a5bb0f8a7283",
+      "name": "test matrix: test one-arg (hi)",
+      "script": "LC_ALL=C LANG=C test 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "a54ca5da142ff4a0",
+      "name": "test matrix: test one-arg (zero)",
+      "script": "LC_ALL=C LANG=C test '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "ebafb67ab8adc555",
+      "name": "test matrix: test one-arg (dash)",
+      "script": "LC_ALL=C LANG=C test '-'; echo rc=$?"
+    },
+    {
+      "content_hash": "b9b7dcf75acb0169",
+      "name": "test matrix: test one-arg (equals)",
+      "script": "LC_ALL=C LANG=C test '='; echo rc=$?"
+    },
+    {
+      "content_hash": "f9c5c16f3483d154",
+      "name": "test matrix: test one-arg (bang)",
+      "script": "LC_ALL=C LANG=C test '!'; echo rc=$?"
+    },
+    {
+      "content_hash": "b79b74cb76bd64c8",
+      "name": "test matrix: test = (equal)",
+      "script": "LC_ALL=C LANG=C test 'hi' '=' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "bf454c98cab3643c",
+      "name": "test matrix: test = (unequal)",
+      "script": "LC_ALL=C LANG=C test 'a' '=' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "66b0810d916e7059",
+      "name": "test matrix: test = (empty-empty)",
+      "script": "LC_ALL=C LANG=C test '' '=' ''; echo rc=$?"
+    },
+    {
+      "content_hash": "cc786c25c41c1178",
+      "name": "test matrix: test = (empty-hi)",
+      "script": "LC_ALL=C LANG=C test '' '=' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "ed4634fa4b8e5607",
+      "name": "test matrix: test = (case)",
+      "script": "LC_ALL=C LANG=C test 'A' '=' 'a'; echo rc=$?"
+    },
+    {
+      "content_hash": "ecdc05057a6531bb",
+      "name": "test matrix: test = (digits)",
+      "script": "LC_ALL=C LANG=C test '10' '=' '9'; echo rc=$?"
+    },
+    {
+      "content_hash": "31edaaffe83a1373",
+      "name": "test matrix: test == (equal)",
+      "script": "LC_ALL=C LANG=C test 'hi' '==' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "4f859ef6d500af78",
+      "name": "test matrix: test == (unequal)",
+      "script": "LC_ALL=C LANG=C test 'a' '==' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "734ef367925afbdb",
+      "name": "test matrix: test == (empty-empty)",
+      "script": "LC_ALL=C LANG=C test '' '==' ''; echo rc=$?"
+    },
+    {
+      "content_hash": "d0cdc0c179e52d35",
+      "name": "test matrix: test == (empty-hi)",
+      "script": "LC_ALL=C LANG=C test '' '==' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "d00fcee4dfceb288",
+      "name": "test matrix: test == (case)",
+      "script": "LC_ALL=C LANG=C test 'A' '==' 'a'; echo rc=$?"
+    },
+    {
+      "content_hash": "34dd211c4cee0588",
+      "name": "test matrix: test == (digits)",
+      "script": "LC_ALL=C LANG=C test '10' '==' '9'; echo rc=$?"
+    },
+    {
+      "content_hash": "bd0dc0afc7a9e274",
+      "name": "test matrix: test != (equal)",
+      "script": "LC_ALL=C LANG=C test 'hi' '!=' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "6a4d0f0afd953ada",
+      "name": "test matrix: test != (unequal)",
+      "script": "LC_ALL=C LANG=C test 'a' '!=' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "a9e0abe1468bcc6c",
+      "name": "test matrix: test != (empty-empty)",
+      "script": "LC_ALL=C LANG=C test '' '!=' ''; echo rc=$?"
+    },
+    {
+      "content_hash": "4487cb365a0c42bf",
+      "name": "test matrix: test != (empty-hi)",
+      "script": "LC_ALL=C LANG=C test '' '!=' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "dcc5a093fba2edcc",
+      "name": "test matrix: test != (case)",
+      "script": "LC_ALL=C LANG=C test 'A' '!=' 'a'; echo rc=$?"
+    },
+    {
+      "content_hash": "033e373093b44bdf",
+      "name": "test matrix: test != (digits)",
+      "script": "LC_ALL=C LANG=C test '10' '!=' '9'; echo rc=$?"
+    },
+    {
+      "content_hash": "cea7df8ec581c9b0",
+      "name": "test matrix: test < (equal)",
+      "script": "LC_ALL=C LANG=C test 'hi' '<' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "8767531dae35c22e",
+      "name": "test matrix: test < (unequal)",
+      "script": "LC_ALL=C LANG=C test 'a' '<' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "b0db00462537e3aa",
+      "name": "test matrix: test < (empty-empty)",
+      "script": "LC_ALL=C LANG=C test '' '<' ''; echo rc=$?"
+    },
+    {
+      "content_hash": "92eb39a3559a9fd7",
+      "name": "test matrix: test < (empty-hi)",
+      "script": "LC_ALL=C LANG=C test '' '<' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "a2811b782bc1c336",
+      "name": "test matrix: test < (case)",
+      "script": "LC_ALL=C LANG=C test 'A' '<' 'a'; echo rc=$?"
+    },
+    {
+      "content_hash": "354798295c4fbe6d",
+      "name": "test matrix: test < (digits)",
+      "script": "LC_ALL=C LANG=C test '10' '<' '9'; echo rc=$?"
+    },
+    {
+      "content_hash": "56c31c86ab2a47f7",
+      "name": "test matrix: test > (equal)",
+      "script": "LC_ALL=C LANG=C test 'hi' '>' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "9ca78380ac08197c",
+      "name": "test matrix: test > (unequal)",
+      "script": "LC_ALL=C LANG=C test 'a' '>' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "37bf4373f17a7b04",
+      "name": "test matrix: test > (empty-empty)",
+      "script": "LC_ALL=C LANG=C test '' '>' ''; echo rc=$?"
+    },
+    {
+      "content_hash": "f089129339335e99",
+      "name": "test matrix: test > (empty-hi)",
+      "script": "LC_ALL=C LANG=C test '' '>' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "6a69e9dd74d2de41",
+      "name": "test matrix: test > (case)",
+      "script": "LC_ALL=C LANG=C test 'A' '>' 'a'; echo rc=$?"
+    },
+    {
+      "content_hash": "e0d37ffbc7f7af50",
+      "name": "test matrix: test > (digits)",
+      "script": "LC_ALL=C LANG=C test '10' '>' '9'; echo rc=$?"
+    },
+    {
+      "content_hash": "6b75058f99110eb0",
+      "name": "test matrix: test -eq (zeros)",
+      "script": "LC_ALL=C LANG=C test '0' '-eq' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "25d248739284d9b1",
+      "name": "test matrix: test -eq (zero-one)",
+      "script": "LC_ALL=C LANG=C test '0' '-eq' '1'; echo rc=$?"
+    },
+    {
+      "content_hash": "10f7207b6f2e86ca",
+      "name": "test matrix: test -eq (neg-zero)",
+      "script": "LC_ALL=C LANG=C test '-1' '-eq' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "02bbb3b470f62aec",
+      "name": "test matrix: test -eq (equal)",
+      "script": "LC_ALL=C LANG=C test '7' '-eq' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "27fd0cc5f010bc44",
+      "name": "test matrix: test -eq (order)",
+      "script": "LC_ALL=C LANG=C test '10' '-eq' '9'; echo rc=$?"
+    },
+    {
+      "content_hash": "8b3beb31c421ee98",
+      "name": "test matrix: test -eq (non-numeric)",
+      "opts": {
+        "known_gap": "JustBash test returns 2 on a non-integer with no diagnostic; bash writes to stderr"
+      },
+      "script": "LC_ALL=C LANG=C test 'a' '-eq' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "85522d868279b311",
+      "name": "test matrix: test -eq (octal-looking)",
+      "script": "LC_ALL=C LANG=C test '08' '-eq' '8'; echo rc=$?"
+    },
+    {
+      "content_hash": "7852f233a793511b",
+      "name": "test matrix: test -eq (spaces)",
+      "opts": {
+        "known_gap": "JustBash Integer.parse/1 does not accept the integer spelling bash test accepts"
+      },
+      "script": "LC_ALL=C LANG=C test ' 7' '-eq' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "e9cf9e42e85eb28f",
+      "name": "test matrix: test -ne (zeros)",
+      "script": "LC_ALL=C LANG=C test '0' '-ne' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "a11c99e1e1cbda28",
+      "name": "test matrix: test -ne (zero-one)",
+      "script": "LC_ALL=C LANG=C test '0' '-ne' '1'; echo rc=$?"
+    },
+    {
+      "content_hash": "ba5db5774d6c74fc",
+      "name": "test matrix: test -ne (neg-zero)",
+      "script": "LC_ALL=C LANG=C test '-1' '-ne' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "7f7732060292e2ae",
+      "name": "test matrix: test -ne (equal)",
+      "script": "LC_ALL=C LANG=C test '7' '-ne' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "b49eb7eeb72eb3eb",
+      "name": "test matrix: test -ne (order)",
+      "script": "LC_ALL=C LANG=C test '10' '-ne' '9'; echo rc=$?"
+    },
+    {
+      "content_hash": "8fb770aa46bef470",
+      "name": "test matrix: test -ne (non-numeric)",
+      "opts": {
+        "known_gap": "JustBash test returns 2 on a non-integer with no diagnostic; bash writes to stderr"
+      },
+      "script": "LC_ALL=C LANG=C test 'a' '-ne' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "1c4b3f39e9b32fd4",
+      "name": "test matrix: test -ne (octal-looking)",
+      "script": "LC_ALL=C LANG=C test '08' '-ne' '8'; echo rc=$?"
+    },
+    {
+      "content_hash": "b10179055ed7220e",
+      "name": "test matrix: test -ne (spaces)",
+      "opts": {
+        "known_gap": "JustBash Integer.parse/1 does not accept the integer spelling bash test accepts"
+      },
+      "script": "LC_ALL=C LANG=C test ' 7' '-ne' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "59ea09e9f30d03b1",
+      "name": "test matrix: test -lt (zeros)",
+      "script": "LC_ALL=C LANG=C test '0' '-lt' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "45a5c02ba4d93cbc",
+      "name": "test matrix: test -lt (zero-one)",
+      "script": "LC_ALL=C LANG=C test '0' '-lt' '1'; echo rc=$?"
+    },
+    {
+      "content_hash": "28b813975a5d8e40",
+      "name": "test matrix: test -lt (neg-zero)",
+      "script": "LC_ALL=C LANG=C test '-1' '-lt' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "535278650c5463eb",
+      "name": "test matrix: test -lt (equal)",
+      "script": "LC_ALL=C LANG=C test '7' '-lt' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "1bbcc4b480b74fff",
+      "name": "test matrix: test -lt (order)",
+      "script": "LC_ALL=C LANG=C test '10' '-lt' '9'; echo rc=$?"
+    },
+    {
+      "content_hash": "f1f22a069844336e",
+      "name": "test matrix: test -lt (non-numeric)",
+      "opts": {
+        "known_gap": "JustBash test returns 2 on a non-integer with no diagnostic; bash writes to stderr"
+      },
+      "script": "LC_ALL=C LANG=C test 'a' '-lt' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "d7530e044096f753",
+      "name": "test matrix: test -lt (octal-looking)",
+      "script": "LC_ALL=C LANG=C test '08' '-lt' '8'; echo rc=$?"
+    },
+    {
+      "content_hash": "7395d1b5945e7862",
+      "name": "test matrix: test -lt (spaces)",
+      "opts": {
+        "known_gap": "JustBash Integer.parse/1 does not accept the integer spelling bash test accepts"
+      },
+      "script": "LC_ALL=C LANG=C test ' 7' '-lt' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "3d8a6d90f43e82c3",
+      "name": "test matrix: test -le (zeros)",
+      "script": "LC_ALL=C LANG=C test '0' '-le' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "06a1dbb49036d389",
+      "name": "test matrix: test -le (zero-one)",
+      "script": "LC_ALL=C LANG=C test '0' '-le' '1'; echo rc=$?"
+    },
+    {
+      "content_hash": "9777036fd531cf9b",
+      "name": "test matrix: test -le (neg-zero)",
+      "script": "LC_ALL=C LANG=C test '-1' '-le' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "09a6dd30928c3309",
+      "name": "test matrix: test -le (equal)",
+      "script": "LC_ALL=C LANG=C test '7' '-le' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "c1dfdce332b27223",
+      "name": "test matrix: test -le (order)",
+      "script": "LC_ALL=C LANG=C test '10' '-le' '9'; echo rc=$?"
+    },
+    {
+      "content_hash": "23a61d62b083923c",
+      "name": "test matrix: test -le (non-numeric)",
+      "opts": {
+        "known_gap": "JustBash test returns 2 on a non-integer with no diagnostic; bash writes to stderr"
+      },
+      "script": "LC_ALL=C LANG=C test 'a' '-le' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "6afbf4d839ac3287",
+      "name": "test matrix: test -le (octal-looking)",
+      "script": "LC_ALL=C LANG=C test '08' '-le' '8'; echo rc=$?"
+    },
+    {
+      "content_hash": "3520a5558b2f83d4",
+      "name": "test matrix: test -le (spaces)",
+      "opts": {
+        "known_gap": "JustBash Integer.parse/1 does not accept the integer spelling bash test accepts"
+      },
+      "script": "LC_ALL=C LANG=C test ' 7' '-le' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "f50e74b47431fa48",
+      "name": "test matrix: test -gt (zeros)",
+      "script": "LC_ALL=C LANG=C test '0' '-gt' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "cf0112f1e9e40cb6",
+      "name": "test matrix: test -gt (zero-one)",
+      "script": "LC_ALL=C LANG=C test '0' '-gt' '1'; echo rc=$?"
+    },
+    {
+      "content_hash": "6e66e42a31fa8891",
+      "name": "test matrix: test -gt (neg-zero)",
+      "script": "LC_ALL=C LANG=C test '-1' '-gt' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "88740e594abd0515",
+      "name": "test matrix: test -gt (equal)",
+      "script": "LC_ALL=C LANG=C test '7' '-gt' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "c335297af187312b",
+      "name": "test matrix: test -gt (order)",
+      "script": "LC_ALL=C LANG=C test '10' '-gt' '9'; echo rc=$?"
+    },
+    {
+      "content_hash": "1e5c0cb110cc361d",
+      "name": "test matrix: test -gt (non-numeric)",
+      "opts": {
+        "known_gap": "JustBash test returns 2 on a non-integer with no diagnostic; bash writes to stderr"
+      },
+      "script": "LC_ALL=C LANG=C test 'a' '-gt' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "ef06671244d9e076",
+      "name": "test matrix: test -gt (octal-looking)",
+      "script": "LC_ALL=C LANG=C test '08' '-gt' '8'; echo rc=$?"
+    },
+    {
+      "content_hash": "204ed0e71bc9efb4",
+      "name": "test matrix: test -gt (spaces)",
+      "opts": {
+        "known_gap": "JustBash Integer.parse/1 does not accept the integer spelling bash test accepts"
+      },
+      "script": "LC_ALL=C LANG=C test ' 7' '-gt' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "7811289a93c0701e",
+      "name": "test matrix: test -ge (zeros)",
+      "script": "LC_ALL=C LANG=C test '0' '-ge' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "f8e418986b6f3d5e",
+      "name": "test matrix: test -ge (zero-one)",
+      "script": "LC_ALL=C LANG=C test '0' '-ge' '1'; echo rc=$?"
+    },
+    {
+      "content_hash": "87813b8cc2908064",
+      "name": "test matrix: test -ge (neg-zero)",
+      "script": "LC_ALL=C LANG=C test '-1' '-ge' '0'; echo rc=$?"
+    },
+    {
+      "content_hash": "30468d5afd89caf1",
+      "name": "test matrix: test -ge (equal)",
+      "script": "LC_ALL=C LANG=C test '7' '-ge' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "d498be91882a6814",
+      "name": "test matrix: test -ge (order)",
+      "script": "LC_ALL=C LANG=C test '10' '-ge' '9'; echo rc=$?"
+    },
+    {
+      "content_hash": "120e2a5c09082687",
+      "name": "test matrix: test -ge (non-numeric)",
+      "opts": {
+        "known_gap": "JustBash test returns 2 on a non-integer with no diagnostic; bash writes to stderr"
+      },
+      "script": "LC_ALL=C LANG=C test 'a' '-ge' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "1aac190d0ba4490e",
+      "name": "test matrix: test -ge (octal-looking)",
+      "script": "LC_ALL=C LANG=C test '08' '-ge' '8'; echo rc=$?"
+    },
+    {
+      "content_hash": "c943b8489f11c6b7",
+      "name": "test matrix: test -ge (spaces)",
+      "opts": {
+        "known_gap": "JustBash Integer.parse/1 does not accept the integer spelling bash test accepts"
+      },
+      "script": "LC_ALL=C LANG=C test ' 7' '-ge' '7'; echo rc=$?"
+    },
+    {
+      "content_hash": "f12484cbfdf8bf16",
+      "name": "test matrix: test -nt (older-newer)",
+      "script": "D=/tmp/jb_t_test_nt_older_newer; mkdir -p \"$D\"; touch -d '2017-12-31' \"$D/old\" 2>/dev/null; touch -d '2018-01-01' \"$D/new\" 2>/dev/null; LC_ALL=C LANG=C test \"$D/old\" '-nt' \"$D/new\"; echo rc=$?"
+    },
+    {
+      "content_hash": "8f118226f4a3359e",
+      "name": "test matrix: test -nt (newer-older)",
+      "opts": {
+        "known_gap": "JustBash test does not implement -nt/-ot/-ef; bash compares mtimes or identity"
+      },
+      "script": "D=/tmp/jb_t_test_nt_newer_older; mkdir -p \"$D\"; touch -d '2017-12-31' \"$D/old\" 2>/dev/null; touch -d '2018-01-01' \"$D/new\" 2>/dev/null; LC_ALL=C LANG=C test \"$D/new\" '-nt' \"$D/old\"; echo rc=$?"
+    },
+    {
+      "content_hash": "71e95becd96d63c4",
+      "name": "test matrix: test -ot (older-newer)",
+      "opts": {
+        "known_gap": "JustBash test does not implement -nt/-ot/-ef; bash compares mtimes or identity"
+      },
+      "script": "D=/tmp/jb_t_test_ot_older_newer; mkdir -p \"$D\"; touch -d '2017-12-31' \"$D/old\" 2>/dev/null; touch -d '2018-01-01' \"$D/new\" 2>/dev/null; LC_ALL=C LANG=C test \"$D/old\" '-ot' \"$D/new\"; echo rc=$?"
+    },
+    {
+      "content_hash": "62bff842ddff00ac",
+      "name": "test matrix: test -ot (newer-older)",
+      "script": "D=/tmp/jb_t_test_ot_newer_older; mkdir -p \"$D\"; touch -d '2017-12-31' \"$D/old\" 2>/dev/null; touch -d '2018-01-01' \"$D/new\" 2>/dev/null; LC_ALL=C LANG=C test \"$D/new\" '-ot' \"$D/old\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3008ae480eb81203",
+      "name": "test matrix: test -nt (same)",
+      "script": "D=/tmp/jb_t_test_nt_same; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test \"$D/file\" '-nt' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f433d27bccfbed6b",
+      "name": "test matrix: test -ot (same)",
+      "script": "D=/tmp/jb_t_test_ot_same; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test \"$D/file\" '-ot' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "480c9381b4910910",
+      "name": "test matrix: test -ef (same-path)",
+      "opts": {
+        "known_gap": "JustBash test does not implement -nt/-ot/-ef; bash compares mtimes or identity"
+      },
+      "script": "D=/tmp/jb_t_test_ef_same_path; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test \"$D/file\" '-ef' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f3235e2c1acbaa88",
+      "name": "test matrix: test -ef (hardlink)",
+      "opts": {
+        "known_gap": "JustBash test does not implement -nt/-ot/-ef; bash compares mtimes or identity"
+      },
+      "script": "D=/tmp/jb_t_test_ef_hardlink; mkdir -p \"$D\"; printf 'x\\n' > \"$D/f\"; ln \"$D/f\" \"$D/hard\"; LC_ALL=C LANG=C test \"$D/f\" '-ef' \"$D/hard\"; echo rc=$?"
+    },
+    {
+      "content_hash": "7e48922d89883a22",
+      "name": "test matrix: test -ef (distinct)",
+      "script": "D=/tmp/jb_t_test_ef_distinct; mkdir -p \"$D\"; printf 'a\\n' > \"$D/a\"; printf 'b\\n' > \"$D/b\"; LC_ALL=C LANG=C test \"$D/a\" '-ef' \"$D/b\"; echo rc=$?"
+    },
+    {
+      "content_hash": "de199b3bf6860b69",
+      "name": "test matrix: test -nt (missing-file)",
+      "script": "D=/tmp/jb_t_test_nt_missing_file; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test \"$D/missing\" '-nt' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "30d7e900afb4c4b6",
+      "name": "test matrix: test -ef (missing-file)",
+      "script": "D=/tmp/jb_t_test_ef_missing_file; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test \"$D/missing\" '-ef' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "63102ce2541ee48f",
+      "name": "test matrix: test -a (hi-hi)",
+      "script": "LC_ALL=C LANG=C test 'hi' '-a' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "75f27272d3952964",
+      "name": "test matrix: test -a (hi-empty)",
+      "script": "LC_ALL=C LANG=C test 'hi' '-a' ''; echo rc=$?"
+    },
+    {
+      "content_hash": "7b3045183f2ef8b7",
+      "name": "test matrix: test -o (empty-hi)",
+      "script": "LC_ALL=C LANG=C test '' '-o' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "679597fb11c55346",
+      "name": "test matrix: test -o (empty-empty)",
+      "script": "LC_ALL=C LANG=C test '' '-o' ''; echo rc=$?"
+    },
+    {
+      "content_hash": "433027aeec703bcc",
+      "name": "test matrix: test unary -a (regular)",
+      "opts": {
+        "known_gap": "JustBash does not implement unary -a as a synonym of -e"
+      },
+      "script": "D=/tmp/jb_t_test_unary_a_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '-a' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "b5f40d280255c8a2",
+      "name": "test matrix: test unary -a (missing)",
+      "script": "D=/tmp/jb_t_test_unary_a_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '-a' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "5661b3650bb001be",
+      "name": "test matrix: test -a (file-and-dir)",
+      "opts": {
+        "known_gap": "JustBash test does not implement 4+ argument -a/-o as expression AND/OR"
+      },
+      "script": "D=/tmp/jb_t_test_a_file_and_dir; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-f' \"$D/file\" '-a' '-d' \"$D/dir\"; echo rc=$?"
+    },
+    {
+      "content_hash": "cba161c19e141df6",
+      "name": "test matrix: test -a (missing-and-dir)",
+      "script": "D=/tmp/jb_t_test_a_missing_and_dir; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C test '-f' \"$D/missing\" '-a' '-d' \"$D/dir\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e1b86612f800eea2",
+      "name": "test matrix: test ! (empty)",
+      "script": "LC_ALL=C LANG=C test '!' ''; echo rc=$?"
+    },
+    {
+      "content_hash": "368028dc443b6567",
+      "name": "test matrix: test ! (hi)",
+      "script": "LC_ALL=C LANG=C test '!' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "71f41916c36935f0",
+      "name": "test matrix: test ! -z (empty)",
+      "script": "LC_ALL=C LANG=C test '!' '-z' ''; echo rc=$?"
+    },
+    {
+      "content_hash": "f29330e77eccdee8",
+      "name": "test matrix: test ! -z (hi)",
+      "script": "LC_ALL=C LANG=C test '!' '-z' 'hi'; echo rc=$?"
+    },
+    {
+      "content_hash": "55317aa4d180f910",
+      "name": "test matrix: test ! -f (missing)",
+      "script": "D=/tmp/jb_t_test_f_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C test '!' '-f' \"$D/missing\"; echo rc=$?"
+    },
+    {
+      "content_hash": "4e9bfdec87413da9",
+      "name": "test matrix: test ! -f (regular)",
+      "script": "D=/tmp/jb_t_test_f_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C test '!' '-f' \"$D/file\"; echo rc=$?"
+    },
+    {
+      "content_hash": "0220acd80b0f689d",
+      "name": "test matrix: test ! = (equal)",
+      "script": "LC_ALL=C LANG=C test '!' 'a' '=' 'a'; echo rc=$?"
+    },
+    {
+      "content_hash": "c50b71e34c0c5dcf",
+      "name": "test matrix: test ! = (unequal)",
+      "script": "LC_ALL=C LANG=C test '!' 'a' '=' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "9a4094534ddf0e08",
+      "name": "test matrix: test group (hi)",
+      "opts": {
+        "known_gap": "JustBash test does not implement ( ) grouping"
+      },
+      "script": "LC_ALL=C LANG=C test '(' 'hi' ')'; echo rc=$?"
+    },
+    {
+      "content_hash": "d342a487e25226fc",
+      "name": "test matrix: test group (-z empty)",
+      "opts": {
+        "known_gap": "JustBash test does not implement ( ) grouping"
+      },
+      "script": "LC_ALL=C LANG=C test '(' '-z' '' ')'; echo rc=$?"
+    },
+    {
+      "content_hash": "9d1a7b7684d6a092",
+      "name": "test matrix: test group (= equal)",
+      "opts": {
+        "known_gap": "JustBash test does not implement ( ) grouping"
+      },
+      "script": "LC_ALL=C LANG=C test '(' 'a' '=' 'a' ')'; echo rc=$?"
+    },
+    {
+      "content_hash": "4d004c777376c270",
+      "name": "test matrix: test no-args",
+      "script": "LC_ALL=C LANG=C test; echo rc=$?"
+    },
+    {
+      "content_hash": "1634d0464bc61996",
+      "name": "test matrix: test extra-args",
+      "opts": {
+        "known_gap": "JustBash test returns 1 for extra or unparsed arguments; bash exits 2 and diagnoses"
+      },
+      "script": "LC_ALL=C LANG=C test '-n' 'x' 'y'; echo rc=$?"
+    },
+    {
+      "content_hash": "3af9fd005020d893",
+      "name": "test matrix: test unknown unary",
+      "opts": {
+        "known_gap": "JustBash test returns 1 for an unknown operator; bash exits 2 and diagnoses"
+      },
+      "script": "LC_ALL=C LANG=C test '-Z' 'x'; echo rc=$?"
+    },
+    {
+      "content_hash": "99aed5d20f2d38c2",
+      "name": "test matrix: test unknown binary",
+      "opts": {
+        "known_gap": "JustBash test returns 1 for an unknown operator; bash exits 2 and diagnoses"
+      },
+      "script": "LC_ALL=C LANG=C test 'a' '-xx' 'b'; echo rc=$?"
+    },
+    {
+      "content_hash": "7b0552e916548d84",
+      "name": "test matrix: test too-many",
+      "opts": {
+        "known_gap": "JustBash test returns 1 for extra or unparsed arguments; bash exits 2 and diagnoses"
+      },
+      "script": "LC_ALL=C LANG=C test 'a' '=' 'a' '=' 'a'; echo rc=$?"
+    },
+    {
+      "content_hash": "26c481b04cb90446",
+      "name": "test matrix: [ no-args",
+      "opts": {
+        "known_gap": "JustBash [ without a closing ] still evaluates the expression; bash exits 2"
+      },
+      "script": "LC_ALL=C LANG=C [; echo rc=$?"
+    },
+    {
+      "content_hash": "6dec3178774b0bd7",
+      "name": "test matrix: [ empty",
+      "script": "LC_ALL=C LANG=C [ ]; echo rc=$?"
+    },
+    {
+      "content_hash": "7f383c06e09bd8d4",
+      "name": "test matrix: [ missing-closer",
+      "opts": {
+        "known_gap": "JustBash [ without a closing ] still evaluates the expression; bash exits 2"
+      },
+      "script": "LC_ALL=C LANG=C [ -n x; echo rc=$?"
+    },
+    {
+      "content_hash": "086fc4eda65a8e6b",
+      "name": "test matrix: [ extra-after-closer",
+      "opts": {
+        "known_gap": "JustBash [ without a closing ] still evaluates the expression; bash exits 2"
+      },
+      "script": "LC_ALL=C LANG=C [ -n x ] y; echo rc=$?"
+    },
+    {
+      "content_hash": "97f547bd455048d6",
+      "name": "test matrix: [ -e (regular)",
+      "script": "D=/tmp/jb_t_br_e_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C [ '-e' \"$D/file\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "cb96ee7daef0e1be",
+      "name": "test matrix: [ -e (missing)",
+      "script": "D=/tmp/jb_t_br_e_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C [ '-e' \"$D/missing\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "5cff075a2bccd5e7",
+      "name": "test matrix: [ -e (dangling)",
+      "script": "D=/tmp/jb_t_br_e_dangling; mkdir -p \"$D\"; ln -s \"$D/nope\" \"$D/dang\"; LC_ALL=C LANG=C [ '-e' \"$D/dang\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "4a51fa0b080318f9",
+      "name": "test matrix: [ -f (regular)",
+      "script": "D=/tmp/jb_t_br_f_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C [ '-f' \"$D/file\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "169373d486c8f1bb",
+      "name": "test matrix: [ -f (directory)",
+      "script": "D=/tmp/jb_t_br_f_directory; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C [ '-f' \"$D/dir\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "83b00f8e4314a799",
+      "name": "test matrix: [ -f (missing)",
+      "script": "D=/tmp/jb_t_br_f_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C [ '-f' \"$D/missing\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "aac02e5a015d4d1a",
+      "name": "test matrix: [ -d (directory)",
+      "script": "D=/tmp/jb_t_br_d_directory; mkdir -p \"$D\"; mkdir -p \"$D/dir\"; LC_ALL=C LANG=C [ '-d' \"$D/dir\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "de1dada540df812e",
+      "name": "test matrix: [ -d (regular)",
+      "script": "D=/tmp/jb_t_br_d_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C [ '-d' \"$D/file\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "622c6b2820de64ac",
+      "name": "test matrix: [ -d (missing)",
+      "script": "D=/tmp/jb_t_br_d_missing; mkdir -p \"$D\"; :; LC_ALL=C LANG=C [ '-d' \"$D/missing\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "69a32be73117a70e",
+      "name": "test matrix: [ -L (symlink)",
+      "script": "D=/tmp/jb_t_br_l_symlink; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/target\"; ln -s \"$D/target\" \"$D/link\"; LC_ALL=C LANG=C [ '-L' \"$D/link\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "58dfa70b230d0cca",
+      "name": "test matrix: [ -L (regular)",
+      "script": "D=/tmp/jb_t_br_l_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C [ '-L' \"$D/file\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "b03e3b9ef8c56e9d",
+      "name": "test matrix: [ -s (empty)",
+      "script": "D=/tmp/jb_t_br_s_empty; mkdir -p \"$D\"; printf '' > \"$D/empty\"; LC_ALL=C LANG=C [ '-s' \"$D/empty\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "b5c8c9ee21e2ed27",
+      "name": "test matrix: [ -s (regular)",
+      "script": "D=/tmp/jb_t_br_s_regular; mkdir -p \"$D\"; printf 'hello\\n' > \"$D/file\"; LC_ALL=C LANG=C [ '-s' \"$D/file\" ]; echo rc=$?"
+    },
+    {
+      "content_hash": "624d79ea24a3ee27",
+      "name": "test matrix: [ -z (empty)",
+      "script": "LC_ALL=C LANG=C [ '-z' '' ]; echo rc=$?"
+    },
+    {
+      "content_hash": "b7ea1deaf9d970df",
+      "name": "test matrix: [ -n (hi)",
+      "script": "LC_ALL=C LANG=C [ '-n' 'hi' ]; echo rc=$?"
+    },
+    {
+      "content_hash": "e195945a4213a1b5",
+      "name": "test matrix: [ one-arg (empty)",
+      "script": "LC_ALL=C LANG=C [ '' ]; echo rc=$?"
+    },
+    {
+      "content_hash": "49d40598087baa4e",
+      "name": "test matrix: [ one-arg (hi)",
+      "script": "LC_ALL=C LANG=C [ 'hi' ]; echo rc=$?"
+    },
+    {
+      "content_hash": "c2b0444d5f07b307",
+      "name": "test matrix: [ = (equal)",
+      "script": "LC_ALL=C LANG=C [ 'hi' '=' 'hi' ]; echo rc=$?"
+    },
+    {
+      "content_hash": "ca8fa324c0c415ff",
+      "name": "test matrix: [ != (unequal)",
+      "script": "LC_ALL=C LANG=C [ 'a' '!=' 'b' ]; echo rc=$?"
+    },
+    {
+      "content_hash": "be6d629b0aeb2edb",
+      "name": "test matrix: [ -eq (zeros)",
+      "script": "LC_ALL=C LANG=C [ '0' '-eq' '0' ]; echo rc=$?"
+    },
+    {
+      "content_hash": "a8c01eead13c86cb",
+      "name": "test matrix: [ -lt (order)",
+      "script": "LC_ALL=C LANG=C [ '10' '-lt' '9' ]; echo rc=$?"
+    },
+    {
+      "content_hash": "e663499301c04c6f",
+      "name": "test matrix: [ ! -z (empty)",
+      "script": "LC_ALL=C LANG=C [ '!' '-z' '' ]; echo rc=$?"
+    },
+    {
+      "content_hash": "bb715cce0ab11d4d",
+      "name": "test matrix: [ -a (hi-hi)",
+      "script": "LC_ALL=C LANG=C [ 'hi' '-a' 'hi' ]; echo rc=$?"
+    },
+    {
+      "content_hash": "b193019fa298f159",
+      "name": "test matrix: [ -L (dangling)",
+      "script": "D=/tmp/jb_t_br_l_dangling; mkdir -p \"$D\"; ln -s \"$D/nope\" \"$D/dang\"; LC_ALL=C LANG=C [ '-L' \"$D/dang\" ]; echo rc=$?"
+    }
+  ],
+  "suite": "test_matrix"
+}
