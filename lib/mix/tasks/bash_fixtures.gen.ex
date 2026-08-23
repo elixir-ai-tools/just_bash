@@ -21,6 +21,10 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       mix bash_fixtures printf_matrix  # record what real bash does
       mix test --only suite:printf_matrix
 
+      mix bash_fixtures.gen test       # write the matrix
+      mix bash_fixtures test_matrix    # record what real bash does
+      mix test --only suite:test_matrix
+
   Generated suites are named `<matrix>_matrix` and are safe to regenerate: the
   digest in `JustBash.Fixtures` is content-derived, so a case that did not change
   keeps its recording.
@@ -36,6 +40,15 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       `%b`/`%q` inputs that make escapes and quoting visible, and format
       recycling with excess arguments. Oils `builtin-printf.test.sh` is a
       cross-check, not this matrix. See #70 item 2.
+    * `test` — every POSIX/`[` operator (`-b -c -d -e -f -g -h -k -L -n -p
+      -r -S -s -t -u -w -x -z`, `=` `==` `!=` `<` `>`, `-eq -ne -lt -le -gt
+      -ge`, `-nt -ot -ef`, `-a -o`, `!`, plus bash extras `-G -O -N`) crossed
+      with revealing operand shapes for that operator — file/dir/missing/empty/
+      symlink/dangling for file tests, empty/nonempty/"0" for `-z`/`-n`, equal/
+      unequal/10-vs-9 for string and integer compares. Both `test` and `[` for
+      a representative subset so they cannot drift; the full operator list is
+      on `test`. This is not the item-3 filesystem-shape × command cube. See
+      #70 item 2.
 
   A list of conversions and a list of flags are each easy to write down. The
   cross of the two is where the bugs live and is what nobody enumerates by hand:
@@ -48,6 +61,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       mix bash_fixtures.gen              # every matrix
       mix bash_fixtures.gen date         # one matrix
       mix bash_fixtures.gen printf       # one matrix
+      mix bash_fixtures.gen test         # one matrix
       mix bash_fixtures.gen --dry-run    # report counts, write nothing
   """
 
@@ -58,7 +72,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
 
   @shortdoc "Generate enumerated fixture matrices"
 
-  @matrices ["date", "printf"]
+  @matrices ["date", "printf", "test"]
 
   @doc false
   def cases_for(name), do: build(name)
@@ -379,6 +393,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
 
   defp build("date"), do: date_cases()
   defp build("printf"), do: printf_cases()
+  defp build("test"), do: test_cases()
 
   defp date_cases do
     Enum.concat([
@@ -1029,6 +1044,549 @@ defmodule Mix.Tasks.BashFixtures.Gen do
   # `%05s` is a zero flag; `%10s` and `%.0s` only happen to contain a 0.
   defp zero_pad_string?(format, conv) do
     conv in ~w(s c b) and String.match?(format, ~r/%-?0\d/)
+  end
+
+  # ---------------------------------------------------------------------------
+  # test / [
+  #
+  # The alphabet is the POSIX `test`/`[` operators plus the bash extras this
+  # shell already claims (`==`, `<`, `>`, `-G`, `-O`, `-N`). Each operator is
+  # crossed with revealing operand shapes for *that* operator — not the item-3
+  # filesystem-shape × command cube. Two or more bases per family so
+  # false-vs-missing, empty-vs-nonempty, and 10-vs-9 cannot hide behind a
+  # single value that already fills the field.
+  #
+  # The full operator list is asked of `test`. A representative subset is
+  # asked of both `test` and `[` so the two spellings cannot drift.
+  #
+  # Gaps are assigned after recording, never by omitting a cell. Marking a
+  # gap must not change the digest — the reason lives in opts.
+  # ---------------------------------------------------------------------------
+
+  # POSIX file/string unary operators, then bash extras. Enumerated rather
+  # than curated: which of these JustBash implements is exactly the fact
+  # nobody writes down.
+  @test_file_unary ~w(-e -f -d -L -h -s -r -w -x)
+  @test_type_unary ~w(-b -c -p -S)
+  @test_mode_unary ~w(-u -g -k -G -O -N)
+  @test_string_unary ~w(-z -n)
+  @test_string_binary ~w(= == != < >)
+  @test_int_binary ~w(-eq -ne -lt -le -gt -ge)
+
+  # Shapes that make file operators distinguishable. A regular file and a
+  # missing path are both "not a directory"; only asking both shows whether
+  # `-d` is false-for-file or false-for-absent. Symlink vs dangling is the
+  # same pair for `-e`/`-L`/`-h`.
+  @test_file_shapes [
+    {:regular, "file"},
+    {:empty, "empty"},
+    {:directory, "dir"},
+    {:missing, "missing"},
+    {:symlink, "link"},
+    {:dangling, "dang"}
+  ]
+
+  # -z/-n: empty vs nonempty is the definition. "0" is nonempty (unlike
+  # arithmetic); a space is nonempty too. One of those two hides if the
+  # implementation trims or truthiness-coerces.
+  @test_string_unary_bases [
+    {"empty", ""},
+    {"hi", "hi"},
+    {"zero", "0"},
+    {"space", " "}
+  ]
+
+  # One-arg `test STRING` is implicit `-n`. Operators-as-operands (`=`, `!`)
+  # are the lookahead cases Oils pins.
+  @test_one_arg_bases [
+    {"empty", ""},
+    {"hi", "hi"},
+    {"zero", "0"},
+    {"dash", "-"},
+    {"equals", "="},
+    {"bang", "!"}
+  ]
+
+  # Two families so one pair cannot hide the operator: equal vs unequal,
+  # and 10-vs-9 where string order and numeric order disagree.
+  @test_string_binary_pairs [
+    {"equal", "hi", "hi"},
+    {"unequal", "a", "b"},
+    {"empty-empty", "", ""},
+    {"empty-hi", "", "hi"},
+    {"case", "A", "a"},
+    {"digits", "10", "9"}
+  ]
+
+  # 0/1 and -1/0 make sign and zero visible. 10/9 is the order that `-lt`
+  # and `<` disagree on. Non-numeric and `08` are the Integer.parse traps.
+  @test_int_binary_pairs [
+    {"zeros", "0", "0"},
+    {"zero-one", "0", "1"},
+    {"neg-zero", "-1", "0"},
+    {"equal", "7", "7"},
+    {"order", "10", "9"},
+    {"non-numeric", "a", "b"},
+    {"octal-looking", "08", "8"},
+    {"spaces", " 7", "7"}
+  ]
+
+  # `[` is asked only on this subset so the two commands cannot drift.
+  # The full operator list stays on `test`.
+  @test_bracket_file_ops ~w(-e -f -d -L -s)
+  @test_bracket_string_unary [{"-z", "empty", ""}, {"-n", "hi", "hi"}]
+  @test_bracket_string_binary [{"=", "equal", "hi", "hi"}, {"!=", "unequal", "a", "b"}]
+  @test_bracket_int_binary [{"-eq", "zeros", "0", "0"}, {"-lt", "order", "10", "9"}]
+
+  # Gaps named after the divergence, not the operator, so a later fix of
+  # `-x` does not keep the integer-parse cells marked.
+  @unimpl_unary_gap "JustBash test treats this unary operator as unknown and returns 1; bash implements it"
+  @unimpl_file_cmp_gap "JustBash test does not implement -nt/-ot/-ef; bash compares mtimes or identity"
+  @perm_gap "JustBash -r/-w/-x are existence checks; bash tests the corresponding permission bit"
+  @devnull_file_gap "JustBash types /dev/null as a regular file; bash reports it as a character device"
+  @dir_size_gap "JustBash reports directory size 0 so test -s dir is false; bash directories have nonzero size"
+  @int_parse_gap "JustBash Integer.parse/1 does not accept the integer spelling bash test accepts"
+  @int_stderr_gap "JustBash test returns 2 on a non-integer with no diagnostic; bash writes to stderr"
+  @arity_gap "JustBash test returns 1 for extra or unparsed arguments; bash exits 2 and diagnoses"
+  @unknown_op_gap "JustBash test returns 1 for an unknown operator; bash exits 2 and diagnoses"
+  @slash_file_gap "JustBash treats a trailing slash on a regular file as the file; bash requires a directory"
+  @bracket_syntax_gap "JustBash [ without a closing ] still evaluates the expression; bash exits 2"
+  @group_gap "JustBash test does not implement ( ) grouping"
+  @andor_nary_gap "JustBash test does not implement 4+ argument -a/-o as expression AND/OR"
+  @unary_a_gap "JustBash does not implement unary -a as a synonym of -e"
+  @setup_or_op_gap "JustBash cannot construct this operand shape (fifo, setuid, sticky, dated mtime) and/or does not implement the operator"
+
+  defp test_cases do
+    Enum.concat([
+      test_file_unary_cases(),
+      test_type_mode_cases(),
+      test_string_cases(),
+      test_int_cases(),
+      test_file_binary_cases(),
+      test_logic_cases(),
+      test_syntax_cases(),
+      test_bracket_cases()
+    ])
+  end
+
+  # File unary × revealing shapes, on `test` only. Permission bits get an
+  # extra chmod'd base so `-x` on a 644 file is not the same cell as `-x`
+  # on a missing file.
+  defp test_file_unary_cases do
+    Enum.concat([
+      for op <- @test_file_unary, {shape, path} <- @test_file_shapes do
+        test_file_case("test #{op} (#{shape})", "test", [op, {:path, path}], shape)
+      end,
+      [
+        test_file_case("test -x (executable)", "test", ["-x", {:path, "exe"}], :executable),
+        test_file_case("test -r (unreadable)", "test", ["-r", {:path, "noread"}], :unreadable),
+        test_file_case("test -w (unreadable)", "test", ["-w", {:path, "noread"}], :unreadable),
+        test_file_case("test -x (unreadable)", "test", ["-x", {:path, "noread"}], :unreadable),
+        test_file_case("test -e (enotdir)", "test", ["-e", {:path, "file/x"}], :enotdir),
+        test_file_case(
+          "test -d (trailing-slash dir)",
+          "test",
+          ["-d", {:path, "dir/"}],
+          :directory
+        ),
+        test_file_case(
+          "test -f (trailing-slash file)",
+          "test",
+          ["-f", {:path, "file/"}],
+          :regular
+        ),
+        test_abs_case("test -e (/dev/null)", "test", ["-e", "/dev/null"]),
+        test_abs_case("test -f (/dev/null)", "test", ["-f", "/dev/null"]),
+        test_abs_case("test -c (/dev/null)", "test", ["-c", "/dev/null"]),
+        test_abs_case("test -s (/dev/null)", "test", ["-s", "/dev/null"])
+      ]
+    ])
+  end
+
+  # Type and mode operators. The matching type is the cell that would
+  # hide behind "false on a regular file" if we never asked it.
+  defp test_type_mode_cases do
+    Enum.concat([
+      for op <- @test_type_unary, {shape, path} <- [{:regular, "file"}, {:missing, "missing"}] do
+        test_file_case("test #{op} (#{shape})", "test", [op, {:path, path}], shape)
+      end,
+      [
+        test_file_case("test -p (fifo)", "test", ["-p", {:path, "fifo"}], :fifo)
+      ],
+      for op <- @test_mode_unary do
+        test_file_case("test #{op} (regular)", "test", [op, {:path, "file"}], :regular)
+      end,
+      [
+        test_file_case("test -u (setuid)", "test", ["-u", {:path, "suid"}], :setuid),
+        test_file_case("test -g (setgid)", "test", ["-g", {:path, "sgid"}], :setgid),
+        test_file_case("test -k (sticky)", "test", ["-k", {:path, "sticky"}], :sticky),
+        test_file_case("test -u (missing)", "test", ["-u", {:path, "missing"}], :missing),
+        test_file_case("test -O (missing)", "test", ["-O", {:path, "missing"}], :missing)
+      ],
+      for fd <- ["0", "1", "2", "99"] do
+        test_plain_case("test -t (fd #{fd})", "test", ["-t", fd])
+      end,
+      [
+        test_plain_case("test -t (invalid)", "test", ["-t", "invalid"]),
+        test_plain_case("test -t (one-arg)", "test", ["-t"])
+      ]
+    ])
+  end
+
+  defp test_string_cases do
+    Enum.concat([
+      for op <- @test_string_unary, {label, value} <- @test_string_unary_bases do
+        test_plain_case("test #{op} (#{label})", "test", [op, value])
+      end,
+      for {label, value} <- @test_one_arg_bases do
+        test_plain_case("test one-arg (#{label})", "test", [value])
+      end,
+      for op <- @test_string_binary, {label, left, right} <- @test_string_binary_pairs do
+        test_plain_case("test #{op} (#{label})", "test", [left, op, right])
+      end
+    ])
+  end
+
+  defp test_int_cases do
+    for op <- @test_int_binary, {label, left, right} <- @test_int_binary_pairs do
+      test_plain_case("test #{op} (#{label})", "test", [left, op, right])
+    end
+  end
+
+  # File compares need two operands with a known relationship. `-nt` of
+  # older-vs-newer is false; newer-vs-older is the cell that would match
+  # "unimplemented returns 1" if we only asked the false side.
+  defp test_file_binary_cases do
+    [
+      test_file_case(
+        "test -nt (older-newer)",
+        "test",
+        [{:path, "old"}, "-nt", {:path, "new"}],
+        :older_newer
+      ),
+      test_file_case(
+        "test -nt (newer-older)",
+        "test",
+        [{:path, "new"}, "-nt", {:path, "old"}],
+        :older_newer
+      ),
+      test_file_case(
+        "test -ot (older-newer)",
+        "test",
+        [{:path, "old"}, "-ot", {:path, "new"}],
+        :older_newer
+      ),
+      test_file_case(
+        "test -ot (newer-older)",
+        "test",
+        [{:path, "new"}, "-ot", {:path, "old"}],
+        :older_newer
+      ),
+      test_file_case(
+        "test -nt (same)",
+        "test",
+        [{:path, "file"}, "-nt", {:path, "file"}],
+        :regular
+      ),
+      test_file_case(
+        "test -ot (same)",
+        "test",
+        [{:path, "file"}, "-ot", {:path, "file"}],
+        :regular
+      ),
+      test_file_case(
+        "test -ef (same-path)",
+        "test",
+        [{:path, "file"}, "-ef", {:path, "file"}],
+        :regular
+      ),
+      test_file_case(
+        "test -ef (hardlink)",
+        "test",
+        [{:path, "f"}, "-ef", {:path, "hard"}],
+        :hardlink
+      ),
+      test_file_case(
+        "test -ef (distinct)",
+        "test",
+        [{:path, "a"}, "-ef", {:path, "b"}],
+        :two_files
+      ),
+      test_file_case(
+        "test -nt (missing-file)",
+        "test",
+        [{:path, "missing"}, "-nt", {:path, "file"}],
+        :regular
+      ),
+      test_file_case(
+        "test -ef (missing-file)",
+        "test",
+        [{:path, "missing"}, "-ef", {:path, "file"}],
+        :regular
+      )
+    ]
+  end
+
+  defp test_logic_cases do
+    Enum.concat([
+      [
+        test_plain_case("test -a (hi-hi)", "test", ["hi", "-a", "hi"]),
+        test_plain_case("test -a (hi-empty)", "test", ["hi", "-a", ""]),
+        test_plain_case("test -o (empty-hi)", "test", ["", "-o", "hi"]),
+        test_plain_case("test -o (empty-empty)", "test", ["", "-o", ""]),
+        test_file_case("test unary -a (regular)", "test", ["-a", {:path, "file"}], :regular),
+        test_file_case("test unary -a (missing)", "test", ["-a", {:path, "missing"}], :missing),
+        test_file_case(
+          "test -a (file-and-dir)",
+          "test",
+          ["-f", {:path, "file"}, "-a", "-d", {:path, "dir"}],
+          :file_and_dir
+        ),
+        test_file_case(
+          "test -a (missing-and-dir)",
+          "test",
+          ["-f", {:path, "missing"}, "-a", "-d", {:path, "dir"}],
+          :directory
+        ),
+        test_plain_case("test ! (empty)", "test", ["!", ""]),
+        test_plain_case("test ! (hi)", "test", ["!", "hi"]),
+        test_plain_case("test ! -z (empty)", "test", ["!", "-z", ""]),
+        test_plain_case("test ! -z (hi)", "test", ["!", "-z", "hi"]),
+        test_file_case("test ! -f (missing)", "test", ["!", "-f", {:path, "missing"}], :missing),
+        test_file_case("test ! -f (regular)", "test", ["!", "-f", {:path, "file"}], :regular),
+        test_plain_case("test ! = (equal)", "test", ["!", "a", "=", "a"]),
+        test_plain_case("test ! = (unequal)", "test", ["!", "a", "=", "b"]),
+        test_plain_case("test group (hi)", "test", ["(", "hi", ")"]),
+        test_plain_case("test group (-z empty)", "test", ["(", "-z", "", ")"]),
+        test_plain_case("test group (= equal)", "test", ["(", "a", "=", "a", ")"])
+      ]
+    ])
+  end
+
+  defp test_syntax_cases do
+    [
+      test_plain_case("test no-args", "test", []),
+      test_plain_case("test extra-args", "test", ["-n", "x", "y"]),
+      test_plain_case("test unknown unary", "test", ["-Z", "x"]),
+      test_plain_case("test unknown binary", "test", ["a", "-xx", "b"]),
+      test_plain_case("test too-many", "test", ["a", "=", "a", "=", "a"]),
+      one_test(
+        "[ no-args",
+        "LC_ALL=C LANG=C [; echo rc=$?",
+        test_gap("[ no-args")
+      ),
+      one_test(
+        "[ empty",
+        "LC_ALL=C LANG=C [ ]; echo rc=$?",
+        test_gap("[ empty")
+      ),
+      one_test(
+        "[ missing-closer",
+        "LC_ALL=C LANG=C [ -n x; echo rc=$?",
+        test_gap("[ missing-closer")
+      ),
+      one_test(
+        "[ extra-after-closer",
+        "LC_ALL=C LANG=C [ -n x ] y; echo rc=$?",
+        test_gap("[ extra-after-closer")
+      )
+    ]
+  end
+
+  # Representative `[` cells, plus the matching `test` cells already
+  # enumerated above for the same expressions. Drift between the two is
+  # a harness failure, not a known gap.
+  defp test_bracket_cases do
+    Enum.concat([
+      for op <- @test_bracket_file_ops, {shape, path} <- bracket_file_shapes(op) do
+        test_file_case("[ #{op} (#{shape})", "[", [op, {:path, path}], shape)
+      end,
+      for {op, label, value} <- @test_bracket_string_unary do
+        test_plain_case("[ #{op} (#{label})", "[", [op, value])
+      end,
+      for {label, value} <- [{"empty", ""}, {"hi", "hi"}] do
+        test_plain_case("[ one-arg (#{label})", "[", [value])
+      end,
+      for {op, label, left, right} <- @test_bracket_string_binary do
+        test_plain_case("[ #{op} (#{label})", "[", [left, op, right])
+      end,
+      for {op, label, left, right} <- @test_bracket_int_binary do
+        test_plain_case("[ #{op} (#{label})", "[", [left, op, right])
+      end,
+      [
+        test_plain_case("[ ! -z (empty)", "[", ["!", "-z", ""]),
+        test_plain_case("[ -a (hi-hi)", "[", ["hi", "-a", "hi"]),
+        test_file_case("[ -L (dangling)", "[", ["-L", {:path, "dang"}], :dangling)
+      ]
+    ])
+  end
+
+  defp bracket_file_shapes("-L"), do: [{:symlink, "link"}, {:regular, "file"}]
+  defp bracket_file_shapes("-s"), do: [{:empty, "empty"}, {:regular, "file"}]
+
+  defp bracket_file_shapes("-f"),
+    do: [{:regular, "file"}, {:directory, "dir"}, {:missing, "missing"}]
+
+  defp bracket_file_shapes("-d"),
+    do: [{:directory, "dir"}, {:regular, "file"}, {:missing, "missing"}]
+
+  defp bracket_file_shapes("-e"),
+    do: [{:regular, "file"}, {:missing, "missing"}, {:dangling, "dang"}]
+
+  defp test_file_case(name, cmd, args, shape) do
+    one_test(name, setup_script(name, cmd, args, shape), test_gap(name))
+  end
+
+  defp test_abs_case(name, cmd, args) do
+    one_test(name, expr_script(cmd, args), test_gap(name))
+  end
+
+  defp test_plain_case(name, cmd, args) do
+    one_test(name, expr_script(cmd, args), test_gap(name))
+  end
+
+  defp expr_script(cmd, args) do
+    "LC_ALL=C LANG=C #{format_cmd(cmd, args)}; echo rc=$?"
+  end
+
+  defp setup_script(name, cmd, args, shape) do
+    slug = slugify(name)
+    setup = shape_setup(shape)
+
+    "D=/tmp/jb_t_#{slug}; mkdir -p \"$D\"; #{setup}; LC_ALL=C LANG=C #{format_cmd(cmd, args)}; echo rc=$?"
+  end
+
+  defp format_cmd("test", args), do: String.trim("test #{format_args(args)}")
+  defp format_cmd("[", args), do: String.trim("[ #{format_args(args)} ]")
+
+  defp format_args(args), do: Enum.map_join(args, " ", &format_arg/1)
+
+  defp format_arg({:path, rel}), do: "\"$D/#{rel}\""
+  defp format_arg(value) when is_binary(value), do: sh_single(value)
+
+  defp slugify(name) do
+    name
+    |> String.replace("[", "br")
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/, "_")
+    |> String.trim("_")
+    |> String.slice(0, 60)
+  end
+
+  defp shape_setup(:regular), do: "printf 'hello\\n' > \"$D/file\""
+  defp shape_setup(:empty), do: "printf '' > \"$D/empty\""
+  defp shape_setup(:directory), do: "mkdir -p \"$D/dir\""
+  defp shape_setup(:missing), do: ":"
+
+  defp shape_setup(:symlink),
+    do: "printf 'hello\\n' > \"$D/target\"; ln -s \"$D/target\" \"$D/link\""
+
+  defp shape_setup(:dangling), do: "ln -s \"$D/nope\" \"$D/dang\""
+  defp shape_setup(:executable), do: "printf 'echo hi\\n' > \"$D/exe\"; chmod +x \"$D/exe\""
+  defp shape_setup(:unreadable), do: "printf 'x\\n' > \"$D/noread\"; chmod 000 \"$D/noread\""
+  defp shape_setup(:fifo), do: "mkfifo \"$D/fifo\" 2>/dev/null"
+
+  defp shape_setup(:older_newer),
+    do:
+      "touch -d '2017-12-31' \"$D/old\" 2>/dev/null; touch -d '2018-01-01' \"$D/new\" 2>/dev/null"
+
+  defp shape_setup(:hardlink), do: "printf 'x\\n' > \"$D/f\"; ln \"$D/f\" \"$D/hard\""
+  defp shape_setup(:two_files), do: "printf 'a\\n' > \"$D/a\"; printf 'b\\n' > \"$D/b\""
+  defp shape_setup(:setuid), do: "printf 'x\\n' > \"$D/suid\"; chmod u+s \"$D/suid\""
+  defp shape_setup(:setgid), do: "printf 'x\\n' > \"$D/sgid\"; chmod g+s \"$D/sgid\""
+  defp shape_setup(:sticky), do: "mkdir -p \"$D/sticky\"; chmod +t \"$D/sticky\""
+  defp shape_setup(:enotdir), do: "printf 'x\\n' > \"$D/file\""
+  defp shape_setup(:file_and_dir), do: "printf 'hello\\n' > \"$D/file\"; mkdir -p \"$D/dir\""
+
+  defp one_test(name, script, known_gap) do
+    fixture_case("test matrix: #{name}", script, known_gap)
+  end
+
+  # Assigned after recording. A cell that matches is left unmarked even
+  # when the operator is unimplemented — returning 1 on a non-pipe is
+  # indistinguishable from a correct `-p`, and marking it would invert a
+  # passing assertion. The revealing shape carries the gap instead.
+  defp test_gap(name) do
+    cond do
+      name in ["test -c (/dev/null)", "test -f (/dev/null)"] ->
+        @devnull_file_gap
+
+      name == "test -s (directory)" ->
+        @dir_size_gap
+
+      name == "test -p (fifo)" ->
+        @setup_or_op_gap
+
+      name in ["test -u (setuid)", "test -g (setgid)", "test -k (sticky)"] ->
+        @setup_or_op_gap
+
+      String.contains?(name, " -nt ") or String.contains?(name, " -ot ") or
+          String.contains?(name, " -ef ") ->
+        file_cmp_gap(name)
+
+      name in [
+        "test -x (regular)",
+        "test -x (empty)",
+        "test -x (unreadable)",
+        "test -x (symlink)",
+        "test -r (unreadable)",
+        "test -w (unreadable)"
+      ] ->
+        @perm_gap
+
+      name == "test -f (trailing-slash file)" ->
+        @slash_file_gap
+
+      name == "test unary -a (regular)" ->
+        @unary_a_gap
+
+      name == "test -a (file-and-dir)" ->
+        @andor_nary_gap
+
+      String.starts_with?(name, "test group ") ->
+        @group_gap
+
+      name in ["[ no-args", "[ missing-closer", "[ extra-after-closer"] ->
+        @bracket_syntax_gap
+
+      name in ["test extra-args", "test too-many"] ->
+        @arity_gap
+
+      name in ["test unknown unary", "test unknown binary"] ->
+        @unknown_op_gap
+
+      int_spelling_gap?(name) ->
+        int_spelling_reason(name)
+
+      name in ["test -O (regular)", "test -G (regular)"] ->
+        @unimpl_unary_gap
+
+      true ->
+        nil
+    end
+  end
+
+  defp file_cmp_gap(name) do
+    if name in [
+         "test -nt (newer-older)",
+         "test -ot (older-newer)",
+         "test -ef (same-path)",
+         "test -ef (hardlink)"
+       ] do
+      @unimpl_file_cmp_gap
+    end
+  end
+
+  defp int_spelling_gap?(name) do
+    String.contains?(name, "(non-numeric)") or String.contains?(name, "(spaces)")
+  end
+
+  defp int_spelling_reason(name) do
+    if String.contains?(name, "(non-numeric)") do
+      @int_stderr_gap
+    else
+      @int_parse_gap
+    end
   end
 
   defp fixture_case(name, script, known_gap) do

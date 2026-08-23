@@ -1,0 +1,1734 @@
+{
+  "results": [
+    {
+      "content_hash": "11b3421a848e08ac",
+      "exit_code": 0,
+      "name": "test matrix: test -e (regular)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "92a5581a31ec6563",
+      "exit_code": 0,
+      "name": "test matrix: test -e (empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "ad6839828947579b",
+      "exit_code": 0,
+      "name": "test matrix: test -e (directory)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "ede2309f2d5fc45e",
+      "exit_code": 0,
+      "name": "test matrix: test -e (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a5b476bfd49b8b57",
+      "exit_code": 0,
+      "name": "test matrix: test -e (symlink)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "e55e8d8bb441cbf3",
+      "exit_code": 0,
+      "name": "test matrix: test -e (dangling)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "200f9211d9cdd434",
+      "exit_code": 0,
+      "name": "test matrix: test -f (regular)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "63e15459fc383322",
+      "exit_code": 0,
+      "name": "test matrix: test -f (empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "9b25dd243254a423",
+      "exit_code": 0,
+      "name": "test matrix: test -f (directory)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e398c0c75ea0a5f9",
+      "exit_code": 0,
+      "name": "test matrix: test -f (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "eac31d30ae2917f9",
+      "exit_code": 0,
+      "name": "test matrix: test -f (symlink)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "aeab59ce19bc2ab5",
+      "exit_code": 0,
+      "name": "test matrix: test -f (dangling)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "621c87a9c114ac37",
+      "exit_code": 0,
+      "name": "test matrix: test -d (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "0f0a1c11700ece26",
+      "exit_code": 0,
+      "name": "test matrix: test -d (empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "73a33ebd32c3550f",
+      "exit_code": 0,
+      "name": "test matrix: test -d (directory)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "8a3e3460bae2bee9",
+      "exit_code": 0,
+      "name": "test matrix: test -d (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a0d1a87538cee38f",
+      "exit_code": 0,
+      "name": "test matrix: test -d (symlink)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "9330e1957c7ccb3e",
+      "exit_code": 0,
+      "name": "test matrix: test -d (dangling)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "88858fd6ebc9d266",
+      "exit_code": 0,
+      "name": "test matrix: test -L (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e0ef011968eeaa11",
+      "exit_code": 0,
+      "name": "test matrix: test -L (empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "282140d314c6538b",
+      "exit_code": 0,
+      "name": "test matrix: test -L (directory)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "d72f603cf1a79968",
+      "exit_code": 0,
+      "name": "test matrix: test -L (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "fa528da0ece73545",
+      "exit_code": 0,
+      "name": "test matrix: test -L (symlink)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "40bbbe6b44fe5d63",
+      "exit_code": 0,
+      "name": "test matrix: test -L (dangling)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "ab073038ea1daad9",
+      "exit_code": 0,
+      "name": "test matrix: test -h (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b0d4b541177011e5",
+      "exit_code": 0,
+      "name": "test matrix: test -h (empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "495d902920d8535b",
+      "exit_code": 0,
+      "name": "test matrix: test -h (directory)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a19f009eee763ba1",
+      "exit_code": 0,
+      "name": "test matrix: test -h (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "2d2e53000e0101b7",
+      "exit_code": 0,
+      "name": "test matrix: test -h (symlink)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "8b361d78f30701f3",
+      "exit_code": 0,
+      "name": "test matrix: test -h (dangling)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "11deac7055abf6f4",
+      "exit_code": 0,
+      "name": "test matrix: test -s (regular)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "410f86b5835dbe31",
+      "exit_code": 0,
+      "name": "test matrix: test -s (empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "bf0a34c272e2b1f9",
+      "exit_code": 0,
+      "name": "test matrix: test -s (directory)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "abd9702e8c878b6f",
+      "exit_code": 0,
+      "name": "test matrix: test -s (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "acfc164595f70781",
+      "exit_code": 0,
+      "name": "test matrix: test -s (symlink)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "7056c81bc5f5acd8",
+      "exit_code": 0,
+      "name": "test matrix: test -s (dangling)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "23b68438875dd537",
+      "exit_code": 0,
+      "name": "test matrix: test -r (regular)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "3d3f1883a0907fa5",
+      "exit_code": 0,
+      "name": "test matrix: test -r (empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "9e718d38952a0195",
+      "exit_code": 0,
+      "name": "test matrix: test -r (directory)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "cdd5d646379170c3",
+      "exit_code": 0,
+      "name": "test matrix: test -r (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "177204c1b437be16",
+      "exit_code": 0,
+      "name": "test matrix: test -r (symlink)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "31762eb80293eec2",
+      "exit_code": 0,
+      "name": "test matrix: test -r (dangling)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "fed7156d7e5a16fc",
+      "exit_code": 0,
+      "name": "test matrix: test -w (regular)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "71ac6a9ba114dfef",
+      "exit_code": 0,
+      "name": "test matrix: test -w (empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "45cf496d750ee74d",
+      "exit_code": 0,
+      "name": "test matrix: test -w (directory)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "0e8a9e4353b22073",
+      "exit_code": 0,
+      "name": "test matrix: test -w (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "650d110a272278ed",
+      "exit_code": 0,
+      "name": "test matrix: test -w (symlink)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "ce33e9e15343d34f",
+      "exit_code": 0,
+      "name": "test matrix: test -w (dangling)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "838dae058ef8faa4",
+      "exit_code": 0,
+      "name": "test matrix: test -x (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "ec8330383441a979",
+      "exit_code": 0,
+      "name": "test matrix: test -x (empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "364dd47d82c8c94b",
+      "exit_code": 0,
+      "name": "test matrix: test -x (directory)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "f507fb6d6f41f162",
+      "exit_code": 0,
+      "name": "test matrix: test -x (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "aba04df94af81416",
+      "exit_code": 0,
+      "name": "test matrix: test -x (symlink)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "5beefe2a9d3262f5",
+      "exit_code": 0,
+      "name": "test matrix: test -x (dangling)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e51e8152f985100c",
+      "exit_code": 0,
+      "name": "test matrix: test -x (executable)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "2c921fbb38c035f2",
+      "exit_code": 0,
+      "name": "test matrix: test -r (unreadable)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "56a3c534d6ec69c9",
+      "exit_code": 0,
+      "name": "test matrix: test -w (unreadable)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b97853606a19ee14",
+      "exit_code": 0,
+      "name": "test matrix: test -x (unreadable)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "cbe7e1106e55c694",
+      "exit_code": 0,
+      "name": "test matrix: test -e (enotdir)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6dcf0122666f68e5",
+      "exit_code": 0,
+      "name": "test matrix: test -d (trailing-slash dir)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "93233f733c518628",
+      "exit_code": 0,
+      "name": "test matrix: test -f (trailing-slash file)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "bf0a34c272e2b1f9",
+      "exit_code": 0,
+      "name": "test matrix: test -s (directory)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "e189ff7b668fe41c",
+      "exit_code": 0,
+      "name": "test matrix: test -e (/dev/null)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "b8bea7ca6b34090c",
+      "exit_code": 0,
+      "name": "test matrix: test -f (/dev/null)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "dabb9258afcdcf48",
+      "exit_code": 0,
+      "name": "test matrix: test -c (/dev/null)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "5cb615164044977b",
+      "exit_code": 0,
+      "name": "test matrix: test -s (/dev/null)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "eb8f9220be60ae26",
+      "exit_code": 0,
+      "name": "test matrix: test -b (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "81a339f342aac124",
+      "exit_code": 0,
+      "name": "test matrix: test -b (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "506bb46b925e5140",
+      "exit_code": 0,
+      "name": "test matrix: test -c (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "0b5a5dce9dbaac05",
+      "exit_code": 0,
+      "name": "test matrix: test -c (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "fc7a473b867eeca7",
+      "exit_code": 0,
+      "name": "test matrix: test -p (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "deb43c5cad4571f0",
+      "exit_code": 0,
+      "name": "test matrix: test -p (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a84760081cdc3dfb",
+      "exit_code": 0,
+      "name": "test matrix: test -S (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "21cbf3316aff1cee",
+      "exit_code": 0,
+      "name": "test matrix: test -S (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "2f758b315ef82a82",
+      "exit_code": 0,
+      "name": "test matrix: test -p (fifo)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "8c46ed8a15e74b02",
+      "exit_code": 0,
+      "name": "test matrix: test -u (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "fd6cb415f46e1db5",
+      "exit_code": 0,
+      "name": "test matrix: test -g (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6ea5112d495ee93c",
+      "exit_code": 0,
+      "name": "test matrix: test -k (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "0b824b2da8d97f72",
+      "exit_code": 0,
+      "name": "test matrix: test -G (regular)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "4e9bfa3379ce6167",
+      "exit_code": 0,
+      "name": "test matrix: test -O (regular)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "6e6e4dea80432259",
+      "exit_code": 0,
+      "name": "test matrix: test -N (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "63525aca7f521a01",
+      "exit_code": 0,
+      "name": "test matrix: test -u (setuid)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "dacacc90641e41ae",
+      "exit_code": 0,
+      "name": "test matrix: test -g (setgid)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "f86bf8ccee64d42a",
+      "exit_code": 0,
+      "name": "test matrix: test -k (sticky)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "693a04e5b4517ea2",
+      "exit_code": 0,
+      "name": "test matrix: test -u (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "c47215d20ed96224",
+      "exit_code": 0,
+      "name": "test matrix: test -O (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "66a7bcb460ad58a3",
+      "exit_code": 0,
+      "name": "test matrix: test -t (fd 0)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "33a726e635831976",
+      "exit_code": 0,
+      "name": "test matrix: test -t (fd 1)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "dc1a48835b46b237",
+      "exit_code": 0,
+      "name": "test matrix: test -t (fd 2)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "2348501715bd7b4e",
+      "exit_code": 0,
+      "name": "test matrix: test -t (fd 99)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8bf0f2c3e87f1fac",
+      "exit_code": 0,
+      "name": "test matrix: test -t (invalid)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a497f4d8d77bba87",
+      "exit_code": 0,
+      "name": "test matrix: test -t (one-arg)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "9a79af09920b43ff",
+      "exit_code": 0,
+      "name": "test matrix: test -z (empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "1396ccb69fda3e5c",
+      "exit_code": 0,
+      "name": "test matrix: test -z (hi)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a1226c2b170b748e",
+      "exit_code": 0,
+      "name": "test matrix: test -z (zero)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "7f96d62d662963c8",
+      "exit_code": 0,
+      "name": "test matrix: test -z (space)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "41a92afd8450e342",
+      "exit_code": 0,
+      "name": "test matrix: test -n (empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8844d6870cb415f4",
+      "exit_code": 0,
+      "name": "test matrix: test -n (hi)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "6c4798873e5ca047",
+      "exit_code": 0,
+      "name": "test matrix: test -n (zero)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a4176f9ad68b94a3",
+      "exit_code": 0,
+      "name": "test matrix: test -n (space)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a473fe750ae4aa02",
+      "exit_code": 0,
+      "name": "test matrix: test one-arg (empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "bce5a5bb0f8a7283",
+      "exit_code": 0,
+      "name": "test matrix: test one-arg (hi)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a54ca5da142ff4a0",
+      "exit_code": 0,
+      "name": "test matrix: test one-arg (zero)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "ebafb67ab8adc555",
+      "exit_code": 0,
+      "name": "test matrix: test one-arg (dash)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "b9b7dcf75acb0169",
+      "exit_code": 0,
+      "name": "test matrix: test one-arg (equals)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "f9c5c16f3483d154",
+      "exit_code": 0,
+      "name": "test matrix: test one-arg (bang)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "b79b74cb76bd64c8",
+      "exit_code": 0,
+      "name": "test matrix: test = (equal)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "bf454c98cab3643c",
+      "exit_code": 0,
+      "name": "test matrix: test = (unequal)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "66b0810d916e7059",
+      "exit_code": 0,
+      "name": "test matrix: test = (empty-empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "cc786c25c41c1178",
+      "exit_code": 0,
+      "name": "test matrix: test = (empty-hi)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "ed4634fa4b8e5607",
+      "exit_code": 0,
+      "name": "test matrix: test = (case)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "ecdc05057a6531bb",
+      "exit_code": 0,
+      "name": "test matrix: test = (digits)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "31edaaffe83a1373",
+      "exit_code": 0,
+      "name": "test matrix: test == (equal)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "4f859ef6d500af78",
+      "exit_code": 0,
+      "name": "test matrix: test == (unequal)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "734ef367925afbdb",
+      "exit_code": 0,
+      "name": "test matrix: test == (empty-empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "d0cdc0c179e52d35",
+      "exit_code": 0,
+      "name": "test matrix: test == (empty-hi)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "d00fcee4dfceb288",
+      "exit_code": 0,
+      "name": "test matrix: test == (case)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "34dd211c4cee0588",
+      "exit_code": 0,
+      "name": "test matrix: test == (digits)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "bd0dc0afc7a9e274",
+      "exit_code": 0,
+      "name": "test matrix: test != (equal)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6a4d0f0afd953ada",
+      "exit_code": 0,
+      "name": "test matrix: test != (unequal)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a9e0abe1468bcc6c",
+      "exit_code": 0,
+      "name": "test matrix: test != (empty-empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "4487cb365a0c42bf",
+      "exit_code": 0,
+      "name": "test matrix: test != (empty-hi)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "dcc5a093fba2edcc",
+      "exit_code": 0,
+      "name": "test matrix: test != (case)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "033e373093b44bdf",
+      "exit_code": 0,
+      "name": "test matrix: test != (digits)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "cea7df8ec581c9b0",
+      "exit_code": 0,
+      "name": "test matrix: test < (equal)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8767531dae35c22e",
+      "exit_code": 0,
+      "name": "test matrix: test < (unequal)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "b0db00462537e3aa",
+      "exit_code": 0,
+      "name": "test matrix: test < (empty-empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "92eb39a3559a9fd7",
+      "exit_code": 0,
+      "name": "test matrix: test < (empty-hi)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a2811b782bc1c336",
+      "exit_code": 0,
+      "name": "test matrix: test < (case)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "354798295c4fbe6d",
+      "exit_code": 0,
+      "name": "test matrix: test < (digits)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "56c31c86ab2a47f7",
+      "exit_code": 0,
+      "name": "test matrix: test > (equal)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "9ca78380ac08197c",
+      "exit_code": 0,
+      "name": "test matrix: test > (unequal)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "37bf4373f17a7b04",
+      "exit_code": 0,
+      "name": "test matrix: test > (empty-empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f089129339335e99",
+      "exit_code": 0,
+      "name": "test matrix: test > (empty-hi)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6a69e9dd74d2de41",
+      "exit_code": 0,
+      "name": "test matrix: test > (case)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e0d37ffbc7f7af50",
+      "exit_code": 0,
+      "name": "test matrix: test > (digits)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6b75058f99110eb0",
+      "exit_code": 0,
+      "name": "test matrix: test -eq (zeros)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "25d248739284d9b1",
+      "exit_code": 0,
+      "name": "test matrix: test -eq (zero-one)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "10f7207b6f2e86ca",
+      "exit_code": 0,
+      "name": "test matrix: test -eq (neg-zero)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "02bbb3b470f62aec",
+      "exit_code": 0,
+      "name": "test matrix: test -eq (equal)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "27fd0cc5f010bc44",
+      "exit_code": 0,
+      "name": "test matrix: test -eq (order)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8b3beb31c421ee98",
+      "exit_code": 0,
+      "name": "test matrix: test -eq (non-numeric)",
+      "stderr": "bash: line 1: test: a: integer expression expected\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "85522d868279b311",
+      "exit_code": 0,
+      "name": "test matrix: test -eq (octal-looking)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "7852f233a793511b",
+      "exit_code": 0,
+      "name": "test matrix: test -eq (spaces)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "e9cf9e42e85eb28f",
+      "exit_code": 0,
+      "name": "test matrix: test -ne (zeros)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a11c99e1e1cbda28",
+      "exit_code": 0,
+      "name": "test matrix: test -ne (zero-one)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "ba5db5774d6c74fc",
+      "exit_code": 0,
+      "name": "test matrix: test -ne (neg-zero)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "7f7732060292e2ae",
+      "exit_code": 0,
+      "name": "test matrix: test -ne (equal)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b49eb7eeb72eb3eb",
+      "exit_code": 0,
+      "name": "test matrix: test -ne (order)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "8fb770aa46bef470",
+      "exit_code": 0,
+      "name": "test matrix: test -ne (non-numeric)",
+      "stderr": "bash: line 1: test: a: integer expression expected\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "1c4b3f39e9b32fd4",
+      "exit_code": 0,
+      "name": "test matrix: test -ne (octal-looking)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b10179055ed7220e",
+      "exit_code": 0,
+      "name": "test matrix: test -ne (spaces)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "59ea09e9f30d03b1",
+      "exit_code": 0,
+      "name": "test matrix: test -lt (zeros)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "45a5c02ba4d93cbc",
+      "exit_code": 0,
+      "name": "test matrix: test -lt (zero-one)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "28b813975a5d8e40",
+      "exit_code": 0,
+      "name": "test matrix: test -lt (neg-zero)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "535278650c5463eb",
+      "exit_code": 0,
+      "name": "test matrix: test -lt (equal)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "1bbcc4b480b74fff",
+      "exit_code": 0,
+      "name": "test matrix: test -lt (order)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f1f22a069844336e",
+      "exit_code": 0,
+      "name": "test matrix: test -lt (non-numeric)",
+      "stderr": "bash: line 1: test: a: integer expression expected\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "d7530e044096f753",
+      "exit_code": 0,
+      "name": "test matrix: test -lt (octal-looking)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "7395d1b5945e7862",
+      "exit_code": 0,
+      "name": "test matrix: test -lt (spaces)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "3d8a6d90f43e82c3",
+      "exit_code": 0,
+      "name": "test matrix: test -le (zeros)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "06a1dbb49036d389",
+      "exit_code": 0,
+      "name": "test matrix: test -le (zero-one)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "9777036fd531cf9b",
+      "exit_code": 0,
+      "name": "test matrix: test -le (neg-zero)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "09a6dd30928c3309",
+      "exit_code": 0,
+      "name": "test matrix: test -le (equal)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "c1dfdce332b27223",
+      "exit_code": 0,
+      "name": "test matrix: test -le (order)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "23a61d62b083923c",
+      "exit_code": 0,
+      "name": "test matrix: test -le (non-numeric)",
+      "stderr": "bash: line 1: test: a: integer expression expected\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "6afbf4d839ac3287",
+      "exit_code": 0,
+      "name": "test matrix: test -le (octal-looking)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "3520a5558b2f83d4",
+      "exit_code": 0,
+      "name": "test matrix: test -le (spaces)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "f50e74b47431fa48",
+      "exit_code": 0,
+      "name": "test matrix: test -gt (zeros)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "cf0112f1e9e40cb6",
+      "exit_code": 0,
+      "name": "test matrix: test -gt (zero-one)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6e66e42a31fa8891",
+      "exit_code": 0,
+      "name": "test matrix: test -gt (neg-zero)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "88740e594abd0515",
+      "exit_code": 0,
+      "name": "test matrix: test -gt (equal)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "c335297af187312b",
+      "exit_code": 0,
+      "name": "test matrix: test -gt (order)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "1e5c0cb110cc361d",
+      "exit_code": 0,
+      "name": "test matrix: test -gt (non-numeric)",
+      "stderr": "bash: line 1: test: a: integer expression expected\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "ef06671244d9e076",
+      "exit_code": 0,
+      "name": "test matrix: test -gt (octal-looking)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "204ed0e71bc9efb4",
+      "exit_code": 0,
+      "name": "test matrix: test -gt (spaces)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "7811289a93c0701e",
+      "exit_code": 0,
+      "name": "test matrix: test -ge (zeros)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "f8e418986b6f3d5e",
+      "exit_code": 0,
+      "name": "test matrix: test -ge (zero-one)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "87813b8cc2908064",
+      "exit_code": 0,
+      "name": "test matrix: test -ge (neg-zero)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "30468d5afd89caf1",
+      "exit_code": 0,
+      "name": "test matrix: test -ge (equal)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "d498be91882a6814",
+      "exit_code": 0,
+      "name": "test matrix: test -ge (order)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "120e2a5c09082687",
+      "exit_code": 0,
+      "name": "test matrix: test -ge (non-numeric)",
+      "stderr": "bash: line 1: test: a: integer expression expected\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "1aac190d0ba4490e",
+      "exit_code": 0,
+      "name": "test matrix: test -ge (octal-looking)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "c943b8489f11c6b7",
+      "exit_code": 0,
+      "name": "test matrix: test -ge (spaces)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "f12484cbfdf8bf16",
+      "exit_code": 0,
+      "name": "test matrix: test -nt (older-newer)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8f118226f4a3359e",
+      "exit_code": 0,
+      "name": "test matrix: test -nt (newer-older)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "71e95becd96d63c4",
+      "exit_code": 0,
+      "name": "test matrix: test -ot (older-newer)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "62bff842ddff00ac",
+      "exit_code": 0,
+      "name": "test matrix: test -ot (newer-older)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "3008ae480eb81203",
+      "exit_code": 0,
+      "name": "test matrix: test -nt (same)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f433d27bccfbed6b",
+      "exit_code": 0,
+      "name": "test matrix: test -ot (same)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "480c9381b4910910",
+      "exit_code": 0,
+      "name": "test matrix: test -ef (same-path)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "f3235e2c1acbaa88",
+      "exit_code": 0,
+      "name": "test matrix: test -ef (hardlink)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "7e48922d89883a22",
+      "exit_code": 0,
+      "name": "test matrix: test -ef (distinct)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "de199b3bf6860b69",
+      "exit_code": 0,
+      "name": "test matrix: test -nt (missing-file)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "30d7e900afb4c4b6",
+      "exit_code": 0,
+      "name": "test matrix: test -ef (missing-file)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "63102ce2541ee48f",
+      "exit_code": 0,
+      "name": "test matrix: test -a (hi-hi)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "75f27272d3952964",
+      "exit_code": 0,
+      "name": "test matrix: test -a (hi-empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "7b3045183f2ef8b7",
+      "exit_code": 0,
+      "name": "test matrix: test -o (empty-hi)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "679597fb11c55346",
+      "exit_code": 0,
+      "name": "test matrix: test -o (empty-empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "433027aeec703bcc",
+      "exit_code": 0,
+      "name": "test matrix: test unary -a (regular)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "b5f40d280255c8a2",
+      "exit_code": 0,
+      "name": "test matrix: test unary -a (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "5661b3650bb001be",
+      "exit_code": 0,
+      "name": "test matrix: test -a (file-and-dir)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "cba161c19e141df6",
+      "exit_code": 0,
+      "name": "test matrix: test -a (missing-and-dir)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e1b86612f800eea2",
+      "exit_code": 0,
+      "name": "test matrix: test ! (empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "368028dc443b6567",
+      "exit_code": 0,
+      "name": "test matrix: test ! (hi)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "71f41916c36935f0",
+      "exit_code": 0,
+      "name": "test matrix: test ! -z (empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f29330e77eccdee8",
+      "exit_code": 0,
+      "name": "test matrix: test ! -z (hi)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "55317aa4d180f910",
+      "exit_code": 0,
+      "name": "test matrix: test ! -f (missing)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "4e9bfdec87413da9",
+      "exit_code": 0,
+      "name": "test matrix: test ! -f (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "0220acd80b0f689d",
+      "exit_code": 0,
+      "name": "test matrix: test ! = (equal)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "c50b71e34c0c5dcf",
+      "exit_code": 0,
+      "name": "test matrix: test ! = (unequal)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "9a4094534ddf0e08",
+      "exit_code": 0,
+      "name": "test matrix: test group (hi)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "d342a487e25226fc",
+      "exit_code": 0,
+      "name": "test matrix: test group (-z empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "9d1a7b7684d6a092",
+      "exit_code": 0,
+      "name": "test matrix: test group (= equal)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "4d004c777376c270",
+      "exit_code": 0,
+      "name": "test matrix: test no-args",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "1634d0464bc61996",
+      "exit_code": 0,
+      "name": "test matrix: test extra-args",
+      "stderr": "bash: line 1: test: x: binary operator expected\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "3af9fd005020d893",
+      "exit_code": 0,
+      "name": "test matrix: test unknown unary",
+      "stderr": "bash: line 1: test: -Z: unary operator expected\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "99aed5d20f2d38c2",
+      "exit_code": 0,
+      "name": "test matrix: test unknown binary",
+      "stderr": "bash: line 1: test: -xx: binary operator expected\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "7b0552e916548d84",
+      "exit_code": 0,
+      "name": "test matrix: test too-many",
+      "stderr": "bash: line 1: test: too many arguments\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "26c481b04cb90446",
+      "exit_code": 0,
+      "name": "test matrix: [ no-args",
+      "stderr": "bash: line 1: [: missing `]'\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "6dec3178774b0bd7",
+      "exit_code": 0,
+      "name": "test matrix: [ empty",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "7f383c06e09bd8d4",
+      "exit_code": 0,
+      "name": "test matrix: [ missing-closer",
+      "stderr": "bash: line 1: [: missing `]'\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "086fc4eda65a8e6b",
+      "exit_code": 0,
+      "name": "test matrix: [ extra-after-closer",
+      "stderr": "bash: line 1: [: missing `]'\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "97f547bd455048d6",
+      "exit_code": 0,
+      "name": "test matrix: [ -e (regular)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "cb96ee7daef0e1be",
+      "exit_code": 0,
+      "name": "test matrix: [ -e (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "5cff075a2bccd5e7",
+      "exit_code": 0,
+      "name": "test matrix: [ -e (dangling)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "4a51fa0b080318f9",
+      "exit_code": 0,
+      "name": "test matrix: [ -f (regular)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "169373d486c8f1bb",
+      "exit_code": 0,
+      "name": "test matrix: [ -f (directory)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "83b00f8e4314a799",
+      "exit_code": 0,
+      "name": "test matrix: [ -f (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "aac02e5a015d4d1a",
+      "exit_code": 0,
+      "name": "test matrix: [ -d (directory)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "de1dada540df812e",
+      "exit_code": 0,
+      "name": "test matrix: [ -d (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "622c6b2820de64ac",
+      "exit_code": 0,
+      "name": "test matrix: [ -d (missing)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "69a32be73117a70e",
+      "exit_code": 0,
+      "name": "test matrix: [ -L (symlink)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "58dfa70b230d0cca",
+      "exit_code": 0,
+      "name": "test matrix: [ -L (regular)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b03e3b9ef8c56e9d",
+      "exit_code": 0,
+      "name": "test matrix: [ -s (empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b5c8c9ee21e2ed27",
+      "exit_code": 0,
+      "name": "test matrix: [ -s (regular)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "624d79ea24a3ee27",
+      "exit_code": 0,
+      "name": "test matrix: [ -z (empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "b7ea1deaf9d970df",
+      "exit_code": 0,
+      "name": "test matrix: [ -n (hi)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "e195945a4213a1b5",
+      "exit_code": 0,
+      "name": "test matrix: [ one-arg (empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "49d40598087baa4e",
+      "exit_code": 0,
+      "name": "test matrix: [ one-arg (hi)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "c2b0444d5f07b307",
+      "exit_code": 0,
+      "name": "test matrix: [ = (equal)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "ca8fa324c0c415ff",
+      "exit_code": 0,
+      "name": "test matrix: [ != (unequal)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "be6d629b0aeb2edb",
+      "exit_code": 0,
+      "name": "test matrix: [ -eq (zeros)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a8c01eead13c86cb",
+      "exit_code": 0,
+      "name": "test matrix: [ -lt (order)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e663499301c04c6f",
+      "exit_code": 0,
+      "name": "test matrix: [ ! -z (empty)",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "bb715cce0ab11d4d",
+      "exit_code": 0,
+      "name": "test matrix: [ -a (hi-hi)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "b193019fa298f159",
+      "exit_code": 0,
+      "name": "test matrix: [ -L (dangling)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    }
+  ],
+  "suite": "test_matrix"
+}
