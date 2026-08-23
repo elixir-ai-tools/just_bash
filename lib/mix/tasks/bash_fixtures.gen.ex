@@ -17,6 +17,10 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       mix bash_fixtures date_matrix    # record what real bash does
       mix test --only suite:date_matrix
 
+      mix bash_fixtures.gen printf     # write the matrix
+      mix bash_fixtures printf_matrix  # record what real bash does
+      mix test --only suite:printf_matrix
+
   Generated suites are named `<matrix>_matrix` and are safe to regenerate: the
   digest in `JustBash.Fixtures` is content-derived, so a case that did not change
   keeps its recording.
@@ -26,6 +30,12 @@ defmodule Mix.Tasks.BashFixtures.Gen do
     * `date` — every strftime conversion alone, adjacently paired, and crossed
       with every field flag, locale modifier, width and compound form, plus `-I`
       granularities, `-d` input forms, and flags GNU date does not have
+    * `printf` — every bash/coreutils conversion (`%s %c %d %i %u %o %x %X %f
+      %e %E %g %G %a %A %%`, plus bash extras `%b` `%q`) alone at two or more
+      bases, then crossed with every format flag, width, precision and `*`, plus
+      `%b`/`%q` inputs that make escapes and quoting visible, and format
+      recycling with excess arguments. Oils `builtin-printf.test.sh` is a
+      cross-check, not this matrix. See #70 item 2.
 
   A list of conversions and a list of flags are each easy to write down. The
   cross of the two is where the bugs live and is what nobody enumerates by hand:
@@ -37,6 +47,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
 
       mix bash_fixtures.gen              # every matrix
       mix bash_fixtures.gen date         # one matrix
+      mix bash_fixtures.gen printf       # one matrix
       mix bash_fixtures.gen --dry-run    # report counts, write nothing
   """
 
@@ -46,6 +57,11 @@ defmodule Mix.Tasks.BashFixtures.Gen do
   alias Mix.Tasks.BashFixtures
 
   @shortdoc "Generate enumerated fixture matrices"
+
+  @matrices ["date", "printf"]
+
+  @doc false
+  def cases_for(name), do: build(name)
 
   # Every conversion GNU date documents, plus the padding and timezone-colon
   # modifiers. Enumerated rather than curated: the point is that no human decides
@@ -338,11 +354,11 @@ defmodule Mix.Tasks.BashFixtures.Gen do
     |> Enum.each(&write_matrix(&1, dry_run?))
   end
 
-  defp resolve([]), do: ["date"]
+  defp resolve([]), do: @matrices
 
   defp resolve(names) do
     Enum.each(names, fn name ->
-      unless name in ["date"], do: Mix.raise("Unknown matrix: #{name}")
+      unless name in @matrices, do: Mix.raise("Unknown matrix: #{name}")
     end)
 
     names
@@ -362,6 +378,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
   end
 
   defp build("date"), do: date_cases()
+  defp build("printf"), do: printf_cases()
 
   defp date_cases do
     Enum.concat([
@@ -549,8 +566,474 @@ defmodule Mix.Tasks.BashFixtures.Gen do
   # `known_gap` rides in opts, which the digest deliberately excludes: marking a
   # gap, or closing one, must not invalidate a recording that is still correct.
   defp one_case(name, script, known_gap \\ nil) do
+    fixture_case("date matrix: #{name}", script, known_gap)
+  end
+
+  # ---------------------------------------------------------------------------
+  # printf
+  #
+  # The alphabet is the conversions bash/coreutils printf documents, plus the
+  # bash extras `%b` and `%q`. Flags, widths and precisions are crossed with
+  # every conversion rather than sampled: which pairs mean anything is the
+  # fact nobody writes down. Two or more bases per family so padding, sign,
+  # precision and empty/zero are visible — one base hides half of those.
+  #
+  # Oils `builtin-printf.test.sh` (~63 cases) is a cross-check of shapes this
+  # matrix must include, not a substitute for the cross product.
+  # ---------------------------------------------------------------------------
+
+  # Documented conversions, including `%%` as "%" so flag/width/precision
+  # crosses reach it through the same path as every other specifier.
+  @printf_conversions ~w(s c d i u o x X f e E g G a A b q %)
+
+  @printf_flags [
+    {"-", "left"},
+    {"+", "plus"},
+    {" ", "space"},
+    {"0", "zero"},
+    {"#", "hash"}
+  ]
+
+  # Widths chosen so they are both narrower and wider than the revealing
+  # values: 7 under width 5 pads, 255 under width 5 overflows, "hi" under
+  # width 1 overflows and under 5/10 pads.
+  @printf_widths ~w(1 5 10)
+
+  # Empty precision (`%.d`) is a distinct GNU/bash spelling of zero, not the
+  # same as omitting the dot.
+  @printf_precisions ["0", "2", "6", ""]
+
+  # 7 vs 255: padding and hex/octal length differ. -1 vs 0: sign flags and
+  # unsigned wrap become visible. Empty vs "hi": string precision and %c.
+  @printf_string_bases [{"hi", "hi"}, {"empty", ""}]
+  @printf_int_bases [{"seven", "7"}, {"byte", "255"}, {"neg", "-1"}, {"zero", "0"}]
+  @printf_float_bases [{"pi", "3.14159"}, {"neg", "-1"}, {"zero", "0"}]
+  @printf_b_bases [{"plain", "hi"}, {"escapes", "A\\tB\\n"}, {"empty", ""}]
+  @printf_q_bases [{"plain", "hi"}, {"space", "a b"}, {"empty", ""}]
+
+  # %b inputs that make escapes observable. \c must terminate. `\xff` is
+  # covered by a unit test: the JSON recorder cannot carry invalid UTF-8
+  # (jq --rawfile replaces the byte), so that cell would be a harness
+  # artifact rather than a printf divergence.
+  @printf_b_specials [
+    {"tab", "A\\tB"},
+    {"newline", "A\\nB"},
+    {"return", "A\\rB"},
+    {"backslash", "A\\\\B"},
+    {"hex", "A\\x41B"},
+    {"octal", "A\\101B"},
+    {"hex-del", "A\\x7fB"},
+    {"stop", "A\\cB"}
+  ]
+
+  # %q inputs that make shell-quoting visible. Empty, space, meta and
+  # already-quoted are the four shapes that diverge first.
+  @printf_q_specials [
+    {"empty", ""},
+    {"plain", "hi"},
+    {"space", "a b"},
+    {"quote", "a'b"},
+    {"dollar", "$HOME"},
+    {"glob", "*"},
+    {"leading-dash", "-n"},
+    {"dquote", "\"quoted\""}
+  ]
+
+  @printf_recycle [
+    {"%s", ["a", "b", "c"]},
+    {"%s %s\\n", ["a", "b", "c", "d"]},
+    {"%s %s\\n", ["a", "b", "c"]},
+    {"%d %d\\n", ["1", "2", "3"]},
+    {"%s:%d\\n", ["a", "1", "b", "2", "c"]},
+    {"%b\\n", ["a\\tb", "c"]},
+    {"%q\\n", ["a b", "c"]},
+    {"%s %s", ["a"]}
+  ]
+
+  @printf_percent_forms [
+    {"%%", []},
+    {"100%%", []},
+    {"%%s", ["x"]},
+    {"%s %% %s", ["a", "b"]},
+    {"%%%s", ["a"]},
+    {"%s%%", ["a"]}
+  ]
+
+  @printf_invalid_forms [
+    {"%", []},
+    {"%v", ["x"]},
+    {"%s%", ["a"]},
+    {"%!", ["x"]}
+  ]
+
+  # Integer spellings bash accepts and JustBash's Integer.parse/1 does not:
+  # hex, octal, a quoted character, a leading plus, and leading spaces.
+  @printf_int_inputs [
+    {"0xff", "hex"},
+    {"010", "octal"},
+    {"'A", "char"},
+    {"+42", "plus"},
+    {"  7", "spaces"}
+  ]
+
+  # Stacked flags. The last-wins / ignore-zero-when-left rule is only
+  # visible when two flags share a specifier.
+  @printf_stacked [
+    {"%-+5d", ["7"]},
+    {"%+-5d", ["7"]},
+    {"% 05d", ["7"]},
+    {"%+05d", ["7"]},
+    {"%#08x", ["255"]},
+    {"%#08o", ["255"]},
+    {"%-05d", ["7"]},
+    {"%0-5d", ["7"]}
+  ]
+
+  # Gaps are assigned after recording, never by omitting a cell. Marking a
+  # gap must not change the digest — the reason lives in opts.
+  @unimpl_convs ~w(i u E g G a A q)
+
+  @unimpl_conv_gap "JustBash printf does not implement this conversion; the specifier is passed through literally"
+  @e_gap "JustBash %e uses Erlang ~e, which differs from bash in exponent width and default digits"
+  @c_nul_gap "bash %c of an empty or missing argument emits a NUL byte; JustBash emits nothing"
+  @unsigned_neg_gap "JustBash prints signed negatives for %o/%x/%X; bash treats the value as unsigned 64-bit"
+  @flag_gap "JustBash printf does not implement the +, space, or # format flags"
+  @star_gap "JustBash printf does not implement * for width or precision"
+  @int_prec_gap "JustBash ignores precision on integer conversions; bash uses it as a minimum digit count"
+  @empty_prec_gap "JustBash does not parse a precision with no digits (%.d); bash treats it as precision 0"
+  @b_octal_gap "JustBash %b does not expand \\NNN octal escapes (only \\0NNN, matching echo -e)"
+  @b_stop_gap "JustBash %b does not honour \\c as a terminator"
+  @b_prec_gap "JustBash ignores precision on %b; bash applies it as a maximum byte count"
+  @int_input_gap "JustBash Integer.parse/1 does not accept bash hex, octal, quoted-character, or leading-space operands"
+  @invalid_gap "JustBash passes an invalid or incomplete specifier through at exit 0; bash prints a diagnostic"
+  @no_ops_gap "JustBash printf with no operands exits 0; bash prints usage and exits 2"
+  @endopt_gap "JustBash treats -- as the format string; bash consumes it as end-of-options"
+  @assign_gap "JustBash printf does not implement -v; the flag is treated as the format"
+  @unknown_flag_gap "JustBash absorbs an unknown flag as the format and exits 0; bash refuses it"
+  @strftime_gap "JustBash printf does not implement %(fmt)T"
+  @pct_mod_gap "bash rejects a flag, width or precision on %%; JustBash prints a literal percent"
+  @zero_str_gap "JustBash honours 0-padding on %s/%c/%b; bash ignores the 0 flag for those conversions"
+  @flag_order_gap "JustBash's format parser does not accept flags after 0 (`%0-5d`); bash left-aligns"
+
+  defp printf_cases do
+    Enum.concat([
+      printf_conversion_cases(),
+      printf_cross_cases(),
+      printf_shape_cases(),
+      printf_argument_cases()
+    ])
+  end
+
+  # Each conversion on its own, at every family base.
+  defp printf_conversion_cases do
+    for conv <- @printf_conversions, {label, value} <- printf_bases(conv) do
+      printf_case("conversion %#{conv} (#{label})", "%#{conv}", printf_args(value))
+    end
+  end
+
+  # Flag × conversion, and flag+width × conversion. A flag without a width
+  # is often a no-op; the width-5 cross is where left/zero/plus become
+  # visible. Both are asked so a no-op is recorded rather than assumed.
+  defp printf_cross_cases do
+    Enum.concat([
+      for {flag, flag_name} <- @printf_flags, conv <- @printf_conversions do
+        printf_case(
+          "flag #{flag_name} %#{conv}",
+          "%#{flag}#{conv}",
+          printf_revealing_args(conv)
+        )
+      end,
+      # Width 5 is the revealing field: 7 and "hi" pad, 255 overflows. The
+      # other widths are asked without flags below; repeating them here
+      # would triple the cross without a new combination.
+      for {flag, flag_name} <- @printf_flags, conv <- @printf_conversions do
+        printf_case(
+          "flag+width #{flag_name} 5 %#{conv}",
+          "%#{flag}5#{conv}",
+          printf_revealing_args(conv)
+        )
+      end
+    ])
+  end
+
+  # Widths, precisions, and `*` — the finite stand-in for a runtime field.
+  # `*` consumes extra arguments, so the revealing value is shifted rather
+  # than dropped; a generator that forgot that would record the width as
+  # the value and hide every padding bug.
+  defp printf_shape_cases do
+    Enum.concat([
+      for width <- @printf_widths, conv <- @printf_conversions do
+        printf_case("width #{width} %#{conv}", "%#{width}#{conv}", printf_revealing_args(conv))
+      end,
+      for prec <- @printf_precisions, conv <- @printf_conversions do
+        printf_case(
+          "precision #{prec_label(prec)} %#{conv}",
+          "%.#{prec}#{conv}",
+          printf_revealing_args(conv)
+        )
+      end,
+      for conv <- @printf_conversions do
+        printf_case(
+          "width+precision 5.2 %#{conv}",
+          "%5.2#{conv}",
+          printf_revealing_args(conv)
+        )
+      end,
+      for conv <- @printf_conversions do
+        printf_case("star width %#{conv}", "%*#{conv}", ["5" | printf_revealing_args(conv)])
+      end,
+      for conv <- @printf_conversions do
+        printf_case("star precision %#{conv}", "%.*#{conv}", ["2" | printf_revealing_args(conv)])
+      end,
+      for conv <- @printf_conversions do
+        printf_case(
+          "star both %#{conv}",
+          "%*.*#{conv}",
+          ["8", "2" | printf_revealing_args(conv)]
+        )
+      end,
+      for {flag, flag_name} <- @printf_flags, conv <- @printf_conversions do
+        printf_case(
+          "flag+star #{flag_name} %#{conv}",
+          "%#{flag}*#{conv}",
+          ["5" | printf_revealing_args(conv)]
+        )
+      end
+    ])
+  end
+
+  # Recycling, %b/%q inputs, missing arguments, %% sequences, refusals.
+  defp printf_argument_cases do
+    Enum.concat([
+      for {format, args} <- @printf_recycle do
+        printf_case("recycle #{inspect(format)} #{Enum.join(args, " ")}", format, args)
+      end,
+      for {label, value} <- @printf_b_specials do
+        printf_case("%b #{label}", "%b", [value])
+      end,
+      for {label, value} <- @printf_q_specials do
+        printf_case("%q #{label}", "%q", [value])
+      end,
+      for conv <- @printf_conversions do
+        printf_case("missing %#{conv}", "%#{conv}", [])
+      end,
+      for {format, args} <- @printf_percent_forms do
+        printf_case("percent #{inspect(format)}", format, args)
+      end,
+      for {format, args} <- @printf_invalid_forms do
+        printf_case("invalid #{inspect(format)}", format, args)
+      end,
+      for {value, label} <- @printf_int_inputs do
+        printf_case("integer input #{label}", "%d", [value])
+      end,
+      for {format, args} <- @printf_stacked do
+        printf_case("stacked #{format}", format, args)
+      end,
+      [
+        one_printf(
+          "no operands",
+          "LC_ALL=C LANG=C printf; echo rc=$?",
+          @no_ops_gap
+        ),
+        one_printf(
+          "end of options --",
+          "LC_ALL=C LANG=C printf -- '%s' -n; echo rc=$?",
+          @endopt_gap
+        ),
+        one_printf(
+          "assign -v",
+          "LC_ALL=C LANG=C printf -v x '%s' hi; echo \"$x\"; echo rc=$?",
+          @assign_gap
+        ),
+        one_printf(
+          "unknown flag -Z",
+          "LC_ALL=C LANG=C printf -Z '%s' hi; echo rc=$?",
+          @unknown_flag_gap
+        ),
+        one_printf(
+          "strftime %(%Y)T epoch",
+          "LC_ALL=C LANG=C TZ=UTC printf '%(%Y-%m-%d)T' 0; echo rc=$?",
+          @strftime_gap
+        ),
+        one_printf(
+          "strftime %(%F)T unix",
+          "LC_ALL=C LANG=C TZ=UTC printf '%(%F)T' 1718458200; echo rc=$?",
+          @strftime_gap
+        )
+      ]
+    ])
+  end
+
+  defp printf_bases(conv) when conv in ~w(s c), do: @printf_string_bases
+  defp printf_bases(conv) when conv in ~w(d i), do: @printf_int_bases
+  defp printf_bases(conv) when conv in ~w(u o x X), do: @printf_int_bases
+  defp printf_bases(conv) when conv in ~w(f e E g G a A), do: @printf_float_bases
+  defp printf_bases("b"), do: @printf_b_bases
+  defp printf_bases("q"), do: @printf_q_bases
+  defp printf_bases("%"), do: [{"literal", nil}]
+
+  # One revealing value per conversion so a flag/width run is not hidden by
+  # a value that already fills the field. 7 (not 15) for signed; 255 for
+  # hex/octal; empty-capable strings stay "hi" so %c and precision truncate.
+  defp printf_revealing("s"), do: "hi"
+  defp printf_revealing("c"), do: "hi"
+  defp printf_revealing(conv) when conv in ~w(d i), do: "7"
+  defp printf_revealing(conv) when conv in ~w(u o x X), do: "255"
+  defp printf_revealing(conv) when conv in ~w(f e E g G a A), do: "3.14159"
+  defp printf_revealing("b"), do: "A\\tB\\n"
+  defp printf_revealing("q"), do: "a b"
+  defp printf_revealing("%"), do: nil
+
+  defp printf_revealing_args(conv), do: printf_args(printf_revealing(conv))
+
+  defp printf_args(nil), do: []
+  defp printf_args(value), do: [value]
+
+  defp prec_label(""), do: "empty"
+  defp prec_label(prec), do: prec
+
+  defp printf_case(name, format, args) do
+    one_printf(name, printf_script(format, args), printf_gap(name, format, args))
+  end
+
+  defp printf_script(format, args) do
+    quoted = Enum.map_join([format | args], " ", &sh_single/1)
+    "LC_ALL=C LANG=C printf #{quoted}; echo rc=$?"
+  end
+
+  # Single-quote an operand so spaces, stars and leading dashes stay data.
+  # Formats never contain a single quote, so the replace is defensive.
+  defp sh_single(str) do
+    "'" <> String.replace(str, "'", "'\\''") <> "'"
+  end
+
+  defp one_printf(name, script, known_gap) do
+    fixture_case("printf matrix: #{name}", script, known_gap)
+  end
+
+  defp printf_gap(name, format, args) do
+    case special_printf_gap(name, format) do
+      :none ->
+        case named_conv(name) do
+          nil -> nil
+          conv -> gap_for_conv_cell(name, format, args, conv)
+        end
+
+      gap ->
+        gap
+    end
+  end
+
+  defp special_printf_gap(name, format) do
+    cond do
+      String.starts_with?(name, "percent ") -> nil
+      String.starts_with?(name, "invalid ") -> @invalid_gap
+      int_input_gap?(name) -> @int_input_gap
+      name == "%b octal" -> @b_octal_gap
+      name == "%b stop" -> @b_stop_gap
+      q_gap?(name, format) -> @unimpl_conv_gap
+      star_gap?(name) -> @star_gap
+      true -> stacked_gap(name)
+    end
+  end
+
+  defp int_input_gap?(name) do
+    name in [
+      "integer input hex",
+      "integer input octal",
+      "integer input char",
+      "integer input spaces"
+    ]
+  end
+
+  defp q_gap?(name, format) do
+    String.starts_with?(name, "%q ") or
+      (String.starts_with?(name, "recycle ") and String.contains?(format, "%q"))
+  end
+
+  defp star_gap?(name) do
+    String.starts_with?(name, "star ") or String.starts_with?(name, "flag+star ")
+  end
+
+  defp stacked_gap("stacked %0-5d"), do: @flag_order_gap
+  defp stacked_gap("stacked %-05d"), do: nil
+  defp stacked_gap("stacked " <> _), do: @flag_gap
+  defp stacked_gap(_), do: :none
+
+  defp named_conv(name) do
+    case Regex.run(~r/%([a-zA-Z%])(?:\s|\(|$)/, name) do
+      [_, conv] -> conv
+      _ -> nil
+    end
+  end
+
+  defp gap_for_conv_cell(_name, _format, _args, conv) when conv in @unimpl_convs do
+    @unimpl_conv_gap
+  end
+
+  defp gap_for_conv_cell(name, format, args, conv) do
+    cond do
+      conv == "%" and percent_modified?(name, format) -> @pct_mod_gap
+      conv == "e" -> @e_gap
+      conv == "c" and args in [[], [""]] -> @c_nul_gap
+      conv in ~w(o x X) and args == ["-1"] -> @unsigned_neg_gap
+      true -> gap_for_parsed_conv(name, format, conv)
+    end
+  end
+
+  defp gap_for_parsed_conv(name, format, conv) do
+    cond do
+      empty_precision?(format) -> @empty_prec_gap
+      conv == "b" and b_precision_truncates?(name) -> @b_prec_gap
+      integer_precision_visible?(name, conv) -> @int_prec_gap
+      has_unimpl_flag?(format) -> @flag_gap
+      zero_pad_string?(format, conv) -> @zero_str_gap
+      true -> nil
+    end
+  end
+
+  defp percent_modified?(name, format) do
+    String.contains?(name, "width ") or
+      String.contains?(name, "precision ") or
+      String.contains?(name, "flag ") or
+      format not in ["%%"]
+  end
+
+  defp empty_precision?(format),
+    do: String.contains?(format, "%.") and not String.match?(format, ~r/%\.\d/)
+
+  # Precision is a minimum digit count. It only changes the output when it
+  # is longer than the revealing value: 7 is one digit, 255 is 3 octal / 2 hex.
+  defp integer_precision_visible?(name, conv) do
+    cond do
+      conv == "d" and name in ["precision 2 %d", "precision 6 %d", "width+precision 5.2 %d"] ->
+        true
+
+      conv in ~w(o x X) and String.starts_with?(name, "precision 6 ") ->
+        true
+
+      true ->
+        false
+    end
+  end
+
+  defp b_precision_truncates?(name) do
+    name in ["precision 0 %b", "precision 2 %b", "width+precision 5.2 %b"]
+  end
+
+  defp has_unimpl_flag?(format) do
+    String.contains?(format, "+") or String.contains?(format, "#") or
+      String.contains?(format, "% ")
+  end
+
+  # `%05s` is a zero flag; `%10s` and `%.0s` only happen to contain a 0.
+  defp zero_pad_string?(format, conv) do
+    conv in ~w(s c b) and String.match?(format, ~r/%-?0\d/)
+  end
+
+  defp fixture_case(name, script, known_gap) do
     test_case = %{
-      "name" => "date matrix: #{name}",
+      "name" => name,
       "script" => script,
       "content_hash" => Fixtures.content_hash(script)
     }
