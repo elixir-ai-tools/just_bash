@@ -1,0 +1,1409 @@
+{
+  "cases": [
+    {
+      "content_hash": "e8d84f47ac46a868",
+      "name": "varop matrix: ${v:-1} (unset)",
+      "script": "set +u; unset v; echo \"[${v:-1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9fd65e3201eed796",
+      "name": "varop matrix: ${v:-1} (empty)",
+      "script": "set +u; v=; echo \"[${v:-1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9317cf807f6d010c",
+      "name": "varop matrix: ${v:-1} (foo)",
+      "script": "set +u; v=foo; echo \"[${v:-1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "778f8d0079e20a91",
+      "name": "varop matrix: ${v:-1} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v:-1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "23958776ce32c943",
+      "name": "varop matrix: ${v-word} (unset, word)",
+      "script": "set +u; unset v; echo \"[${v-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9428e1c42530c0ea",
+      "name": "varop matrix: ${v-word} (empty, word)",
+      "script": "set +u; v=; echo \"[${v-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "6e6cdbc00c09e1e2",
+      "name": "varop matrix: ${v-word} (foo, word)",
+      "script": "set +u; v=foo; echo \"[${v-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "2b471b7a34d0e473",
+      "name": "varop matrix: ${v-word} (foobar, word)",
+      "script": "set +u; v=foobar; echo \"[${v-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "d7aec96a472ab3b2",
+      "name": "varop matrix: ${v-} (unset, empty)",
+      "script": "set +u; unset v; echo \"[${v-}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9b9a802ce10d478f",
+      "name": "varop matrix: ${v-} (empty, empty)",
+      "script": "set +u; v=; echo \"[${v-}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "431f1093e92ef37d",
+      "name": "varop matrix: ${v-} (foo, empty)",
+      "script": "set +u; v=foo; echo \"[${v-}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a2bf48364826dc7e",
+      "name": "varop matrix: ${v-} (foobar, empty)",
+      "script": "set +u; v=foobar; echo \"[${v-}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9261b41b692f2611",
+      "name": "varop matrix: ${v:-word} (unset, word)",
+      "script": "set +u; unset v; echo \"[${v:-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "fe333ed10bec8470",
+      "name": "varop matrix: ${v:-word} (empty, word)",
+      "script": "set +u; v=; echo \"[${v:-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "71fea0b9cb5e56da",
+      "name": "varop matrix: ${v:-word} (foo, word)",
+      "script": "set +u; v=foo; echo \"[${v:-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9669f7fcdc9eaded",
+      "name": "varop matrix: ${v:-word} (foobar, word)",
+      "script": "set +u; v=foobar; echo \"[${v:-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "45ddc02e75af9fb6",
+      "name": "varop matrix: ${v:-} (unset, empty)",
+      "script": "set +u; unset v; echo \"[${v:-}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "0e7eb668bbc8643c",
+      "name": "varop matrix: ${v:-} (empty, empty)",
+      "script": "set +u; v=; echo \"[${v:-}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3e9c50a7cb413ad0",
+      "name": "varop matrix: ${v:-} (foo, empty)",
+      "script": "set +u; v=foo; echo \"[${v:-}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "2331fdf553aea870",
+      "name": "varop matrix: ${v:-} (foobar, empty)",
+      "script": "set +u; v=foobar; echo \"[${v:-}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "be0a3f837efcb32b",
+      "name": "varop matrix: ${v=word} (unset, word)",
+      "script": "set +u; unset v; echo \"[${v=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "b6c2dbdae80b0323",
+      "name": "varop matrix: ${v=word} (empty, word)",
+      "script": "set +u; v=; echo \"[${v=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "b34e46564d13a8ef",
+      "name": "varop matrix: ${v=word} (foo, word)",
+      "script": "set +u; v=foo; echo \"[${v=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "4f24d9c63e68356a",
+      "name": "varop matrix: ${v=word} (foobar, word)",
+      "script": "set +u; v=foobar; echo \"[${v=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "8019cf4d56f0dcf3",
+      "name": "varop matrix: ${v=} (unset, empty)",
+      "script": "set +u; unset v; echo \"[${v=}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "4b46a7db16cbbb31",
+      "name": "varop matrix: ${v=} (empty, empty)",
+      "script": "set +u; v=; echo \"[${v=}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "dc0853403d45587e",
+      "name": "varop matrix: ${v=} (foo, empty)",
+      "script": "set +u; v=foo; echo \"[${v=}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "1a33ce9aac478d73",
+      "name": "varop matrix: ${v=} (foobar, empty)",
+      "script": "set +u; v=foobar; echo \"[${v=}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c7f7a0c5f4149edc",
+      "name": "varop matrix: ${v:=word} (unset, word)",
+      "script": "set +u; unset v; echo \"[${v:=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c859998a0592891c",
+      "name": "varop matrix: ${v:=word} (empty, word)",
+      "script": "set +u; v=; echo \"[${v:=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "aca1add05289ecb6",
+      "name": "varop matrix: ${v:=word} (foo, word)",
+      "script": "set +u; v=foo; echo \"[${v:=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "4db3fb1b31536c31",
+      "name": "varop matrix: ${v:=word} (foobar, word)",
+      "script": "set +u; v=foobar; echo \"[${v:=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "64d8527906cd72df",
+      "name": "varop matrix: ${v:=} (unset, empty)",
+      "script": "set +u; unset v; echo \"[${v:=}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c25477eb6795346d",
+      "name": "varop matrix: ${v:=} (empty, empty)",
+      "script": "set +u; v=; echo \"[${v:=}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "1c4b16b105a44495",
+      "name": "varop matrix: ${v:=} (foo, empty)",
+      "script": "set +u; v=foo; echo \"[${v:=}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "94baaa18f7797396",
+      "name": "varop matrix: ${v:=} (foobar, empty)",
+      "script": "set +u; v=foobar; echo \"[${v:=}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "924c2fce828fbd21",
+      "name": "varop matrix: ${v+word} (unset, word)",
+      "script": "set +u; unset v; echo \"[${v+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a5226a7e7dd6adfa",
+      "name": "varop matrix: ${v+word} (empty, word)",
+      "script": "set +u; v=; echo \"[${v+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "cf01c326697f9f50",
+      "name": "varop matrix: ${v+word} (foo, word)",
+      "script": "set +u; v=foo; echo \"[${v+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e0c8fd9f239c6270",
+      "name": "varop matrix: ${v+word} (foobar, word)",
+      "script": "set +u; v=foobar; echo \"[${v+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "cae76e7eeafec0a3",
+      "name": "varop matrix: ${v+} (unset, empty)",
+      "script": "set +u; unset v; echo \"[${v+}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "7d09190b2abdd785",
+      "name": "varop matrix: ${v+} (empty, empty)",
+      "script": "set +u; v=; echo \"[${v+}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "775a34a9af6bd853",
+      "name": "varop matrix: ${v+} (foo, empty)",
+      "script": "set +u; v=foo; echo \"[${v+}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f385e501c3f5441f",
+      "name": "varop matrix: ${v+} (foobar, empty)",
+      "script": "set +u; v=foobar; echo \"[${v+}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3c266f5a1fd043b5",
+      "name": "varop matrix: ${v:+word} (unset, word)",
+      "script": "set +u; unset v; echo \"[${v:+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f6b7c6e1381e5b63",
+      "name": "varop matrix: ${v:+word} (empty, word)",
+      "script": "set +u; v=; echo \"[${v:+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e77c691611228480",
+      "name": "varop matrix: ${v:+word} (foo, word)",
+      "script": "set +u; v=foo; echo \"[${v:+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "450426a459a41467",
+      "name": "varop matrix: ${v:+word} (foobar, word)",
+      "script": "set +u; v=foobar; echo \"[${v:+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "327a91b1e326974a",
+      "name": "varop matrix: ${v:+} (unset, empty)",
+      "script": "set +u; unset v; echo \"[${v:+}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a742d7b1fee298e2",
+      "name": "varop matrix: ${v:+} (empty, empty)",
+      "script": "set +u; v=; echo \"[${v:+}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "111ab251f6056594",
+      "name": "varop matrix: ${v:+} (foo, empty)",
+      "script": "set +u; v=foo; echo \"[${v:+}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "bec2203f40e0127e",
+      "name": "varop matrix: ${v:+} (foobar, empty)",
+      "script": "set +u; v=foobar; echo \"[${v:+}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "65a37da8dbd9e560",
+      "name": "varop matrix: ${v?word} (unset, word)",
+      "opts": {
+        "known_gap": "JustBash ${v?}/${v:?} returns empty and continues; bash writes a diagnostic to stderr and aborts"
+      },
+      "script": "set +u; unset v; echo \"[${v?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "2496f2b2515400e4",
+      "name": "varop matrix: ${v?word} (empty, word)",
+      "script": "set +u; v=; echo \"[${v?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "afb21a25a75e3a1a",
+      "name": "varop matrix: ${v?word} (foo, word)",
+      "script": "set +u; v=foo; echo \"[${v?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "63f9a5bd76ff6b91",
+      "name": "varop matrix: ${v?word} (foobar, word)",
+      "script": "set +u; v=foobar; echo \"[${v?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "5cbcf5f47770bffc",
+      "name": "varop matrix: ${v?} (unset, empty)",
+      "opts": {
+        "known_gap": "JustBash ${v?}/${v:?} returns empty and continues; bash writes a diagnostic to stderr and aborts"
+      },
+      "script": "set +u; unset v; echo \"[${v?}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "f74b894c96136fce",
+      "name": "varop matrix: ${v?} (empty, empty)",
+      "script": "set +u; v=; echo \"[${v?}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "579c538bc9bc5753",
+      "name": "varop matrix: ${v?} (foo, empty)",
+      "script": "set +u; v=foo; echo \"[${v?}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "a61267d7211fbc76",
+      "name": "varop matrix: ${v?} (foobar, empty)",
+      "script": "set +u; v=foobar; echo \"[${v?}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "a236e6b73a4950a5",
+      "name": "varop matrix: ${v:?word} (unset, word)",
+      "opts": {
+        "known_gap": "JustBash ${v?}/${v:?} returns empty and continues; bash writes a diagnostic to stderr and aborts"
+      },
+      "script": "set +u; unset v; echo \"[${v:?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "7952b8c22a73b086",
+      "name": "varop matrix: ${v:?word} (empty, word)",
+      "opts": {
+        "known_gap": "JustBash ${v?}/${v:?} returns empty and continues; bash writes a diagnostic to stderr and aborts"
+      },
+      "script": "set +u; v=; echo \"[${v:?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "619d98676c666a77",
+      "name": "varop matrix: ${v:?word} (foo, word)",
+      "script": "set +u; v=foo; echo \"[${v:?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "6774c3a35ceb6fcb",
+      "name": "varop matrix: ${v:?word} (foobar, word)",
+      "script": "set +u; v=foobar; echo \"[${v:?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "54bb680964a03e86",
+      "name": "varop matrix: ${v:?} (unset, empty)",
+      "opts": {
+        "known_gap": "JustBash ${v?}/${v:?} returns empty and continues; bash writes a diagnostic to stderr and aborts"
+      },
+      "script": "set +u; unset v; echo \"[${v:?}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "bc3e2f3135362669",
+      "name": "varop matrix: ${v:?} (empty, empty)",
+      "opts": {
+        "known_gap": "JustBash ${v?}/${v:?} returns empty and continues; bash writes a diagnostic to stderr and aborts"
+      },
+      "script": "set +u; v=; echo \"[${v:?}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "ccd08f8ca5f63069",
+      "name": "varop matrix: ${v:?} (foo, empty)",
+      "script": "set +u; v=foo; echo \"[${v:?}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "b56e8edf3d71f353",
+      "name": "varop matrix: ${v:?} (foobar, empty)",
+      "script": "set +u; v=foobar; echo \"[${v:?}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "de35c240a2f395e5",
+      "name": "varop matrix: set -u ${v-word} (unset)",
+      "script": "set -u; unset v; echo \"[${v-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "32b60682dee4c9dd",
+      "name": "varop matrix: set -u ${v-word} (empty)",
+      "script": "set -u; v=; echo \"[${v-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "39769032586567b2",
+      "name": "varop matrix: set -u ${v:-word} (unset)",
+      "script": "set -u; unset v; echo \"[${v:-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "36283dc6c5ffd527",
+      "name": "varop matrix: set -u ${v:-word} (empty)",
+      "script": "set -u; v=; echo \"[${v:-word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f01d8d211fc1a36b",
+      "name": "varop matrix: set -u ${v=word} (unset)",
+      "script": "set -u; unset v; echo \"[${v=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "da9590195e27257f",
+      "name": "varop matrix: set -u ${v=word} (empty)",
+      "script": "set -u; v=; echo \"[${v=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "fdb7e488cb562d54",
+      "name": "varop matrix: set -u ${v:=word} (unset)",
+      "script": "set -u; unset v; echo \"[${v:=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "dade6d948f229b31",
+      "name": "varop matrix: set -u ${v:=word} (empty)",
+      "script": "set -u; v=; echo \"[${v:=word}]\"; echo \"[$v]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "b36bc64cfc644221",
+      "name": "varop matrix: set -u ${v+word} (unset)",
+      "script": "set -u; unset v; echo \"[${v+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "2d6c5f73d3caabcd",
+      "name": "varop matrix: set -u ${v+word} (empty)",
+      "script": "set -u; v=; echo \"[${v+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "7240cde0183b05f2",
+      "name": "varop matrix: set -u ${v:+word} (unset)",
+      "script": "set -u; unset v; echo \"[${v:+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "36798059419fd814",
+      "name": "varop matrix: set -u ${v:+word} (empty)",
+      "script": "set -u; v=; echo \"[${v:+word}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "073da5ce458d0bf7",
+      "name": "varop matrix: set -u ${v?word} (unset)",
+      "opts": {
+        "known_gap": "JustBash ${v?}/${v:?} returns empty and continues; bash writes a diagnostic to stderr and aborts"
+      },
+      "script": "set -u; unset v; echo \"[${v?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "dfaad0cee53f94b1",
+      "name": "varop matrix: set -u ${v?word} (empty)",
+      "script": "set -u; v=; echo \"[${v?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "5bfa3380fef546d9",
+      "name": "varop matrix: set -u ${v:?word} (unset)",
+      "opts": {
+        "known_gap": "JustBash ${v?}/${v:?} returns empty and continues; bash writes a diagnostic to stderr and aborts"
+      },
+      "script": "set -u; unset v; echo \"[${v:?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "60762b0fd9eae924",
+      "name": "varop matrix: set -u ${v:?word} (empty)",
+      "opts": {
+        "known_gap": "JustBash ${v?}/${v:?} returns empty and continues; bash writes a diagnostic to stderr and aborts"
+      },
+      "script": "set -u; v=; echo \"[${v:?word}]\"; echo after; echo rc=$?"
+    },
+    {
+      "content_hash": "ad5dab775b0b5590",
+      "name": "varop matrix: set -u ${#v} (unset)",
+      "opts": {
+        "known_gap": "JustBash set -u treats unset as empty for ${#v}/${v:offset}/${v#pat}/${v/pat}; bash errors unbound variable"
+      },
+      "script": "set -u; unset v; echo \"[${#v}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "29be4b20eec6a6eb",
+      "name": "varop matrix: set -u ${v:0} (unset)",
+      "opts": {
+        "known_gap": "JustBash set -u treats unset as empty for ${#v}/${v:offset}/${v#pat}/${v/pat}; bash errors unbound variable"
+      },
+      "script": "set -u; unset v; echo \"[${v:0}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a481f53d9e7b9ecd",
+      "name": "varop matrix: set -u ${v#x} (unset)",
+      "opts": {
+        "known_gap": "JustBash set -u treats unset as empty for ${#v}/${v:offset}/${v#pat}/${v/pat}; bash errors unbound variable"
+      },
+      "script": "set -u; unset v; echo \"[${v#x}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "46da344ce21ec60e",
+      "name": "varop matrix: set -u ${v/x/y} (unset)",
+      "opts": {
+        "known_gap": "JustBash set -u treats unset as empty for ${#v}/${v:offset}/${v#pat}/${v/pat}; bash errors unbound variable"
+      },
+      "script": "set -u; unset v; echo \"[${v/x/y}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "71aaa2a58947df8b",
+      "name": "varop matrix: ${#v} (unset)",
+      "script": "set +u; unset v; echo \"[${#v}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3c93fe95c75a0f55",
+      "name": "varop matrix: ${#v} (empty)",
+      "script": "set +u; v=; echo \"[${#v}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f49aee16bef187db",
+      "name": "varop matrix: ${#v} (foo)",
+      "script": "set +u; v=foo; echo \"[${#v}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "22bea81097a846ed",
+      "name": "varop matrix: ${#v} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${#v}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3a58efedb99dd94b",
+      "name": "varop matrix: ${v:0} (unset)",
+      "script": "set +u; unset v; echo \"[${v:0}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "579660560b7e2eee",
+      "name": "varop matrix: ${v:0} (empty)",
+      "script": "set +u; v=; echo \"[${v:0}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a48273b5ffab90da",
+      "name": "varop matrix: ${v:0} (foo)",
+      "script": "set +u; v=foo; echo \"[${v:0}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f86302f756c5d459",
+      "name": "varop matrix: ${v:0} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v:0}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "5bc66020ae307108",
+      "name": "varop matrix: ${v:1} (unset)",
+      "script": "set +u; unset v; echo \"[${v:1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a48e28d365ca930b",
+      "name": "varop matrix: ${v:1} (empty)",
+      "script": "set +u; v=; echo \"[${v:1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f668c46f5070d2fb",
+      "name": "varop matrix: ${v:1} (foo)",
+      "script": "set +u; v=foo; echo \"[${v:1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3c818d44016810dc",
+      "name": "varop matrix: ${v:1} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v:1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e465ca7123784d18",
+      "name": "varop matrix: ${v:3} (unset)",
+      "script": "set +u; unset v; echo \"[${v:3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "01a58c54f153bcdb",
+      "name": "varop matrix: ${v:3} (empty)",
+      "script": "set +u; v=; echo \"[${v:3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "5101ac255f09d506",
+      "name": "varop matrix: ${v:3} (foo)",
+      "script": "set +u; v=foo; echo \"[${v:3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "1cfe0cb916dfa7d6",
+      "name": "varop matrix: ${v:3} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v:3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c8608020b2f25b8f",
+      "name": "varop matrix: ${v:6} (unset)",
+      "script": "set +u; unset v; echo \"[${v:6}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "028480c1b09d05dd",
+      "name": "varop matrix: ${v:6} (empty)",
+      "script": "set +u; v=; echo \"[${v:6}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "68cb2ac7de63fc86",
+      "name": "varop matrix: ${v:6} (foo)",
+      "script": "set +u; v=foo; echo \"[${v:6}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ecc637f652dbe132",
+      "name": "varop matrix: ${v:6} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v:6}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "b83e2e374e731c7d",
+      "name": "varop matrix: ${v: -1} (unset)",
+      "script": "set +u; unset v; echo \"[${v: -1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "fab14cd86b74fbc8",
+      "name": "varop matrix: ${v: -1} (empty)",
+      "script": "set +u; v=; echo \"[${v: -1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "479a20aee2b8c504",
+      "name": "varop matrix: ${v: -1} (foo)",
+      "script": "set +u; v=foo; echo \"[${v: -1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "0565124e45a410e2",
+      "name": "varop matrix: ${v: -1} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v: -1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "1b9f2207a6b35e52",
+      "name": "varop matrix: ${v: -3} (unset)",
+      "script": "set +u; unset v; echo \"[${v: -3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "88b90f7a46248ab3",
+      "name": "varop matrix: ${v: -3} (empty)",
+      "script": "set +u; v=; echo \"[${v: -3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "7597947e2420406c",
+      "name": "varop matrix: ${v: -3} (foo)",
+      "script": "set +u; v=foo; echo \"[${v: -3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "5b42cf4f3e0f2623",
+      "name": "varop matrix: ${v: -3} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v: -3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "07cebb5f3cf752db",
+      "name": "varop matrix: ${v:0:0} (unset)",
+      "script": "set +u; unset v; echo \"[${v:0:0}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "2cc193fa18e3f35c",
+      "name": "varop matrix: ${v:0:0} (empty)",
+      "script": "set +u; v=; echo \"[${v:0:0}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "beec8978b86ae9c3",
+      "name": "varop matrix: ${v:0:0} (foo)",
+      "script": "set +u; v=foo; echo \"[${v:0:0}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "8d56cbc8516b0cc3",
+      "name": "varop matrix: ${v:0:0} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v:0:0}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "904039a61554a223",
+      "name": "varop matrix: ${v:1:2} (unset)",
+      "script": "set +u; unset v; echo \"[${v:1:2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a8458f5d4f73e4ba",
+      "name": "varop matrix: ${v:1:2} (empty)",
+      "script": "set +u; v=; echo \"[${v:1:2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "1a5b26637768e62a",
+      "name": "varop matrix: ${v:1:2} (foo)",
+      "script": "set +u; v=foo; echo \"[${v:1:2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "086ff63a291a04b4",
+      "name": "varop matrix: ${v:1:2} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v:1:2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ddd3c3482e3e25ba",
+      "name": "varop matrix: ${v:1:3} (unset)",
+      "script": "set +u; unset v; echo \"[${v:1:3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ffdc70d344349d9d",
+      "name": "varop matrix: ${v:1:3} (empty)",
+      "script": "set +u; v=; echo \"[${v:1:3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "2660c2afc18256cb",
+      "name": "varop matrix: ${v:1:3} (foo)",
+      "script": "set +u; v=foo; echo \"[${v:1:3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "cacacd5a060217bc",
+      "name": "varop matrix: ${v:1:3} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v:1:3}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "b2c5080813d761a0",
+      "name": "varop matrix: ${v:3:2} (unset)",
+      "script": "set +u; unset v; echo \"[${v:3:2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "4d7a9c4fa625781e",
+      "name": "varop matrix: ${v:3:2} (empty)",
+      "script": "set +u; v=; echo \"[${v:3:2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "d55d6779a0c6a23f",
+      "name": "varop matrix: ${v:3:2} (foo)",
+      "script": "set +u; v=foo; echo \"[${v:3:2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ebc019835437a18e",
+      "name": "varop matrix: ${v:3:2} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v:3:2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "74226759fe70de4d",
+      "name": "varop matrix: ${v: -2:1} (unset)",
+      "script": "set +u; unset v; echo \"[${v: -2:1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "4c8de583a1af59b6",
+      "name": "varop matrix: ${v: -2:1} (empty)",
+      "script": "set +u; v=; echo \"[${v: -2:1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a3362807f17747c6",
+      "name": "varop matrix: ${v: -2:1} (foo)",
+      "script": "set +u; v=foo; echo \"[${v: -2:1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a091d8b7775e7cfc",
+      "name": "varop matrix: ${v: -2:1} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v: -2:1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "7a275f0640e8310e",
+      "name": "varop matrix: ${v:0:-1} (unset)",
+      "script": "set +u; unset v; echo \"[${v:0:-1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "27d8938db69fecfa",
+      "name": "varop matrix: ${v:0:-1} (empty)",
+      "opts": {
+        "known_gap": "JustBash ${v:0:-1} on empty is empty at exit 0; bash errors substring expression < 0"
+      },
+      "script": "set +u; v=; echo \"[${v:0:-1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "95c78ea4950c8406",
+      "name": "varop matrix: ${v:0:-1} (foo)",
+      "script": "set +u; v=foo; echo \"[${v:0:-1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "2e6390107969d95d",
+      "name": "varop matrix: ${v:0:-1} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v:0:-1}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9760eaa73a898cd4",
+      "name": "varop matrix: ${v::2} (unset)",
+      "script": "set +u; unset v; echo \"[${v::2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "1f05504309640337",
+      "name": "varop matrix: ${v::2} (empty)",
+      "script": "set +u; v=; echo \"[${v::2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f4248d793abb49ea",
+      "name": "varop matrix: ${v::2} (foo)",
+      "script": "set +u; v=foo; echo \"[${v::2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f8348c981aff44d7",
+      "name": "varop matrix: ${v::2} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v::2}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "63ba2c810c935aa6",
+      "name": "varop matrix: ${v#foo} (unset)",
+      "script": "set +u; unset v; echo \"[${v#foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c16dc8d99396113a",
+      "name": "varop matrix: ${v#foo} (empty)",
+      "script": "set +u; v=; echo \"[${v#foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "74aef8b513a36472",
+      "name": "varop matrix: ${v#foo} (foo)",
+      "script": "set +u; v=foo; echo \"[${v#foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "700f2cf68ff5bf9a",
+      "name": "varop matrix: ${v#foo} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v#foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "995ef9d1b3b05be4",
+      "name": "varop matrix: ${v#f*} (unset)",
+      "script": "set +u; unset v; echo \"[${v#f*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "4c80c201bcffcde5",
+      "name": "varop matrix: ${v#f*} (empty)",
+      "script": "set +u; v=; echo \"[${v#f*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9c3c22cb12dc1e0d",
+      "name": "varop matrix: ${v#f*} (foo)",
+      "script": "set +u; v=foo; echo \"[${v#f*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "29b65f0ce7edef37",
+      "name": "varop matrix: ${v#f*} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v#f*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "bf608d76be23a2d9",
+      "name": "varop matrix: ${v#bar} (unset)",
+      "script": "set +u; unset v; echo \"[${v#bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "81a602079a751cc2",
+      "name": "varop matrix: ${v#bar} (empty)",
+      "script": "set +u; v=; echo \"[${v#bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "75f4f1790e78ad9b",
+      "name": "varop matrix: ${v#bar} (foo)",
+      "script": "set +u; v=foo; echo \"[${v#bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3294b498bf6a7ed4",
+      "name": "varop matrix: ${v#bar} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v#bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "62e77b7ad3af63c2",
+      "name": "varop matrix: ${v#*} (unset)",
+      "script": "set +u; unset v; echo \"[${v#*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e9bd2cacc9d54314",
+      "name": "varop matrix: ${v#*} (empty)",
+      "script": "set +u; v=; echo \"[${v#*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "8445492401cde5c3",
+      "name": "varop matrix: ${v#*} (foo)",
+      "opts": {
+        "known_gap": "JustBash shortest #/*/% of * consumes one character; bash's shortest * match is empty so the value is unchanged"
+      },
+      "script": "set +u; v=foo; echo \"[${v#*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f6bb59d2bcdab7c7",
+      "name": "varop matrix: ${v#*} (foobar)",
+      "opts": {
+        "known_gap": "JustBash shortest #/*/% of * consumes one character; bash's shortest * match is empty so the value is unchanged"
+      },
+      "script": "set +u; v=foobar; echo \"[${v#*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "dd4225bf0bee4503",
+      "name": "varop matrix: ${v#} (unset)",
+      "script": "set +u; unset v; echo \"[${v#}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "576e8a8beea2805e",
+      "name": "varop matrix: ${v#} (empty)",
+      "script": "set +u; v=; echo \"[${v#}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "fbcf2efde37c87ee",
+      "name": "varop matrix: ${v#} (foo)",
+      "script": "set +u; v=foo; echo \"[${v#}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f93392f3ed895c1e",
+      "name": "varop matrix: ${v#} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v#}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "542e51800103540b",
+      "name": "varop matrix: ${v##foo} (unset)",
+      "script": "set +u; unset v; echo \"[${v##foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f99de91a1a725d05",
+      "name": "varop matrix: ${v##foo} (empty)",
+      "script": "set +u; v=; echo \"[${v##foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "69aa8230bcb16403",
+      "name": "varop matrix: ${v##foo} (foo)",
+      "script": "set +u; v=foo; echo \"[${v##foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "d62c6804c0d2eecb",
+      "name": "varop matrix: ${v##foo} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v##foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ea6a49aca7b53e09",
+      "name": "varop matrix: ${v##f*} (unset)",
+      "script": "set +u; unset v; echo \"[${v##f*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "8a20b059818bdb92",
+      "name": "varop matrix: ${v##f*} (empty)",
+      "script": "set +u; v=; echo \"[${v##f*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "2ca5dd5afa31d1e9",
+      "name": "varop matrix: ${v##f*} (foo)",
+      "script": "set +u; v=foo; echo \"[${v##f*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "5130505512b1ae7e",
+      "name": "varop matrix: ${v##f*} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v##f*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "1d18e6b47da9a645",
+      "name": "varop matrix: ${v##bar} (unset)",
+      "script": "set +u; unset v; echo \"[${v##bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9257384da5d07bc8",
+      "name": "varop matrix: ${v##bar} (empty)",
+      "script": "set +u; v=; echo \"[${v##bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "266ac2df9dcf6c76",
+      "name": "varop matrix: ${v##bar} (foo)",
+      "script": "set +u; v=foo; echo \"[${v##bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "33f5fae9f63eac64",
+      "name": "varop matrix: ${v##bar} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v##bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "60a4eb3a44877127",
+      "name": "varop matrix: ${v##*} (unset)",
+      "script": "set +u; unset v; echo \"[${v##*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ceed23da8c8134c1",
+      "name": "varop matrix: ${v##*} (empty)",
+      "script": "set +u; v=; echo \"[${v##*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "192605b629c4bbfc",
+      "name": "varop matrix: ${v##*} (foo)",
+      "script": "set +u; v=foo; echo \"[${v##*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f96e902573c3cda2",
+      "name": "varop matrix: ${v##*} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v##*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9eb461db2ea05053",
+      "name": "varop matrix: ${v##} (unset)",
+      "script": "set +u; unset v; echo \"[${v##}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "aaa954dceb312f9b",
+      "name": "varop matrix: ${v##} (empty)",
+      "script": "set +u; v=; echo \"[${v##}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "4f44b8606bcca06f",
+      "name": "varop matrix: ${v##} (foo)",
+      "script": "set +u; v=foo; echo \"[${v##}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "596e625f053a5f53",
+      "name": "varop matrix: ${v##} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v##}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e3eb5cf3fba9d193",
+      "name": "varop matrix: ${v%foo} (unset)",
+      "script": "set +u; unset v; echo \"[${v%foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "08a0a0bf602db55d",
+      "name": "varop matrix: ${v%foo} (empty)",
+      "script": "set +u; v=; echo \"[${v%foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9bffb3dcdf54c207",
+      "name": "varop matrix: ${v%foo} (foo)",
+      "script": "set +u; v=foo; echo \"[${v%foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9dfdc36b43168cf8",
+      "name": "varop matrix: ${v%foo} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v%foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e0021ce11921b46a",
+      "name": "varop matrix: ${v%bar} (unset)",
+      "script": "set +u; unset v; echo \"[${v%bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3ea7e95bc4041f41",
+      "name": "varop matrix: ${v%bar} (empty)",
+      "script": "set +u; v=; echo \"[${v%bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c1446834edb63c86",
+      "name": "varop matrix: ${v%bar} (foo)",
+      "script": "set +u; v=foo; echo \"[${v%bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "d38c168021f42eeb",
+      "name": "varop matrix: ${v%bar} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v%bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c75095446bc39e5b",
+      "name": "varop matrix: ${v%*r} (unset)",
+      "script": "set +u; unset v; echo \"[${v%*r}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "403d21b8ab5c1045",
+      "name": "varop matrix: ${v%*r} (empty)",
+      "script": "set +u; v=; echo \"[${v%*r}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "25c2263a0e824900",
+      "name": "varop matrix: ${v%*r} (foo)",
+      "script": "set +u; v=foo; echo \"[${v%*r}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f563eef5308d28a2",
+      "name": "varop matrix: ${v%*r} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v%*r}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "af0a5c6e7b6b581a",
+      "name": "varop matrix: ${v%*} (unset)",
+      "script": "set +u; unset v; echo \"[${v%*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "51512a3c8e12d3a4",
+      "name": "varop matrix: ${v%*} (empty)",
+      "script": "set +u; v=; echo \"[${v%*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "0c5d3d1b5f397860",
+      "name": "varop matrix: ${v%*} (foo)",
+      "opts": {
+        "known_gap": "JustBash shortest #/*/% of * consumes one character; bash's shortest * match is empty so the value is unchanged"
+      },
+      "script": "set +u; v=foo; echo \"[${v%*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "fc78f01b29234dc8",
+      "name": "varop matrix: ${v%*} (foobar)",
+      "opts": {
+        "known_gap": "JustBash shortest #/*/% of * consumes one character; bash's shortest * match is empty so the value is unchanged"
+      },
+      "script": "set +u; v=foobar; echo \"[${v%*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "97881f640f8562d7",
+      "name": "varop matrix: ${v%} (unset)",
+      "script": "set +u; unset v; echo \"[${v%}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f845afef09007a85",
+      "name": "varop matrix: ${v%} (empty)",
+      "script": "set +u; v=; echo \"[${v%}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "476d748bc33abf87",
+      "name": "varop matrix: ${v%} (foo)",
+      "script": "set +u; v=foo; echo \"[${v%}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f6815bddf75e23c0",
+      "name": "varop matrix: ${v%} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v%}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a4e8bcb427847bcb",
+      "name": "varop matrix: ${v%%foo} (unset)",
+      "script": "set +u; unset v; echo \"[${v%%foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c336b7e9401b962b",
+      "name": "varop matrix: ${v%%foo} (empty)",
+      "script": "set +u; v=; echo \"[${v%%foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a073c5c0f241bad1",
+      "name": "varop matrix: ${v%%foo} (foo)",
+      "script": "set +u; v=foo; echo \"[${v%%foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "6d08f8d3cc4ed570",
+      "name": "varop matrix: ${v%%foo} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v%%foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "d5e7779057e4261e",
+      "name": "varop matrix: ${v%%bar} (unset)",
+      "script": "set +u; unset v; echo \"[${v%%bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "36e652f72cc58c9d",
+      "name": "varop matrix: ${v%%bar} (empty)",
+      "script": "set +u; v=; echo \"[${v%%bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "77e0dfa57d72c074",
+      "name": "varop matrix: ${v%%bar} (foo)",
+      "script": "set +u; v=foo; echo \"[${v%%bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f5f549f5b351a417",
+      "name": "varop matrix: ${v%%bar} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v%%bar}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "536e069896157e5f",
+      "name": "varop matrix: ${v%%*r} (unset)",
+      "script": "set +u; unset v; echo \"[${v%%*r}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "20a12ce18bcb3188",
+      "name": "varop matrix: ${v%%*r} (empty)",
+      "script": "set +u; v=; echo \"[${v%%*r}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "29a45e03cf63151f",
+      "name": "varop matrix: ${v%%*r} (foo)",
+      "script": "set +u; v=foo; echo \"[${v%%*r}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "4146d4b069ac0b29",
+      "name": "varop matrix: ${v%%*r} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v%%*r}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "980d92a33ea89e54",
+      "name": "varop matrix: ${v%%*} (unset)",
+      "script": "set +u; unset v; echo \"[${v%%*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3b34b63c26e47fba",
+      "name": "varop matrix: ${v%%*} (empty)",
+      "script": "set +u; v=; echo \"[${v%%*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "dac60e08169d4c47",
+      "name": "varop matrix: ${v%%*} (foo)",
+      "script": "set +u; v=foo; echo \"[${v%%*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "07b0486257603985",
+      "name": "varop matrix: ${v%%*} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v%%*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "57f06c3ad4567d17",
+      "name": "varop matrix: ${v%%} (unset)",
+      "script": "set +u; unset v; echo \"[${v%%}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "090972ae3e64a2c8",
+      "name": "varop matrix: ${v%%} (empty)",
+      "script": "set +u; v=; echo \"[${v%%}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "8633f9823e056dca",
+      "name": "varop matrix: ${v%%} (foo)",
+      "script": "set +u; v=foo; echo \"[${v%%}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3cb1270765bb9977",
+      "name": "varop matrix: ${v%%} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v%%}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "fdf43c9cbed68636",
+      "name": "varop matrix: ${v#f*} (foofoo)",
+      "script": "set +u; v=foofoo; echo \"[${v#f*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "fc2c01ac980b87ee",
+      "name": "varop matrix: ${v##f*} (foofoo)",
+      "script": "set +u; v=foofoo; echo \"[${v##f*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a9be89ac6534a241",
+      "name": "varop matrix: ${v#foo*} (foofoo)",
+      "script": "set +u; v=foofoo; echo \"[${v#foo*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f565d373ff2da9b3",
+      "name": "varop matrix: ${v##foo*} (foofoo)",
+      "script": "set +u; v=foofoo; echo \"[${v##foo*}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c20e188cc78504bc",
+      "name": "varop matrix: ${v%*o} (foofoo)",
+      "script": "set +u; v=foofoo; echo \"[${v%*o}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "8672db2368491e0c",
+      "name": "varop matrix: ${v%%*o} (foofoo)",
+      "script": "set +u; v=foofoo; echo \"[${v%%*o}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "4f892e317b3d17ff",
+      "name": "varop matrix: ${v%*foo} (foofoo)",
+      "script": "set +u; v=foofoo; echo \"[${v%*foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "dac343f001a55509",
+      "name": "varop matrix: ${v%%*foo} (foofoo)",
+      "script": "set +u; v=foofoo; echo \"[${v%%*foo}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "1bd22f65afb31156",
+      "name": "varop matrix: ${v/o/X} (unset)",
+      "script": "set +u; unset v; echo \"[${v/o/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f712fdd5938fc1c7",
+      "name": "varop matrix: ${v/o/X} (empty)",
+      "script": "set +u; v=; echo \"[${v/o/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "09a90cf48833b483",
+      "name": "varop matrix: ${v/o/X} (foo)",
+      "script": "set +u; v=foo; echo \"[${v/o/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "3df9b0b451a367f3",
+      "name": "varop matrix: ${v/o/X} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v/o/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "8bbd1bcacc386d53",
+      "name": "varop matrix: ${v/o/} (unset)",
+      "script": "set +u; unset v; echo \"[${v/o/}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "e763d78ac6ae5706",
+      "name": "varop matrix: ${v/o/} (empty)",
+      "script": "set +u; v=; echo \"[${v/o/}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9b07c111c2c05c64",
+      "name": "varop matrix: ${v/o/} (foo)",
+      "script": "set +u; v=foo; echo \"[${v/o/}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "242e7ee84a4bbfed",
+      "name": "varop matrix: ${v/o/} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v/o/}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "0da2dcc84d5d3cc4",
+      "name": "varop matrix: ${v/foo/X} (unset)",
+      "script": "set +u; unset v; echo \"[${v/foo/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "25d508183918c3af",
+      "name": "varop matrix: ${v/foo/X} (empty)",
+      "script": "set +u; v=; echo \"[${v/foo/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "dce20fadcfa98d9d",
+      "name": "varop matrix: ${v/foo/X} (foo)",
+      "script": "set +u; v=foo; echo \"[${v/foo/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "6afeb9e958bf3a75",
+      "name": "varop matrix: ${v/foo/X} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v/foo/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c14686ec25540567",
+      "name": "varop matrix: ${v/bar/X} (unset)",
+      "script": "set +u; unset v; echo \"[${v/bar/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "7db1dd2908f62e36",
+      "name": "varop matrix: ${v/bar/X} (empty)",
+      "script": "set +u; v=; echo \"[${v/bar/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "66edbcf0a2afe5ae",
+      "name": "varop matrix: ${v/bar/X} (foo)",
+      "script": "set +u; v=foo; echo \"[${v/bar/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "1cd93358f73bd034",
+      "name": "varop matrix: ${v/bar/X} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v/bar/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f25c8482fa6bba17",
+      "name": "varop matrix: ${v//o/X} (unset)",
+      "script": "set +u; unset v; echo \"[${v//o/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "85ce062c6905af8b",
+      "name": "varop matrix: ${v//o/X} (empty)",
+      "script": "set +u; v=; echo \"[${v//o/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "a47d5c2d18ba000c",
+      "name": "varop matrix: ${v//o/X} (foo)",
+      "script": "set +u; v=foo; echo \"[${v//o/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "161832266f47db6b",
+      "name": "varop matrix: ${v//o/X} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v//o/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "41cf642d7764f0dd",
+      "name": "varop matrix: ${v//o/} (unset)",
+      "script": "set +u; unset v; echo \"[${v//o/}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "21008468d8f6e610",
+      "name": "varop matrix: ${v//o/} (empty)",
+      "script": "set +u; v=; echo \"[${v//o/}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "10040d958c0c6d84",
+      "name": "varop matrix: ${v//o/} (foo)",
+      "script": "set +u; v=foo; echo \"[${v//o/}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "ef7ff9c5247aa96e",
+      "name": "varop matrix: ${v//o/} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v//o/}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f04ff74cd37ac1b7",
+      "name": "varop matrix: ${v//foo/X} (unset)",
+      "script": "set +u; unset v; echo \"[${v//foo/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "394e2baacc9ffa31",
+      "name": "varop matrix: ${v//foo/X} (empty)",
+      "script": "set +u; v=; echo \"[${v//foo/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "87b0bdaa5dd987f2",
+      "name": "varop matrix: ${v//foo/X} (foo)",
+      "script": "set +u; v=foo; echo \"[${v//foo/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "da50a048c1f8b6f6",
+      "name": "varop matrix: ${v//foo/X} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v//foo/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "adc97f11c76318c4",
+      "name": "varop matrix: ${v//bar/X} (unset)",
+      "script": "set +u; unset v; echo \"[${v//bar/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "7ed0ed0e08486ee0",
+      "name": "varop matrix: ${v//bar/X} (empty)",
+      "script": "set +u; v=; echo \"[${v//bar/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "1a7111b5a8c48fc1",
+      "name": "varop matrix: ${v//bar/X} (foo)",
+      "script": "set +u; v=foo; echo \"[${v//bar/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "621bfe00424f9b12",
+      "name": "varop matrix: ${v//bar/X} (foobar)",
+      "script": "set +u; v=foobar; echo \"[${v//bar/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "f4eabe602394edc8",
+      "name": "varop matrix: ${v/foo/X} (foofoo)",
+      "script": "set +u; v=foofoo; echo \"[${v/foo/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "868ea60f372c7085",
+      "name": "varop matrix: ${v//foo/X} (foofoo)",
+      "script": "set +u; v=foofoo; echo \"[${v//foo/X}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "0c85894fe0b55ba1",
+      "name": "varop matrix: ${v/} (foo)",
+      "script": "set +u; v=foo; echo \"[${v/}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "16437e278cd1e4ef",
+      "name": "varop matrix: ${v//} (foo)",
+      "script": "set +u; v=foo; echo \"[${v//}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "c6c1d89eb92a54c1",
+      "name": "varop matrix: ${v/o} (foo)",
+      "script": "set +u; v=foo; echo \"[${v/o}]\"; echo rc=$?"
+    },
+    {
+      "content_hash": "9b2b75af31a88627",
+      "name": "varop matrix: ${v//o} (foo)",
+      "script": "set +u; v=foo; echo \"[${v//o}]\"; echo rc=$?"
+    }
+  ],
+  "suite": "varop_matrix"
+}
