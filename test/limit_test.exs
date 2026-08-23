@@ -216,6 +216,19 @@ defmodule JustBash.LimitTest do
       {result, _bash} = JustBash.exec(bash, ~s(echo "hello" > /tmp/small.txt))
       assert result.exit_code == 0
     end
+
+    test "> /dev/./null skips the file-size cap" do
+      bash = JustBash.new(limits: [max_file_bytes: 10])
+      big = String.duplicate("x", 100)
+      {result, bash} = JustBash.exec(bash, ~s(echo -n "#{big}" > /dev/./null))
+
+      assert result.exit_code == 0
+      assert result.stdout == ""
+      assert result.stderr == ""
+
+      {cat, _} = JustBash.exec(bash, "cat /dev/null")
+      assert cat.stdout == ""
+    end
   end
 
   describe "value size limit" do

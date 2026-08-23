@@ -50,12 +50,25 @@ defmodule JustBash.FS.Special do
   def children(@dev), do: ["null"]
   def children(_path), do: []
 
+  @doc """
+  Merge special children into a backend listing.
+
+  Only paths that contribute children (`/` and `/dev`) are uniq-sorted.
+  Every other directory returns `entries` in the backend's order, so
+  `ls` of an unrelated path is not a drive-by sort.
+  """
   @spec merge_children(String.t(), [String.t()]) :: [String.t()]
   def merge_children(path, entries) do
-    entries
-    |> Enum.concat(children(path))
-    |> Enum.uniq()
-    |> Enum.sort()
+    case children(path) do
+      [] ->
+        entries
+
+      extra ->
+        entries
+        |> Enum.concat(extra)
+        |> Enum.uniq()
+        |> Enum.sort()
+    end
   end
 
   @spec read_file(term(), kind(), String.t()) :: {:ok, binary(), term()} | {:error, Error.t()}

@@ -14,17 +14,11 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   alias JustBash.AST
   alias JustBash.FS
+  alias JustBash.FS.Special
   alias JustBash.Interpreter.Expansion
   alias JustBash.Limit
 
   @type result :: %{stdout: String.t(), stderr: String.t(), exit_code: non_neg_integer()}
-
-  # The one path the shell discards on the write side instead of opening in
-  # the filesystem. The read side (`< /dev/null`) and every command operand
-  # go through `JustBash.FS`, which services the same path as a special file.
-  # Both layers have to name the same set: `> /dev/null` discards, so
-  # `< /dev/null` and `cat /dev/null` read empty.
-  @null_device "/dev/null"
 
   @typedoc """
   A redirection whose target has already been expanded, resolved, and opened
@@ -65,8 +59,9 @@ defmodule JustBash.Interpreter.Executor.Redirection do
 
   Opening follows the `open/2` flags bash uses: `>`, `2>` and `&>` create or
   truncate (`O_CREAT | O_TRUNC`), `>>` and `&>>` create only if missing
-  (`O_CREAT | O_APPEND`). Redirections that touch no file — `/dev/null`,
-  `>&`, `<` — are classified and passed through untouched.
+  (`O_CREAT | O_APPEND`). Redirections that touch no file — the
+  special-file table's null device (`/dev/null`, `/dev/./null`), `>&`,
+  `<` — are classified and passed through untouched.
 
   Targets to the left of a failing one are still created or truncated, and
   targets to its right are never expanded, so a command substitution in one
@@ -127,8 +122,8 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     %AST.Redirection{fd: fd, operator: operator, target: target} = redirection
 
     target_path = Expansion.expand_redirect_target(bash, target)
-    redir_type = classify_redirection(fd, operator, target_path)
     resolved = FS.resolve_path(bash.cwd, target_path)
+    redir_type = classify_redirection(fd, operator, target_path, resolved)
 
     case open_target(bash, redir_type, target_path, resolved) do
       {:ok, bash} ->
@@ -231,25 +226,46 @@ defmodule JustBash.Interpreter.Executor.Redirection do
     end
   end
 
-  @spec classify_redirection(non_neg_integer(), atom(), String.t()) :: redir_type()
-  # Combined redirection &> must be checked before /dev/null catch-all
-  defp classify_redirection(_fd, :"&>", @null_device), do: :combined_dev_null
-  defp classify_redirection(_fd, :"&>>", @null_device), do: :combined_dev_null
-  defp classify_redirection(_fd, :"&>", _target), do: :combined_write
-  defp classify_redirection(_fd, :"&>>", _target), do: :combined_append
-  defp classify_redirection(2, :>, @null_device), do: :stderr_dev_null
-  defp classify_redirection(2, :">>", @null_device), do: :stderr_dev_null
-  defp classify_redirection(_fd, _operator, @null_device), do: :stdout_dev_null
-  defp classify_redirection(2, :>, _target), do: :stderr_write
-  defp classify_redirection(2, :">>", _target), do: :stderr_append
-  defp classify_redirection(_fd, :>, _target), do: :stdout_write
-  defp classify_redirection(_fd, :">>", _target), do: :stdout_append
+  @spec classify_redirection(non_neg_integer() | nil, atom(), String.t(), FS.resolved()) ::
+          redir_type()
+  defp classify_redirection(fd, operator, target, resolved) do
+    if null_redirect?(target, resolved) do
+      classify_null_redirection(fd, operator)
+    else
+      classify_ordinary_redirection(fd, operator, target)
+    end
+  end
+
+  # Write redirects consult the special-file table after resolve/normalize,
+  # so `> /dev/./null` is the same node as `> /dev/null` and skips the
+  # file-size cap. A trailing slash is a directory assertion, not another
+  # spelling of the device — bash rejects `> /dev/null/` — so those stay
+  # on the ordinary open path.
+  defp null_redirect?(target, resolved) when is_binary(resolved) do
+    Special.null?(resolved) and not FS.directory_spelling?(target)
+  end
+
+  defp null_redirect?(_target, _resolved), do: false
+
+  defp classify_null_redirection(_fd, :"&>"), do: :combined_dev_null
+  defp classify_null_redirection(_fd, :"&>>"), do: :combined_dev_null
+  defp classify_null_redirection(2, :>), do: :stderr_dev_null
+  defp classify_null_redirection(2, :">>"), do: :stderr_dev_null
+  defp classify_null_redirection(_fd, _operator), do: :stdout_dev_null
+
+  # Combined redirection &> must be checked before the fd-2 write clauses.
+  defp classify_ordinary_redirection(_fd, :"&>", _target), do: :combined_write
+  defp classify_ordinary_redirection(_fd, :"&>>", _target), do: :combined_append
+  defp classify_ordinary_redirection(2, :>, _target), do: :stderr_write
+  defp classify_ordinary_redirection(2, :">>", _target), do: :stderr_append
+  defp classify_ordinary_redirection(_fd, :>, _target), do: :stdout_write
+  defp classify_ordinary_redirection(_fd, :">>", _target), do: :stdout_append
   # >&2 without explicit fd defaults to 1>&2 (stdout to stderr)
-  defp classify_redirection(fd, :">&", "2") when fd in [nil, 1], do: :stdout_to_stderr
-  defp classify_redirection(fd, :">&", "1") when fd in [nil, 2], do: :stderr_to_stdout
-  defp classify_redirection(_fd, :">&", "-"), do: :close_fd
-  defp classify_redirection(_fd, :<, _target), do: :stdin_read
-  defp classify_redirection(_fd, _operator, _target), do: :noop
+  defp classify_ordinary_redirection(fd, :">&", "2") when fd in [nil, 1], do: :stdout_to_stderr
+  defp classify_ordinary_redirection(fd, :">&", "1") when fd in [nil, 2], do: :stderr_to_stdout
+  defp classify_ordinary_redirection(_fd, :">&", "-"), do: :close_fd
+  defp classify_ordinary_redirection(_fd, :<, _target), do: :stdin_read
+  defp classify_ordinary_redirection(_fd, _operator, _target), do: :noop
 
   defp apply_classified_redirection(:stdout_dev_null, result, bash, _resolved) do
     {%{result | stdout: ""}, bash}

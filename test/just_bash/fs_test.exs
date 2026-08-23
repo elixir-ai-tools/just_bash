@@ -2,6 +2,8 @@ defmodule JustBash.FSTest do
   use ExUnit.Case, async: true
 
   alias JustBash.FS
+  alias JustBash.FS.Special
+  alias JustBash.Test.OrderedReaddirBackend
 
   describe "new/1" do
     test "creates filesystem with root directory" do
@@ -277,6 +279,21 @@ defmodule JustBash.FSTest do
       {:ok, entries, _fs} = FS.readdir(fs, "/")
       assert "file.txt" in entries
       assert "dir" in entries
+    end
+
+    test "does not sort a directory that has no special children" do
+      # The backend yields a Stream so VFS does not sort the listing first.
+      fs =
+        VFS.new()
+        |> VFS.mount("/data", %OrderedReaddirBackend{entries: ["z", "a", "m"]})
+
+      assert {:ok, ["z", "a", "m"], _fs} = FS.readdir(fs, "/data")
+    end
+
+    test "still uniq-sorts root after merging special children" do
+      fs = VFS.new() |> VFS.mount("/", %OrderedReaddirBackend{entries: ["z", "a"]})
+
+      assert {:ok, ["a", "dev", "z"], _fs} = FS.readdir(fs, "/")
     end
   end
 
@@ -837,6 +854,15 @@ defmodule JustBash.FSTest do
       fs = FS.new()
       {:ok, entries, _fs} = FS.readdir(fs, "/")
       assert "dev" in Enum.to_list(entries)
+    end
+
+    test "merge_children preserves backend order when a path has no special children" do
+      assert Special.merge_children("/dir", ["z", "a", "m"]) == ["z", "a", "m"]
+    end
+
+    test "merge_children uniq-sorts only directories that contribute children" do
+      assert Special.merge_children("/", ["z", "a"]) == ["a", "dev", "z"]
+      assert Special.merge_children("/dev", ["foo"]) == ["foo", "null"]
     end
 
     test "cp from /dev/null writes an empty destination" do
