@@ -1,0 +1,1293 @@
+{
+  "results": [
+    {
+      "content_hash": "8c29f946339dab87",
+      "exit_code": 0,
+      "name": "flags matrix: . --jb-not-a-flag",
+      "stderr": "bash: line 1: .: --: invalid option\n.: usage: . filename [arguments]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "9fdbbb9735809581",
+      "exit_code": 0,
+      "name": "flags matrix: . -Z",
+      "stderr": "bash: line 1: .: -Z: invalid option\n.: usage: . filename [arguments]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "b244dcddf9c07964",
+      "exit_code": 0,
+      "name": "flags matrix: : --jb-not-a-flag",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "8a21c7a9e82d063a",
+      "exit_code": 0,
+      "name": "flags matrix: : -Z",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "cce910e2b4329ff4",
+      "exit_code": 0,
+      "name": "flags matrix: [ --jb-not-a-flag",
+      "stderr": "bash: line 1: [: missing `]'\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "f9a5bab5cbe88382",
+      "exit_code": 0,
+      "name": "flags matrix: [ -Z",
+      "stderr": "bash: line 1: [: missing `]'\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "6522ab3a9bb3e4f7",
+      "exit_code": 0,
+      "name": "flags matrix: arch --jb-not-a-flag",
+      "stderr": "arch: unrecognized option '--jb-not-a-flag'\nTry 'arch --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "dc267e4c075a8ead",
+      "exit_code": 0,
+      "name": "flags matrix: arch -Z",
+      "stderr": "arch: invalid option -- 'Z'\nTry 'arch --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "9720e773eb1af481",
+      "exit_code": 0,
+      "name": "flags matrix: awk --jb-not-a-flag",
+      "stderr": "awk: not an option: --jb-not-a-flag\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "8cbda97754e29556",
+      "exit_code": 0,
+      "name": "flags matrix: awk -Z",
+      "stderr": "awk: not an option: -Z\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "0a2aeaa49ea11402",
+      "exit_code": 0,
+      "name": "flags matrix: base64 --jb-not-a-flag",
+      "stderr": "base64: unrecognized option '--jb-not-a-flag'\nTry 'base64 --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "ee596a90b2cdfae3",
+      "exit_code": 0,
+      "name": "flags matrix: base64 -Z",
+      "stderr": "base64: invalid option -- 'Z'\nTry 'base64 --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f80afcdc01efa68a",
+      "exit_code": 0,
+      "name": "flags matrix: basename --jb-not-a-flag",
+      "stderr": "basename: unrecognized option '--jb-not-a-flag'\nTry 'basename --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6c9a94316f6c7a5c",
+      "exit_code": 0,
+      "name": "flags matrix: basename -Z",
+      "stderr": "basename: invalid option -- 'Z'\nTry 'basename --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8d61057f74c9766e",
+      "exit_code": 0,
+      "name": "flags matrix: break --jb-not-a-flag",
+      "stderr": "bash: line 1: break: only meaningful in a `for', `while', or `until' loop\n",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "9bf2712cfeb3d99b",
+      "exit_code": 0,
+      "name": "flags matrix: break -Z",
+      "stderr": "bash: line 1: break: only meaningful in a `for', `while', or `until' loop\n",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "8d27f8303d34d25e",
+      "exit_code": 0,
+      "name": "flags matrix: cat --jb-not-a-flag",
+      "stderr": "cat: unrecognized option '--jb-not-a-flag'\nTry 'cat --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "931c42f37877e610",
+      "exit_code": 0,
+      "name": "flags matrix: cat -Z",
+      "stderr": "cat: invalid option -- 'Z'\nTry 'cat --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "c806f5e88bb30f72",
+      "exit_code": 0,
+      "name": "flags matrix: cd --jb-not-a-flag",
+      "stderr": "bash: line 1: cd: --: invalid option\ncd: usage: cd [-L|[-P [-e]] [-@]] [dir]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "ee52d1333815317d",
+      "exit_code": 0,
+      "name": "flags matrix: cd -Z",
+      "stderr": "bash: line 1: cd: -Z: invalid option\ncd: usage: cd [-L|[-P [-e]] [-@]] [dir]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "806d3235adf3eda2",
+      "exit_code": 0,
+      "name": "flags matrix: chmod --jb-not-a-flag",
+      "stderr": "chmod: unrecognized option '--jb-not-a-flag'\nTry 'chmod --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "c3f4fa910fef9181",
+      "exit_code": 0,
+      "name": "flags matrix: chmod -Z",
+      "stderr": "chmod: invalid option -- 'Z'\nTry 'chmod --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "62c4ed52201d44ea",
+      "exit_code": 0,
+      "name": "flags matrix: chown --jb-not-a-flag",
+      "stderr": "chown: unrecognized option '--jb-not-a-flag'\nTry 'chown --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "1342dcd3648926a5",
+      "exit_code": 0,
+      "name": "flags matrix: chown -Z",
+      "stderr": "chown: invalid option -- 'Z'\nTry 'chown --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "ff97de54b8215960",
+      "exit_code": 0,
+      "name": "flags matrix: comm --jb-not-a-flag",
+      "stderr": "comm: unrecognized option '--jb-not-a-flag'\nTry 'comm --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8eb95ad97877a6e4",
+      "exit_code": 0,
+      "name": "flags matrix: comm -Z",
+      "stderr": "comm: invalid option -- 'Z'\nTry 'comm --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a1d0bacd29760673",
+      "exit_code": 0,
+      "name": "flags matrix: command --jb-not-a-flag",
+      "stderr": "bash: line 1: command: --: invalid option\ncommand: usage: command [-pVv] command [arg ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "712dde023c924136",
+      "exit_code": 0,
+      "name": "flags matrix: command -Z",
+      "stderr": "bash: line 1: command: -Z: invalid option\ncommand: usage: command [-pVv] command [arg ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "c359b9389fff025a",
+      "exit_code": 0,
+      "name": "flags matrix: continue --jb-not-a-flag",
+      "stderr": "bash: line 1: continue: only meaningful in a `for', `while', or `until' loop\n",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "55c777dd61a929b8",
+      "exit_code": 0,
+      "name": "flags matrix: continue -Z",
+      "stderr": "bash: line 1: continue: only meaningful in a `for', `while', or `until' loop\n",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "d75034e2b4d1850a",
+      "exit_code": 0,
+      "name": "flags matrix: cp --jb-not-a-flag",
+      "stderr": "cp: unrecognized option '--jb-not-a-flag'\nTry 'cp --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "36a451b7c9afcd8c",
+      "exit_code": 0,
+      "name": "flags matrix: cp -Z",
+      "stderr": "cp: missing file operand\nTry 'cp --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8264c85f8ffcd1fe",
+      "exit_code": 0,
+      "name": "flags matrix: curl --jb-not-a-flag",
+      "stderr": "curl: option --jb-not-a-flag: is unknown\ncurl: try 'curl --help' or 'curl --manual' for more information\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "7e3ea378d76be00b",
+      "exit_code": 0,
+      "name": "flags matrix: curl -Z",
+      "stderr": "curl: (2) no URL specified\ncurl: try 'curl --help' or 'curl --manual' for more information\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "48c81c23948cfdb1",
+      "exit_code": 0,
+      "name": "flags matrix: cut --jb-not-a-flag",
+      "stderr": "cut: unrecognized option '--jb-not-a-flag'\nTry 'cut --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6bb3b13f1114f84e",
+      "exit_code": 0,
+      "name": "flags matrix: cut -Z",
+      "stderr": "cut: invalid option -- 'Z'\nTry 'cut --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f0c09a8a8ecf5c75",
+      "exit_code": 0,
+      "name": "flags matrix: date --jb-not-a-flag",
+      "stderr": "date: unrecognized option '--jb-not-a-flag'\nTry 'date --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "eda7c90ef168cd79",
+      "exit_code": 0,
+      "name": "flags matrix: date -Z",
+      "stderr": "date: invalid option -- 'Z'\nTry 'date --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "c4592335e027ec93",
+      "exit_code": 0,
+      "name": "flags matrix: declare --jb-not-a-flag",
+      "stderr": "bash: line 1: declare: --: invalid option\ndeclare: usage: declare [-aAfFgiIlnrtux] [name[=value] ...] or declare -p [-aAfFilnrtux] [name ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "aac8829e8e9a69ed",
+      "exit_code": 0,
+      "name": "flags matrix: declare -Z",
+      "stderr": "bash: line 1: declare: -Z: invalid option\ndeclare: usage: declare [-aAfFgiIlnrtux] [name[=value] ...] or declare -p [-aAfFilnrtux] [name ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "f83f1e80925ccf29",
+      "exit_code": 0,
+      "name": "flags matrix: diff --jb-not-a-flag",
+      "stderr": "diff: unrecognized option '--jb-not-a-flag'\ndiff: Try 'diff --help' for more information.\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "2273846e7228cf54",
+      "exit_code": 0,
+      "name": "flags matrix: diff -Z",
+      "stderr": "diff: missing operand after '-Z'\ndiff: Try 'diff --help' for more information.\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "0d2dcd2254bfef14",
+      "exit_code": 0,
+      "name": "flags matrix: dirname --jb-not-a-flag",
+      "stderr": "dirname: unrecognized option '--jb-not-a-flag'\nTry 'dirname --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "7fb21f0c98a15979",
+      "exit_code": 0,
+      "name": "flags matrix: dirname -Z",
+      "stderr": "dirname: invalid option -- 'Z'\nTry 'dirname --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "4e3c5ec077432534",
+      "exit_code": 0,
+      "name": "flags matrix: du --jb-not-a-flag",
+      "stderr": "du: unrecognized option '--jb-not-a-flag'\nTry 'du --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "dda5c66630e4a6cb",
+      "exit_code": 0,
+      "name": "flags matrix: du -Z",
+      "stderr": "du: invalid option -- 'Z'\nTry 'du --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "738a5a1db2895671",
+      "exit_code": 0,
+      "name": "flags matrix: echo --jb-not-a-flag",
+      "stderr": "",
+      "stdout": "--jb-not-a-flag\nrc=0\n"
+    },
+    {
+      "content_hash": "b3667c189b932d38",
+      "exit_code": 0,
+      "name": "flags matrix: echo -Z",
+      "stderr": "",
+      "stdout": "-Z\nrc=0\n"
+    },
+    {
+      "content_hash": "86cf314e0ebbccd8",
+      "exit_code": 0,
+      "name": "flags matrix: env --jb-not-a-flag",
+      "stderr": "env: unrecognized option '--jb-not-a-flag'\nTry 'env --help' for more information.\n",
+      "stdout": "rc=125\n"
+    },
+    {
+      "content_hash": "87c049a58961ec1d",
+      "exit_code": 0,
+      "name": "flags matrix: env -Z",
+      "stderr": "env: invalid option -- 'Z'\nTry 'env --help' for more information.\n",
+      "stdout": "rc=125\n"
+    },
+    {
+      "content_hash": "99dc084feeb41578",
+      "exit_code": 0,
+      "name": "flags matrix: eval --jb-not-a-flag",
+      "stderr": "bash: line 1: eval: --: invalid option\neval: usage: eval [arg ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "0c346639ee4c367f",
+      "exit_code": 0,
+      "name": "flags matrix: eval -Z",
+      "stderr": "bash: line 1: eval: -Z: invalid option\neval: usage: eval [arg ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "9b30adf19c2828b7",
+      "exit_code": 2,
+      "name": "flags matrix: exit --jb-not-a-flag",
+      "stderr": "bash: line 1: exit: --jb-not-a-flag: numeric argument required\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "aaa7cd9a1b722675",
+      "exit_code": 2,
+      "name": "flags matrix: exit -Z",
+      "stderr": "bash: line 1: exit: -Z: numeric argument required\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "3c2f567b5d0e67c0",
+      "exit_code": 0,
+      "name": "flags matrix: expand --jb-not-a-flag",
+      "stderr": "expand: unrecognized option '--jb-not-a-flag'\nTry 'expand --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "80d65f205aba6eb5",
+      "exit_code": 0,
+      "name": "flags matrix: expand -Z",
+      "stderr": "expand: invalid option -- 'Z'\nTry 'expand --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8ab517d142f2a34d",
+      "exit_code": 0,
+      "name": "flags matrix: export --jb-not-a-flag",
+      "stderr": "bash: line 1: export: --: invalid option\nexport: usage: export [-fn] [name[=value] ...] or export -p\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "0c525111b96fb065",
+      "exit_code": 0,
+      "name": "flags matrix: export -Z",
+      "stderr": "bash: line 1: export: -Z: invalid option\nexport: usage: export [-fn] [name[=value] ...] or export -p\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "f08a76e769f7b68b",
+      "exit_code": 0,
+      "name": "flags matrix: false --jb-not-a-flag",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "d1660d75ad465ad1",
+      "exit_code": 0,
+      "name": "flags matrix: false -Z",
+      "stderr": "",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "0786015a70def26a",
+      "exit_code": 0,
+      "name": "flags matrix: file --jb-not-a-flag",
+      "stderr": "file: unrecognized option '--jb-not-a-flag'\nUsage: file [-bcCdEhikLlNnprsSvzZ0] [--apple] [--extension] [--mime-encoding]\n            [--mime-type] [-e <testname>] [-F <separator>]  [-f <namefile>]\n            [-m <magicfiles>] [-P <parameter=value>] [--exclude-quiet]\n            <file> ...\n       file -C [-m <magicfiles>]\n       file [--help]\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "d39b6c6db0fc870d",
+      "exit_code": 0,
+      "name": "flags matrix: file -Z",
+      "stderr": "Usage: file [-bcCdEhikLlNnprsSvzZ0] [--apple] [--extension] [--mime-encoding]\n            [--mime-type] [-e <testname>] [-F <separator>]  [-f <namefile>]\n            [-m <magicfiles>] [-P <parameter=value>] [--exclude-quiet]\n            <file> ...\n       file -C [-m <magicfiles>]\n       file [--help]\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "91dda89cf619b042",
+      "exit_code": 0,
+      "name": "flags matrix: find --jb-not-a-flag",
+      "stderr": "find: unknown predicate `--jb-not-a-flag'\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f7bb635ba111a5a7",
+      "exit_code": 0,
+      "name": "flags matrix: find -Z",
+      "stderr": "find: unknown predicate `-Z'\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "ab40733a4468a002",
+      "exit_code": 0,
+      "name": "flags matrix: fold --jb-not-a-flag",
+      "stderr": "fold: unrecognized option '--jb-not-a-flag'\nTry 'fold --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "4f59f1858e7a4b38",
+      "exit_code": 0,
+      "name": "flags matrix: fold -Z",
+      "stderr": "fold: invalid option -- 'Z'\nTry 'fold --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "5d56181846eea17e",
+      "exit_code": 0,
+      "name": "flags matrix: getopts --jb-not-a-flag",
+      "stderr": "bash: line 1: getopts: --: invalid option\ngetopts: usage: getopts optstring name [arg ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "64c0dec6297fe61a",
+      "exit_code": 0,
+      "name": "flags matrix: getopts -Z",
+      "stderr": "bash: line 1: getopts: -Z: invalid option\ngetopts: usage: getopts optstring name [arg ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "a05fcb2b267719c2",
+      "exit_code": 0,
+      "name": "flags matrix: grep --jb-not-a-flag",
+      "stderr": "grep: unrecognized option '--jb-not-a-flag'\nUsage: grep [OPTION]... PATTERNS [FILE]...\nTry 'grep --help' for more information.\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "f6424691562fe7a0",
+      "exit_code": 0,
+      "name": "flags matrix: grep -Z",
+      "stderr": "Usage: grep [OPTION]... PATTERNS [FILE]...\nTry 'grep --help' for more information.\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "3cb1edf1663242a3",
+      "exit_code": 0,
+      "name": "flags matrix: head --jb-not-a-flag",
+      "stderr": "head: unrecognized option '--jb-not-a-flag'\nTry 'head --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "2d384ed256882204",
+      "exit_code": 0,
+      "name": "flags matrix: head -Z",
+      "stderr": "head: invalid option -- 'Z'\nTry 'head --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e57d10a3e345416a",
+      "exit_code": 0,
+      "name": "flags matrix: hostname --jb-not-a-flag",
+      "stderr": "hostname: unrecognized option '--jb-not-a-flag'\n",
+      "stdout": "Usage: hostname [-b] {hostname|-F file}         set host name (from file)\n       hostname [-a|-A|-d|-f|-i|-I|-s|-y]       display formatted name\n       hostname                                 display host name\n\n       {yp,nis,}domainname {nisdomain|-F file}  set NIS domain name (from file)\n       {yp,nis,}domainname                      display NIS domain name\n\n       dnsdomainname                            display dns domain name\n\n       hostname -V|--version|-h|--help          print info and exit\n\nProgram name:\n       {yp,nis,}domainname=hostname -y\n       dnsdomainname=hostname -d\n\nProgram options:\n    -a, --alias            alias names\n    -A, --all-fqdns        all long host names (FQDNs)\n    -b, --boot             set default hostname if none available\n    -d, --domain           DNS domain name\n    -f, --fqdn, --long     long host name (FQDN)\n    -F, --file             read host name or NIS domain name from given file\n    -i, --ip-address       addresses for the host name\n    -I, --all-ip-addresses all addresses for the host\n    -s, --short            short host name\n    -y, --yp, --nis        NIS/YP domain name\n\nDescription:\n   This command can get or set the host name or the NIS domain name. You can\n   also get the DNS domain or the FQDN (fully qualified domain name).\n   Unless you are using bind or NIS for host lookups you can change the\n   FQDN (Fully Qualified Domain Name) and the DNS domain name (which is\n   part of the FQDN) in the /etc/hosts file.\nrc=255\n"
+    },
+    {
+      "content_hash": "bc6dff95de1e8a2e",
+      "exit_code": 0,
+      "name": "flags matrix: hostname -Z",
+      "stderr": "hostname: invalid option -- 'Z'\n",
+      "stdout": "Usage: hostname [-b] {hostname|-F file}         set host name (from file)\n       hostname [-a|-A|-d|-f|-i|-I|-s|-y]       display formatted name\n       hostname                                 display host name\n\n       {yp,nis,}domainname {nisdomain|-F file}  set NIS domain name (from file)\n       {yp,nis,}domainname                      display NIS domain name\n\n       dnsdomainname                            display dns domain name\n\n       hostname -V|--version|-h|--help          print info and exit\n\nProgram name:\n       {yp,nis,}domainname=hostname -y\n       dnsdomainname=hostname -d\n\nProgram options:\n    -a, --alias            alias names\n    -A, --all-fqdns        all long host names (FQDNs)\n    -b, --boot             set default hostname if none available\n    -d, --domain           DNS domain name\n    -f, --fqdn, --long     long host name (FQDN)\n    -F, --file             read host name or NIS domain name from given file\n    -i, --ip-address       addresses for the host name\n    -I, --all-ip-addresses all addresses for the host\n    -s, --short            short host name\n    -y, --yp, --nis        NIS/YP domain name\n\nDescription:\n   This command can get or set the host name or the NIS domain name. You can\n   also get the DNS domain or the FQDN (fully qualified domain name).\n   Unless you are using bind or NIS for host lookups you can change the\n   FQDN (Fully Qualified Domain Name) and the DNS domain name (which is\n   part of the FQDN) in the /etc/hosts file.\nrc=255\n"
+    },
+    {
+      "content_hash": "f244bbf3ded46b33",
+      "exit_code": 0,
+      "name": "flags matrix: id --jb-not-a-flag",
+      "stderr": "id: unrecognized option '--jb-not-a-flag'\nTry 'id --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "00fbac6c1dd2a6b3",
+      "exit_code": 0,
+      "name": "flags matrix: id -Z",
+      "stderr": "id: --context (-Z) works only on an SELinux-enabled kernel\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "58bce440850c781d",
+      "exit_code": 0,
+      "name": "flags matrix: jq --jb-not-a-flag",
+      "stderr": "jq: Unknown option --jb-not-a-flag\nUse jq --help for help with command-line options,\nor see the jq manpage, or online docs  at https://jqlang.github.io/jq\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "c5d1fd47ba075dc3",
+      "exit_code": 0,
+      "name": "flags matrix: jq -Z",
+      "stderr": "jq: Unknown option -Z\nUse jq --help for help with command-line options,\nor see the jq manpage, or online docs  at https://jqlang.github.io/jq\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "99c75f5418539766",
+      "exit_code": 0,
+      "name": "flags matrix: ln --jb-not-a-flag",
+      "stderr": "ln: unrecognized option '--jb-not-a-flag'\nTry 'ln --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "28d0cbe45a1d5c93",
+      "exit_code": 0,
+      "name": "flags matrix: ln -Z",
+      "stderr": "ln: invalid option -- 'Z'\nTry 'ln --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "222b698d1b8688a4",
+      "exit_code": 0,
+      "name": "flags matrix: local --jb-not-a-flag",
+      "stderr": "bash: line 1: local: can only be used in a function\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "c33f71709cb52044",
+      "exit_code": 0,
+      "name": "flags matrix: local -Z",
+      "stderr": "bash: line 1: local: can only be used in a function\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8f70e712ea44d0ad",
+      "exit_code": 0,
+      "name": "flags matrix: ls --jb-not-a-flag",
+      "stderr": "ls: unrecognized option '--jb-not-a-flag'\nTry 'ls --help' for more information.\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "9de0b59f0522db84",
+      "exit_code": 0,
+      "name": "flags matrix: ls -Z",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "77d2b5962f2cc2ba",
+      "exit_code": 0,
+      "name": "flags matrix: markdown --jb-not-a-flag",
+      "stderr": "bash: line 1: markdown: command not found\n",
+      "stdout": "rc=127\n"
+    },
+    {
+      "content_hash": "710190a48ded9de9",
+      "exit_code": 0,
+      "name": "flags matrix: markdown -Z",
+      "stderr": "bash: line 1: markdown: command not found\n",
+      "stdout": "rc=127\n"
+    },
+    {
+      "content_hash": "daa408d95ab87f8f",
+      "exit_code": 0,
+      "name": "flags matrix: md --jb-not-a-flag",
+      "stderr": "bash: line 1: md: command not found\n",
+      "stdout": "rc=127\n"
+    },
+    {
+      "content_hash": "a753e9fea918ee8f",
+      "exit_code": 0,
+      "name": "flags matrix: md -Z",
+      "stderr": "bash: line 1: md: command not found\n",
+      "stdout": "rc=127\n"
+    },
+    {
+      "content_hash": "2e2b716439071ea6",
+      "exit_code": 0,
+      "name": "flags matrix: md5sum --jb-not-a-flag",
+      "stderr": "md5sum: unrecognized option '--jb-not-a-flag'\nTry 'md5sum --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8b85ad48b8a6e5c7",
+      "exit_code": 0,
+      "name": "flags matrix: md5sum -Z",
+      "stderr": "md5sum: invalid option -- 'Z'\nTry 'md5sum --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "04378694958b9c75",
+      "exit_code": 0,
+      "name": "flags matrix: mkdir --jb-not-a-flag",
+      "stderr": "mkdir: unrecognized option '--jb-not-a-flag'\nTry 'mkdir --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e110a6668cd5da54",
+      "exit_code": 0,
+      "name": "flags matrix: mkdir -Z",
+      "stderr": "mkdir: missing operand\nTry 'mkdir --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "69c70479f4c18e85",
+      "exit_code": 0,
+      "name": "flags matrix: mktemp --jb-not-a-flag",
+      "stderr": "mktemp: unrecognized option '--jb-not-a-flag'\nTry 'mktemp --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "d6524d789517e7e2",
+      "exit_code": 0,
+      "name": "flags matrix: mktemp -Z",
+      "stderr": "mktemp: invalid option -- 'Z'\nTry 'mktemp --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6eae29972d31ae11",
+      "exit_code": 0,
+      "name": "flags matrix: mv --jb-not-a-flag",
+      "stderr": "mv: unrecognized option '--jb-not-a-flag'\nTry 'mv --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "77b9e191488f731e",
+      "exit_code": 0,
+      "name": "flags matrix: mv -Z",
+      "stderr": "mv: missing file operand\nTry 'mv --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "dda020763eb774c8",
+      "exit_code": 0,
+      "name": "flags matrix: nl --jb-not-a-flag",
+      "stderr": "nl: unrecognized option '--jb-not-a-flag'\nTry 'nl --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "01e036b5867eb414",
+      "exit_code": 0,
+      "name": "flags matrix: nl -Z",
+      "stderr": "nl: invalid option -- 'Z'\nTry 'nl --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "22430f159dd9624e",
+      "exit_code": 0,
+      "name": "flags matrix: nproc --jb-not-a-flag",
+      "stderr": "nproc: unrecognized option '--jb-not-a-flag'\nTry 'nproc --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "705b9cdc2593fe38",
+      "exit_code": 0,
+      "name": "flags matrix: nproc -Z",
+      "stderr": "nproc: invalid option -- 'Z'\nTry 'nproc --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "5511a2a87fe6ecad",
+      "exit_code": 0,
+      "name": "flags matrix: od --jb-not-a-flag",
+      "stderr": "od: unrecognized option '--jb-not-a-flag'\nTry 'od --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "0d7dbac466fdef72",
+      "exit_code": 0,
+      "name": "flags matrix: od -Z",
+      "stderr": "od: invalid option -- 'Z'\nTry 'od --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a13d8bba35d1aaa3",
+      "exit_code": 0,
+      "name": "flags matrix: paste --jb-not-a-flag",
+      "stderr": "paste: unrecognized option '--jb-not-a-flag'\nTry 'paste --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "ec804b28970e480c",
+      "exit_code": 0,
+      "name": "flags matrix: paste -Z",
+      "stderr": "paste: invalid option -- 'Z'\nTry 'paste --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "4eefe94b27c89243",
+      "exit_code": 0,
+      "name": "flags matrix: printenv --jb-not-a-flag",
+      "stderr": "printenv: unrecognized option '--jb-not-a-flag'\nTry 'printenv --help' for more information.\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "198cb53efc7badd9",
+      "exit_code": 0,
+      "name": "flags matrix: printenv -Z",
+      "stderr": "printenv: invalid option -- 'Z'\nTry 'printenv --help' for more information.\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "5c580a682bc167e7",
+      "exit_code": 0,
+      "name": "flags matrix: printf --jb-not-a-flag",
+      "stderr": "bash: line 1: printf: --: invalid option\nprintf: usage: printf [-v var] format [arguments]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "ad6e556cbba16d20",
+      "exit_code": 0,
+      "name": "flags matrix: printf -Z",
+      "stderr": "bash: line 1: printf: -Z: invalid option\nprintf: usage: printf [-v var] format [arguments]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "0bed639817d884a1",
+      "exit_code": 0,
+      "name": "flags matrix: pwd --jb-not-a-flag",
+      "stderr": "bash: line 1: pwd: --: invalid option\npwd: usage: pwd [-LP]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "20684d4868679fa4",
+      "exit_code": 0,
+      "name": "flags matrix: pwd -Z",
+      "stderr": "bash: line 1: pwd: -Z: invalid option\npwd: usage: pwd [-LP]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "6b061c1881b52ba2",
+      "exit_code": 0,
+      "name": "flags matrix: read --jb-not-a-flag",
+      "stderr": "bash: line 1: read: --: invalid option\nread: usage: read [-ers] [-a array] [-d delim] [-i text] [-n nchars] [-N nchars] [-p prompt] [-t timeout] [-u fd] [name ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "12db787b6b0d1b65",
+      "exit_code": 0,
+      "name": "flags matrix: read -Z",
+      "stderr": "bash: line 1: read: -Z: invalid option\nread: usage: read [-ers] [-a array] [-d delim] [-i text] [-n nchars] [-N nchars] [-p prompt] [-t timeout] [-u fd] [name ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "2a974559bf470f17",
+      "exit_code": 0,
+      "name": "flags matrix: readlink --jb-not-a-flag",
+      "stderr": "readlink: unrecognized option '--jb-not-a-flag'\nTry 'readlink --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "acdf21f44a34c202",
+      "exit_code": 0,
+      "name": "flags matrix: readlink -Z",
+      "stderr": "readlink: invalid option -- 'Z'\nTry 'readlink --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "7a0e0149c351d39a",
+      "exit_code": 0,
+      "name": "flags matrix: realpath --jb-not-a-flag",
+      "stderr": "realpath: unrecognized option '--jb-not-a-flag'\nTry 'realpath --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "471ccaa47e71e625",
+      "exit_code": 0,
+      "name": "flags matrix: realpath -Z",
+      "stderr": "realpath: invalid option -- 'Z'\nTry 'realpath --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "54542de9851c2103",
+      "exit_code": 0,
+      "name": "flags matrix: return --jb-not-a-flag",
+      "stderr": "bash: line 1: return: --jb-not-a-flag: numeric argument required\nbash: line 1: return: can only `return' from a function or sourced script\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "582e5993a83624ca",
+      "exit_code": 0,
+      "name": "flags matrix: return -Z",
+      "stderr": "bash: line 1: return: -Z: numeric argument required\nbash: line 1: return: can only `return' from a function or sourced script\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "442ecfc430f3243b",
+      "exit_code": 0,
+      "name": "flags matrix: rev --jb-not-a-flag",
+      "stderr": "rev: unrecognized option '--jb-not-a-flag'\nTry 'rev --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "19bc9d32b17f3680",
+      "exit_code": 0,
+      "name": "flags matrix: rev -Z",
+      "stderr": "rev: invalid option -- 'Z'\nTry 'rev --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a19bee7a093e43d9",
+      "exit_code": 0,
+      "name": "flags matrix: rm --jb-not-a-flag",
+      "stderr": "rm: unrecognized option '--jb-not-a-flag'\nTry 'rm --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "ade74dfc89d89a8a",
+      "exit_code": 0,
+      "name": "flags matrix: rm -Z",
+      "stderr": "rm: invalid option -- 'Z'\nTry 'rm --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "c4d0b19d788f7dca",
+      "exit_code": 0,
+      "name": "flags matrix: sed --jb-not-a-flag",
+      "stderr": "sed: unrecognized option '--jb-not-a-flag'\nUsage: sed [OPTION]... {script-only-if-no-other-script} [input-file]...\n\n  -n, --quiet, --silent\n                 suppress automatic printing of pattern space\n      --debug\n                 annotate program execution\n  -e script, --expression=script\n                 add the script to the commands to be executed\n  -f script-file, --file=script-file\n                 add the contents of script-file to the commands to be executed\n  --follow-symlinks\n                 follow symlinks when processing in place\n  -i[SUFFIX], --in-place[=SUFFIX]\n                 edit files in place (makes backup if SUFFIX supplied)\n  -l N, --line-length=N\n                 specify the desired line-wrap length for the `l' command\n  --posix\n                 disable all GNU extensions.\n  -E, -r, --regexp-extended\n                 use extended regular expressions in the script\n                 (for portability use POSIX -E).\n  -s, --separate\n                 consider files as separate rather than as a single,\n                 continuous long stream.\n      --sandbox\n                 operate in sandbox mode (disable e/r/w commands).\n  -u, --unbuffered\n                 load minimal amounts of data from the input files and flush\n                 the output buffers more often\n  -z, --null-data\n                 separate lines by NUL characters\n      --help     display this help and exit\n      --version  output version information and exit\n\nIf no -e, --expression, -f, or --file option is given, then the first\nnon-option argument is taken as the sed script to interpret.  All\nremaining arguments are names of input files; if no input files are\nspecified, then the standard input is read.\n\nGNU sed home page: <https://www.gnu.org/software/sed/>.\nGeneral help using GNU software: <https://www.gnu.org/gethelp/>.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e38d79063bd7d4b7",
+      "exit_code": 0,
+      "name": "flags matrix: sed -Z",
+      "stderr": "sed: invalid option -- 'Z'\nUsage: sed [OPTION]... {script-only-if-no-other-script} [input-file]...\n\n  -n, --quiet, --silent\n                 suppress automatic printing of pattern space\n      --debug\n                 annotate program execution\n  -e script, --expression=script\n                 add the script to the commands to be executed\n  -f script-file, --file=script-file\n                 add the contents of script-file to the commands to be executed\n  --follow-symlinks\n                 follow symlinks when processing in place\n  -i[SUFFIX], --in-place[=SUFFIX]\n                 edit files in place (makes backup if SUFFIX supplied)\n  -l N, --line-length=N\n                 specify the desired line-wrap length for the `l' command\n  --posix\n                 disable all GNU extensions.\n  -E, -r, --regexp-extended\n                 use extended regular expressions in the script\n                 (for portability use POSIX -E).\n  -s, --separate\n                 consider files as separate rather than as a single,\n                 continuous long stream.\n      --sandbox\n                 operate in sandbox mode (disable e/r/w commands).\n  -u, --unbuffered\n                 load minimal amounts of data from the input files and flush\n                 the output buffers more often\n  -z, --null-data\n                 separate lines by NUL characters\n      --help     display this help and exit\n      --version  output version information and exit\n\nIf no -e, --expression, -f, or --file option is given, then the first\nnon-option argument is taken as the sed script to interpret.  All\nremaining arguments are names of input files; if no input files are\nspecified, then the standard input is read.\n\nGNU sed home page: <https://www.gnu.org/software/sed/>.\nGeneral help using GNU software: <https://www.gnu.org/gethelp/>.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "19bcb620821e1d34",
+      "exit_code": 0,
+      "name": "flags matrix: seq --jb-not-a-flag",
+      "stderr": "seq: unrecognized option '--jb-not-a-flag'\nTry 'seq --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "440b65f8e220b94b",
+      "exit_code": 0,
+      "name": "flags matrix: seq -Z",
+      "stderr": "seq: invalid option -- 'Z'\nTry 'seq --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e04e58d0474a93a8",
+      "exit_code": 0,
+      "name": "flags matrix: set --jb-not-a-flag",
+      "stderr": "bash: line 1: set: --: invalid option\nset: usage: set [-abefhkmnptuvxBCEHPT] [-o option-name] [--] [-] [arg ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "35190c70718f7fd5",
+      "exit_code": 0,
+      "name": "flags matrix: set -Z",
+      "stderr": "bash: line 1: set: -Z: invalid option\nset: usage: set [-abefhkmnptuvxBCEHPT] [-o option-name] [--] [-] [arg ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "fee204554f83df8f",
+      "exit_code": 0,
+      "name": "flags matrix: sha256sum --jb-not-a-flag",
+      "stderr": "sha256sum: unrecognized option '--jb-not-a-flag'\nTry 'sha256sum --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "2c61859cc4e65514",
+      "exit_code": 0,
+      "name": "flags matrix: sha256sum -Z",
+      "stderr": "sha256sum: invalid option -- 'Z'\nTry 'sha256sum --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "46168061a576619a",
+      "exit_code": 0,
+      "name": "flags matrix: shasum --jb-not-a-flag",
+      "stderr": "Unknown option: jb-not-a-flag\nType shasum -h for help\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a318c5216be49614",
+      "exit_code": 0,
+      "name": "flags matrix: shasum -Z",
+      "stderr": "Unknown option: Z\nType shasum -h for help\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b5dc1230c5ddc7c9",
+      "exit_code": 0,
+      "name": "flags matrix: shift --jb-not-a-flag",
+      "stderr": "bash: line 1: shift: --jb-not-a-flag: numeric argument required\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "bb60b18cdf1ff66a",
+      "exit_code": 0,
+      "name": "flags matrix: shift -Z",
+      "stderr": "bash: line 1: shift: -Z: numeric argument required\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "578d253f43cd436c",
+      "exit_code": 0,
+      "name": "flags matrix: sleep --jb-not-a-flag",
+      "stderr": "sleep: unrecognized option '--jb-not-a-flag'\nTry 'sleep --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "bac11ed0862d76db",
+      "exit_code": 0,
+      "name": "flags matrix: sleep -Z",
+      "stderr": "sleep: invalid option -- 'Z'\nTry 'sleep --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "2207625afdf49a88",
+      "exit_code": 0,
+      "name": "flags matrix: sort --jb-not-a-flag",
+      "stderr": "sort: unrecognized option '--jb-not-a-flag'\nTry 'sort --help' for more information.\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "bac9e8ca927c744b",
+      "exit_code": 0,
+      "name": "flags matrix: sort -Z",
+      "stderr": "sort: invalid option -- 'Z'\nTry 'sort --help' for more information.\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "976270b0db470582",
+      "exit_code": 0,
+      "name": "flags matrix: source --jb-not-a-flag",
+      "stderr": "bash: line 1: source: --: invalid option\nsource: usage: source filename [arguments]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "27b10b1f9cceee95",
+      "exit_code": 0,
+      "name": "flags matrix: source -Z",
+      "stderr": "bash: line 1: source: -Z: invalid option\nsource: usage: source filename [arguments]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "209a4d0ca55f2bdd",
+      "exit_code": 0,
+      "name": "flags matrix: stat --jb-not-a-flag",
+      "stderr": "stat: unrecognized option '--jb-not-a-flag'\nTry 'stat --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a6205cb88875c4d9",
+      "exit_code": 0,
+      "name": "flags matrix: stat -Z",
+      "stderr": "stat: invalid option -- 'Z'\nTry 'stat --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "5c49dab31fb465b7",
+      "exit_code": 0,
+      "name": "flags matrix: tac --jb-not-a-flag",
+      "stderr": "tac: unrecognized option '--jb-not-a-flag'\nTry 'tac --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "1857c78bef2652fc",
+      "exit_code": 0,
+      "name": "flags matrix: tac -Z",
+      "stderr": "tac: invalid option -- 'Z'\nTry 'tac --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "25f3c2f6336d8f2a",
+      "exit_code": 0,
+      "name": "flags matrix: tail --jb-not-a-flag",
+      "stderr": "tail: unrecognized option '--jb-not-a-flag'\nTry 'tail --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a912c94bfccda44d",
+      "exit_code": 0,
+      "name": "flags matrix: tail -Z",
+      "stderr": "tail: invalid option -- 'Z'\nTry 'tail --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "8c1198eeaf0ba285",
+      "exit_code": 0,
+      "name": "flags matrix: tee --jb-not-a-flag",
+      "stderr": "tee: unrecognized option '--jb-not-a-flag'\nTry 'tee --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "89dfa88b6963bdd8",
+      "exit_code": 0,
+      "name": "flags matrix: tee -Z",
+      "stderr": "tee: invalid option -- 'Z'\nTry 'tee --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "9f15eb67784953d7",
+      "exit_code": 0,
+      "name": "flags matrix: test --jb-not-a-flag",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "91c3454c66da01d5",
+      "exit_code": 0,
+      "name": "flags matrix: test -Z",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "991b407415c50094",
+      "exit_code": 0,
+      "name": "flags matrix: touch --jb-not-a-flag",
+      "stderr": "touch: unrecognized option '--jb-not-a-flag'\nTry 'touch --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "18613896b9b26eac",
+      "exit_code": 0,
+      "name": "flags matrix: touch -Z",
+      "stderr": "touch: invalid option -- 'Z'\nTry 'touch --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "7bd25c99fa6c25c4",
+      "exit_code": 0,
+      "name": "flags matrix: tr --jb-not-a-flag",
+      "stderr": "tr: unrecognized option '--jb-not-a-flag'\nTry 'tr --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "c5fb221920d91b35",
+      "exit_code": 0,
+      "name": "flags matrix: tr -Z",
+      "stderr": "tr: invalid option -- 'Z'\nTry 'tr --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "9a8726a5ca235d0e",
+      "exit_code": 0,
+      "name": "flags matrix: trap --jb-not-a-flag",
+      "stderr": "bash: line 1: trap: --: invalid option\ntrap: usage: trap [-lp] [[arg] signal_spec ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "4efa32321ce38cd3",
+      "exit_code": 0,
+      "name": "flags matrix: trap -Z",
+      "stderr": "bash: line 1: trap: -Z: invalid option\ntrap: usage: trap [-lp] [[arg] signal_spec ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "3594642b30758999",
+      "exit_code": 0,
+      "name": "flags matrix: tree --jb-not-a-flag",
+      "stderr": "tree: Invalid argument `--jb-not-a-flag'.\nusage: tree [-acdfghilnpqrstuvxACDFJQNSUX] [-L level [-R]] [-H  baseHREF]\n\t[-T title] [-o filename] [-P pattern] [-I pattern] [--gitignore]\n\t[--gitfile[=]file] [--matchdirs] [--metafirst] [--ignore-case]\n\t[--nolinks] [--hintro[=]file] [--houtro[=]file] [--inodes] [--device]\n\t[--sort[=]<name>] [--dirsfirst] [--filesfirst] [--filelimit #] [--si]\n\t[--du] [--prune] [--charset[=]X] [--timefmt[=]format] [--fromfile]\n\t[--fromtabfile] [--fflinks] [--info] [--infofile[=]file] [--noreport]\n\t[--version] [--help] [--] [directory ...]\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b00efc56994f27aa",
+      "exit_code": 0,
+      "name": "flags matrix: tree -Z",
+      "stderr": "tree: Invalid argument -`Z'.\nusage: tree [-acdfghilnpqrstuvxACDFJQNSUX] [-L level [-R]] [-H  baseHREF]\n\t[-T title] [-o filename] [-P pattern] [-I pattern] [--gitignore]\n\t[--gitfile[=]file] [--matchdirs] [--metafirst] [--ignore-case]\n\t[--nolinks] [--hintro[=]file] [--houtro[=]file] [--inodes] [--device]\n\t[--sort[=]<name>] [--dirsfirst] [--filesfirst] [--filelimit #] [--si]\n\t[--du] [--prune] [--charset[=]X] [--timefmt[=]format] [--fromfile]\n\t[--fromtabfile] [--fflinks] [--info] [--infofile[=]file] [--noreport]\n\t[--version] [--help] [--] [directory ...]\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "98fee787fdd52229",
+      "exit_code": 0,
+      "name": "flags matrix: true --jb-not-a-flag",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "ba8e9b25b65bad17",
+      "exit_code": 0,
+      "name": "flags matrix: true -Z",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "f944bf079ab0dc51",
+      "exit_code": 0,
+      "name": "flags matrix: type --jb-not-a-flag",
+      "stderr": "bash: line 1: type: --: invalid option\ntype: usage: type [-afptP] name [name ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "efbb88610f20f3c8",
+      "exit_code": 0,
+      "name": "flags matrix: type -Z",
+      "stderr": "bash: line 1: type: -Z: invalid option\ntype: usage: type [-afptP] name [name ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "a6410187d5603489",
+      "exit_code": 0,
+      "name": "flags matrix: typeset --jb-not-a-flag",
+      "stderr": "bash: line 1: typeset: --: invalid option\ntypeset: usage: typeset [-aAfFgiIlnrtux] name[=value] ... or typeset -p [-aAfFilnrtux] [name ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "1e4a824817174dbb",
+      "exit_code": 0,
+      "name": "flags matrix: typeset -Z",
+      "stderr": "bash: line 1: typeset: -Z: invalid option\ntypeset: usage: typeset [-aAfFgiIlnrtux] name[=value] ... or typeset -p [-aAfFilnrtux] [name ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "0096d73a7367cfb0",
+      "exit_code": 0,
+      "name": "flags matrix: uname --jb-not-a-flag",
+      "stderr": "uname: unrecognized option '--jb-not-a-flag'\nTry 'uname --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "5046c9612e0213c2",
+      "exit_code": 0,
+      "name": "flags matrix: uname -Z",
+      "stderr": "uname: invalid option -- 'Z'\nTry 'uname --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "0a4f167ecd414001",
+      "exit_code": 0,
+      "name": "flags matrix: uniq --jb-not-a-flag",
+      "stderr": "uniq: unrecognized option '--jb-not-a-flag'\nTry 'uniq --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "c4227a716fcb48fb",
+      "exit_code": 0,
+      "name": "flags matrix: uniq -Z",
+      "stderr": "uniq: invalid option -- 'Z'\nTry 'uniq --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "52f98db617b39493",
+      "exit_code": 0,
+      "name": "flags matrix: unset --jb-not-a-flag",
+      "stderr": "bash: line 1: unset: --: invalid option\nunset: usage: unset [-f] [-v] [-n] [name ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "3cbac757aec98e64",
+      "exit_code": 0,
+      "name": "flags matrix: unset -Z",
+      "stderr": "bash: line 1: unset: -Z: invalid option\nunset: usage: unset [-f] [-v] [-n] [name ...]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "823f2280ae6841a0",
+      "exit_code": 0,
+      "name": "flags matrix: wc --jb-not-a-flag",
+      "stderr": "wc: unrecognized option '--jb-not-a-flag'\nTry 'wc --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "0ad8a1fe795f3430",
+      "exit_code": 0,
+      "name": "flags matrix: wc -Z",
+      "stderr": "wc: invalid option -- 'Z'\nTry 'wc --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "49d92eafb7fe210f",
+      "exit_code": 0,
+      "name": "flags matrix: wget --jb-not-a-flag",
+      "stderr": "wget: unrecognized option '--jb-not-a-flag'\nUsage: wget [OPTION]... [URL]...\n\nTry `wget --help' for more options.\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "daffc614f64a9c27",
+      "exit_code": 0,
+      "name": "flags matrix: wget -Z",
+      "stderr": "wget: invalid option -- 'Z'\nUsage: wget [OPTION]... [URL]...\n\nTry `wget --help' for more options.\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "14edba23874bb151",
+      "exit_code": 0,
+      "name": "flags matrix: which --jb-not-a-flag",
+      "stderr": "Illegal option --\n",
+      "stdout": "Usage: /usr/bin/which [-as] args\nrc=2\n"
+    },
+    {
+      "content_hash": "1f4e1d0b62b8b1f9",
+      "exit_code": 0,
+      "name": "flags matrix: which -Z",
+      "stderr": "Illegal option -Z\n",
+      "stdout": "Usage: /usr/bin/which [-as] args\nrc=2\n"
+    },
+    {
+      "content_hash": "4f6fad84e75d32af",
+      "exit_code": 0,
+      "name": "flags matrix: whoami --jb-not-a-flag",
+      "stderr": "whoami: unrecognized option '--jb-not-a-flag'\nTry 'whoami --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "1d97c07337856f39",
+      "exit_code": 0,
+      "name": "flags matrix: whoami -Z",
+      "stderr": "whoami: invalid option -- 'Z'\nTry 'whoami --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "196240c39b7686d9",
+      "exit_code": 0,
+      "name": "flags matrix: xargs --jb-not-a-flag",
+      "stderr": "xargs: unrecognized option '--jb-not-a-flag'\nTry 'xargs --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "86689a3c74ae8123",
+      "exit_code": 0,
+      "name": "flags matrix: xargs -Z",
+      "stderr": "xargs: invalid option -- 'Z'\nTry 'xargs --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f3d49b8ce55378c0",
+      "exit_code": 0,
+      "name": "flags matrix: xxd --jb-not-a-flag",
+      "stderr": "Usage:\n       xxd [options] [infile [outfile]]\n    or\n       xxd -r [-s [-]offset] [-c cols] [-ps] [infile [outfile]]\nOptions:\n    -a          toggle autoskip: A single '*' replaces nul-lines. Default off.\n    -b          binary digit dump (incompatible with -ps,-i). Default hex.\n    -C          capitalize variable names in C include file style (-i).\n    -c cols     format <cols> octets per line. Default 16 (-i: 12, -ps: 30).\n    -E          show characters in EBCDIC. Default ASCII.\n    -e          little-endian dump (incompatible with -ps,-i,-r).\n    -g bytes    number of octets per group in normal output. Default 2 (-e: 4).\n    -h          print this summary.\n    -i          output in C include file style.\n    -l len      stop after <len> octets.\n    -n name     set the variable name used in C include output (-i).\n    -o off      add <off> to the displayed file position.\n    -ps         output in postscript plain hexdump style.\n    -r          reverse operation: convert (or patch) hexdump into binary.\n    -r -s off   revert with <off> added to file positions found in hexdump.\n    -d          show offset in decimal instead of hex.\n    -s [+][-]seek  start at <seek> bytes abs. (or +: rel.) infile offset.\n    -u          use upper case hex letters.\n    -R when     colorize the output; <when> can be 'always', 'auto' or 'never'. Default: 'auto'.\n    -v          show version: \"xxd 2023-10-25 by Juergen Weigert et al.\".\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "2cfa811b48800d4f",
+      "exit_code": 0,
+      "name": "flags matrix: xxd -Z",
+      "stderr": "Usage:\n       xxd [options] [infile [outfile]]\n    or\n       xxd -r [-s [-]offset] [-c cols] [-ps] [infile [outfile]]\nOptions:\n    -a          toggle autoskip: A single '*' replaces nul-lines. Default off.\n    -b          binary digit dump (incompatible with -ps,-i). Default hex.\n    -C          capitalize variable names in C include file style (-i).\n    -c cols     format <cols> octets per line. Default 16 (-i: 12, -ps: 30).\n    -E          show characters in EBCDIC. Default ASCII.\n    -e          little-endian dump (incompatible with -ps,-i,-r).\n    -g bytes    number of octets per group in normal output. Default 2 (-e: 4).\n    -h          print this summary.\n    -i          output in C include file style.\n    -l len      stop after <len> octets.\n    -n name     set the variable name used in C include output (-i).\n    -o off      add <off> to the displayed file position.\n    -ps         output in postscript plain hexdump style.\n    -r          reverse operation: convert (or patch) hexdump into binary.\n    -r -s off   revert with <off> added to file positions found in hexdump.\n    -d          show offset in decimal instead of hex.\n    -s [+][-]seek  start at <seek> bytes abs. (or +: rel.) infile offset.\n    -u          use upper case hex letters.\n    -R when     colorize the output; <when> can be 'always', 'auto' or 'never'. Default: 'auto'.\n    -v          show version: \"xxd 2023-10-25 by Juergen Weigert et al.\".\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "87f1d5e751018b2b",
+      "exit_code": 0,
+      "name": "flags matrix: yes --jb-not-a-flag",
+      "stderr": "yes: unrecognized option '--jb-not-a-flag'\nTry 'yes --help' for more information.\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "6368d678d481610d",
+      "exit_code": 0,
+      "name": "flags matrix: yes -Z",
+      "stderr": "yes: invalid option -- 'Z'\nTry 'yes --help' for more information.\n",
+      "stdout": "rc=1\n"
+    }
+  ],
+  "suite": "flags_matrix"
+}

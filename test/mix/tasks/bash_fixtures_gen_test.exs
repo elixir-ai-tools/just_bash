@@ -228,6 +228,75 @@ defmodule Mix.Tasks.BashFixtures.GenTest do
     end
   end
 
+  describe "flags matrix" do
+    test "probes every Registry command with both flags" do
+      alias JustBash.Commands.Registry
+
+      cases = Gen.cases_for("flags")
+      names = Enum.map(cases, & &1["name"])
+
+      assert length(cases) == length(Registry.list()) * 2
+
+      for cmd <- Registry.list(), flag <- ["--jb-not-a-flag", "-Z"] do
+        assert Enum.any?(names, &(&1 == "flags matrix: #{cmd} #{flag}")),
+               "missing #{cmd} #{flag}"
+      end
+    end
+
+    test "classifies every Registry name with a reason, never a silent omit" do
+      alias JustBash.Commands.Registry
+
+      classified = Gen.flags_classifications()
+
+      assert Map.keys(classified) |> Enum.sort() == Enum.sort(Registry.list())
+
+      Enum.each(classified, fn {name, reason} ->
+        assert is_binary(reason), "#{name} has no reason"
+        assert String.length(reason) > 10, "#{name} reason is too short: #{inspect(reason)}"
+      end)
+    end
+
+    test "records operand and GNU -Z exceptions instead of omitting them" do
+      names = Gen.cases_for("flags") |> Enum.map(& &1["name"])
+      cases = Gen.cases_for("flags")
+
+      assert Enum.any?(names, &(&1 == "flags matrix: echo -Z"))
+      assert Enum.any?(names, &(&1 == "flags matrix: echo --jb-not-a-flag"))
+      assert Enum.any?(names, &(&1 == "flags matrix: test -Z"))
+      assert Enum.any?(names, &(&1 == "flags matrix: ls -Z"))
+      assert Enum.any?(names, &(&1 == "flags matrix: markdown --jb-not-a-flag"))
+
+      ls_z = Enum.find(cases, &(&1["name"] == "flags matrix: ls -Z"))
+      assert ls_z["script"] =~ "ls -Z"
+      assert ls_z["script"] =~ "/tmp/jb_flags_ls"
+    end
+
+    test "every case hashes from its script, not its name or gap" do
+      cases = Gen.cases_for("flags")
+
+      Enum.each(cases, fn test_case ->
+        assert test_case["content_hash"] == JustBash.Fixtures.hash_case(test_case)
+      end)
+    end
+
+    test "known_gap lives in opts and does not change the digest" do
+      cases = Gen.cases_for("flags")
+      gapped = Enum.filter(cases, &get_in(&1, ["opts", "known_gap"]))
+
+      assert length(gapped) > 10
+      assert length(gapped) < length(cases)
+
+      Enum.each(gapped, fn test_case ->
+        reason = test_case["opts"]["known_gap"]
+        assert is_binary(reason)
+        assert String.length(reason) > 10
+
+        assert JustBash.Fixtures.hash_case(test_case) ==
+                 JustBash.Fixtures.hash_case(Map.delete(test_case, "opts"))
+      end)
+    end
+  end
+
   describe "run/1" do
     test "printf --dry-run reports a count and writes nothing" do
       output =
@@ -256,6 +325,16 @@ defmodule Mix.Tasks.BashFixtures.GenTest do
         end)
 
       assert output =~ ~r/varop_matrix: \d+ cases/
+      refute output =~ "wrote"
+    end
+
+    test "flags --dry-run reports a count and writes nothing" do
+      output =
+        ExUnit.CaptureIO.capture_io(fn ->
+          Mix.Task.rerun("bash_fixtures.gen", ["flags", "--dry-run"])
+        end)
+
+      assert output =~ ~r/flags_matrix: \d+ cases/
       refute output =~ "wrote"
     end
 
