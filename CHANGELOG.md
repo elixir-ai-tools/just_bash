@@ -49,6 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* `mix bash_fixtures.gen printf` enumerates a printf conversion × flag/width/precision matrix (`printf_matrix`) — #70 item 2
+
 ### Bug Fixes
 
 * `${v//pat/rep}` / `${v/pat/rep}` refuse before allocating a result that would exceed `:max_value_bytes` ([#86](https://github.com/elixir-ai-tools/just_bash/issues/86))

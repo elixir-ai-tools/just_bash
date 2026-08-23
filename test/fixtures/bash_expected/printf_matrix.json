@@ -1,0 +1,4170 @@
+{
+  "results": [
+    {
+      "content_hash": "e93691976bc90255",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %s (hi)",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "e54b5890bd6b08ae",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %s (empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "5496cd981727b0c7",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %c (hi)",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "88ab3d3c93598118",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %c (empty)",
+      "stderr": "",
+      "stdout": "\u0000rc=0\n"
+    },
+    {
+      "content_hash": "da57f6f6eb3bcce3",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %d (seven)",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "d068155fceba0beb",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %d (byte)",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "6d07b95e417fa915",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %d (neg)",
+      "stderr": "",
+      "stdout": "-1rc=0\n"
+    },
+    {
+      "content_hash": "6e1eaf98031b0aec",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %d (zero)",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "64c7a07043483c8b",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %i (seven)",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "ae958b33ff6bb3c4",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %i (byte)",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "e54329e53bcc796b",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %i (neg)",
+      "stderr": "",
+      "stdout": "-1rc=0\n"
+    },
+    {
+      "content_hash": "71f263653d617504",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %i (zero)",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "2a49957c14a9688d",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %u (seven)",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "186cfdb8110066aa",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %u (byte)",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "532c7305d95392e1",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %u (neg)",
+      "stderr": "",
+      "stdout": "18446744073709551615rc=0\n"
+    },
+    {
+      "content_hash": "a5a9ddf05090043f",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %u (zero)",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "8d1c3d29e049270f",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %o (seven)",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "136aceaaddc049e2",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %o (byte)",
+      "stderr": "",
+      "stdout": "377rc=0\n"
+    },
+    {
+      "content_hash": "62e6931431d8a551",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %o (neg)",
+      "stderr": "",
+      "stdout": "1777777777777777777777rc=0\n"
+    },
+    {
+      "content_hash": "40f6acbf44f9079a",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %o (zero)",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "4f88af775b7abc66",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %x (seven)",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "4e177b728aa4cfee",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %x (byte)",
+      "stderr": "",
+      "stdout": "ffrc=0\n"
+    },
+    {
+      "content_hash": "343629132299053d",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %x (neg)",
+      "stderr": "",
+      "stdout": "ffffffffffffffffrc=0\n"
+    },
+    {
+      "content_hash": "ebcc7afc4c83087c",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %x (zero)",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "7f455fb737cf1fc4",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %X (seven)",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "c7a640dbb2b3ac1d",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %X (byte)",
+      "stderr": "",
+      "stdout": "FFrc=0\n"
+    },
+    {
+      "content_hash": "64d02306461c78cd",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %X (neg)",
+      "stderr": "",
+      "stdout": "FFFFFFFFFFFFFFFFrc=0\n"
+    },
+    {
+      "content_hash": "917a450a0b322305",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %X (zero)",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "93160194bddc3cd4",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %f (pi)",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "8c951794a5fe4cc1",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %f (neg)",
+      "stderr": "",
+      "stdout": "-1.000000rc=0\n"
+    },
+    {
+      "content_hash": "8fd7861fc4652f60",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %f (zero)",
+      "stderr": "",
+      "stdout": "0.000000rc=0\n"
+    },
+    {
+      "content_hash": "0944358e7733e31b",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %e (pi)",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "09f1c207fa09e22e",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %e (neg)",
+      "stderr": "",
+      "stdout": "-1.000000e+00rc=0\n"
+    },
+    {
+      "content_hash": "7c5b7d4608ab4472",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %e (zero)",
+      "stderr": "",
+      "stdout": "0.000000e+00rc=0\n"
+    },
+    {
+      "content_hash": "e2ee5980f89e6bc7",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %E (pi)",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "5dd50a687cee06fa",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %E (neg)",
+      "stderr": "",
+      "stdout": "-1.000000E+00rc=0\n"
+    },
+    {
+      "content_hash": "eeafbc57fd2db554",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %E (zero)",
+      "stderr": "",
+      "stdout": "0.000000E+00rc=0\n"
+    },
+    {
+      "content_hash": "33f8dcea43bd8a5f",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %g (pi)",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "2275ce97d0ff2eb1",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %g (neg)",
+      "stderr": "",
+      "stdout": "-1rc=0\n"
+    },
+    {
+      "content_hash": "64b15c4322ac7584",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %g (zero)",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "431fe0b26ee5fd18",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %G (pi)",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "c9f4cefec31dd603",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %G (neg)",
+      "stderr": "",
+      "stdout": "-1rc=0\n"
+    },
+    {
+      "content_hash": "01ec3606f19a5b4c",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %G (zero)",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "0e0a7e460712e2d8",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %a (pi)",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "7c30e6c59ddf02cc",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %a (neg)",
+      "stderr": "",
+      "stdout": "-0x8p-3rc=0\n"
+    },
+    {
+      "content_hash": "7a9c291c79e2ca55",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %a (zero)",
+      "stderr": "",
+      "stdout": "0x0p+0rc=0\n"
+    },
+    {
+      "content_hash": "b8f487eef698058a",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %A (pi)",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "8718ec9558ce0f0b",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %A (neg)",
+      "stderr": "",
+      "stdout": "-0X8P-3rc=0\n"
+    },
+    {
+      "content_hash": "39498d4030d73494",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %A (zero)",
+      "stderr": "",
+      "stdout": "0X0P+0rc=0\n"
+    },
+    {
+      "content_hash": "899ae18b1345f75b",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %b (plain)",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "c79c54ab7948e70d",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %b (escapes)",
+      "stderr": "",
+      "stdout": "A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "79ab988646b41f02",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %b (empty)",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "5d547e6d5cdb5a55",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %q (plain)",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "d06bce626cfa27fb",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %q (space)",
+      "stderr": "",
+      "stdout": "a\\ brc=0\n"
+    },
+    {
+      "content_hash": "addb7aa999dc1d32",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %q (empty)",
+      "stderr": "",
+      "stdout": "''rc=0\n"
+    },
+    {
+      "content_hash": "be36159d9bcec7bd",
+      "exit_code": 0,
+      "name": "printf matrix: conversion %% (literal)",
+      "stderr": "",
+      "stdout": "%rc=0\n"
+    },
+    {
+      "content_hash": "4971f188795a5670",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %s",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "db7b493ece1ca8b3",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %c",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "244002db2fc71379",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %d",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "5465f545aa21b93a",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %i",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "5a06cb0c486e31eb",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %u",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "f3f08bc1905a65b2",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %o",
+      "stderr": "",
+      "stdout": "377rc=0\n"
+    },
+    {
+      "content_hash": "a0dd1e876bce607a",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %x",
+      "stderr": "",
+      "stdout": "ffrc=0\n"
+    },
+    {
+      "content_hash": "376ab72e24363d5a",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %X",
+      "stderr": "",
+      "stdout": "FFrc=0\n"
+    },
+    {
+      "content_hash": "d492685a073fe5db",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "e9d8574ec8f7eb4b",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "124601995caa9fa3",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "de9339fd551c7ae7",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "47deeb7460404cb8",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "9c4a4a081d02f98e",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "10312d6dbc117816",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "d037feec2363761d",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %b",
+      "stderr": "",
+      "stdout": "A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "70d63619ff21fde2",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %q",
+      "stderr": "",
+      "stdout": "a\\ brc=0\n"
+    },
+    {
+      "content_hash": "d4627cf73b49e78f",
+      "exit_code": 0,
+      "name": "printf matrix: flag left %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a3fe41c5039a5062",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %s",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "19b019b06c9d0b97",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %c",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "17e13ba7def63fda",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %d",
+      "stderr": "",
+      "stdout": "+7rc=0\n"
+    },
+    {
+      "content_hash": "64959b33ede6a67d",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %i",
+      "stderr": "",
+      "stdout": "+7rc=0\n"
+    },
+    {
+      "content_hash": "d73f259a31128b97",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %u",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "a128c3b8cb2899c6",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %o",
+      "stderr": "",
+      "stdout": "377rc=0\n"
+    },
+    {
+      "content_hash": "36c4c29c6a80c1a6",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %x",
+      "stderr": "",
+      "stdout": "ffrc=0\n"
+    },
+    {
+      "content_hash": "d871a1179a4abea6",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %X",
+      "stderr": "",
+      "stdout": "FFrc=0\n"
+    },
+    {
+      "content_hash": "beb2f74f3304fbec",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %f",
+      "stderr": "",
+      "stdout": "+3.141590rc=0\n"
+    },
+    {
+      "content_hash": "e3e6555280cf0209",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %e",
+      "stderr": "",
+      "stdout": "+3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "0dc6fd95a5874c2f",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %E",
+      "stderr": "",
+      "stdout": "+3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "e7ec80e6b9411091",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %g",
+      "stderr": "",
+      "stdout": "+3.14159rc=0\n"
+    },
+    {
+      "content_hash": "92181fda9a265db3",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %G",
+      "stderr": "",
+      "stdout": "+3.14159rc=0\n"
+    },
+    {
+      "content_hash": "12f86a50461e6dbf",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %a",
+      "stderr": "",
+      "stdout": "+0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "2992527417905634",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %A",
+      "stderr": "",
+      "stdout": "+0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "44b0a70fc8cbc226",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %b",
+      "stderr": "",
+      "stdout": "A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "e6ef175e00615560",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %q",
+      "stderr": "",
+      "stdout": "a\\ brc=0\n"
+    },
+    {
+      "content_hash": "178a0b4e0e2a2699",
+      "exit_code": 0,
+      "name": "printf matrix: flag plus %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "62aa977ecee0a383",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %s",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "8d4f941e9be01d5b",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %c",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "553cbc72e8fbe8c6",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %d",
+      "stderr": "",
+      "stdout": " 7rc=0\n"
+    },
+    {
+      "content_hash": "076f8c952211426b",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %i",
+      "stderr": "",
+      "stdout": " 7rc=0\n"
+    },
+    {
+      "content_hash": "93ef6d08342cf181",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %u",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "84d633ad7dc32a53",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %o",
+      "stderr": "",
+      "stdout": "377rc=0\n"
+    },
+    {
+      "content_hash": "d44e32d96d993890",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %x",
+      "stderr": "",
+      "stdout": "ffrc=0\n"
+    },
+    {
+      "content_hash": "e58b52a4ad8d9949",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %X",
+      "stderr": "",
+      "stdout": "FFrc=0\n"
+    },
+    {
+      "content_hash": "86f344c0f99590d6",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %f",
+      "stderr": "",
+      "stdout": " 3.141590rc=0\n"
+    },
+    {
+      "content_hash": "95e35d2f0d4a779b",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %e",
+      "stderr": "",
+      "stdout": " 3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "b3579a71b23728a1",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %E",
+      "stderr": "",
+      "stdout": " 3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "171e7e73082ff65e",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %g",
+      "stderr": "",
+      "stdout": " 3.14159rc=0\n"
+    },
+    {
+      "content_hash": "73c391754c9b9825",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %G",
+      "stderr": "",
+      "stdout": " 3.14159rc=0\n"
+    },
+    {
+      "content_hash": "0095a93d77b12909",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %a",
+      "stderr": "",
+      "stdout": " 0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "90ab325d54af072f",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %A",
+      "stderr": "",
+      "stdout": " 0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "febef39131743b87",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %b",
+      "stderr": "",
+      "stdout": "A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "daea0f09c6f3782a",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %q",
+      "stderr": "",
+      "stdout": "a\\ brc=0\n"
+    },
+    {
+      "content_hash": "4ef45eab76f1f683",
+      "exit_code": 0,
+      "name": "printf matrix: flag space %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "73878f67c36970d2",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %s",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "218268e91dea6852",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %c",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "0bcbe8ef25d1d7f4",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %d",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "2a7b9888294662b3",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %i",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "af6425f36f81a6ea",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %u",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "89f3881c1be3a93f",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %o",
+      "stderr": "",
+      "stdout": "377rc=0\n"
+    },
+    {
+      "content_hash": "4907fbf5e03b3d2f",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %x",
+      "stderr": "",
+      "stdout": "ffrc=0\n"
+    },
+    {
+      "content_hash": "0cbcbedb6018529c",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %X",
+      "stderr": "",
+      "stdout": "FFrc=0\n"
+    },
+    {
+      "content_hash": "b78021eb9da4173f",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "e57f7fe80e5254b4",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "7225c252a3fc74bf",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "21c73a228713b710",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "0b14bb24640e9c4c",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "9af018d508f04eda",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "fedf5895b90982d1",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "a505f80868e6fae8",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %b",
+      "stderr": "",
+      "stdout": "A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "34efe8892950df91",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %q",
+      "stderr": "",
+      "stdout": "a\\ brc=0\n"
+    },
+    {
+      "content_hash": "1e65de03a7ba7b0b",
+      "exit_code": 0,
+      "name": "printf matrix: flag zero %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "1582b54146274cfa",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %s",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "83a4877961351880",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %c",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "6fad018a300c998e",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %d",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "ff21df78d8c3105f",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %i",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "0d5b5882e67933d0",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %u",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "37378e41cc8d024d",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %o",
+      "stderr": "",
+      "stdout": "0377rc=0\n"
+    },
+    {
+      "content_hash": "6efa33bc7c3f846e",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %x",
+      "stderr": "",
+      "stdout": "0xffrc=0\n"
+    },
+    {
+      "content_hash": "8d6a147fff1798c3",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %X",
+      "stderr": "",
+      "stdout": "0XFFrc=0\n"
+    },
+    {
+      "content_hash": "66a36324d145c221",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "bdf4b4856e3006f9",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "689134c8a713bb69",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "c731cc8ba3958a84",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "fb2d818f5f160b6f",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "803ec05cdfeb131f",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "8abb947f3700643d",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "5d461334a38b4445",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %b",
+      "stderr": "",
+      "stdout": "A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "2e0bca80ade78101",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %q",
+      "stderr": "",
+      "stdout": "a\\ brc=0\n"
+    },
+    {
+      "content_hash": "1611e4f01297fea5",
+      "exit_code": 0,
+      "name": "printf matrix: flag hash %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "cf13367d82ae681d",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %s",
+      "stderr": "",
+      "stdout": "hi   rc=0\n"
+    },
+    {
+      "content_hash": "e071663221a84755",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %c",
+      "stderr": "",
+      "stdout": "h    rc=0\n"
+    },
+    {
+      "content_hash": "59b83f334dada801",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %d",
+      "stderr": "",
+      "stdout": "7    rc=0\n"
+    },
+    {
+      "content_hash": "78e19b8b300100e7",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %i",
+      "stderr": "",
+      "stdout": "7    rc=0\n"
+    },
+    {
+      "content_hash": "8a4b9a8b074ca387",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %u",
+      "stderr": "",
+      "stdout": "255  rc=0\n"
+    },
+    {
+      "content_hash": "f20bce157af112fa",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %o",
+      "stderr": "",
+      "stdout": "377  rc=0\n"
+    },
+    {
+      "content_hash": "9ebaa580c3c5e710",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %x",
+      "stderr": "",
+      "stdout": "ff   rc=0\n"
+    },
+    {
+      "content_hash": "ee7e2a8d3d79313b",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %X",
+      "stderr": "",
+      "stdout": "FF   rc=0\n"
+    },
+    {
+      "content_hash": "e707dd0810dae644",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "a29fbfca0041b8b9",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "5e56bdfc75dc24c0",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "d74a400695d23b21",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "52acdf3bc2de6394",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "315dcb781d214aac",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "c017e74a605e5459",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "d58289d38ed7c4ba",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %b",
+      "stderr": "",
+      "stdout": "A\tB\n rc=0\n"
+    },
+    {
+      "content_hash": "459938cd6f3da50c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %q",
+      "stderr": "",
+      "stdout": "a\\ b rc=0\n"
+    },
+    {
+      "content_hash": "79a8f65f64cb786c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width left 5 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "ae4343c5e2f71424",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %s",
+      "stderr": "",
+      "stdout": "   hirc=0\n"
+    },
+    {
+      "content_hash": "3cb96498614f2527",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %c",
+      "stderr": "",
+      "stdout": "    hrc=0\n"
+    },
+    {
+      "content_hash": "1de9e540433b1077",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %d",
+      "stderr": "",
+      "stdout": "   +7rc=0\n"
+    },
+    {
+      "content_hash": "ddbcb0e7620f36a8",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %i",
+      "stderr": "",
+      "stdout": "   +7rc=0\n"
+    },
+    {
+      "content_hash": "76475568a7a1319c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %u",
+      "stderr": "",
+      "stdout": "  255rc=0\n"
+    },
+    {
+      "content_hash": "0d13a172ce7fa174",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %o",
+      "stderr": "",
+      "stdout": "  377rc=0\n"
+    },
+    {
+      "content_hash": "ec4f80db1d9f7148",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %x",
+      "stderr": "",
+      "stdout": "   ffrc=0\n"
+    },
+    {
+      "content_hash": "72274d5929bd5965",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %X",
+      "stderr": "",
+      "stdout": "   FFrc=0\n"
+    },
+    {
+      "content_hash": "7695e69ed1d356e4",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %f",
+      "stderr": "",
+      "stdout": "+3.141590rc=0\n"
+    },
+    {
+      "content_hash": "a252d07cf1e07796",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %e",
+      "stderr": "",
+      "stdout": "+3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "63d98be574003f30",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %E",
+      "stderr": "",
+      "stdout": "+3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "7a3de88ce0f1f393",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %g",
+      "stderr": "",
+      "stdout": "+3.14159rc=0\n"
+    },
+    {
+      "content_hash": "5c4f84257b53d6a6",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %G",
+      "stderr": "",
+      "stdout": "+3.14159rc=0\n"
+    },
+    {
+      "content_hash": "4ed520af3cd9b481",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %a",
+      "stderr": "",
+      "stdout": "+0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "b03ca0bf39172a36",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %A",
+      "stderr": "",
+      "stdout": "+0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "f395659d7ff31a8a",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %b",
+      "stderr": "",
+      "stdout": " A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "8857d737bd563b9f",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %q",
+      "stderr": "",
+      "stdout": " a\\ brc=0\n"
+    },
+    {
+      "content_hash": "c47ca9b856dcf61c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width plus 5 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "7f29603fdd2cc400",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %s",
+      "stderr": "",
+      "stdout": "   hirc=0\n"
+    },
+    {
+      "content_hash": "668bc5729df80033",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %c",
+      "stderr": "",
+      "stdout": "    hrc=0\n"
+    },
+    {
+      "content_hash": "b1f49ae58eb69098",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %d",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "a4f7a438c58d1deb",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %i",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "9238bd719a07396a",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %u",
+      "stderr": "",
+      "stdout": "  255rc=0\n"
+    },
+    {
+      "content_hash": "317f4afa07051f02",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %o",
+      "stderr": "",
+      "stdout": "  377rc=0\n"
+    },
+    {
+      "content_hash": "24a14cc10c338f78",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %x",
+      "stderr": "",
+      "stdout": "   ffrc=0\n"
+    },
+    {
+      "content_hash": "2361415661f5e2df",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %X",
+      "stderr": "",
+      "stdout": "   FFrc=0\n"
+    },
+    {
+      "content_hash": "fe9da809ddf83f9d",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %f",
+      "stderr": "",
+      "stdout": " 3.141590rc=0\n"
+    },
+    {
+      "content_hash": "34fe2d74acd7f632",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %e",
+      "stderr": "",
+      "stdout": " 3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "bfc46ff457c26b8d",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %E",
+      "stderr": "",
+      "stdout": " 3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "9e7c23a5ad2c852f",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %g",
+      "stderr": "",
+      "stdout": " 3.14159rc=0\n"
+    },
+    {
+      "content_hash": "9d76c17468f00582",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %G",
+      "stderr": "",
+      "stdout": " 3.14159rc=0\n"
+    },
+    {
+      "content_hash": "53677fe1c12cdd8f",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %a",
+      "stderr": "",
+      "stdout": " 0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "395b13e2b05da76c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %A",
+      "stderr": "",
+      "stdout": " 0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "d10689d235af0ffc",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %b",
+      "stderr": "",
+      "stdout": " A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "9305eff6ec642a9c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %q",
+      "stderr": "",
+      "stdout": " a\\ brc=0\n"
+    },
+    {
+      "content_hash": "3161075cc58d9bba",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width space 5 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "3a6c0a9a666bf2e8",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %s",
+      "stderr": "",
+      "stdout": "   hirc=0\n"
+    },
+    {
+      "content_hash": "6b4d94f75f7d6bfa",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %c",
+      "stderr": "",
+      "stdout": "    hrc=0\n"
+    },
+    {
+      "content_hash": "e4663a2195801191",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %d",
+      "stderr": "",
+      "stdout": "00007rc=0\n"
+    },
+    {
+      "content_hash": "146b2f3af77880c5",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %i",
+      "stderr": "",
+      "stdout": "00007rc=0\n"
+    },
+    {
+      "content_hash": "d3869501354d2c84",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %u",
+      "stderr": "",
+      "stdout": "00255rc=0\n"
+    },
+    {
+      "content_hash": "a2d49a2a1bcee726",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %o",
+      "stderr": "",
+      "stdout": "00377rc=0\n"
+    },
+    {
+      "content_hash": "5d052d3027bda12d",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %x",
+      "stderr": "",
+      "stdout": "000ffrc=0\n"
+    },
+    {
+      "content_hash": "1ec5a6004b2c967e",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %X",
+      "stderr": "",
+      "stdout": "000FFrc=0\n"
+    },
+    {
+      "content_hash": "90f3594c061cf317",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "4e78e14dcf4c3773",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "37d0a1ccd160e91b",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "73bcb5d87744ae9b",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "dbe5e8647212a218",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "61d9e21cc74a76f6",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "21f8ef75f0372825",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "01f3d5119f649b6c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %b",
+      "stderr": "",
+      "stdout": " A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "228f9d9d399a0262",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %q",
+      "stderr": "",
+      "stdout": " a\\ brc=0\n"
+    },
+    {
+      "content_hash": "6699cf99450e54cf",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width zero 5 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "64efa92cbb556c91",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %s",
+      "stderr": "",
+      "stdout": "   hirc=0\n"
+    },
+    {
+      "content_hash": "cb45939431f8fcc7",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %c",
+      "stderr": "",
+      "stdout": "    hrc=0\n"
+    },
+    {
+      "content_hash": "ae84b1ef40d2e019",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %d",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "a3db2fa7d01e36f7",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %i",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "8318a57e64b3adab",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %u",
+      "stderr": "",
+      "stdout": "  255rc=0\n"
+    },
+    {
+      "content_hash": "ac48447eed748e1e",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %o",
+      "stderr": "",
+      "stdout": " 0377rc=0\n"
+    },
+    {
+      "content_hash": "860d1120f09aab1a",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %x",
+      "stderr": "",
+      "stdout": " 0xffrc=0\n"
+    },
+    {
+      "content_hash": "f1d3832edfcd0f93",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %X",
+      "stderr": "",
+      "stdout": " 0XFFrc=0\n"
+    },
+    {
+      "content_hash": "44459ccc71cca87d",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "7a87b7125927dcb0",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "0e4748433f1daeab",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "ce834c547a26f927",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "d4ed44251d8bd70a",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "b99f321b5532536f",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "11ccdf6c68b14a00",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "79a46c7fcea92f91",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %b",
+      "stderr": "",
+      "stdout": " A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "8ff7e7a19f9f0e1d",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %q",
+      "stderr": "",
+      "stdout": " a\\ brc=0\n"
+    },
+    {
+      "content_hash": "4d1eb07fe6ff8046",
+      "exit_code": 0,
+      "name": "printf matrix: flag+width hash 5 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "93cb683e19637c98",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %s",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "50b1b1ff13d73816",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %c",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "af7edd0448b44f4a",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %d",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "560553b271d30a08",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %i",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "fb24862fdc7801e6",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %u",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "dc9ded7cd8c5e498",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %o",
+      "stderr": "",
+      "stdout": "377rc=0\n"
+    },
+    {
+      "content_hash": "7d91d81ed37e2b31",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %x",
+      "stderr": "",
+      "stdout": "ffrc=0\n"
+    },
+    {
+      "content_hash": "1853f2d4cb6142bc",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %X",
+      "stderr": "",
+      "stdout": "FFrc=0\n"
+    },
+    {
+      "content_hash": "5f6c29043e068799",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "f3524045f94b389e",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "9de4066ac1ad85b2",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "8ca047b2f4cb7340",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "ddaccc39f5e2403c",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "0e541294f95bc151",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "b73d5c070e19157f",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "5b36c694a8c5a37f",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %b",
+      "stderr": "",
+      "stdout": "A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "54194caead1b6a8d",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %q",
+      "stderr": "",
+      "stdout": "a\\ brc=0\n"
+    },
+    {
+      "content_hash": "03642c0b323b7e53",
+      "exit_code": 0,
+      "name": "printf matrix: width 1 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "1cc18d093510ddb1",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %s",
+      "stderr": "",
+      "stdout": "   hirc=0\n"
+    },
+    {
+      "content_hash": "ac8cd9075bcb8fdb",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %c",
+      "stderr": "",
+      "stdout": "    hrc=0\n"
+    },
+    {
+      "content_hash": "7c864d0b0b2cf8bb",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %d",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "49e5ba2017f75e3e",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %i",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "55474382ff72f1ab",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %u",
+      "stderr": "",
+      "stdout": "  255rc=0\n"
+    },
+    {
+      "content_hash": "ad3b9083540f6b45",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %o",
+      "stderr": "",
+      "stdout": "  377rc=0\n"
+    },
+    {
+      "content_hash": "b0e1db3fd13f0d4d",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %x",
+      "stderr": "",
+      "stdout": "   ffrc=0\n"
+    },
+    {
+      "content_hash": "4a7f78dba7a159d6",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %X",
+      "stderr": "",
+      "stdout": "   FFrc=0\n"
+    },
+    {
+      "content_hash": "403477773a7393c0",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "49f9b0a30eb6cc47",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "a0b3475a50a68cf0",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "04ba674a490d599f",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "26a0fee7b769a5dc",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "ee1343b103c5c898",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "513a60c1223cdccc",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "b0899c7187b29e6f",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %b",
+      "stderr": "",
+      "stdout": " A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "bb9fde9092dfc08b",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %q",
+      "stderr": "",
+      "stdout": " a\\ brc=0\n"
+    },
+    {
+      "content_hash": "6dcadb45f1970a5b",
+      "exit_code": 0,
+      "name": "printf matrix: width 5 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a5a1d5bfb0a04858",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %s",
+      "stderr": "",
+      "stdout": "        hirc=0\n"
+    },
+    {
+      "content_hash": "a83f66a8bbfc8254",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %c",
+      "stderr": "",
+      "stdout": "         hrc=0\n"
+    },
+    {
+      "content_hash": "01515db6170ea9d4",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %d",
+      "stderr": "",
+      "stdout": "         7rc=0\n"
+    },
+    {
+      "content_hash": "4cf5c059b2f1519c",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %i",
+      "stderr": "",
+      "stdout": "         7rc=0\n"
+    },
+    {
+      "content_hash": "591e932e4997bada",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %u",
+      "stderr": "",
+      "stdout": "       255rc=0\n"
+    },
+    {
+      "content_hash": "b5604fe2b89a72cc",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %o",
+      "stderr": "",
+      "stdout": "       377rc=0\n"
+    },
+    {
+      "content_hash": "6e5d1c13504dffe9",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %x",
+      "stderr": "",
+      "stdout": "        ffrc=0\n"
+    },
+    {
+      "content_hash": "7e4ee0aa0f10e4f3",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %X",
+      "stderr": "",
+      "stdout": "        FFrc=0\n"
+    },
+    {
+      "content_hash": "85ab410538669923",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %f",
+      "stderr": "",
+      "stdout": "  3.141590rc=0\n"
+    },
+    {
+      "content_hash": "4ae74032f2315c90",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "1c487b1ca7916ece",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "6fc2164b0fcdd6e1",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %g",
+      "stderr": "",
+      "stdout": "   3.14159rc=0\n"
+    },
+    {
+      "content_hash": "3cdf463810c96958",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %G",
+      "stderr": "",
+      "stdout": "   3.14159rc=0\n"
+    },
+    {
+      "content_hash": "6290406bcf0aaf46",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "d17e5eb01a72e981",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "1267aa2ccc23286b",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %b",
+      "stderr": "",
+      "stdout": "      A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "b1030128f5e3d8a4",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %q",
+      "stderr": "",
+      "stdout": "      a\\ brc=0\n"
+    },
+    {
+      "content_hash": "2ff156c7ab3a332e",
+      "exit_code": 0,
+      "name": "printf matrix: width 10 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "d4db7c4432a02434",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %s",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "b1f0a5df3c8ad74a",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %c",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "2ef135455c78692d",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %d",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "d1a4a8d80177f887",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %i",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "2e57efdf77b593d8",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %u",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "481748fedd445728",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %o",
+      "stderr": "",
+      "stdout": "377rc=0\n"
+    },
+    {
+      "content_hash": "1b6ceb6f81e9c262",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %x",
+      "stderr": "",
+      "stdout": "ffrc=0\n"
+    },
+    {
+      "content_hash": "5eba982ee4f15137",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %X",
+      "stderr": "",
+      "stdout": "FFrc=0\n"
+    },
+    {
+      "content_hash": "c5efaf4840ff937b",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %f",
+      "stderr": "",
+      "stdout": "3rc=0\n"
+    },
+    {
+      "content_hash": "bf1a534896839d08",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %e",
+      "stderr": "",
+      "stdout": "3e+00rc=0\n"
+    },
+    {
+      "content_hash": "dbf971abd360e5a2",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %E",
+      "stderr": "",
+      "stdout": "3E+00rc=0\n"
+    },
+    {
+      "content_hash": "c784f6bde1f3bc62",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %g",
+      "stderr": "",
+      "stdout": "3rc=0\n"
+    },
+    {
+      "content_hash": "5c851f324c4b3ec5",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %G",
+      "stderr": "",
+      "stdout": "3rc=0\n"
+    },
+    {
+      "content_hash": "d99fa333b294390a",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %a",
+      "stderr": "",
+      "stdout": "0xdp-2rc=0\n"
+    },
+    {
+      "content_hash": "78f92aee4d6d7536",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %A",
+      "stderr": "",
+      "stdout": "0XDP-2rc=0\n"
+    },
+    {
+      "content_hash": "ec9365b16ab90815",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %b",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "9a0a97c185f5dadf",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %q",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "d8050b5af03cbee5",
+      "exit_code": 0,
+      "name": "printf matrix: precision 0 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b164be9a94173e62",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %s",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "ff3745441e7744ce",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %c",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "6e32d000a63b8d06",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %d",
+      "stderr": "",
+      "stdout": "07rc=0\n"
+    },
+    {
+      "content_hash": "b7d32403043c9c49",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %i",
+      "stderr": "",
+      "stdout": "07rc=0\n"
+    },
+    {
+      "content_hash": "3f6a7fe88df9aa21",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %u",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "abf4849e62eb2668",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %o",
+      "stderr": "",
+      "stdout": "377rc=0\n"
+    },
+    {
+      "content_hash": "769a7514889e06de",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %x",
+      "stderr": "",
+      "stdout": "ffrc=0\n"
+    },
+    {
+      "content_hash": "e76ab0cc448d6f2c",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %X",
+      "stderr": "",
+      "stdout": "FFrc=0\n"
+    },
+    {
+      "content_hash": "3f58d259e04ce7e9",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %f",
+      "stderr": "",
+      "stdout": "3.14rc=0\n"
+    },
+    {
+      "content_hash": "f1f261edbaa76642",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %e",
+      "stderr": "",
+      "stdout": "3.14e+00rc=0\n"
+    },
+    {
+      "content_hash": "b77f0b915c4b5bad",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %E",
+      "stderr": "",
+      "stdout": "3.14E+00rc=0\n"
+    },
+    {
+      "content_hash": "f2b41d43bec43f4c",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %g",
+      "stderr": "",
+      "stdout": "3.1rc=0\n"
+    },
+    {
+      "content_hash": "129475ae4eede433",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %G",
+      "stderr": "",
+      "stdout": "3.1rc=0\n"
+    },
+    {
+      "content_hash": "3b01899dffbddc8a",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %a",
+      "stderr": "",
+      "stdout": "0xc.91p-2rc=0\n"
+    },
+    {
+      "content_hash": "c67b97117b5d57d1",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %A",
+      "stderr": "",
+      "stdout": "0XC.91P-2rc=0\n"
+    },
+    {
+      "content_hash": "64f76e0afabb4db2",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %b",
+      "stderr": "",
+      "stdout": "A\trc=0\n"
+    },
+    {
+      "content_hash": "a047847598e8bd04",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %q",
+      "stderr": "",
+      "stdout": "a\\rc=0\n"
+    },
+    {
+      "content_hash": "158ff3881428c6ec",
+      "exit_code": 0,
+      "name": "printf matrix: precision 2 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "52a3f6f15d049434",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %s",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "bb565cb240e7105d",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %c",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "664818ff4f35bcfd",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %d",
+      "stderr": "",
+      "stdout": "000007rc=0\n"
+    },
+    {
+      "content_hash": "085c6e70d11849e8",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %i",
+      "stderr": "",
+      "stdout": "000007rc=0\n"
+    },
+    {
+      "content_hash": "015aa826a25f9476",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %u",
+      "stderr": "",
+      "stdout": "000255rc=0\n"
+    },
+    {
+      "content_hash": "1df39b174e04a635",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %o",
+      "stderr": "",
+      "stdout": "000377rc=0\n"
+    },
+    {
+      "content_hash": "025ab5b2d3d58587",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %x",
+      "stderr": "",
+      "stdout": "0000ffrc=0\n"
+    },
+    {
+      "content_hash": "b77f3ecf39b7bef1",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %X",
+      "stderr": "",
+      "stdout": "0000FFrc=0\n"
+    },
+    {
+      "content_hash": "b573ef2e03dcbdaa",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "4d4a90f304404a08",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "461d0eced4cc6268",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "c2ebdb2b40f4187d",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "d4acc7a399a486ec",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "9464786a724d1c88",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf8p-2rc=0\n"
+    },
+    {
+      "content_hash": "297999a27e37cc08",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF8P-2rc=0\n"
+    },
+    {
+      "content_hash": "e1edbf0e404e238f",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %b",
+      "stderr": "",
+      "stdout": "A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "21bf8e092fb2a5ea",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %q",
+      "stderr": "",
+      "stdout": "a\\ brc=0\n"
+    },
+    {
+      "content_hash": "beb03bc97e198f6a",
+      "exit_code": 0,
+      "name": "printf matrix: precision 6 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "4a3cec77c6121d49",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %s",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "0167a13accc7e29a",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %c",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "c5fb0c8e54fdff0b",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %d",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "a0884b29e90b1d2a",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %i",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "596f396f0819f361",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %u",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "58c91c5a0b10b2db",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %o",
+      "stderr": "",
+      "stdout": "377rc=0\n"
+    },
+    {
+      "content_hash": "4b31b494ad0ba630",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %x",
+      "stderr": "",
+      "stdout": "ffrc=0\n"
+    },
+    {
+      "content_hash": "be2860d228f750a6",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %X",
+      "stderr": "",
+      "stdout": "FFrc=0\n"
+    },
+    {
+      "content_hash": "251cf93f120ca41c",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %f",
+      "stderr": "",
+      "stdout": "3rc=0\n"
+    },
+    {
+      "content_hash": "be9b6c25c9bb27bc",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %e",
+      "stderr": "",
+      "stdout": "3e+00rc=0\n"
+    },
+    {
+      "content_hash": "23b2e00a4230af6f",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %E",
+      "stderr": "",
+      "stdout": "3E+00rc=0\n"
+    },
+    {
+      "content_hash": "2cc3cdfadba28b2b",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %g",
+      "stderr": "",
+      "stdout": "3rc=0\n"
+    },
+    {
+      "content_hash": "fee5831c33afc0d0",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %G",
+      "stderr": "",
+      "stdout": "3rc=0\n"
+    },
+    {
+      "content_hash": "c9432fb071c63a8d",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %a",
+      "stderr": "",
+      "stdout": "0xdp-2rc=0\n"
+    },
+    {
+      "content_hash": "efbcf3a13ee1aaf5",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %A",
+      "stderr": "",
+      "stdout": "0XDP-2rc=0\n"
+    },
+    {
+      "content_hash": "95ee0b5452284af9",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %b",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "763fb28e965c4a3a",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %q",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "06b71a00b9145fd5",
+      "exit_code": 0,
+      "name": "printf matrix: precision empty %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "f8f309c637313119",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %s",
+      "stderr": "",
+      "stdout": "   hirc=0\n"
+    },
+    {
+      "content_hash": "13b0c3718b19fbe8",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %c",
+      "stderr": "",
+      "stdout": "    hrc=0\n"
+    },
+    {
+      "content_hash": "9f1a3fbd8e494fd6",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %d",
+      "stderr": "",
+      "stdout": "   07rc=0\n"
+    },
+    {
+      "content_hash": "1bd151f4a89ad3fb",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %i",
+      "stderr": "",
+      "stdout": "   07rc=0\n"
+    },
+    {
+      "content_hash": "fdf74a330b775f6e",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %u",
+      "stderr": "",
+      "stdout": "  255rc=0\n"
+    },
+    {
+      "content_hash": "ccc3c18bf76e3217",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %o",
+      "stderr": "",
+      "stdout": "  377rc=0\n"
+    },
+    {
+      "content_hash": "63ad05a2551fa031",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %x",
+      "stderr": "",
+      "stdout": "   ffrc=0\n"
+    },
+    {
+      "content_hash": "411965274e9062df",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %X",
+      "stderr": "",
+      "stdout": "   FFrc=0\n"
+    },
+    {
+      "content_hash": "34ad2f1e319e88d4",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %f",
+      "stderr": "",
+      "stdout": " 3.14rc=0\n"
+    },
+    {
+      "content_hash": "6d3cd53903e4b0e1",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %e",
+      "stderr": "",
+      "stdout": "3.14e+00rc=0\n"
+    },
+    {
+      "content_hash": "9d38c5a44ea4e98a",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %E",
+      "stderr": "",
+      "stdout": "3.14E+00rc=0\n"
+    },
+    {
+      "content_hash": "b3cb5e597a56660e",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %g",
+      "stderr": "",
+      "stdout": "  3.1rc=0\n"
+    },
+    {
+      "content_hash": "b4aa99f24c4b3342",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %G",
+      "stderr": "",
+      "stdout": "  3.1rc=0\n"
+    },
+    {
+      "content_hash": "fa5256661e9f61cf",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %a",
+      "stderr": "",
+      "stdout": "0xc.91p-2rc=0\n"
+    },
+    {
+      "content_hash": "124a12bd63eb4f46",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %A",
+      "stderr": "",
+      "stdout": "0XC.91P-2rc=0\n"
+    },
+    {
+      "content_hash": "de334f9e7080fdc7",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %b",
+      "stderr": "",
+      "stdout": "   A\trc=0\n"
+    },
+    {
+      "content_hash": "77b672d1033eb0c7",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %q",
+      "stderr": "",
+      "stdout": "   a\\rc=0\n"
+    },
+    {
+      "content_hash": "8e9d874ac2c31924",
+      "exit_code": 0,
+      "name": "printf matrix: width+precision 5.2 %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "95e5402542e413b1",
+      "exit_code": 0,
+      "name": "printf matrix: star width %s",
+      "stderr": "",
+      "stdout": "   hirc=0\n"
+    },
+    {
+      "content_hash": "2ddbab1f18d53de1",
+      "exit_code": 0,
+      "name": "printf matrix: star width %c",
+      "stderr": "",
+      "stdout": "    hrc=0\n"
+    },
+    {
+      "content_hash": "e3c1cfb2738ff6ed",
+      "exit_code": 0,
+      "name": "printf matrix: star width %d",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "741829d75c5defe9",
+      "exit_code": 0,
+      "name": "printf matrix: star width %i",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "a01fdb2e77701221",
+      "exit_code": 0,
+      "name": "printf matrix: star width %u",
+      "stderr": "",
+      "stdout": "  255rc=0\n"
+    },
+    {
+      "content_hash": "322f20befa7fa575",
+      "exit_code": 0,
+      "name": "printf matrix: star width %o",
+      "stderr": "",
+      "stdout": "  377rc=0\n"
+    },
+    {
+      "content_hash": "bb436b32c652d6aa",
+      "exit_code": 0,
+      "name": "printf matrix: star width %x",
+      "stderr": "",
+      "stdout": "   ffrc=0\n"
+    },
+    {
+      "content_hash": "36de1a629b7bc003",
+      "exit_code": 0,
+      "name": "printf matrix: star width %X",
+      "stderr": "",
+      "stdout": "   FFrc=0\n"
+    },
+    {
+      "content_hash": "9d50f5886b0f60b7",
+      "exit_code": 0,
+      "name": "printf matrix: star width %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "4b875ad36a2d6d5d",
+      "exit_code": 0,
+      "name": "printf matrix: star width %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "2577f8be74a2004b",
+      "exit_code": 0,
+      "name": "printf matrix: star width %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "17681135323d63a0",
+      "exit_code": 0,
+      "name": "printf matrix: star width %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "ec2d3befbfa9948b",
+      "exit_code": 0,
+      "name": "printf matrix: star width %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "c057f980a03a8137",
+      "exit_code": 0,
+      "name": "printf matrix: star width %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "8a8bf3efbe303618",
+      "exit_code": 0,
+      "name": "printf matrix: star width %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "64664fd4eb750b65",
+      "exit_code": 0,
+      "name": "printf matrix: star width %b",
+      "stderr": "",
+      "stdout": " A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "f392bef3b58c49e6",
+      "exit_code": 0,
+      "name": "printf matrix: star width %q",
+      "stderr": "",
+      "stdout": " a\\ brc=0\n"
+    },
+    {
+      "content_hash": "666c81161f51cd32",
+      "exit_code": 0,
+      "name": "printf matrix: star width %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "46660ee6bc1370cc",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %s",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "e6c01f7633014449",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %c",
+      "stderr": "",
+      "stdout": "hrc=0\n"
+    },
+    {
+      "content_hash": "c6ba401c88e58cdb",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %d",
+      "stderr": "",
+      "stdout": "07rc=0\n"
+    },
+    {
+      "content_hash": "6e916fd72d96ea67",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %i",
+      "stderr": "",
+      "stdout": "07rc=0\n"
+    },
+    {
+      "content_hash": "aca44ca1c4ccad5e",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %u",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "ce4c2ccf1f548884",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %o",
+      "stderr": "",
+      "stdout": "377rc=0\n"
+    },
+    {
+      "content_hash": "039d162de9fbd5fe",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %x",
+      "stderr": "",
+      "stdout": "ffrc=0\n"
+    },
+    {
+      "content_hash": "3032fa13fc77640f",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %X",
+      "stderr": "",
+      "stdout": "FFrc=0\n"
+    },
+    {
+      "content_hash": "1dd64343301ab547",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %f",
+      "stderr": "",
+      "stdout": "3.14rc=0\n"
+    },
+    {
+      "content_hash": "72ff6ba0dacc0981",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %e",
+      "stderr": "",
+      "stdout": "3.14e+00rc=0\n"
+    },
+    {
+      "content_hash": "64bcb9817a047e4f",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %E",
+      "stderr": "",
+      "stdout": "3.14E+00rc=0\n"
+    },
+    {
+      "content_hash": "8a7260e63c5ffeeb",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %g",
+      "stderr": "",
+      "stdout": "3.1rc=0\n"
+    },
+    {
+      "content_hash": "8654bbd2922b729d",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %G",
+      "stderr": "",
+      "stdout": "3.1rc=0\n"
+    },
+    {
+      "content_hash": "d3101153ed6dad47",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %a",
+      "stderr": "",
+      "stdout": "0xc.91p-2rc=0\n"
+    },
+    {
+      "content_hash": "8bf90e82fd50dad9",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %A",
+      "stderr": "",
+      "stdout": "0XC.91P-2rc=0\n"
+    },
+    {
+      "content_hash": "3753234c54b333da",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %b",
+      "stderr": "",
+      "stdout": "A\trc=0\n"
+    },
+    {
+      "content_hash": "3cb8dd1ae8d492da",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %q",
+      "stderr": "",
+      "stdout": "a\\rc=0\n"
+    },
+    {
+      "content_hash": "bae14df3556c6fc4",
+      "exit_code": 0,
+      "name": "printf matrix: star precision %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "08d049b809f38edc",
+      "exit_code": 0,
+      "name": "printf matrix: star both %s",
+      "stderr": "",
+      "stdout": "      hirc=0\n"
+    },
+    {
+      "content_hash": "465e29daeaaad459",
+      "exit_code": 0,
+      "name": "printf matrix: star both %c",
+      "stderr": "",
+      "stdout": "       hrc=0\n"
+    },
+    {
+      "content_hash": "03c2e3ec654fdac9",
+      "exit_code": 0,
+      "name": "printf matrix: star both %d",
+      "stderr": "",
+      "stdout": "      07rc=0\n"
+    },
+    {
+      "content_hash": "1188ea882f22819b",
+      "exit_code": 0,
+      "name": "printf matrix: star both %i",
+      "stderr": "",
+      "stdout": "      07rc=0\n"
+    },
+    {
+      "content_hash": "54e486fe9d531c04",
+      "exit_code": 0,
+      "name": "printf matrix: star both %u",
+      "stderr": "",
+      "stdout": "     255rc=0\n"
+    },
+    {
+      "content_hash": "7d95685faa0d08a7",
+      "exit_code": 0,
+      "name": "printf matrix: star both %o",
+      "stderr": "",
+      "stdout": "     377rc=0\n"
+    },
+    {
+      "content_hash": "c0b3bcb2945703ba",
+      "exit_code": 0,
+      "name": "printf matrix: star both %x",
+      "stderr": "",
+      "stdout": "      ffrc=0\n"
+    },
+    {
+      "content_hash": "3873d800093c1a9e",
+      "exit_code": 0,
+      "name": "printf matrix: star both %X",
+      "stderr": "",
+      "stdout": "      FFrc=0\n"
+    },
+    {
+      "content_hash": "a1c285dc2299abc8",
+      "exit_code": 0,
+      "name": "printf matrix: star both %f",
+      "stderr": "",
+      "stdout": "    3.14rc=0\n"
+    },
+    {
+      "content_hash": "34802a825d85c80e",
+      "exit_code": 0,
+      "name": "printf matrix: star both %e",
+      "stderr": "",
+      "stdout": "3.14e+00rc=0\n"
+    },
+    {
+      "content_hash": "39d65067fa6972b9",
+      "exit_code": 0,
+      "name": "printf matrix: star both %E",
+      "stderr": "",
+      "stdout": "3.14E+00rc=0\n"
+    },
+    {
+      "content_hash": "29c3e4055c8c1760",
+      "exit_code": 0,
+      "name": "printf matrix: star both %g",
+      "stderr": "",
+      "stdout": "     3.1rc=0\n"
+    },
+    {
+      "content_hash": "73c4b4dbf51cab58",
+      "exit_code": 0,
+      "name": "printf matrix: star both %G",
+      "stderr": "",
+      "stdout": "     3.1rc=0\n"
+    },
+    {
+      "content_hash": "f224449c832ac712",
+      "exit_code": 0,
+      "name": "printf matrix: star both %a",
+      "stderr": "",
+      "stdout": "0xc.91p-2rc=0\n"
+    },
+    {
+      "content_hash": "7069c43f98ad5661",
+      "exit_code": 0,
+      "name": "printf matrix: star both %A",
+      "stderr": "",
+      "stdout": "0XC.91P-2rc=0\n"
+    },
+    {
+      "content_hash": "d59d8dca759c5646",
+      "exit_code": 0,
+      "name": "printf matrix: star both %b",
+      "stderr": "",
+      "stdout": "      A\trc=0\n"
+    },
+    {
+      "content_hash": "971650f185b89b42",
+      "exit_code": 0,
+      "name": "printf matrix: star both %q",
+      "stderr": "",
+      "stdout": "      a\\rc=0\n"
+    },
+    {
+      "content_hash": "96e4f83001407913",
+      "exit_code": 0,
+      "name": "printf matrix: star both %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "864770c523fc6035",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %s",
+      "stderr": "",
+      "stdout": "hi   rc=0\n"
+    },
+    {
+      "content_hash": "20ad2ceebde4f6af",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %c",
+      "stderr": "",
+      "stdout": "h    rc=0\n"
+    },
+    {
+      "content_hash": "9ebdc3f572c5d9ae",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %d",
+      "stderr": "",
+      "stdout": "7    rc=0\n"
+    },
+    {
+      "content_hash": "8a7e1128b0655d08",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %i",
+      "stderr": "",
+      "stdout": "7    rc=0\n"
+    },
+    {
+      "content_hash": "5e5ca0f91d09e17d",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %u",
+      "stderr": "",
+      "stdout": "255  rc=0\n"
+    },
+    {
+      "content_hash": "d524f27fd8ffe06c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %o",
+      "stderr": "",
+      "stdout": "377  rc=0\n"
+    },
+    {
+      "content_hash": "7ff8714e14a8fbab",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %x",
+      "stderr": "",
+      "stdout": "ff   rc=0\n"
+    },
+    {
+      "content_hash": "d9527f89feee3bc4",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %X",
+      "stderr": "",
+      "stdout": "FF   rc=0\n"
+    },
+    {
+      "content_hash": "8e9ffc5f25d8ae8a",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "4612a9435731657b",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "c418c357e247678c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "2bba37ca6a355973",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "94f9e00b90383e6b",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "af8184fe080d7e06",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "a89ab83426eb28f0",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "5da83f53bfa6904e",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %b",
+      "stderr": "",
+      "stdout": "A\tB\n rc=0\n"
+    },
+    {
+      "content_hash": "b5038ef4bbb7639d",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %q",
+      "stderr": "",
+      "stdout": "a\\ b rc=0\n"
+    },
+    {
+      "content_hash": "5968f4845ccd2d94",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star left %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "cf6b2c855cc2f51b",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %s",
+      "stderr": "",
+      "stdout": "   hirc=0\n"
+    },
+    {
+      "content_hash": "e4e231b3f93f254a",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %c",
+      "stderr": "",
+      "stdout": "    hrc=0\n"
+    },
+    {
+      "content_hash": "d3ab1329e3df312c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %d",
+      "stderr": "",
+      "stdout": "   +7rc=0\n"
+    },
+    {
+      "content_hash": "278f17c0178f2076",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %i",
+      "stderr": "",
+      "stdout": "   +7rc=0\n"
+    },
+    {
+      "content_hash": "34c84381f324936c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %u",
+      "stderr": "",
+      "stdout": "  255rc=0\n"
+    },
+    {
+      "content_hash": "18bbf77c1f9887cb",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %o",
+      "stderr": "",
+      "stdout": "  377rc=0\n"
+    },
+    {
+      "content_hash": "d776cd68b8202ccc",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %x",
+      "stderr": "",
+      "stdout": "   ffrc=0\n"
+    },
+    {
+      "content_hash": "59b3093dab368e74",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %X",
+      "stderr": "",
+      "stdout": "   FFrc=0\n"
+    },
+    {
+      "content_hash": "6546d4ab06c1f6ac",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %f",
+      "stderr": "",
+      "stdout": "+3.141590rc=0\n"
+    },
+    {
+      "content_hash": "14e535529bf2e22d",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %e",
+      "stderr": "",
+      "stdout": "+3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "c8e34a5d442f1a79",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %E",
+      "stderr": "",
+      "stdout": "+3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "8dafc7b7e4f0bcf1",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %g",
+      "stderr": "",
+      "stdout": "+3.14159rc=0\n"
+    },
+    {
+      "content_hash": "14bd368e3041e8da",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %G",
+      "stderr": "",
+      "stdout": "+3.14159rc=0\n"
+    },
+    {
+      "content_hash": "3e58bfb987a0b9ad",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %a",
+      "stderr": "",
+      "stdout": "+0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "efe649eec463dd0b",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %A",
+      "stderr": "",
+      "stdout": "+0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "ca8e981ca84d4319",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %b",
+      "stderr": "",
+      "stdout": " A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "41fe10779fd1e7a5",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %q",
+      "stderr": "",
+      "stdout": " a\\ brc=0\n"
+    },
+    {
+      "content_hash": "fe87944720b159d2",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star plus %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "a4c95dada45f576b",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %s",
+      "stderr": "",
+      "stdout": "   hirc=0\n"
+    },
+    {
+      "content_hash": "101c3ef2e4fa9bbb",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %c",
+      "stderr": "",
+      "stdout": "    hrc=0\n"
+    },
+    {
+      "content_hash": "aec3943a55488b39",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %d",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "133c9b5d74c02dcd",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %i",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "5a7690fc608c7103",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %u",
+      "stderr": "",
+      "stdout": "  255rc=0\n"
+    },
+    {
+      "content_hash": "33eb80ad7d8bc111",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %o",
+      "stderr": "",
+      "stdout": "  377rc=0\n"
+    },
+    {
+      "content_hash": "ef9ba4857ef5b3bc",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %x",
+      "stderr": "",
+      "stdout": "   ffrc=0\n"
+    },
+    {
+      "content_hash": "78101dbc669f328e",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %X",
+      "stderr": "",
+      "stdout": "   FFrc=0\n"
+    },
+    {
+      "content_hash": "efb661a5a9936b34",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %f",
+      "stderr": "",
+      "stdout": " 3.141590rc=0\n"
+    },
+    {
+      "content_hash": "c946feb5e28f1ee6",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %e",
+      "stderr": "",
+      "stdout": " 3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "ddf897fcfbb97f96",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %E",
+      "stderr": "",
+      "stdout": " 3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "b02ca328ac0f3939",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %g",
+      "stderr": "",
+      "stdout": " 3.14159rc=0\n"
+    },
+    {
+      "content_hash": "a79a085c4766cba8",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %G",
+      "stderr": "",
+      "stdout": " 3.14159rc=0\n"
+    },
+    {
+      "content_hash": "34ee7aabd0e45b7f",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %a",
+      "stderr": "",
+      "stdout": " 0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "b6abb7ae8e8e6b49",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %A",
+      "stderr": "",
+      "stdout": " 0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "c67595495ecb2d6e",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %b",
+      "stderr": "",
+      "stdout": " A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "d1d9d8614ea63b69",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %q",
+      "stderr": "",
+      "stdout": " a\\ brc=0\n"
+    },
+    {
+      "content_hash": "60820b25c26fde67",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star space %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b6860396642d2480",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %s",
+      "stderr": "",
+      "stdout": "   hirc=0\n"
+    },
+    {
+      "content_hash": "1b7d7742fa1d1af4",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %c",
+      "stderr": "",
+      "stdout": "    hrc=0\n"
+    },
+    {
+      "content_hash": "c1ce1aef7b669c42",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %d",
+      "stderr": "",
+      "stdout": "00007rc=0\n"
+    },
+    {
+      "content_hash": "0abc070773c17b9a",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %i",
+      "stderr": "",
+      "stdout": "00007rc=0\n"
+    },
+    {
+      "content_hash": "67994b49af17b2dc",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %u",
+      "stderr": "",
+      "stdout": "00255rc=0\n"
+    },
+    {
+      "content_hash": "4798810a8c42bfa6",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %o",
+      "stderr": "",
+      "stdout": "00377rc=0\n"
+    },
+    {
+      "content_hash": "54593329e77472a3",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %x",
+      "stderr": "",
+      "stdout": "000ffrc=0\n"
+    },
+    {
+      "content_hash": "c922f9c0879ec419",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %X",
+      "stderr": "",
+      "stdout": "000FFrc=0\n"
+    },
+    {
+      "content_hash": "51029c16a60f674b",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "edd705704d4d9eee",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "43e40d0707205b7d",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "837dc8b5d9215f6c",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "c5a14ce4ccd66f7a",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "1b3c21b03cf6c772",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "afd9fb0ebb035206",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "4eed4db6ba425808",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %b",
+      "stderr": "",
+      "stdout": " A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "90d3da6d06b2d2e4",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %q",
+      "stderr": "",
+      "stdout": " a\\ brc=0\n"
+    },
+    {
+      "content_hash": "46469605e81f3c05",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star zero %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "e3bbf0ca1e99518f",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %s",
+      "stderr": "",
+      "stdout": "   hirc=0\n"
+    },
+    {
+      "content_hash": "9e447418a39f6393",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %c",
+      "stderr": "",
+      "stdout": "    hrc=0\n"
+    },
+    {
+      "content_hash": "88754ec5ba0b4f25",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %d",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "784d5aef20cbe9e5",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %i",
+      "stderr": "",
+      "stdout": "    7rc=0\n"
+    },
+    {
+      "content_hash": "f2302be6af36b806",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %u",
+      "stderr": "",
+      "stdout": "  255rc=0\n"
+    },
+    {
+      "content_hash": "3f791475bd00777e",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %o",
+      "stderr": "",
+      "stdout": " 0377rc=0\n"
+    },
+    {
+      "content_hash": "b5ea5c20d18d966a",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %x",
+      "stderr": "",
+      "stdout": " 0xffrc=0\n"
+    },
+    {
+      "content_hash": "5c9531a933f564ee",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %X",
+      "stderr": "",
+      "stdout": " 0XFFrc=0\n"
+    },
+    {
+      "content_hash": "1ea59db14513cbef",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %f",
+      "stderr": "",
+      "stdout": "3.141590rc=0\n"
+    },
+    {
+      "content_hash": "7de421cb7384c568",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %e",
+      "stderr": "",
+      "stdout": "3.141590e+00rc=0\n"
+    },
+    {
+      "content_hash": "bc5afce2161c9a9a",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %E",
+      "stderr": "",
+      "stdout": "3.141590E+00rc=0\n"
+    },
+    {
+      "content_hash": "219f62762b6c748a",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %g",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "529da8e6c67e0492",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %G",
+      "stderr": "",
+      "stdout": "3.14159rc=0\n"
+    },
+    {
+      "content_hash": "592db5fb9802b1ad",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %a",
+      "stderr": "",
+      "stdout": "0xc.90fcf80dc33721dp-2rc=0\n"
+    },
+    {
+      "content_hash": "88acc1aa39c9f459",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %A",
+      "stderr": "",
+      "stdout": "0XC.90FCF80DC33721DP-2rc=0\n"
+    },
+    {
+      "content_hash": "ff0f50bfa9778fd1",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %b",
+      "stderr": "",
+      "stdout": " A\tB\nrc=0\n"
+    },
+    {
+      "content_hash": "aab0e3418c1ed8d6",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %q",
+      "stderr": "",
+      "stdout": " a\\ brc=0\n"
+    },
+    {
+      "content_hash": "17b0fa69b35705b5",
+      "exit_code": 0,
+      "name": "printf matrix: flag+star hash %%",
+      "stderr": "bash: line 1: printf: `%': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "5bc0b4542ade5f79",
+      "exit_code": 0,
+      "name": "printf matrix: recycle \"%s\" a b c",
+      "stderr": "",
+      "stdout": "abcrc=0\n"
+    },
+    {
+      "content_hash": "97f66d0ae4ecbd13",
+      "exit_code": 0,
+      "name": "printf matrix: recycle \"%s %s\\\\n\" a b c d",
+      "stderr": "",
+      "stdout": "a b\nc d\nrc=0\n"
+    },
+    {
+      "content_hash": "60aeda8fee1851e2",
+      "exit_code": 0,
+      "name": "printf matrix: recycle \"%s %s\\\\n\" a b c",
+      "stderr": "",
+      "stdout": "a b\nc \nrc=0\n"
+    },
+    {
+      "content_hash": "b9b17e7930111ed6",
+      "exit_code": 0,
+      "name": "printf matrix: recycle \"%d %d\\\\n\" 1 2 3",
+      "stderr": "",
+      "stdout": "1 2\n3 0\nrc=0\n"
+    },
+    {
+      "content_hash": "3176ca729a6e9e5f",
+      "exit_code": 0,
+      "name": "printf matrix: recycle \"%s:%d\\\\n\" a 1 b 2 c",
+      "stderr": "",
+      "stdout": "a:1\nb:2\nc:0\nrc=0\n"
+    },
+    {
+      "content_hash": "490ac6be75d10819",
+      "exit_code": 0,
+      "name": "printf matrix: recycle \"%b\\\\n\" a\\tb c",
+      "stderr": "",
+      "stdout": "a\tb\nc\nrc=0\n"
+    },
+    {
+      "content_hash": "e5f9002eb5f9eccc",
+      "exit_code": 0,
+      "name": "printf matrix: recycle \"%q\\\\n\" a b c",
+      "stderr": "",
+      "stdout": "a\\ b\nc\nrc=0\n"
+    },
+    {
+      "content_hash": "aa64da96c056c201",
+      "exit_code": 0,
+      "name": "printf matrix: recycle \"%s %s\" a",
+      "stderr": "",
+      "stdout": "a rc=0\n"
+    },
+    {
+      "content_hash": "1341bf1ac65175bb",
+      "exit_code": 0,
+      "name": "printf matrix: %b tab",
+      "stderr": "",
+      "stdout": "A\tBrc=0\n"
+    },
+    {
+      "content_hash": "a46da1537d7dd3ef",
+      "exit_code": 0,
+      "name": "printf matrix: %b newline",
+      "stderr": "",
+      "stdout": "A\nBrc=0\n"
+    },
+    {
+      "content_hash": "8ef9388ddef8652c",
+      "exit_code": 0,
+      "name": "printf matrix: %b return",
+      "stderr": "",
+      "stdout": "A\rBrc=0\n"
+    },
+    {
+      "content_hash": "6a59be16f1fe0d6a",
+      "exit_code": 0,
+      "name": "printf matrix: %b backslash",
+      "stderr": "",
+      "stdout": "A\\Brc=0\n"
+    },
+    {
+      "content_hash": "46239fc35bfb3549",
+      "exit_code": 0,
+      "name": "printf matrix: %b hex",
+      "stderr": "",
+      "stdout": "AABrc=0\n"
+    },
+    {
+      "content_hash": "8d4e9e024a37bc55",
+      "exit_code": 0,
+      "name": "printf matrix: %b octal",
+      "stderr": "",
+      "stdout": "AABrc=0\n"
+    },
+    {
+      "content_hash": "1a5f271353544500",
+      "exit_code": 0,
+      "name": "printf matrix: %b hex-del",
+      "stderr": "",
+      "stdout": "ABrc=0\n"
+    },
+    {
+      "content_hash": "340d2ce57f7d4523",
+      "exit_code": 0,
+      "name": "printf matrix: %b stop",
+      "stderr": "",
+      "stdout": "Arc=0\n"
+    },
+    {
+      "content_hash": "addb7aa999dc1d32",
+      "exit_code": 0,
+      "name": "printf matrix: %q empty",
+      "stderr": "",
+      "stdout": "''rc=0\n"
+    },
+    {
+      "content_hash": "5d547e6d5cdb5a55",
+      "exit_code": 0,
+      "name": "printf matrix: %q plain",
+      "stderr": "",
+      "stdout": "hirc=0\n"
+    },
+    {
+      "content_hash": "d06bce626cfa27fb",
+      "exit_code": 0,
+      "name": "printf matrix: %q space",
+      "stderr": "",
+      "stdout": "a\\ brc=0\n"
+    },
+    {
+      "content_hash": "695ecdad9925d94a",
+      "exit_code": 0,
+      "name": "printf matrix: %q quote",
+      "stderr": "",
+      "stdout": "a\\'brc=0\n"
+    },
+    {
+      "content_hash": "a183f9850284e5de",
+      "exit_code": 0,
+      "name": "printf matrix: %q dollar",
+      "stderr": "",
+      "stdout": "\\$HOMErc=0\n"
+    },
+    {
+      "content_hash": "4fb9b92cfc9038e9",
+      "exit_code": 0,
+      "name": "printf matrix: %q glob",
+      "stderr": "",
+      "stdout": "\\*rc=0\n"
+    },
+    {
+      "content_hash": "42b1eec486bbc350",
+      "exit_code": 0,
+      "name": "printf matrix: %q leading-dash",
+      "stderr": "",
+      "stdout": "-nrc=0\n"
+    },
+    {
+      "content_hash": "188476cdd9f026c3",
+      "exit_code": 0,
+      "name": "printf matrix: %q dquote",
+      "stderr": "",
+      "stdout": "\\\"quoted\\\"rc=0\n"
+    },
+    {
+      "content_hash": "6cb5f69ab8a55bdb",
+      "exit_code": 0,
+      "name": "printf matrix: missing %s",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "2d0ee9f6614db87b",
+      "exit_code": 0,
+      "name": "printf matrix: missing %c",
+      "stderr": "",
+      "stdout": "\u0000rc=0\n"
+    },
+    {
+      "content_hash": "b1e83e631320b268",
+      "exit_code": 0,
+      "name": "printf matrix: missing %d",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "18e871309a35e9b3",
+      "exit_code": 0,
+      "name": "printf matrix: missing %i",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "8a964ea751b018e8",
+      "exit_code": 0,
+      "name": "printf matrix: missing %u",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "f1e9ff09f89197c9",
+      "exit_code": 0,
+      "name": "printf matrix: missing %o",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "9fb0ed70e66ede3f",
+      "exit_code": 0,
+      "name": "printf matrix: missing %x",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "232e8b97e3850c12",
+      "exit_code": 0,
+      "name": "printf matrix: missing %X",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "50515069ee4701e1",
+      "exit_code": 0,
+      "name": "printf matrix: missing %f",
+      "stderr": "",
+      "stdout": "0.000000rc=0\n"
+    },
+    {
+      "content_hash": "1b8ceefca5043ac8",
+      "exit_code": 0,
+      "name": "printf matrix: missing %e",
+      "stderr": "",
+      "stdout": "0.000000e+00rc=0\n"
+    },
+    {
+      "content_hash": "b2e659ecf6da2e82",
+      "exit_code": 0,
+      "name": "printf matrix: missing %E",
+      "stderr": "",
+      "stdout": "0.000000E+00rc=0\n"
+    },
+    {
+      "content_hash": "178dfe75471a86df",
+      "exit_code": 0,
+      "name": "printf matrix: missing %g",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "d789f93f24edf511",
+      "exit_code": 0,
+      "name": "printf matrix: missing %G",
+      "stderr": "",
+      "stdout": "0rc=0\n"
+    },
+    {
+      "content_hash": "078b5084d0379059",
+      "exit_code": 0,
+      "name": "printf matrix: missing %a",
+      "stderr": "",
+      "stdout": "0x0p+0rc=0\n"
+    },
+    {
+      "content_hash": "a9cb1a8f082976b0",
+      "exit_code": 0,
+      "name": "printf matrix: missing %A",
+      "stderr": "",
+      "stdout": "0X0P+0rc=0\n"
+    },
+    {
+      "content_hash": "594fdf77765f87a4",
+      "exit_code": 0,
+      "name": "printf matrix: missing %b",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "2935348396becd3c",
+      "exit_code": 0,
+      "name": "printf matrix: missing %q",
+      "stderr": "",
+      "stdout": "''rc=0\n"
+    },
+    {
+      "content_hash": "be36159d9bcec7bd",
+      "exit_code": 0,
+      "name": "printf matrix: missing %%",
+      "stderr": "",
+      "stdout": "%rc=0\n"
+    },
+    {
+      "content_hash": "be36159d9bcec7bd",
+      "exit_code": 0,
+      "name": "printf matrix: percent \"%%\"",
+      "stderr": "",
+      "stdout": "%rc=0\n"
+    },
+    {
+      "content_hash": "315ad93b2bfc67af",
+      "exit_code": 0,
+      "name": "printf matrix: percent \"100%%\"",
+      "stderr": "",
+      "stdout": "100%rc=0\n"
+    },
+    {
+      "content_hash": "e10a8551ce1bac1f",
+      "exit_code": 0,
+      "name": "printf matrix: percent \"%%s\"",
+      "stderr": "",
+      "stdout": "%src=0\n"
+    },
+    {
+      "content_hash": "1fbf19d227fc806f",
+      "exit_code": 0,
+      "name": "printf matrix: percent \"%s %% %s\"",
+      "stderr": "",
+      "stdout": "a % brc=0\n"
+    },
+    {
+      "content_hash": "abf0f94d045cae2d",
+      "exit_code": 0,
+      "name": "printf matrix: percent \"%%%s\"",
+      "stderr": "",
+      "stdout": "%arc=0\n"
+    },
+    {
+      "content_hash": "c18c27cd6d6987ca",
+      "exit_code": 0,
+      "name": "printf matrix: percent \"%s%%\"",
+      "stderr": "",
+      "stdout": "a%rc=0\n"
+    },
+    {
+      "content_hash": "42d9e3537f84a883",
+      "exit_code": 0,
+      "name": "printf matrix: invalid \"%\"",
+      "stderr": "bash: line 1: printf: `%': missing format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "83406c0b4657036e",
+      "exit_code": 0,
+      "name": "printf matrix: invalid \"%v\"",
+      "stderr": "bash: line 1: printf: `v': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "b1037d5d231e316d",
+      "exit_code": 0,
+      "name": "printf matrix: invalid \"%s%\"",
+      "stderr": "bash: line 1: printf: `%': missing format character\n",
+      "stdout": "arc=1\n"
+    },
+    {
+      "content_hash": "62f4846d283b7186",
+      "exit_code": 0,
+      "name": "printf matrix: invalid \"%!\"",
+      "stderr": "bash: line 1: printf: `!': invalid format character\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "2191ea902b2dc64b",
+      "exit_code": 0,
+      "name": "printf matrix: integer input hex",
+      "stderr": "",
+      "stdout": "255rc=0\n"
+    },
+    {
+      "content_hash": "80cff11bbd1070ef",
+      "exit_code": 0,
+      "name": "printf matrix: integer input octal",
+      "stderr": "",
+      "stdout": "8rc=0\n"
+    },
+    {
+      "content_hash": "367c91ee9daecf6c",
+      "exit_code": 0,
+      "name": "printf matrix: integer input char",
+      "stderr": "",
+      "stdout": "65rc=0\n"
+    },
+    {
+      "content_hash": "88f385c62a339d6a",
+      "exit_code": 0,
+      "name": "printf matrix: integer input plus",
+      "stderr": "",
+      "stdout": "42rc=0\n"
+    },
+    {
+      "content_hash": "f64ba19438a76ef7",
+      "exit_code": 0,
+      "name": "printf matrix: integer input spaces",
+      "stderr": "",
+      "stdout": "7rc=0\n"
+    },
+    {
+      "content_hash": "eccc298172017e03",
+      "exit_code": 0,
+      "name": "printf matrix: stacked %-+5d",
+      "stderr": "",
+      "stdout": "+7   rc=0\n"
+    },
+    {
+      "content_hash": "769aed959fd85c11",
+      "exit_code": 0,
+      "name": "printf matrix: stacked %+-5d",
+      "stderr": "",
+      "stdout": "+7   rc=0\n"
+    },
+    {
+      "content_hash": "e17b63c59d589bc6",
+      "exit_code": 0,
+      "name": "printf matrix: stacked % 05d",
+      "stderr": "",
+      "stdout": " 0007rc=0\n"
+    },
+    {
+      "content_hash": "08c4d0769a3ef750",
+      "exit_code": 0,
+      "name": "printf matrix: stacked %+05d",
+      "stderr": "",
+      "stdout": "+0007rc=0\n"
+    },
+    {
+      "content_hash": "489f71536cbd251b",
+      "exit_code": 0,
+      "name": "printf matrix: stacked %#08x",
+      "stderr": "",
+      "stdout": "0x0000ffrc=0\n"
+    },
+    {
+      "content_hash": "fe3c23ebe6ff1eb2",
+      "exit_code": 0,
+      "name": "printf matrix: stacked %#08o",
+      "stderr": "",
+      "stdout": "00000377rc=0\n"
+    },
+    {
+      "content_hash": "8464e2407b4e65d8",
+      "exit_code": 0,
+      "name": "printf matrix: stacked %-05d",
+      "stderr": "",
+      "stdout": "7    rc=0\n"
+    },
+    {
+      "content_hash": "0aace6737199c3aa",
+      "exit_code": 0,
+      "name": "printf matrix: stacked %0-5d",
+      "stderr": "",
+      "stdout": "7    rc=0\n"
+    },
+    {
+      "content_hash": "42f5d5042dff5500",
+      "exit_code": 0,
+      "name": "printf matrix: no operands",
+      "stderr": "printf: usage: printf [-v var] format [arguments]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "cdb33e7f2fc1fbcc",
+      "exit_code": 0,
+      "name": "printf matrix: end of options --",
+      "stderr": "",
+      "stdout": "-nrc=0\n"
+    },
+    {
+      "content_hash": "1c55fdfd05d3d194",
+      "exit_code": 0,
+      "name": "printf matrix: assign -v",
+      "stderr": "",
+      "stdout": "hi\nrc=0\n"
+    },
+    {
+      "content_hash": "b2f644cab3042d8c",
+      "exit_code": 0,
+      "name": "printf matrix: unknown flag -Z",
+      "stderr": "bash: line 1: printf: -Z: invalid option\nprintf: usage: printf [-v var] format [arguments]\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "cb8c78c51f5729f2",
+      "exit_code": 0,
+      "name": "printf matrix: strftime %(%Y)T epoch",
+      "stderr": "",
+      "stdout": "1970-01-01rc=0\n"
+    },
+    {
+      "content_hash": "952fe4cfe27eb898",
+      "exit_code": 0,
+      "name": "printf matrix: strftime %(%F)T unix",
+      "stderr": "",
+      "stdout": "2024-06-15rc=0\n"
+    }
+  ],
+  "suite": "printf_matrix"
+}
