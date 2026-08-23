@@ -25,6 +25,10 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       mix bash_fixtures test_matrix    # record what real bash does
       mix test --only suite:test_matrix
 
+      mix bash_fixtures.gen varop      # write the matrix
+      mix bash_fixtures varop_matrix   # record what real bash does
+      mix test --only suite:varop_matrix
+
   Generated suites are named `<matrix>_matrix` and are safe to regenerate: the
   digest in `JustBash.Fixtures` is content-derived, so a case that did not change
   keeps its recording.
@@ -49,6 +53,14 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       a representative subset so they cannot drift; the full operator list is
       on `test`. This is not the item-3 filesystem-shape × command cube. See
       #70 item 2.
+    * `varop` — every POSIX/bash `${var op word}` form (`-` `:-` `=` `:=` `+`
+      `:+` `?` `:?`, `#` `##` `%` `%%`, `${#var}`, `${var:offset}`,
+      `${var:offset:len}`, `${var/pat/rep}`, `${var//pat/rep}`) crossed with
+      unset / set-empty / set-nonempty, and with a nonempty vs empty word
+      where that changes the answer. Two nonempty bases (`foo` vs `foobar`,
+      plus `foofoo` where shortest vs longest or first vs all would otherwise
+      hide) so one value cannot hide the bug. Suite `varop_matrix`. See #70
+      item 2.
 
   A list of conversions and a list of flags are each easy to write down. The
   cross of the two is where the bugs live and is what nobody enumerates by hand:
@@ -62,6 +74,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       mix bash_fixtures.gen date         # one matrix
       mix bash_fixtures.gen printf       # one matrix
       mix bash_fixtures.gen test         # one matrix
+      mix bash_fixtures.gen varop        # one matrix
       mix bash_fixtures.gen --dry-run    # report counts, write nothing
   """
 
@@ -72,7 +85,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
 
   @shortdoc "Generate enumerated fixture matrices"
 
-  @matrices ["date", "printf", "test"]
+  @matrices ["date", "printf", "test", "varop"]
 
   @doc false
   def cases_for(name), do: build(name)
@@ -394,6 +407,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
   defp build("date"), do: date_cases()
   defp build("printf"), do: printf_cases()
   defp build("test"), do: test_cases()
+  defp build("varop"), do: varop_cases()
 
   defp date_cases do
     Enum.concat([
@@ -1587,6 +1601,284 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       @int_stderr_gap
     else
       @int_parse_gap
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # varop — `${var op word}` parameter expansion
+  #
+  # The alphabet is the POSIX/bash forms JustBash implements: defaults and
+  # alternatives (`-` `:-` `=` `:=` `+` `:+` `?` `:?`), length (`${#var}`),
+  # prefix/suffix removal (`#` `##` `%` `%%`), substring (`${var:offset}` /
+  # `${var:offset:len}`), and pattern replacement (`/` `//`). Each operator
+  # is crossed with unset / set-empty / set-nonempty rather than sampled:
+  # `-` vs `:-` is invisible unless empty and unset are both asked, and
+  # `+` vs `:+` is the same fact from the other side.
+  #
+  # Two nonempty bases — `foo` and `foobar` — so a substring, prefix or
+  # suffix that happens to agree on one value cannot hide. `foofoo` is the
+  # extra base for `#`/`##`/`%`/`%%` and `/`/`//`, where shortest vs
+  # longest and first vs all are otherwise the same cell.
+  #
+  # Every expansion is double-quoted (`"${v-word}"`) so the script is what
+  # bash sees: empty results stay empty, and `*` in a pattern is not a
+  # pathname. `set +u` is explicit except for the nounset cells, which
+  # use `set -u` so we record which operators are unset-safe (`-` `:-`
+  # and the other word-ops) and which still fire (`${#v}`, substring,
+  # removal, replacement).
+  # ---------------------------------------------------------------------------
+
+  # Word-taking operators. The colon forms treat empty as unset; the
+  # non-colon forms do not. That distinction is the whole reason to
+  # enumerate empty and unset separately.
+  @varop_word_ops [
+    {"-", "default-unset"},
+    {":-", "default-null"},
+    {"=", "assign-unset"},
+    {":=", "assign-null"},
+    {"+", "alt-set"},
+    {":+", "alt-null"},
+    {"?", "error-unset"},
+    {":?", "error-null"}
+  ]
+
+  # Empty vs nonempty word. For `-`/`:-`/`=`/`:=` the empty word is the
+  # cell that would hide behind "uses the default" if we only asked
+  # `word`. For `+`/`:+` the nonempty word is what the expansion *is*.
+  # For `?`/`:?` the word is the diagnostic (or bash's "parameter null
+  # or not set" when it is empty).
+  @varop_words [{"word", "word"}, {"empty", ""}]
+
+  @varop_states [
+    {"unset", :unset},
+    {"empty", :empty},
+    {"foo", {:set, "foo"}},
+    {"foobar", {:set, "foobar"}}
+  ]
+
+  # Prefix/suffix patterns. `foo` matches both nonempty bases as a
+  # prefix and only `foo` as a suffix; `bar` matches only `foobar` as a
+  # suffix. `f*` / `*r` / `*` are where `#` vs `##` and `%` vs `%%`
+  # disagree; the empty pattern is the no-op that a generator which
+  # required a word would omit.
+  @varop_prefix_pats ["foo", "f*", "bar", "*", ""]
+  @varop_suffix_pats ["foo", "bar", "*r", "*", ""]
+
+  # Offsets and lengths that distinguish `foo` from `foobar`: `:3` is
+  # empty vs `bar`, `:1:3` is `oo` vs `oob`, `: -1` is `o` vs `r`.
+  # `: -N` needs the space so bash does not parse it as `:-`. `::2` is
+  # the empty-offset spelling; `:0:-1` is a negative length.
+  @varop_slices [
+    ":0",
+    ":1",
+    ":3",
+    ":6",
+    ": -1",
+    ": -3",
+    ":0:0",
+    ":1:2",
+    ":1:3",
+    ":3:2",
+    ": -2:1",
+    ":0:-1",
+    "::2"
+  ]
+
+  # First-vs-all replacements. `o` occurs twice in both nonempty bases,
+  # so `/` and `//` disagree; `foo`/`bar` are the literal match and
+  # miss; empty replacement is deletion.
+  @varop_replaces [
+    {"o", "X"},
+    {"o", ""},
+    {"foo", "X"},
+    {"bar", "X"}
+  ]
+
+  defp varop_cases do
+    Enum.concat([
+      varop_word_cases(),
+      varop_nounset_cases(),
+      varop_length_cases(),
+      varop_slice_cases(),
+      varop_remove_cases(),
+      varop_replace_cases()
+    ])
+  end
+
+  # 8 operators × 2 words × 4 states. The colon/non-colon pair is only
+  # visible when empty and unset are both present; the two nonempty
+  # bases are only visible when the operator returns the value (`-` on
+  # a set var, or `+` wrongly returning it).
+  defp varop_word_cases do
+    extra_default_one =
+      for {label, state} <- @varop_states do
+        # `${v:-1}` is default-null with word `1`, not substring. Asked
+        # next to `${v: -1}` so a parser that drops the colon/space
+        # distinction cannot hide behind `word`.
+        varop_case("${v:-1} (#{label})", varop_setup(state), "${v:-1}", [])
+      end
+
+    word_cross =
+      for {op, _kind} <- @varop_word_ops,
+          {word_label, word} <- @varop_words,
+          {state_label, state} <- @varop_states do
+        expansion = "${v#{op}#{word}}"
+        name = "#{expansion} (#{state_label}, #{word_label})"
+        after_lines = varop_after_lines(op)
+        varop_case(name, varop_setup(state), expansion, after_lines)
+      end
+
+    extra_default_one ++ word_cross
+  end
+
+  # Nounset must not fire on the operators that exist to handle unset.
+  # One revealing cell per family, plus the word-ops on unset (and on
+  # empty for the colon forms, where empty is the other trigger).
+  defp varop_nounset_cases do
+    Enum.concat([
+      for {op, _kind} <- @varop_word_ops,
+          {state_label, state} <- [{"unset", :unset}, {"empty", :empty}] do
+        expansion = "${v#{op}word}"
+
+        varop_case(
+          "set -u #{expansion} (#{state_label})",
+          varop_setup_u(state),
+          expansion,
+          varop_after_lines(op)
+        )
+      end,
+      [
+        varop_case("set -u ${#v} (unset)", varop_setup_u(:unset), "${#v}", []),
+        varop_case("set -u ${v:0} (unset)", varop_setup_u(:unset), "${v:0}", []),
+        varop_case("set -u ${v#x} (unset)", varop_setup_u(:unset), "${v#x}", []),
+        varop_case("set -u ${v/x/y} (unset)", varop_setup_u(:unset), "${v/x/y}", [])
+      ]
+    ])
+  end
+
+  defp varop_length_cases do
+    for {label, state} <- @varop_states do
+      varop_case("${#v} (#{label})", varop_setup(state), "${#v}", [])
+    end
+  end
+
+  defp varop_slice_cases do
+    for slice <- @varop_slices, {label, state} <- @varop_states do
+      expansion = "${v#{slice}}"
+      varop_case("#{expansion} (#{label})", varop_setup(state), expansion, [])
+    end
+  end
+
+  defp varop_remove_cases do
+    Enum.concat([
+      for {op, pats} <- [
+            {"#", @varop_prefix_pats},
+            {"##", @varop_prefix_pats},
+            {"%", @varop_suffix_pats},
+            {"%%", @varop_suffix_pats}
+          ],
+          pat <- pats,
+          {label, state} <- @varop_states do
+        expansion = "${v#{op}#{pat}}"
+        varop_case("#{expansion} (#{label})", varop_setup(state), expansion, [])
+      end,
+      # `foofoo` is where `#` vs `##` and `%` vs `%%` actually split
+      # on a repeated literal, not only on `*`.
+      for {op, pat} <- [
+            {"#", "f*"},
+            {"##", "f*"},
+            {"#", "foo*"},
+            {"##", "foo*"},
+            {"%", "*o"},
+            {"%%", "*o"},
+            {"%", "*foo"},
+            {"%%", "*foo"}
+          ] do
+        expansion = "${v#{op}#{pat}}"
+        varop_case("#{expansion} (foofoo)", varop_setup({:set, "foofoo"}), expansion, [])
+      end
+    ])
+  end
+
+  defp varop_replace_cases do
+    Enum.concat([
+      for all? <- [false, true],
+          {pat, rep} <- @varop_replaces,
+          {label, state} <- @varop_states do
+        slash = if all?, do: "//", else: "/"
+        expansion = "${v#{slash}#{pat}/#{rep}}"
+        varop_case("#{expansion} (#{label})", varop_setup(state), expansion, [])
+      end,
+      [
+        varop_case("${v/foo/X} (foofoo)", varop_setup({:set, "foofoo"}), "${v/foo/X}", []),
+        varop_case("${v//foo/X} (foofoo)", varop_setup({:set, "foofoo"}), "${v//foo/X}", []),
+        varop_case("${v/} (foo)", varop_setup({:set, "foo"}), "${v/}", []),
+        varop_case("${v//} (foo)", varop_setup({:set, "foo"}), "${v//}", []),
+        varop_case("${v/o} (foo)", varop_setup({:set, "foo"}), "${v/o}", []),
+        varop_case("${v//o} (foo)", varop_setup({:set, "foo"}), "${v//o}", [])
+      ]
+    ])
+  end
+
+  defp varop_setup(:unset), do: "set +u; unset v"
+  defp varop_setup(:empty), do: "set +u; v="
+  defp varop_setup({:set, value}), do: "set +u; v=#{value}"
+
+  defp varop_setup_u(:unset), do: "set -u; unset v"
+  defp varop_setup_u(:empty), do: "set -u; v="
+
+  defp varop_after_lines(op) when op in ["=", ":="], do: ["echo \"[$v]\""]
+  defp varop_after_lines(op) when op in ["?", ":?"], do: ["echo after"]
+  defp varop_after_lines(_op), do: []
+
+  defp varop_case(name, setup, expansion, after_lines) do
+    echoes = ["echo \"[#{expansion}]\"" | after_lines]
+    script = Enum.join([setup | echoes] ++ ["echo rc=$?"], "; ")
+    fixture_case("varop matrix: #{name}", script, varop_gap(name))
+  end
+
+  # Assigned after recording. A cell that matches is left unmarked even
+  # when a sibling of the same operator diverges — marking a match
+  # inverts a passing assertion. `${v?}` on a set or empty value is
+  # correct; only the unset (and, for `:?`, empty) triggers are gaps.
+  @error_op_gap "JustBash ${v?}/${v:?} returns empty and continues; bash writes a diagnostic to stderr and aborts"
+  @nounset_other_gap "JustBash set -u treats unset as empty for ${#v}/${v:offset}/${v#pat}/${v/pat}; bash errors unbound variable"
+  @slice_neg_empty_gap "JustBash ${v:0:-1} on empty is empty at exit 0; bash errors substring expression < 0"
+  @shortest_star_gap "JustBash shortest #/*/% of * consumes one character; bash's shortest * match is empty so the value is unchanged"
+
+  @error_op_names [
+    "${v?word} (unset, word)",
+    "${v?} (unset, empty)",
+    "${v:?word} (unset, word)",
+    "${v:?word} (empty, word)",
+    "${v:?} (unset, empty)",
+    "${v:?} (empty, empty)",
+    "set -u ${v?word} (unset)",
+    "set -u ${v:?word} (unset)",
+    "set -u ${v:?word} (empty)"
+  ]
+
+  @nounset_other_names [
+    "set -u ${#v} (unset)",
+    "set -u ${v:0} (unset)",
+    "set -u ${v#x} (unset)",
+    "set -u ${v/x/y} (unset)"
+  ]
+
+  @shortest_star_names [
+    "${v#*} (foo)",
+    "${v#*} (foobar)",
+    "${v%*} (foo)",
+    "${v%*} (foobar)"
+  ]
+
+  defp varop_gap(name) do
+    cond do
+      name in @error_op_names -> @error_op_gap
+      name in @nounset_other_names -> @nounset_other_gap
+      name == "${v:0:-1} (empty)" -> @slice_neg_empty_gap
+      name in @shortest_star_names -> @shortest_star_gap
+      true -> nil
     end
   end
 

@@ -138,6 +138,96 @@ defmodule Mix.Tasks.BashFixtures.GenTest do
     end
   end
 
+  describe "varop matrix" do
+    test "enumerates every ${var op word} form, not a sample" do
+      cases = Gen.cases_for("varop")
+      names = Enum.map(cases, & &1["name"])
+
+      assert length(cases) > 150
+
+      for op <- ["-", ":-", "=", ":=", "+", ":+", "?", ":?"] do
+        fragment = "${" <> "v#{op}"
+
+        assert Enum.any?(names, &String.contains?(&1, fragment)),
+               "missing word-op #{fragment}"
+      end
+
+      for op <- ["#", "##", "%", "%%"] do
+        fragment = "${" <> "v#{op}"
+
+        assert Enum.any?(names, &String.contains?(&1, fragment)),
+               "missing removal #{fragment}"
+      end
+
+      assert Enum.any?(names, &String.contains?(&1, ~S|${#v}|))
+      assert Enum.any?(names, &String.contains?(&1, ~S|${v:3}|))
+      assert Enum.any?(names, &String.contains?(&1, ~S|${v:1:3}|))
+      assert Enum.any?(names, &String.contains?(&1, ~S|${v/o/X}|))
+      assert Enum.any?(names, &String.contains?(&1, ~S|${v//o/X}|))
+    end
+
+    test "uses two or more bases so prefix/suffix and offset cannot hide" do
+      names = Gen.cases_for("varop") |> Enum.map(& &1["name"])
+
+      for fragment <- [
+            ~S|${v-word} (unset|,
+            ~S|${v-word} (empty|,
+            ~S|${v-word} (foo|,
+            ~S|${v-word} (foobar|,
+            ~S|${v-} (unset|,
+            ~S|${v:3} (foo)|,
+            ~S|${v:3} (foobar)|,
+            ~S|${v#f*} (foo)|,
+            ~S|${v#f*} (foobar)|,
+            ~S|${v##f*} (foofoo)|,
+            ~S|${v//foo/X} (foofoo)|
+          ] do
+        assert Enum.any?(names, &String.contains?(&1, fragment)),
+               "missing #{fragment}"
+      end
+    end
+
+    test "quotes expansions and is explicit about set +u vs unset" do
+      cases = Gen.cases_for("varop")
+
+      assert Enum.any?(cases, fn test_case ->
+               String.contains?(test_case["script"], ~S|"[${v-word}]"|) and
+                 String.contains?(test_case["script"], "set +u") and
+                 String.contains?(test_case["script"], "unset v")
+             end)
+
+      assert Enum.any?(cases, fn test_case ->
+               String.contains?(test_case["name"], ~S|set -u ${v-word}|) and
+                 String.contains?(test_case["script"], "set -u")
+             end)
+    end
+
+    test "every case hashes from its script, not its name or gap" do
+      cases = Gen.cases_for("varop")
+
+      Enum.each(cases, fn test_case ->
+        assert test_case["content_hash"] == JustBash.Fixtures.hash_case(test_case)
+      end)
+    end
+
+    test "known_gap lives in opts and does not change the digest" do
+      cases = Gen.cases_for("varop")
+      gapped = Enum.filter(cases, &get_in(&1, ["opts", "known_gap"]))
+
+      assert length(gapped) > 10
+      assert length(gapped) < length(cases)
+
+      Enum.each(gapped, fn test_case ->
+        reason = test_case["opts"]["known_gap"]
+        assert is_binary(reason)
+        assert String.length(reason) > 10
+
+        assert JustBash.Fixtures.hash_case(test_case) ==
+                 JustBash.Fixtures.hash_case(Map.delete(test_case, "opts"))
+      end)
+    end
+  end
+
   describe "run/1" do
     test "printf --dry-run reports a count and writes nothing" do
       output =
@@ -156,6 +246,16 @@ defmodule Mix.Tasks.BashFixtures.GenTest do
         end)
 
       assert output =~ ~r/test_matrix: \d+ cases/
+      refute output =~ "wrote"
+    end
+
+    test "varop --dry-run reports a count and writes nothing" do
+      output =
+        ExUnit.CaptureIO.capture_io(fn ->
+          Mix.Task.rerun("bash_fixtures.gen", ["varop", "--dry-run"])
+        end)
+
+      assert output =~ ~r/varop_matrix: \d+ cases/
       refute output =~ "wrote"
     end
 

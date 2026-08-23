@@ -1,0 +1,1895 @@
+{
+  "results": [
+    {
+      "content_hash": "e8d84f47ac46a868",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-1} (unset)",
+      "stderr": "",
+      "stdout": "[1]\nrc=0\n"
+    },
+    {
+      "content_hash": "9fd65e3201eed796",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-1} (empty)",
+      "stderr": "",
+      "stdout": "[1]\nrc=0\n"
+    },
+    {
+      "content_hash": "9317cf807f6d010c",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-1} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "778f8d0079e20a91",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-1} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "23958776ce32c943",
+      "exit_code": 0,
+      "name": "varop matrix: ${v-word} (unset, word)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "9428e1c42530c0ea",
+      "exit_code": 0,
+      "name": "varop matrix: ${v-word} (empty, word)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "6e6cdbc00c09e1e2",
+      "exit_code": 0,
+      "name": "varop matrix: ${v-word} (foo, word)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "2b471b7a34d0e473",
+      "exit_code": 0,
+      "name": "varop matrix: ${v-word} (foobar, word)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "d7aec96a472ab3b2",
+      "exit_code": 0,
+      "name": "varop matrix: ${v-} (unset, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "9b9a802ce10d478f",
+      "exit_code": 0,
+      "name": "varop matrix: ${v-} (empty, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "431f1093e92ef37d",
+      "exit_code": 0,
+      "name": "varop matrix: ${v-} (foo, empty)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "a2bf48364826dc7e",
+      "exit_code": 0,
+      "name": "varop matrix: ${v-} (foobar, empty)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "9261b41b692f2611",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-word} (unset, word)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "fe333ed10bec8470",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-word} (empty, word)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "71fea0b9cb5e56da",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-word} (foo, word)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "9669f7fcdc9eaded",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-word} (foobar, word)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "45ddc02e75af9fb6",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-} (unset, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "0e7eb668bbc8643c",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-} (empty, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "3e9c50a7cb413ad0",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-} (foo, empty)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "2331fdf553aea870",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:-} (foobar, empty)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "be0a3f837efcb32b",
+      "exit_code": 0,
+      "name": "varop matrix: ${v=word} (unset, word)",
+      "stderr": "",
+      "stdout": "[word]\n[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "b6c2dbdae80b0323",
+      "exit_code": 0,
+      "name": "varop matrix: ${v=word} (empty, word)",
+      "stderr": "",
+      "stdout": "[]\n[]\nrc=0\n"
+    },
+    {
+      "content_hash": "b34e46564d13a8ef",
+      "exit_code": 0,
+      "name": "varop matrix: ${v=word} (foo, word)",
+      "stderr": "",
+      "stdout": "[foo]\n[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "4f24d9c63e68356a",
+      "exit_code": 0,
+      "name": "varop matrix: ${v=word} (foobar, word)",
+      "stderr": "",
+      "stdout": "[foobar]\n[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "8019cf4d56f0dcf3",
+      "exit_code": 0,
+      "name": "varop matrix: ${v=} (unset, empty)",
+      "stderr": "",
+      "stdout": "[]\n[]\nrc=0\n"
+    },
+    {
+      "content_hash": "4b46a7db16cbbb31",
+      "exit_code": 0,
+      "name": "varop matrix: ${v=} (empty, empty)",
+      "stderr": "",
+      "stdout": "[]\n[]\nrc=0\n"
+    },
+    {
+      "content_hash": "dc0853403d45587e",
+      "exit_code": 0,
+      "name": "varop matrix: ${v=} (foo, empty)",
+      "stderr": "",
+      "stdout": "[foo]\n[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "1a33ce9aac478d73",
+      "exit_code": 0,
+      "name": "varop matrix: ${v=} (foobar, empty)",
+      "stderr": "",
+      "stdout": "[foobar]\n[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "c7f7a0c5f4149edc",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:=word} (unset, word)",
+      "stderr": "",
+      "stdout": "[word]\n[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "c859998a0592891c",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:=word} (empty, word)",
+      "stderr": "",
+      "stdout": "[word]\n[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "aca1add05289ecb6",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:=word} (foo, word)",
+      "stderr": "",
+      "stdout": "[foo]\n[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "4db3fb1b31536c31",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:=word} (foobar, word)",
+      "stderr": "",
+      "stdout": "[foobar]\n[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "64d8527906cd72df",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:=} (unset, empty)",
+      "stderr": "",
+      "stdout": "[]\n[]\nrc=0\n"
+    },
+    {
+      "content_hash": "c25477eb6795346d",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:=} (empty, empty)",
+      "stderr": "",
+      "stdout": "[]\n[]\nrc=0\n"
+    },
+    {
+      "content_hash": "1c4b16b105a44495",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:=} (foo, empty)",
+      "stderr": "",
+      "stdout": "[foo]\n[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "94baaa18f7797396",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:=} (foobar, empty)",
+      "stderr": "",
+      "stdout": "[foobar]\n[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "924c2fce828fbd21",
+      "exit_code": 0,
+      "name": "varop matrix: ${v+word} (unset, word)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "a5226a7e7dd6adfa",
+      "exit_code": 0,
+      "name": "varop matrix: ${v+word} (empty, word)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "cf01c326697f9f50",
+      "exit_code": 0,
+      "name": "varop matrix: ${v+word} (foo, word)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "e0c8fd9f239c6270",
+      "exit_code": 0,
+      "name": "varop matrix: ${v+word} (foobar, word)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "cae76e7eeafec0a3",
+      "exit_code": 0,
+      "name": "varop matrix: ${v+} (unset, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "7d09190b2abdd785",
+      "exit_code": 0,
+      "name": "varop matrix: ${v+} (empty, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "775a34a9af6bd853",
+      "exit_code": 0,
+      "name": "varop matrix: ${v+} (foo, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "f385e501c3f5441f",
+      "exit_code": 0,
+      "name": "varop matrix: ${v+} (foobar, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "3c266f5a1fd043b5",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:+word} (unset, word)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "f6b7c6e1381e5b63",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:+word} (empty, word)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "e77c691611228480",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:+word} (foo, word)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "450426a459a41467",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:+word} (foobar, word)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "327a91b1e326974a",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:+} (unset, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "a742d7b1fee298e2",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:+} (empty, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "111ab251f6056594",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:+} (foo, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "bec2203f40e0127e",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:+} (foobar, empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "65a37da8dbd9e560",
+      "exit_code": 127,
+      "name": "varop matrix: ${v?word} (unset, word)",
+      "stderr": "bash: line 1: v: word\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "2496f2b2515400e4",
+      "exit_code": 0,
+      "name": "varop matrix: ${v?word} (empty, word)",
+      "stderr": "",
+      "stdout": "[]\nafter\nrc=0\n"
+    },
+    {
+      "content_hash": "afb21a25a75e3a1a",
+      "exit_code": 0,
+      "name": "varop matrix: ${v?word} (foo, word)",
+      "stderr": "",
+      "stdout": "[foo]\nafter\nrc=0\n"
+    },
+    {
+      "content_hash": "63f9a5bd76ff6b91",
+      "exit_code": 0,
+      "name": "varop matrix: ${v?word} (foobar, word)",
+      "stderr": "",
+      "stdout": "[foobar]\nafter\nrc=0\n"
+    },
+    {
+      "content_hash": "5cbcf5f47770bffc",
+      "exit_code": 127,
+      "name": "varop matrix: ${v?} (unset, empty)",
+      "stderr": "bash: line 1: v: parameter not set\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "f74b894c96136fce",
+      "exit_code": 0,
+      "name": "varop matrix: ${v?} (empty, empty)",
+      "stderr": "",
+      "stdout": "[]\nafter\nrc=0\n"
+    },
+    {
+      "content_hash": "579c538bc9bc5753",
+      "exit_code": 0,
+      "name": "varop matrix: ${v?} (foo, empty)",
+      "stderr": "",
+      "stdout": "[foo]\nafter\nrc=0\n"
+    },
+    {
+      "content_hash": "a61267d7211fbc76",
+      "exit_code": 0,
+      "name": "varop matrix: ${v?} (foobar, empty)",
+      "stderr": "",
+      "stdout": "[foobar]\nafter\nrc=0\n"
+    },
+    {
+      "content_hash": "a236e6b73a4950a5",
+      "exit_code": 127,
+      "name": "varop matrix: ${v:?word} (unset, word)",
+      "stderr": "bash: line 1: v: word\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "7952b8c22a73b086",
+      "exit_code": 127,
+      "name": "varop matrix: ${v:?word} (empty, word)",
+      "stderr": "bash: line 1: v: word\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "619d98676c666a77",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:?word} (foo, word)",
+      "stderr": "",
+      "stdout": "[foo]\nafter\nrc=0\n"
+    },
+    {
+      "content_hash": "6774c3a35ceb6fcb",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:?word} (foobar, word)",
+      "stderr": "",
+      "stdout": "[foobar]\nafter\nrc=0\n"
+    },
+    {
+      "content_hash": "54bb680964a03e86",
+      "exit_code": 127,
+      "name": "varop matrix: ${v:?} (unset, empty)",
+      "stderr": "bash: line 1: v: parameter null or not set\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "bc3e2f3135362669",
+      "exit_code": 127,
+      "name": "varop matrix: ${v:?} (empty, empty)",
+      "stderr": "bash: line 1: v: parameter null or not set\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "ccd08f8ca5f63069",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:?} (foo, empty)",
+      "stderr": "",
+      "stdout": "[foo]\nafter\nrc=0\n"
+    },
+    {
+      "content_hash": "b56e8edf3d71f353",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:?} (foobar, empty)",
+      "stderr": "",
+      "stdout": "[foobar]\nafter\nrc=0\n"
+    },
+    {
+      "content_hash": "de35c240a2f395e5",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v-word} (unset)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "32b60682dee4c9dd",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v-word} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "39769032586567b2",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v:-word} (unset)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "36283dc6c5ffd527",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v:-word} (empty)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "f01d8d211fc1a36b",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v=word} (unset)",
+      "stderr": "",
+      "stdout": "[word]\n[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "da9590195e27257f",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v=word} (empty)",
+      "stderr": "",
+      "stdout": "[]\n[]\nrc=0\n"
+    },
+    {
+      "content_hash": "fdb7e488cb562d54",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v:=word} (unset)",
+      "stderr": "",
+      "stdout": "[word]\n[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "dade6d948f229b31",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v:=word} (empty)",
+      "stderr": "",
+      "stdout": "[word]\n[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "b36bc64cfc644221",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v+word} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "2d6c5f73d3caabcd",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v+word} (empty)",
+      "stderr": "",
+      "stdout": "[word]\nrc=0\n"
+    },
+    {
+      "content_hash": "7240cde0183b05f2",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v:+word} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "36798059419fd814",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v:+word} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "073da5ce458d0bf7",
+      "exit_code": 127,
+      "name": "varop matrix: set -u ${v?word} (unset)",
+      "stderr": "bash: line 1: v: word\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "dfaad0cee53f94b1",
+      "exit_code": 0,
+      "name": "varop matrix: set -u ${v?word} (empty)",
+      "stderr": "",
+      "stdout": "[]\nafter\nrc=0\n"
+    },
+    {
+      "content_hash": "5bfa3380fef546d9",
+      "exit_code": 127,
+      "name": "varop matrix: set -u ${v:?word} (unset)",
+      "stderr": "bash: line 1: v: word\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "60762b0fd9eae924",
+      "exit_code": 127,
+      "name": "varop matrix: set -u ${v:?word} (empty)",
+      "stderr": "bash: line 1: v: word\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "ad5dab775b0b5590",
+      "exit_code": 127,
+      "name": "varop matrix: set -u ${#v} (unset)",
+      "stderr": "bash: line 1: v: unbound variable\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "29be4b20eec6a6eb",
+      "exit_code": 127,
+      "name": "varop matrix: set -u ${v:0} (unset)",
+      "stderr": "bash: line 1: v: unbound variable\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "a481f53d9e7b9ecd",
+      "exit_code": 127,
+      "name": "varop matrix: set -u ${v#x} (unset)",
+      "stderr": "bash: line 1: v: unbound variable\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "46da344ce21ec60e",
+      "exit_code": 127,
+      "name": "varop matrix: set -u ${v/x/y} (unset)",
+      "stderr": "bash: line 1: v: unbound variable\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "71aaa2a58947df8b",
+      "exit_code": 0,
+      "name": "varop matrix: ${#v} (unset)",
+      "stderr": "",
+      "stdout": "[0]\nrc=0\n"
+    },
+    {
+      "content_hash": "3c93fe95c75a0f55",
+      "exit_code": 0,
+      "name": "varop matrix: ${#v} (empty)",
+      "stderr": "",
+      "stdout": "[0]\nrc=0\n"
+    },
+    {
+      "content_hash": "f49aee16bef187db",
+      "exit_code": 0,
+      "name": "varop matrix: ${#v} (foo)",
+      "stderr": "",
+      "stdout": "[3]\nrc=0\n"
+    },
+    {
+      "content_hash": "22bea81097a846ed",
+      "exit_code": 0,
+      "name": "varop matrix: ${#v} (foobar)",
+      "stderr": "",
+      "stdout": "[6]\nrc=0\n"
+    },
+    {
+      "content_hash": "3a58efedb99dd94b",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:0} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "579660560b7e2eee",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:0} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "a48273b5ffab90da",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:0} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "f86302f756c5d459",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:0} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "5bc66020ae307108",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "a48e28d365ca930b",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "f668c46f5070d2fb",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1} (foo)",
+      "stderr": "",
+      "stdout": "[oo]\nrc=0\n"
+    },
+    {
+      "content_hash": "3c818d44016810dc",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1} (foobar)",
+      "stderr": "",
+      "stdout": "[oobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "e465ca7123784d18",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:3} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "01a58c54f153bcdb",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:3} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "5101ac255f09d506",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:3} (foo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "1cfe0cb916dfa7d6",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:3} (foobar)",
+      "stderr": "",
+      "stdout": "[bar]\nrc=0\n"
+    },
+    {
+      "content_hash": "c8608020b2f25b8f",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:6} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "028480c1b09d05dd",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:6} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "68cb2ac7de63fc86",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:6} (foo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "ecc637f652dbe132",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:6} (foobar)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "b83e2e374e731c7d",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -1} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "fab14cd86b74fbc8",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -1} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "479a20aee2b8c504",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -1} (foo)",
+      "stderr": "",
+      "stdout": "[o]\nrc=0\n"
+    },
+    {
+      "content_hash": "0565124e45a410e2",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -1} (foobar)",
+      "stderr": "",
+      "stdout": "[r]\nrc=0\n"
+    },
+    {
+      "content_hash": "1b9f2207a6b35e52",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -3} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "88b90f7a46248ab3",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -3} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "7597947e2420406c",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -3} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "5b42cf4f3e0f2623",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -3} (foobar)",
+      "stderr": "",
+      "stdout": "[bar]\nrc=0\n"
+    },
+    {
+      "content_hash": "07cebb5f3cf752db",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:0:0} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "2cc193fa18e3f35c",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:0:0} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "beec8978b86ae9c3",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:0:0} (foo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "8d56cbc8516b0cc3",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:0:0} (foobar)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "904039a61554a223",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1:2} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "a8458f5d4f73e4ba",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1:2} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "1a5b26637768e62a",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1:2} (foo)",
+      "stderr": "",
+      "stdout": "[oo]\nrc=0\n"
+    },
+    {
+      "content_hash": "086ff63a291a04b4",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1:2} (foobar)",
+      "stderr": "",
+      "stdout": "[oo]\nrc=0\n"
+    },
+    {
+      "content_hash": "ddd3c3482e3e25ba",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1:3} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "ffdc70d344349d9d",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1:3} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "2660c2afc18256cb",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1:3} (foo)",
+      "stderr": "",
+      "stdout": "[oo]\nrc=0\n"
+    },
+    {
+      "content_hash": "cacacd5a060217bc",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:1:3} (foobar)",
+      "stderr": "",
+      "stdout": "[oob]\nrc=0\n"
+    },
+    {
+      "content_hash": "b2c5080813d761a0",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:3:2} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "4d7a9c4fa625781e",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:3:2} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "d55d6779a0c6a23f",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:3:2} (foo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "ebc019835437a18e",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:3:2} (foobar)",
+      "stderr": "",
+      "stdout": "[ba]\nrc=0\n"
+    },
+    {
+      "content_hash": "74226759fe70de4d",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -2:1} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "4c8de583a1af59b6",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -2:1} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "a3362807f17747c6",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -2:1} (foo)",
+      "stderr": "",
+      "stdout": "[o]\nrc=0\n"
+    },
+    {
+      "content_hash": "a091d8b7775e7cfc",
+      "exit_code": 0,
+      "name": "varop matrix: ${v: -2:1} (foobar)",
+      "stderr": "",
+      "stdout": "[a]\nrc=0\n"
+    },
+    {
+      "content_hash": "7a275f0640e8310e",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:0:-1} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "27d8938db69fecfa",
+      "exit_code": 1,
+      "name": "varop matrix: ${v:0:-1} (empty)",
+      "stderr": "bash: line 1: -1: substring expression < 0\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "95c78ea4950c8406",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:0:-1} (foo)",
+      "stderr": "",
+      "stdout": "[fo]\nrc=0\n"
+    },
+    {
+      "content_hash": "2e6390107969d95d",
+      "exit_code": 0,
+      "name": "varop matrix: ${v:0:-1} (foobar)",
+      "stderr": "",
+      "stdout": "[fooba]\nrc=0\n"
+    },
+    {
+      "content_hash": "9760eaa73a898cd4",
+      "exit_code": 0,
+      "name": "varop matrix: ${v::2} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "1f05504309640337",
+      "exit_code": 0,
+      "name": "varop matrix: ${v::2} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "f4248d793abb49ea",
+      "exit_code": 0,
+      "name": "varop matrix: ${v::2} (foo)",
+      "stderr": "",
+      "stdout": "[fo]\nrc=0\n"
+    },
+    {
+      "content_hash": "f8348c981aff44d7",
+      "exit_code": 0,
+      "name": "varop matrix: ${v::2} (foobar)",
+      "stderr": "",
+      "stdout": "[fo]\nrc=0\n"
+    },
+    {
+      "content_hash": "63ba2c810c935aa6",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#foo} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "c16dc8d99396113a",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#foo} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "74aef8b513a36472",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#foo} (foo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "700f2cf68ff5bf9a",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#foo} (foobar)",
+      "stderr": "",
+      "stdout": "[bar]\nrc=0\n"
+    },
+    {
+      "content_hash": "995ef9d1b3b05be4",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#f*} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "4c80c201bcffcde5",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#f*} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "9c3c22cb12dc1e0d",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#f*} (foo)",
+      "stderr": "",
+      "stdout": "[oo]\nrc=0\n"
+    },
+    {
+      "content_hash": "29b65f0ce7edef37",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#f*} (foobar)",
+      "stderr": "",
+      "stdout": "[oobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "bf608d76be23a2d9",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#bar} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "81a602079a751cc2",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#bar} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "75f4f1790e78ad9b",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#bar} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "3294b498bf6a7ed4",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#bar} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "62e77b7ad3af63c2",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#*} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "e9bd2cacc9d54314",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#*} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "8445492401cde5c3",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#*} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "f6bb59d2bcdab7c7",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#*} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "dd4225bf0bee4503",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "576e8a8beea2805e",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "fbcf2efde37c87ee",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "f93392f3ed895c1e",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "542e51800103540b",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##foo} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "f99de91a1a725d05",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##foo} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "69aa8230bcb16403",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##foo} (foo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "d62c6804c0d2eecb",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##foo} (foobar)",
+      "stderr": "",
+      "stdout": "[bar]\nrc=0\n"
+    },
+    {
+      "content_hash": "ea6a49aca7b53e09",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##f*} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "8a20b059818bdb92",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##f*} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "2ca5dd5afa31d1e9",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##f*} (foo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "5130505512b1ae7e",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##f*} (foobar)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "1d18e6b47da9a645",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##bar} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "9257384da5d07bc8",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##bar} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "266ac2df9dcf6c76",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##bar} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "33f5fae9f63eac64",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##bar} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "60a4eb3a44877127",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##*} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "ceed23da8c8134c1",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##*} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "192605b629c4bbfc",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##*} (foo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "f96e902573c3cda2",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##*} (foobar)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "9eb461db2ea05053",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "aaa954dceb312f9b",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "4f44b8606bcca06f",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "596e625f053a5f53",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "e3eb5cf3fba9d193",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%foo} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "08a0a0bf602db55d",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%foo} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "9bffb3dcdf54c207",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%foo} (foo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "9dfdc36b43168cf8",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%foo} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "e0021ce11921b46a",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%bar} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "3ea7e95bc4041f41",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%bar} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "c1446834edb63c86",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%bar} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "d38c168021f42eeb",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%bar} (foobar)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "c75095446bc39e5b",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%*r} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "403d21b8ab5c1045",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%*r} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "25c2263a0e824900",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%*r} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "f563eef5308d28a2",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%*r} (foobar)",
+      "stderr": "",
+      "stdout": "[fooba]\nrc=0\n"
+    },
+    {
+      "content_hash": "af0a5c6e7b6b581a",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%*} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "51512a3c8e12d3a4",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%*} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "0c5d3d1b5f397860",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%*} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "fc78f01b29234dc8",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%*} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "97881f640f8562d7",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "f845afef09007a85",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "476d748bc33abf87",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "f6815bddf75e23c0",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "a4e8bcb427847bcb",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%foo} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "c336b7e9401b962b",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%foo} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "a073c5c0f241bad1",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%foo} (foo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "6d08f8d3cc4ed570",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%foo} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "d5e7779057e4261e",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%bar} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "36e652f72cc58c9d",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%bar} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "77e0dfa57d72c074",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%bar} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "f5f549f5b351a417",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%bar} (foobar)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "536e069896157e5f",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%*r} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "20a12ce18bcb3188",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%*r} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "29a45e03cf63151f",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%*r} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "4146d4b069ac0b29",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%*r} (foobar)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "980d92a33ea89e54",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%*} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "3b34b63c26e47fba",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%*} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "dac60e08169d4c47",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%*} (foo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "07b0486257603985",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%*} (foobar)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "57f06c3ad4567d17",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "090972ae3e64a2c8",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "8633f9823e056dca",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "3cb1270765bb9977",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%} (foobar)",
+      "stderr": "",
+      "stdout": "[foobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "fdf43c9cbed68636",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#f*} (foofoo)",
+      "stderr": "",
+      "stdout": "[oofoo]\nrc=0\n"
+    },
+    {
+      "content_hash": "fc2c01ac980b87ee",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##f*} (foofoo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "a9be89ac6534a241",
+      "exit_code": 0,
+      "name": "varop matrix: ${v#foo*} (foofoo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "f565d373ff2da9b3",
+      "exit_code": 0,
+      "name": "varop matrix: ${v##foo*} (foofoo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "c20e188cc78504bc",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%*o} (foofoo)",
+      "stderr": "",
+      "stdout": "[foofo]\nrc=0\n"
+    },
+    {
+      "content_hash": "8672db2368491e0c",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%*o} (foofoo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "4f892e317b3d17ff",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%*foo} (foofoo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "dac343f001a55509",
+      "exit_code": 0,
+      "name": "varop matrix: ${v%%*foo} (foofoo)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "1bd22f65afb31156",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/o/X} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "f712fdd5938fc1c7",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/o/X} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "09a90cf48833b483",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/o/X} (foo)",
+      "stderr": "",
+      "stdout": "[fXo]\nrc=0\n"
+    },
+    {
+      "content_hash": "3df9b0b451a367f3",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/o/X} (foobar)",
+      "stderr": "",
+      "stdout": "[fXobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "8bbd1bcacc386d53",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/o/} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "e763d78ac6ae5706",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/o/} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "9b07c111c2c05c64",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/o/} (foo)",
+      "stderr": "",
+      "stdout": "[fo]\nrc=0\n"
+    },
+    {
+      "content_hash": "242e7ee84a4bbfed",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/o/} (foobar)",
+      "stderr": "",
+      "stdout": "[fobar]\nrc=0\n"
+    },
+    {
+      "content_hash": "0da2dcc84d5d3cc4",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/foo/X} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "25d508183918c3af",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/foo/X} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "dce20fadcfa98d9d",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/foo/X} (foo)",
+      "stderr": "",
+      "stdout": "[X]\nrc=0\n"
+    },
+    {
+      "content_hash": "6afeb9e958bf3a75",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/foo/X} (foobar)",
+      "stderr": "",
+      "stdout": "[Xbar]\nrc=0\n"
+    },
+    {
+      "content_hash": "c14686ec25540567",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/bar/X} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "7db1dd2908f62e36",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/bar/X} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "66edbcf0a2afe5ae",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/bar/X} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "1cd93358f73bd034",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/bar/X} (foobar)",
+      "stderr": "",
+      "stdout": "[fooX]\nrc=0\n"
+    },
+    {
+      "content_hash": "f25c8482fa6bba17",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//o/X} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "85ce062c6905af8b",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//o/X} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "a47d5c2d18ba000c",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//o/X} (foo)",
+      "stderr": "",
+      "stdout": "[fXX]\nrc=0\n"
+    },
+    {
+      "content_hash": "161832266f47db6b",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//o/X} (foobar)",
+      "stderr": "",
+      "stdout": "[fXXbar]\nrc=0\n"
+    },
+    {
+      "content_hash": "41cf642d7764f0dd",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//o/} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "21008468d8f6e610",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//o/} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "10040d958c0c6d84",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//o/} (foo)",
+      "stderr": "",
+      "stdout": "[f]\nrc=0\n"
+    },
+    {
+      "content_hash": "ef7ff9c5247aa96e",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//o/} (foobar)",
+      "stderr": "",
+      "stdout": "[fbar]\nrc=0\n"
+    },
+    {
+      "content_hash": "f04ff74cd37ac1b7",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//foo/X} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "394e2baacc9ffa31",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//foo/X} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "87b0bdaa5dd987f2",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//foo/X} (foo)",
+      "stderr": "",
+      "stdout": "[X]\nrc=0\n"
+    },
+    {
+      "content_hash": "da50a048c1f8b6f6",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//foo/X} (foobar)",
+      "stderr": "",
+      "stdout": "[Xbar]\nrc=0\n"
+    },
+    {
+      "content_hash": "adc97f11c76318c4",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//bar/X} (unset)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "7ed0ed0e08486ee0",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//bar/X} (empty)",
+      "stderr": "",
+      "stdout": "[]\nrc=0\n"
+    },
+    {
+      "content_hash": "1a7111b5a8c48fc1",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//bar/X} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "621bfe00424f9b12",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//bar/X} (foobar)",
+      "stderr": "",
+      "stdout": "[fooX]\nrc=0\n"
+    },
+    {
+      "content_hash": "f4eabe602394edc8",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/foo/X} (foofoo)",
+      "stderr": "",
+      "stdout": "[Xfoo]\nrc=0\n"
+    },
+    {
+      "content_hash": "868ea60f372c7085",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//foo/X} (foofoo)",
+      "stderr": "",
+      "stdout": "[XX]\nrc=0\n"
+    },
+    {
+      "content_hash": "0c85894fe0b55ba1",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "16437e278cd1e4ef",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//} (foo)",
+      "stderr": "",
+      "stdout": "[foo]\nrc=0\n"
+    },
+    {
+      "content_hash": "c6c1d89eb92a54c1",
+      "exit_code": 0,
+      "name": "varop matrix: ${v/o} (foo)",
+      "stderr": "",
+      "stdout": "[fo]\nrc=0\n"
+    },
+    {
+      "content_hash": "9b2b75af31a88627",
+      "exit_code": 0,
+      "name": "varop matrix: ${v//o} (foo)",
+      "stderr": "",
+      "stdout": "[f]\nrc=0\n"
+    }
+  ],
+  "suite": "varop_matrix"
+}
