@@ -1,0 +1,425 @@
+{
+  "results": [
+    {
+      "content_hash": "3115ab7751270d15",
+      "exit_code": 0,
+      "name": "seto matrix: -o allexport",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "e6b92512ffd42d65",
+      "exit_code": 0,
+      "name": "seto matrix: +o allexport",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a651c05393f294e2",
+      "exit_code": 0,
+      "name": "seto matrix: -o errexit",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "6f94bed1abbeebba",
+      "exit_code": 0,
+      "name": "seto matrix: +o errexit",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a94c52c0b3a0f87e",
+      "exit_code": 0,
+      "name": "seto matrix: -o ignoreeof",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "e52c8da9481a6c06",
+      "exit_code": 0,
+      "name": "seto matrix: +o ignoreeof",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "e30828c00141c609",
+      "exit_code": 0,
+      "name": "seto matrix: -o monitor",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "2ded897d750c9464",
+      "exit_code": 0,
+      "name": "seto matrix: +o monitor",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "b934358f6044dd18",
+      "exit_code": 0,
+      "name": "seto matrix: -o noclobber",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "0f188f12d5047fb2",
+      "exit_code": 0,
+      "name": "seto matrix: +o noclobber",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "0b0fba31d13addf3",
+      "exit_code": 0,
+      "name": "seto matrix: -o noglob",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "e7bb35d195bebbeb",
+      "exit_code": 0,
+      "name": "seto matrix: +o noglob",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "70636fa283a652b9",
+      "exit_code": 0,
+      "name": "seto matrix: -o noexec",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "content_hash": "5f478feeb3f1ed53",
+      "exit_code": 0,
+      "name": "seto matrix: +o noexec",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "768ce60ebf8c09fd",
+      "exit_code": 0,
+      "name": "seto matrix: -o nolog",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "190f605fd430995d",
+      "exit_code": 0,
+      "name": "seto matrix: +o nolog",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "866399b14fc06b48",
+      "exit_code": 0,
+      "name": "seto matrix: -o notify",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a31c8ed814b2a125",
+      "exit_code": 0,
+      "name": "seto matrix: +o notify",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "decaac3252c20aee",
+      "exit_code": 0,
+      "name": "seto matrix: -o nounset",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "df1f66125ca6247c",
+      "exit_code": 0,
+      "name": "seto matrix: +o nounset",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "05d0c4f82fbce7d7",
+      "exit_code": 0,
+      "name": "seto matrix: -o verbose",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "0385b0f26f774708",
+      "exit_code": 0,
+      "name": "seto matrix: +o verbose",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "c60921b8c771941b",
+      "exit_code": 0,
+      "name": "seto matrix: -o vi",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "d0d0c0a0d11dcc74",
+      "exit_code": 0,
+      "name": "seto matrix: +o vi",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "7690605827846e5a",
+      "exit_code": 0,
+      "name": "seto matrix: -o xtrace",
+      "stderr": "+ echo rc=0\n",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "b2ea5f8fa1786c19",
+      "exit_code": 0,
+      "name": "seto matrix: +o xtrace",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "f12aa522f427233d",
+      "exit_code": 0,
+      "name": "seto matrix: -o braceexpand",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "79d4d26a1dd3ed60",
+      "exit_code": 0,
+      "name": "seto matrix: +o braceexpand",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "e20852247f6ac779",
+      "exit_code": 0,
+      "name": "seto matrix: -o emacs",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "8feed1c5085c0bc2",
+      "exit_code": 0,
+      "name": "seto matrix: +o emacs",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "7384bd0b0df8c613",
+      "exit_code": 0,
+      "name": "seto matrix: -o errtrace",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "75ab80b807222856",
+      "exit_code": 0,
+      "name": "seto matrix: +o errtrace",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a339abcc167e59de",
+      "exit_code": 0,
+      "name": "seto matrix: -o functrace",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "fe242c7376302c2e",
+      "exit_code": 0,
+      "name": "seto matrix: +o functrace",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "58585997fa5c326d",
+      "exit_code": 0,
+      "name": "seto matrix: -o hashall",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "46fad353ef177ecf",
+      "exit_code": 0,
+      "name": "seto matrix: +o hashall",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "1a7fef5be7042a75",
+      "exit_code": 0,
+      "name": "seto matrix: -o histexpand",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "9977c46021c44e57",
+      "exit_code": 0,
+      "name": "seto matrix: +o histexpand",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a0312be545a218b7",
+      "exit_code": 0,
+      "name": "seto matrix: -o history",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "75f6192f3e8fe94b",
+      "exit_code": 0,
+      "name": "seto matrix: +o history",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "1c3ba1dc4c6191fd",
+      "exit_code": 0,
+      "name": "seto matrix: -o interactive-comments",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "747a71abf6eec55b",
+      "exit_code": 0,
+      "name": "seto matrix: +o interactive-comments",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "3a30e2613a9efd7f",
+      "exit_code": 0,
+      "name": "seto matrix: -o keyword",
+      "stderr": "",
+      "stdout": "\n"
+    },
+    {
+      "content_hash": "ec822441cf746b10",
+      "exit_code": 0,
+      "name": "seto matrix: +o keyword",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "ac4e2514e7816b22",
+      "exit_code": 0,
+      "name": "seto matrix: -o onecmd",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "de230f44ed5e917d",
+      "exit_code": 0,
+      "name": "seto matrix: +o onecmd",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "0b029ef160e8bc72",
+      "exit_code": 0,
+      "name": "seto matrix: -o physical",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "107d597ebdf99015",
+      "exit_code": 0,
+      "name": "seto matrix: +o physical",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "da2d04ae72e91102",
+      "exit_code": 0,
+      "name": "seto matrix: -o pipefail",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "c8b051d26dbfcd38",
+      "exit_code": 0,
+      "name": "seto matrix: +o pipefail",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "d8f5ab2539604db8",
+      "exit_code": 0,
+      "name": "seto matrix: -o posix",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "8a90b6d614943f90",
+      "exit_code": 0,
+      "name": "seto matrix: +o posix",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "4a3af3659e5cc1be",
+      "exit_code": 0,
+      "name": "seto matrix: -o privileged",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a7356f18ba29edac",
+      "exit_code": 0,
+      "name": "seto matrix: +o privileged",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "a8fb795468e17f2b",
+      "exit_code": 0,
+      "name": "seto matrix: -o not-an-option",
+      "stderr": "bash: line 1: set: not-an-option: invalid option name\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "a582042193a91446",
+      "exit_code": 0,
+      "name": "seto matrix: +o not-an-option",
+      "stderr": "bash: line 1: set: not-an-option: invalid option name\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "53bd34daf635c8d5",
+      "exit_code": 0,
+      "name": "seto matrix: -o jb-not-an-option",
+      "stderr": "bash: line 1: set: jb-not-an-option: invalid option name\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "2b26805af90b14c4",
+      "exit_code": 0,
+      "name": "seto matrix: +o jb-not-an-option",
+      "stderr": "bash: line 1: set: jb-not-an-option: invalid option name\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "d5311a0d68adca60",
+      "exit_code": 0,
+      "name": "seto matrix: -o ERREXIT",
+      "stderr": "bash: line 1: set: ERREXIT: invalid option name\n",
+      "stdout": "rc=2\n"
+    },
+    {
+      "content_hash": "a8ced96d414218e4",
+      "exit_code": 0,
+      "name": "seto matrix: +o ERREXIT",
+      "stderr": "bash: line 1: set: ERREXIT: invalid option name\n",
+      "stdout": "rc=2\n"
+    }
+  ],
+  "suite": "seto_matrix"
+}
