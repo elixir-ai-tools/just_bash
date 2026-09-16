@@ -530,6 +530,21 @@
       "name": "awk edge cases comparison: awk string coercion in arithmetic",
       "script": "echo '10abc 5' | awk '{print $1 + $2}'",
       "content_hash": "587a86f56c3a1f53"
+    },
+    {
+      "name": "awk strftime comparison: explicit timestamp and UTC flag",
+      "script": "TZ=UTC LC_ALL=C awk 'BEGIN { print strftime(\"%F %T %Z %z\", 0); print strftime(\"%F %T %Z %z\", 1718458200, 1) }'",
+      "content_hash": "4b852164672823b4"
+    },
+    {
+      "name": "awk strftime comparison: invalid timestamp inputs and empty format",
+      "script": "TZ=UTC LC_ALL=C awk 'BEGIN { print strftime(\"%F\", \"not-a-timestamp\", 1); print strftime(\"%Y\", 1e100, 1); print strftime(\"\", 0, 1) }'",
+      "content_hash": "4ae0bc0e390c8664"
+    },
+    {
+      "name": "awk strftime comparison: omitted arguments use documented defaults",
+      "script": "TZ=UTC LC_ALL=C awk 'BEGIN { value = strftime(); print length(value), (index(value, \" UTC \") > 0); print length(strftime(\"%F\")); PROCINFO[\"strftime\"] = \"%Y\"; print length(strftime()) }'",
+      "content_hash": "f8b630f4b23a831d"
     }
   ]
 }

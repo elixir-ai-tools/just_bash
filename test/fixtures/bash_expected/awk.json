@@ -741,6 +741,27 @@
       "name": "awk edge cases comparison: awk string coercion in arithmetic",
       "stderr": "",
       "stdout": "15\n"
+    },
+    {
+      "content_hash": "4b852164672823b4",
+      "exit_code": 0,
+      "name": "awk strftime comparison: explicit timestamp and UTC flag",
+      "stderr": "",
+      "stdout": "1970-01-01 00:00:00 UTC +0000\n2024-06-15 13:30:00 GMT +0000\n"
+    },
+    {
+      "content_hash": "4ae0bc0e390c8664",
+      "exit_code": 0,
+      "name": "awk strftime comparison: invalid timestamp inputs and empty format",
+      "stderr": "",
+      "stdout": "1970-01-01\n\n\n"
+    },
+    {
+      "content_hash": "f8b630f4b23a831d",
+      "exit_code": 0,
+      "name": "awk strftime comparison: omitted arguments use documented defaults",
+      "stderr": "",
+      "stdout": "28 1\n10\n4\n"
     }
   ],
   "suite": "awk"

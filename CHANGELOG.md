@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* `awk` implements GNU-compatible `strftime([format [, timestamp [, utc-flag]]])` arguments and defaults
 * `mix bash_fixtures.gen printf` enumerates a printf conversion × flag/width/precision matrix (`printf_matrix`) — #70 item 2
 * `mix bash_fixtures.gen test` enumerates a `test`/`[` operator × revealing-shape matrix (`test_matrix`) — #70 item 2
 * `mix bash_fixtures.gen varop` enumerates a `${var op word}` parameter-expansion matrix (`varop_matrix`) — #70 item 2

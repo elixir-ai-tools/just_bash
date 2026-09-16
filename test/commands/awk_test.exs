@@ -483,6 +483,75 @@ defmodule JustBash.Commands.AwkTest do
     end
   end
 
+  describe "strftime() function" do
+    test "formats explicit timestamps in local UTC and forced UTC" do
+      bash = JustBash.new()
+
+      {result, _} =
+        JustBash.exec(
+          bash,
+          ~s|TZ=UTC awk 'BEGIN { print strftime("%F %T %Z %z", 0); print strftime("%F %T %Z %z", 1718458200, 1) }'|
+        )
+
+      assert result.stdout ==
+               "1970-01-01 00:00:00 UTC +0000\n2024-06-15 13:30:00 GMT +0000\n"
+
+      assert result.exit_code == 0
+    end
+
+    test "uses the current time and documented format defaults" do
+      before = DateTime.utc_now() |> DateTime.to_unix()
+
+      {result, _} =
+        JustBash.exec(
+          JustBash.new(),
+          ~s|TZ=UTC awk 'BEGIN { print strftime(); print strftime("%s") }'|
+        )
+
+      after_time = DateTime.utc_now() |> DateTime.to_unix()
+      [default_time, timestamp, ""] = String.split(result.stdout, "\n")
+
+      assert default_time =~
+               ~r/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [ 0-9][0-9] [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}$/
+
+      assert String.to_integer(timestamp) in before..after_time
+      assert result.exit_code == 0
+    end
+
+    test "uses PROCINFO strftime as the default format" do
+      {result, _} =
+        JustBash.exec(
+          JustBash.new(),
+          ~s|TZ=UTC awk 'BEGIN { PROCINFO["strftime"] = "%F"; print length(strftime()) }'|
+        )
+
+      assert result.stdout == "10\n"
+      assert result.exit_code == 0
+    end
+
+    test "coerces invalid timestamp text to the epoch" do
+      {result, _} =
+        JustBash.exec(
+          JustBash.new(),
+          ~s|awk 'BEGIN { print strftime("%F", "not-a-timestamp", 1) }'|
+        )
+
+      assert result.stdout == "1970-01-01\n"
+      assert result.exit_code == 0
+    end
+
+    test "returns an empty string for an out-of-range timestamp or empty format" do
+      {result, _} =
+        JustBash.exec(
+          JustBash.new(),
+          ~s|awk 'BEGIN { print strftime("%Y", 1e100, 1); print strftime("", 0, 1) }'|
+        )
+
+      assert result.stdout == "\n\n"
+      assert result.exit_code == 0
+    end
+  end
+
   describe "gsub and sub" do
     test "gsub replaces all occurrences" do
       bash = JustBash.new(files: %{"/data.txt" => "hello world\n"})

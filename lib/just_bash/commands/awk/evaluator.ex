@@ -7,8 +7,11 @@ defmodule JustBash.Commands.Awk.Evaluator do
   """
 
   alias JustBash.Commands.Awk.{AST, Formatter}
+  alias JustBash.Commands.Date, as: DateCommand
   alias JustBash.FS
   alias JustBash.Limit
+
+  @default_strftime_format "%a %b %e %H:%M:%S %Z %Y"
 
   @type state :: %{
           nr: non_neg_integer(),
@@ -1607,6 +1610,27 @@ defmodule JustBash.Commands.Awk.Evaluator do
     Formatter.format_printf(format, args)
   end
 
+  defp evaluate_function("strftime", [], state) do
+    format =
+      state.arrays
+      |> Map.get("PROCINFO", %{})
+      |> Map.get("strftime", @default_strftime_format)
+
+    format_strftime(format, DateTime.utc_now(), false)
+  end
+
+  defp evaluate_function("strftime", [format], _state) do
+    format_strftime(format, DateTime.utc_now(), false)
+  end
+
+  defp evaluate_function("strftime", [format, timestamp], _state) do
+    format_strftime(format, timestamp, false)
+  end
+
+  defp evaluate_function("strftime", [format, timestamp, utc_flag], _state) do
+    format_strftime(format, timestamp, truthy?(utc_flag))
+  end
+
   # Math functions
   defp evaluate_function("int", [arg], _state) do
     parse_number(arg) |> trunc()
@@ -1663,6 +1687,29 @@ defmodule JustBash.Commands.Awk.Evaluator do
   defp evaluate_function("asorti", _args, _state), do: 0
 
   defp evaluate_function(_name, _args, _state), do: ""
+
+  defp format_strftime(format, %DateTime{} = datetime, utc?) do
+    datetime
+    |> strftime_datetime(utc?)
+    |> DateCommand.format_datetime(to_string(format))
+  end
+
+  defp format_strftime(format, timestamp, utc?) do
+    case timestamp |> parse_number() |> trunc() |> DateTime.from_unix() do
+      {:ok, datetime} ->
+        datetime
+        |> strftime_datetime(utc?)
+        |> DateCommand.format_datetime(to_string(format))
+
+      {:error, :invalid_unix_time} ->
+        ""
+    end
+  end
+
+  # GNU awk names the forced UTC zone "GMT". Without the flag, JustBash uses
+  # its UTC sandbox clock and keeps the normal "UTC" zone name.
+  defp strftime_datetime(datetime, true), do: %{datetime | zone_abbr: "GMT"}
+  defp strftime_datetime(datetime, false), do: datetime
 
   # Format a value for output - integers print without .0
   # Format array keys: 0.0 -> "0", 1.0 -> "1", "1.0" -> "1", etc.

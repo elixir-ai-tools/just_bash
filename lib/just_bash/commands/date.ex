@@ -528,7 +528,9 @@ defmodule JustBash.Commands.Date do
   #
   # `yr_spec` is the padding flag a compound conversion forwards to the year
   # fields of its sub-format, and nil at the top level. See `yearish/3`.
-  defp format_datetime(datetime, format), do: scan(format, datetime, nil, [])
+  @doc false
+  @spec format_datetime(DateTime.t(), binary()) :: binary()
+  def format_datetime(datetime, format), do: scan(format, datetime, nil, [])
 
   defp scan(<<>>, _datetime, _yr_spec, acc), do: acc |> Enum.reverse() |> IO.iodata_to_binary()
 
