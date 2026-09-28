@@ -347,6 +347,24 @@ defmodule Mix.Tasks.BashFixtures.GenTest do
       end)
     end
 
+    test "Set.option_names/0 is exactly the set of names Set accepts for -o and +o" do
+      alphabet = Gen.seto_posix() ++ Gen.seto_bash() ++ Gen.seto_unknown()
+
+      assert Enum.sort(Gen.seto_accepted(alphabet)) == Enum.sort(Gen.seto_supported())
+    end
+
+    test "generation fails when the option list and Set's clauses disagree" do
+      assert_raise Mix.Error, ~r/listed but rejected.*"noglob"/s, fn ->
+        Gen.check_seto_supported!(~w(errexit noglob), ~w(errexit))
+      end
+
+      assert_raise Mix.Error, ~r/accepted but not listed.*"xtrace"/s, fn ->
+        Gen.check_seto_supported!(~w(errexit), ~w(errexit xtrace))
+      end
+
+      assert Gen.check_seto_supported!(~w(errexit pipefail), ~w(pipefail errexit)) == :ok
+    end
+
     test "records unknown and unsupported names instead of omitting them" do
       cases = Gen.cases_for("seto")
       names = Enum.map(cases, & &1["name"])

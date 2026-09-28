@@ -80,7 +80,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
       #68 rather than a second classification table.
     * `seto` — every POSIX `set -o` name and every extra bash name `set -o`
       lists, plus unknown names, each asked as `-o` and `+o`. Names
-      `JustBash.Commands.Set.option_names/0` implements are generated
+      `JustBash.Commands.Set` implements are generated
       unmarked; real names this shell rejects, and names bash itself
       refuses, are still generated and named with a reason — never silently
       omitted. Suite `seto_matrix`. This is the `set -o` name alphabet from
@@ -2200,7 +2200,9 @@ defmodule Mix.Tasks.BashFixtures.Gen do
   #
   # Completeness is `Set.option_names/0`: a name this shell implements must
   # be in the POSIX/bash alphabet or generation fails, and every such name
-  # is generated. Unsupported real names and unknown names are still
+  # is generated. The list itself is checked against the builtin — every
+  # alphabet name is run through `Set.execute/3`, and a disagreement either
+  # way fails generation. Unsupported real names and unknown names are still
   # generated; the reason lives here so an omit cannot hide as a pass.
   #
   # Gaps are assigned after recording, never by omitting a cell. Marking a
@@ -2271,6 +2273,7 @@ defmodule Mix.Tasks.BashFixtures.Gen do
 
   defp seto_cases do
     assert_seto_supported_in_alphabet!()
+    check_seto_supported!(seto_supported(), seto_accepted(seto_names()))
 
     for name <- seto_names(), sign <- @seto_signs do
       seto_case(sign, name)
@@ -2293,6 +2296,40 @@ defmodule Mix.Tasks.BashFixtures.Gen do
         missing: #{inspect(missing)}
       """)
     end
+  end
+
+  # Names `Set` actually honours, found by running each through the builtin
+  # as both `-o` and `+o`. A name counts only if both succeed.
+  @doc false
+  def seto_accepted(names) do
+    {:ok, _} = Application.ensure_all_started(:just_bash)
+    bash = JustBash.new()
+
+    Enum.filter(names, fn name ->
+      Enum.all?(@seto_signs, fn sign ->
+        {%{exit_code: code}, _} = JustBash.Commands.Set.execute(bash, [sign, name], "")
+        code == 0
+      end)
+    end)
+  end
+
+  # `Set.option_names/0` must be exactly what `Set` accepts: a listed name
+  # with no clause, or a clause with no listing, fails generation instead of
+  # surfacing later as a fixture mismatch.
+  @doc false
+  def check_seto_supported!(listed, accepted) do
+    rejected = listed -- accepted
+    unlisted = accepted -- listed
+
+    unless rejected == [] and unlisted == [] do
+      Mix.raise("""
+      Set.option_names/0 disagrees with what Set.execute/3 accepts:
+        listed but rejected: #{inspect(rejected)}
+        accepted but not listed: #{inspect(unlisted)}
+      """)
+    end
+
+    :ok
   end
 
   defp seto_case(sign, name) do

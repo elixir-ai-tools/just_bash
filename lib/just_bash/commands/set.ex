@@ -18,9 +18,10 @@ defmodule JustBash.Commands.Set do
 
   @behaviour JustBash.Commands.Command
 
-  # Names `set -o` / `+o` actually honour. The seto fixture matrix asserts
-  # completeness against this list — a new clause that is not listed here
-  # (or a listed name with no clause) fails generation.
+  # Names `set -o` / `+o` actually honour. `mix bash_fixtures.gen seto` runs
+  # every POSIX/bash name through execute/3 and fails if the names accepted
+  # differ from this list — a new clause that is not listed here, or a listed
+  # name with no clause, fails generation.
   @option_names ~w(errexit nounset pipefail)
 
   @impl true
