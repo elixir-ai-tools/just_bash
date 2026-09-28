@@ -1,0 +1,467 @@
+{
+  "cases": [
+    {
+      "content_hash": "3115ab7751270d15",
+      "name": "seto matrix: -o allexport",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'allexport'; echo rc=$?"
+    },
+    {
+      "content_hash": "e6b92512ffd42d65",
+      "name": "seto matrix: +o allexport",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'allexport'; echo rc=$?"
+    },
+    {
+      "content_hash": "a651c05393f294e2",
+      "name": "seto matrix: -o errexit",
+      "script": "LC_ALL=C LANG=C set -o 'errexit'; echo rc=$?"
+    },
+    {
+      "content_hash": "6f94bed1abbeebba",
+      "name": "seto matrix: +o errexit",
+      "script": "LC_ALL=C LANG=C set +o 'errexit'; echo rc=$?"
+    },
+    {
+      "content_hash": "a94c52c0b3a0f87e",
+      "name": "seto matrix: -o ignoreeof",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'ignoreeof'; echo rc=$?"
+    },
+    {
+      "content_hash": "e52c8da9481a6c06",
+      "name": "seto matrix: +o ignoreeof",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'ignoreeof'; echo rc=$?"
+    },
+    {
+      "content_hash": "e30828c00141c609",
+      "name": "seto matrix: -o monitor",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'monitor'; echo rc=$?"
+    },
+    {
+      "content_hash": "2ded897d750c9464",
+      "name": "seto matrix: +o monitor",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'monitor'; echo rc=$?"
+    },
+    {
+      "content_hash": "b934358f6044dd18",
+      "name": "seto matrix: -o noclobber",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'noclobber'; echo rc=$?"
+    },
+    {
+      "content_hash": "0f188f12d5047fb2",
+      "name": "seto matrix: +o noclobber",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'noclobber'; echo rc=$?"
+    },
+    {
+      "content_hash": "0b0fba31d13addf3",
+      "name": "seto matrix: -o noglob",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'noglob'; echo rc=$?"
+    },
+    {
+      "content_hash": "e7bb35d195bebbeb",
+      "name": "seto matrix: +o noglob",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'noglob'; echo rc=$?"
+    },
+    {
+      "content_hash": "70636fa283a652b9",
+      "name": "seto matrix: -o noexec",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'noexec'; echo rc=$?"
+    },
+    {
+      "content_hash": "5f478feeb3f1ed53",
+      "name": "seto matrix: +o noexec",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'noexec'; echo rc=$?"
+    },
+    {
+      "content_hash": "768ce60ebf8c09fd",
+      "name": "seto matrix: -o nolog",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'nolog'; echo rc=$?"
+    },
+    {
+      "content_hash": "190f605fd430995d",
+      "name": "seto matrix: +o nolog",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'nolog'; echo rc=$?"
+    },
+    {
+      "content_hash": "866399b14fc06b48",
+      "name": "seto matrix: -o notify",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'notify'; echo rc=$?"
+    },
+    {
+      "content_hash": "a31c8ed814b2a125",
+      "name": "seto matrix: +o notify",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'notify'; echo rc=$?"
+    },
+    {
+      "content_hash": "decaac3252c20aee",
+      "name": "seto matrix: -o nounset",
+      "script": "LC_ALL=C LANG=C set -o 'nounset'; echo rc=$?"
+    },
+    {
+      "content_hash": "df1f66125ca6247c",
+      "name": "seto matrix: +o nounset",
+      "script": "LC_ALL=C LANG=C set +o 'nounset'; echo rc=$?"
+    },
+    {
+      "content_hash": "05d0c4f82fbce7d7",
+      "name": "seto matrix: -o verbose",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'verbose'; echo rc=$?"
+    },
+    {
+      "content_hash": "0385b0f26f774708",
+      "name": "seto matrix: +o verbose",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'verbose'; echo rc=$?"
+    },
+    {
+      "content_hash": "c60921b8c771941b",
+      "name": "seto matrix: -o vi",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'vi'; echo rc=$?"
+    },
+    {
+      "content_hash": "d0d0c0a0d11dcc74",
+      "name": "seto matrix: +o vi",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'vi'; echo rc=$?"
+    },
+    {
+      "content_hash": "7690605827846e5a",
+      "name": "seto matrix: -o xtrace",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'xtrace'; echo rc=$?"
+    },
+    {
+      "content_hash": "b2ea5f8fa1786c19",
+      "name": "seto matrix: +o xtrace",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'xtrace'; echo rc=$?"
+    },
+    {
+      "content_hash": "f12aa522f427233d",
+      "name": "seto matrix: -o braceexpand",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'braceexpand'; echo rc=$?"
+    },
+    {
+      "content_hash": "79d4d26a1dd3ed60",
+      "name": "seto matrix: +o braceexpand",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'braceexpand'; echo rc=$?"
+    },
+    {
+      "content_hash": "e20852247f6ac779",
+      "name": "seto matrix: -o emacs",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'emacs'; echo rc=$?"
+    },
+    {
+      "content_hash": "8feed1c5085c0bc2",
+      "name": "seto matrix: +o emacs",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'emacs'; echo rc=$?"
+    },
+    {
+      "content_hash": "7384bd0b0df8c613",
+      "name": "seto matrix: -o errtrace",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'errtrace'; echo rc=$?"
+    },
+    {
+      "content_hash": "75ab80b807222856",
+      "name": "seto matrix: +o errtrace",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'errtrace'; echo rc=$?"
+    },
+    {
+      "content_hash": "a339abcc167e59de",
+      "name": "seto matrix: -o functrace",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'functrace'; echo rc=$?"
+    },
+    {
+      "content_hash": "fe242c7376302c2e",
+      "name": "seto matrix: +o functrace",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'functrace'; echo rc=$?"
+    },
+    {
+      "content_hash": "58585997fa5c326d",
+      "name": "seto matrix: -o hashall",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'hashall'; echo rc=$?"
+    },
+    {
+      "content_hash": "46fad353ef177ecf",
+      "name": "seto matrix: +o hashall",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'hashall'; echo rc=$?"
+    },
+    {
+      "content_hash": "1a7fef5be7042a75",
+      "name": "seto matrix: -o histexpand",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'histexpand'; echo rc=$?"
+    },
+    {
+      "content_hash": "9977c46021c44e57",
+      "name": "seto matrix: +o histexpand",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'histexpand'; echo rc=$?"
+    },
+    {
+      "content_hash": "a0312be545a218b7",
+      "name": "seto matrix: -o history",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'history'; echo rc=$?"
+    },
+    {
+      "content_hash": "75f6192f3e8fe94b",
+      "name": "seto matrix: +o history",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'history'; echo rc=$?"
+    },
+    {
+      "content_hash": "1c3ba1dc4c6191fd",
+      "name": "seto matrix: -o interactive-comments",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'interactive-comments'; echo rc=$?"
+    },
+    {
+      "content_hash": "747a71abf6eec55b",
+      "name": "seto matrix: +o interactive-comments",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'interactive-comments'; echo rc=$?"
+    },
+    {
+      "content_hash": "3a30e2613a9efd7f",
+      "name": "seto matrix: -o keyword",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'keyword'; echo rc=$?"
+    },
+    {
+      "content_hash": "ec822441cf746b10",
+      "name": "seto matrix: +o keyword",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'keyword'; echo rc=$?"
+    },
+    {
+      "content_hash": "ac4e2514e7816b22",
+      "name": "seto matrix: -o onecmd",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'onecmd'; echo rc=$?"
+    },
+    {
+      "content_hash": "de230f44ed5e917d",
+      "name": "seto matrix: +o onecmd",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'onecmd'; echo rc=$?"
+    },
+    {
+      "content_hash": "0b029ef160e8bc72",
+      "name": "seto matrix: -o physical",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'physical'; echo rc=$?"
+    },
+    {
+      "content_hash": "107d597ebdf99015",
+      "name": "seto matrix: +o physical",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'physical'; echo rc=$?"
+    },
+    {
+      "content_hash": "da2d04ae72e91102",
+      "name": "seto matrix: -o pipefail",
+      "script": "LC_ALL=C LANG=C set -o 'pipefail'; echo rc=$?"
+    },
+    {
+      "content_hash": "c8b051d26dbfcd38",
+      "name": "seto matrix: +o pipefail",
+      "script": "LC_ALL=C LANG=C set +o 'pipefail'; echo rc=$?"
+    },
+    {
+      "content_hash": "d8f5ab2539604db8",
+      "name": "seto matrix: -o posix",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'posix'; echo rc=$?"
+    },
+    {
+      "content_hash": "8a90b6d614943f90",
+      "name": "seto matrix: +o posix",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'posix'; echo rc=$?"
+    },
+    {
+      "content_hash": "4a3af3659e5cc1be",
+      "name": "seto matrix: -o privileged",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'privileged'; echo rc=$?"
+    },
+    {
+      "content_hash": "a7356f18ba29edac",
+      "name": "seto matrix: +o privileged",
+      "opts": {
+        "known_gap": "JustBash rejects this set -o name; bash accepts it"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'privileged'; echo rc=$?"
+    },
+    {
+      "content_hash": "a8fb795468e17f2b",
+      "name": "seto matrix: -o not-an-option",
+      "opts": {
+        "known_gap": "JustBash names the option in a different word order and exits 1; bash exits 2"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'not-an-option'; echo rc=$?"
+    },
+    {
+      "content_hash": "a582042193a91446",
+      "name": "seto matrix: +o not-an-option",
+      "opts": {
+        "known_gap": "JustBash names the option in a different word order and exits 1; bash exits 2"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'not-an-option'; echo rc=$?"
+    },
+    {
+      "content_hash": "53bd34daf635c8d5",
+      "name": "seto matrix: -o jb-not-an-option",
+      "opts": {
+        "known_gap": "JustBash names the option in a different word order and exits 1; bash exits 2"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'jb-not-an-option'; echo rc=$?"
+    },
+    {
+      "content_hash": "2b26805af90b14c4",
+      "name": "seto matrix: +o jb-not-an-option",
+      "opts": {
+        "known_gap": "JustBash names the option in a different word order and exits 1; bash exits 2"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'jb-not-an-option'; echo rc=$?"
+    },
+    {
+      "content_hash": "d5311a0d68adca60",
+      "name": "seto matrix: -o ERREXIT",
+      "opts": {
+        "known_gap": "JustBash names the option in a different word order and exits 1; bash exits 2"
+      },
+      "script": "LC_ALL=C LANG=C set -o 'ERREXIT'; echo rc=$?"
+    },
+    {
+      "content_hash": "a8ced96d414218e4",
+      "name": "seto matrix: +o ERREXIT",
+      "opts": {
+        "known_gap": "JustBash names the option in a different word order and exits 1; bash exits 2"
+      },
+      "script": "LC_ALL=C LANG=C set +o 'ERREXIT'; echo rc=$?"
+    }
+  ],
+  "suite": "seto_matrix"
+}

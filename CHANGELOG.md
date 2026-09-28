@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `mix bash_fixtures.gen test` enumerates a `test`/`[` operator × revealing-shape matrix (`test_matrix`) — #70 item 2
 * `mix bash_fixtures.gen varop` enumerates a `${var op word}` parameter-expansion matrix (`varop_matrix`) — #70 item 2
 * `mix bash_fixtures.gen flags` enumerates a Registry-wide unknown-flag probe (`flags_matrix`) — #70 item 2
+* `mix bash_fixtures.gen seto` enumerates the POSIX/bash `set -o`/`+o` name alphabet (`seto_matrix`) — #70 item 2
 
 ### Bug Fixes
 
