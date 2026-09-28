@@ -94,16 +94,16 @@ defmodule JustBash.FixturesTest do
   describe "validate/2" do
     setup do
       test_case = %{"name" => "a case", "script" => "echo hi"}
-      %{case: Map.put(test_case, "content_hash", Fixtures.hash_case(test_case))}
+      %{test_case: Map.put(test_case, "content_hash", Fixtures.hash_case(test_case))}
     end
 
-    test "a sound suite has no problems", %{case: test_case} do
+    test "a sound suite has no problems", %{test_case: test_case} do
       recording = %{"content_hash" => test_case["content_hash"], "stdout" => "hi\n"}
 
       assert Fixtures.validate([test_case], [recording]) == []
     end
 
-    test "detects a hash left behind by an edited script", %{case: test_case} do
+    test "detects a hash left behind by an edited script", %{test_case: test_case} do
       edited = %{test_case | "script" => "echo changed"}
       recording = %{"content_hash" => test_case["content_hash"]}
 
@@ -120,18 +120,18 @@ defmodule JustBash.FixturesTest do
       assert {:orphan_recording, stored} in problems
     end
 
-    test "detects an absent hash as stale", %{case: test_case} do
+    test "detects an absent hash as stale", %{test_case: test_case} do
       bare = Map.delete(test_case, "content_hash")
 
       assert [{:stale_hash, "a case", nil, _computed}] = Fixtures.validate([bare], [])
     end
 
-    test "detects a case with no recording", %{case: test_case} do
+    test "detects a case with no recording", %{test_case: test_case} do
       assert [{:missing_recording, "a case", hash}] = Fixtures.validate([test_case], [])
       assert hash == test_case["content_hash"]
     end
 
-    test "detects a recording no live case claims", %{case: test_case} do
+    test "detects a recording no live case claims", %{test_case: test_case} do
       recording = %{"content_hash" => test_case["content_hash"]}
       orphan = %{"content_hash" => "0000000000000000"}
 
@@ -139,7 +139,9 @@ defmodule JustBash.FixturesTest do
                Fixtures.validate([test_case], [recording, orphan])
     end
 
-    test "accepts two cases sharing a hash when their inputs are identical", %{case: test_case} do
+    test "accepts two cases sharing a hash when their inputs are identical", %{
+      test_case: test_case
+    } do
       # The corpus contains such a pair, differing only in name.
       twin = %{test_case | "name" => "same script, different name"}
       recording = %{"content_hash" => test_case["content_hash"]}
