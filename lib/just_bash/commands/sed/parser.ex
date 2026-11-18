@@ -54,11 +54,93 @@ defmodule JustBash.Commands.Sed.Parser do
 
   defp parse_script(script, ctx) do
     script
-    |> String.split(";")
+    |> split_commands([])
     |> Enum.map(&String.trim/1)
     |> Enum.filter(&(&1 != ""))
     |> Enum.map(&parse_command(&1, ctx))
   end
+
+  # Splits a script into its commands at `;` and newlines, as GNU sed does.
+  # A separator only counts between commands: a `;` inside an s or y command's
+  # delimited parts, inside a /regex/ address, or in a, i or c text (which runs
+  # to the end of the line) is part of that command. `s/a/b; c/` is one
+  # substitution whose replacement is "b; c", not `s/a/b` followed by a command
+  # named "c/".
+  defp split_commands("", acc), do: Enum.reverse(acc)
+
+  defp split_commands(script, acc) do
+    {address, rest} = take_address(script, "")
+    {body, rest} = take_body(rest)
+    split_commands(rest, [address <> body | acc])
+  end
+
+  # Line numbers, `$`, ranges, negation and /regex/ addresses ahead of the
+  # command letter.
+  defp take_address(<<c, rest::binary>>, acc) when c in ~c"0123456789$,! \t" do
+    take_address(rest, acc <> <<c>>)
+  end
+
+  defp take_address("/" <> rest, acc) do
+    {regex, rest} = take_delimited(rest, "/", "")
+    take_address(rest, acc <> "/" <> regex)
+  end
+
+  defp take_address(rest, acc), do: {acc, rest}
+
+  defp take_body(<<cmd, rest::binary>>) when cmd in [?s, ?y] do
+    case String.next_grapheme(rest) do
+      {delimiter, rest} when delimiter not in ["\n", "\\"] ->
+        {first, rest} = take_delimited(rest, delimiter, "")
+        {second, rest} = take_delimited(rest, delimiter, "")
+        {flags, rest} = take_to_separator(rest, "")
+        {<<cmd>> <> delimiter <> first <> second <> flags, rest}
+
+      _ ->
+        take_to_separator(<<cmd>> <> rest, "")
+    end
+  end
+
+  defp take_body(<<cmd, rest::binary>>) when cmd in [?a, ?i, ?c] do
+    take_text(rest, <<cmd>>)
+  end
+
+  defp take_body(rest), do: take_to_separator(rest, "")
+
+  # One delimited part of an s or y command, or a /regex/ address, up to and
+  # including its closing delimiter. A backslash keeps the character after it,
+  # so an escaped delimiter does not close the part. An unterminated part takes
+  # the rest of the script, and the command parser reports it.
+  defp take_delimited("", _delimiter, acc), do: {acc, ""}
+
+  defp take_delimited("\\" <> rest, delimiter, acc) do
+    case String.next_grapheme(rest) do
+      {char, rest} -> take_delimited(rest, delimiter, acc <> "\\" <> char)
+      nil -> {acc <> "\\", ""}
+    end
+  end
+
+  defp take_delimited(str, delimiter, acc) do
+    case String.next_grapheme(str) do
+      {^delimiter, rest} -> {acc <> delimiter, rest}
+      {char, rest} -> take_delimited(rest, delimiter, acc <> char)
+    end
+  end
+
+  # Up to a `;` or newline, which is consumed and not returned.
+  defp take_to_separator("", acc), do: {acc, ""}
+  defp take_to_separator(";" <> rest, acc), do: {acc, rest}
+  defp take_to_separator("\n" <> rest, acc), do: {acc, rest}
+
+  defp take_to_separator(<<c, rest::binary>>, acc),
+    do: take_to_separator(rest, acc <> <<c>>)
+
+  # The text of an a, i or c command runs to the end of the line, `;`
+  # included. In the classic form, `a\` followed by a newline, the text is on
+  # the next line, and a backslash at the end of a text line continues it.
+  defp take_text("\\\n" <> rest, acc), do: take_text(rest, acc <> "\\\n")
+  defp take_text("", acc), do: {acc, ""}
+  defp take_text("\n" <> rest, acc), do: {acc, rest}
+  defp take_text(<<c, rest::binary>>, acc), do: take_text(rest, acc <> <<c>>)
 
   defp parse_command(cmd, ctx) do
     case parse_address_and_command(cmd, ctx) do
@@ -305,6 +387,7 @@ defmodule JustBash.Commands.Sed.Parser do
       case char do
         "g" -> [:global | acc]
         "i" -> [:caseless | acc]
+        "I" -> [:caseless | acc]
         "p" -> [:print | acc]
         _ -> acc
       end
@@ -339,7 +422,7 @@ defmodule JustBash.Commands.Sed.Parser do
 
     JustBash.Limit.check_regex_size!(ctx.limits, converted_pattern)
 
-    case Regex.compile(converted_pattern, regex_opts) do
+    case JustBash.TextRegex.compile(converted_pattern, regex_opts) do
       {:ok, regex} -> {:ok, regex}
       {:error, {msg, _}} -> {:error, "invalid regex: #{msg}"}
     end
@@ -422,13 +505,19 @@ defmodule JustBash.Commands.Sed.Parser do
   defp parse_translate_parts(rest, delimiter) do
     parts = String.split(rest, delimiter, parts: 3)
 
+    # Lengths are in characters, as the executor maps one grapheme to one
+    # grapheme: `y/“”/""/` is two characters to two.
     case parts do
-      [source, dest | _] when byte_size(source) == byte_size(dest) ->
-        {:ok, {:translate, source, dest}}
-
       [source, dest | _] ->
-        {:error,
-         "y command requires source and dest of same length (#{byte_size(source)} vs #{byte_size(dest)})"}
+        source_length = String.length(source)
+        dest_length = String.length(dest)
+
+        if source_length == dest_length do
+          {:ok, {:translate, source, dest}}
+        else
+          {:error,
+           "y command requires source and dest of same length (#{source_length} vs #{dest_length})"}
+        end
 
       _ ->
         {:error, "unterminated `y' command"}

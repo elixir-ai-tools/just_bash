@@ -7,6 +7,7 @@ defmodule JustBash.Commands.Grep do
   alias JustBash.FlagParser
   alias JustBash.FS
   alias JustBash.Limit
+  alias JustBash.TextRegex
 
   @flag_spec %{
     boolean: [
@@ -263,9 +264,9 @@ defmodule JustBash.Commands.Grep do
         true -> base_pattern
       end
 
-    case Regex.compile(regex_pattern, opts) do
+    case TextRegex.compile(regex_pattern, opts) do
       {:ok, regex} -> regex
-      {:error, _} -> Regex.compile!(Regex.escape(pattern), opts)
+      {:error, _} -> TextRegex.compile!(Regex.escape(pattern), opts)
     end
   end
 
@@ -312,7 +313,7 @@ defmodule JustBash.Commands.Grep do
     do: do_bre_pipes_to_pcre(rest, [char | acc])
 
   defp grep_line(line, regex, flags, line_num, prefix) do
-    matches = Regex.match?(regex, line)
+    matches = TextRegex.match?(regex, line)
     should_output = if flags.v, do: not matches, else: matches
 
     if should_output do
@@ -337,7 +338,7 @@ defmodule JustBash.Commands.Grep do
 
   defp format_only_matches(regex, line, prefix, with_line_num, line_num) do
     regex
-    |> Regex.scan(line)
+    |> TextRegex.scan(line)
     |> List.flatten()
     |> Enum.map(&add_prefix(&1, prefix, with_line_num, line_num))
   end

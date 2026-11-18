@@ -6,6 +6,7 @@ defmodule JustBash.Commands.Sed.Executor do
   """
 
   alias JustBash.Commands.Sed.Parser
+  alias JustBash.TextRegex
 
   @type line_state :: %{
           pattern_space: String.t(),
@@ -174,7 +175,7 @@ defmodule JustBash.Commands.Sed.Executor do
   defp single_address_matches?(:last, state), do: state.line_num == state.total_lines
 
   defp single_address_matches?({:regex, regex}, state) do
-    Regex.match?(regex, state.pattern_space)
+    TextRegex.match?(regex, state.pattern_space)
   end
 
   defp execute_command(:noop, state, exec_state), do: {state, exec_state}
@@ -261,7 +262,7 @@ defmodule JustBash.Commands.Sed.Executor do
   end
 
   defp single_substitute(regex, pattern_space, replacement) do
-    case Regex.run(regex, pattern_space, return: :index) do
+    case TextRegex.run(regex, pattern_space, return: :index) do
       nil ->
         {pattern_space, false}
 
@@ -282,7 +283,7 @@ defmodule JustBash.Commands.Sed.Executor do
   end
 
   defp nth_substitute(regex, pattern_space, replacement, nth) do
-    case Regex.scan(regex, pattern_space, return: :index) do
+    case TextRegex.scan(regex, pattern_space, return: :index) do
       [] ->
         {pattern_space, false}
 
@@ -307,16 +308,16 @@ defmodule JustBash.Commands.Sed.Executor do
   end
 
   defp global_replace_with_backrefs(regex, string, replacement) do
-    case Regex.scan(regex, string, return: :index) do
+    case TextRegex.scan(regex, string, return: :index) do
       [] ->
         {string, false}
 
       matches ->
-        has_ampersand = String.contains?(replacement, "&")
-        has_backrefs = String.contains?(replacement, "\\")
+        # A replacement of plain text is the same for every match.
+        literal_only? = Enum.all?(replacement, &is_binary/1)
 
         result =
-          build_global_replacement(matches, string, replacement, 0, has_ampersand, has_backrefs)
+          build_global_replacement(matches, string, replacement, 0, literal_only?)
           |> IO.iodata_to_binary()
 
         {result, true}
@@ -324,34 +325,27 @@ defmodule JustBash.Commands.Sed.Executor do
   end
 
   # Walk matches left-to-right, building iodata: [gap, replacement, gap, replacement, ... tail]
-  defp build_global_replacement([], string, _replacement, pos, _has_amp, _has_backref) do
+  defp build_global_replacement([], string, _replacement, pos, _literal_only?) do
     [tail_part(string, pos)]
   end
 
-  defp build_global_replacement(
-         [match | rest],
-         string,
-         replacement,
-         pos,
-         has_amp,
-         has_backref
-       ) do
+  defp build_global_replacement([match | rest], string, replacement, pos, literal_only?) do
     [{start, len} | group_indices] = match
     gap = :binary.part(string, pos, start - pos)
 
     expanded =
-      if has_amp or has_backref do
+      if literal_only? do
+        replacement
+      else
         full_match = :binary.part(string, start, len)
         group_values = extract_group_values(group_indices, string)
         expand_replacement(replacement, full_match, group_values)
-      else
-        replacement
       end
 
     [
       gap,
       expanded
-      | build_global_replacement(rest, string, replacement, start + len, has_amp, has_backref)
+      | build_global_replacement(rest, string, replacement, start + len, literal_only?)
     ]
   end
 
@@ -366,37 +360,53 @@ defmodule JustBash.Commands.Sed.Executor do
     end)
   end
 
+  # Reads the replacement once, left to right, into literal text, `:match` for
+  # `&` and `{:group, n}` for `\1`-`\9`, as GNU sed does. `\n` and `\t` are a
+  # newline and a tab; a backslash before any other character makes that
+  # character literal, so `\&` is an ampersand, `\/` a slash and `\\` one
+  # backslash. Expanding per match then never re-reads text it inserted: a
+  # matched line containing `\1` or `&` is copied as is.
   defp process_replacement(replacement) do
     replacement
-    |> String.replace("\\n", "\n")
-    |> String.replace("\\t", "\t")
+    |> tokenize_replacement([], "")
+    |> Enum.reverse()
   end
 
-  # Expand & (full match) and \1-\9 (capture groups) in replacement string.
-  defp expand_replacement(replacement, full_match, groups) do
-    replacement =
-      if String.contains?(replacement, "&") do
-        String.replace(replacement, "&", full_match)
-      else
-        replacement
-      end
+  defp tokenize_replacement("", tokens, literal), do: push_literal(tokens, literal)
 
-    if String.contains?(replacement, "\\") do
-      expand_numbered_backrefs(replacement, groups)
-    else
-      replacement
+  defp tokenize_replacement("&" <> rest, tokens, literal),
+    do: tokenize_replacement(rest, [:match | push_literal(tokens, literal)], "")
+
+  defp tokenize_replacement(<<"\\", d, rest::binary>>, tokens, literal) when d in ?0..?9,
+    do: tokenize_replacement(rest, [{:group, d - ?0} | push_literal(tokens, literal)], "")
+
+  defp tokenize_replacement("\\n" <> rest, tokens, literal),
+    do: tokenize_replacement(rest, tokens, literal <> "\n")
+
+  defp tokenize_replacement("\\t" <> rest, tokens, literal),
+    do: tokenize_replacement(rest, tokens, literal <> "\t")
+
+  defp tokenize_replacement("\\" <> rest, tokens, literal) do
+    case String.next_grapheme(rest) do
+      {char, rest} -> tokenize_replacement(rest, tokens, literal <> char)
+      nil -> push_literal(tokens, literal <> "\\")
     end
   end
 
-  defp expand_numbered_backrefs(str, groups) do
-    Regex.replace(~r/\\(\d)/, str, fn _, num_str ->
-      num = String.to_integer(num_str)
+  defp tokenize_replacement(<<c, rest::binary>>, tokens, literal),
+    do: tokenize_replacement(rest, tokens, literal <> <<c>>)
 
-      if num > 0 and num <= length(groups) do
-        Enum.at(groups, num - 1)
-      else
-        "\\#{num_str}"
-      end
+  defp push_literal(tokens, ""), do: tokens
+  defp push_literal(tokens, literal), do: [literal | tokens]
+
+  # The text one match is replaced with. `\0` is the whole match, as in GNU
+  # sed; a group the regex does not have is empty.
+  defp expand_replacement(tokens, full_match, groups) do
+    Enum.map(tokens, fn
+      :match -> full_match
+      {:group, 0} -> full_match
+      {:group, n} -> Enum.at(groups, n - 1, "")
+      literal -> literal
     end)
   end
 end

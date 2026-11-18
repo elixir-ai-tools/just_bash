@@ -209,6 +209,181 @@
       "name": "sed comparison: first line address",
       "stderr": "",
       "stdout": "a\n"
+    },
+    {
+      "content_hash": "7754d817876085ec",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in the replacement",
+      "stderr": "",
+      "stdout": "a; b\n"
+    },
+    {
+      "content_hash": "3e0a8a75ca662f2d",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in the pattern",
+      "stderr": "",
+      "stdout": "twelve, but still\n"
+    },
+    {
+      "content_hash": "194521a01da4095e",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in the replacement with another delimiter",
+      "stderr": "",
+      "stdout": "x;y b\n"
+    },
+    {
+      "content_hash": "e7def674d3efa10a",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon as the s delimiter",
+      "stderr": "",
+      "stdout": "x b\n"
+    },
+    {
+      "content_hash": "fe556782b2960ca4",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in a regex address",
+      "stderr": "",
+      "stdout": "z\n"
+    },
+    {
+      "content_hash": "3ab27b9d88729b4f",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in one-line append text",
+      "stderr": "",
+      "stdout": "a\nText; with semicolon\nb\n"
+    },
+    {
+      "content_hash": "058754343eb94854",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in a\\ text",
+      "stderr": "",
+      "stdout": "a\nText; more\nb\n"
+    },
+    {
+      "content_hash": "0fb5cd7a41d4d8f2",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in i\\ and c\\ text",
+      "stderr": "",
+      "stdout": "Before; this\na\nChanged; line\n"
+    },
+    {
+      "content_hash": "2eebb2137e3e0594",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in y operands",
+      "stderr": "",
+      "stdout": "a,b\n"
+    },
+    {
+      "content_hash": "df975bb18c777bcb",
+      "exit_code": 0,
+      "name": "sed comparison: newline separates commands",
+      "stderr": "",
+      "stdout": "x y\n"
+    },
+    {
+      "content_hash": "2c2c5740dce5a636",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon after flags separates commands",
+      "stderr": "",
+      "stdout": "x y x\n"
+    },
+    {
+      "content_hash": "5694dc32a7053f11",
+      "exit_code": 0,
+      "name": "sed comparison: escaped ampersand is literal",
+      "stderr": "",
+      "stdout": "Rosa & Kit\n"
+    },
+    {
+      "content_hash": "186f5a34b65d1584",
+      "exit_code": 0,
+      "name": "sed comparison: escaped delimiter in the replacement is literal",
+      "stderr": "",
+      "stdout": "a/b\n"
+    },
+    {
+      "content_hash": "5966d2b6193f7805",
+      "exit_code": 0,
+      "name": "sed comparison: escaped backslash in the replacement",
+      "stderr": "",
+      "stdout": "a\\b\n"
+    },
+    {
+      "content_hash": "1e92ccb832cecb61",
+      "exit_code": 0,
+      "name": "sed comparison: backreference text in the match is not re-expanded",
+      "stderr": "",
+      "stdout": "[a\\1b]\n"
+    },
+    {
+      "content_hash": "b85f14ebe6f510f6",
+      "exit_code": 0,
+      "name": "sed comparison: ampersand in a group is not re-expanded",
+      "stderr": "",
+      "stdout": "<a&>\n"
+    },
+    {
+      "content_hash": "7645cfe3163caca2",
+      "exit_code": 0,
+      "name": "sed comparison: backslash zero is the whole match",
+      "stderr": "",
+      "stdout": "a<b>c\n"
+    },
+    {
+      "content_hash": "00ebab79dfed7ff7",
+      "exit_code": 0,
+      "name": "sed comparison: capital I flag is case-insensitive",
+      "stderr": "",
+      "stdout": "world\n"
+    },
+    {
+      "content_hash": "50eae9dbe75d8d24",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: bracket class of curly quotes",
+      "stderr": "",
+      "stdout": "\"Hi,\" she said\n"
+    },
+    {
+      "content_hash": "7abf4f211df0ebc2",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: dot matches one multi-byte character",
+      "stderr": "",
+      "stdout": "X\n"
+    },
+    {
+      "content_hash": "559eac3b79054976",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: dot matches an em-dash",
+      "stderr": "",
+      "stdout": "door the\n"
+    },
+    {
+      "content_hash": "33661119177cc277",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: caret dot on a curly quote",
+      "stderr": "",
+      "stdout": "XHello”\n"
+    },
+    {
+      "content_hash": "e0164f94e507bc55",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: y with multi-byte characters",
+      "stderr": "",
+      "stdout": "\"Hi\"\n"
+    },
+    {
+      "content_hash": "901958b00f622f04",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: word characters include accented letters",
+      "stderr": "",
+      "stdout": "X plan\n"
+    },
+    {
+      "content_hash": "c20b516c4b2f1e47",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: case-insensitive match of accented letters",
+      "stderr": "",
+      "stdout": "x\n"
     }
   ],
   "suite": "sed"

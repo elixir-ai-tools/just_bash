@@ -235,6 +235,26 @@
       "name": "grep -q: an operand read before the match still reports its error",
       "script": "echo hi > a.txt; grep -q hi nope.txt a.txt; echo $?",
       "content_hash": "cfce295cc614eed8"
+    },
+    {
+      "name": "grep comparison: utf8: dot matches one multi-byte character at end of line",
+      "script": "printf 'café\\n' | LC_ALL=C.UTF-8 grep -c 'caf.$'",
+      "content_hash": "d909acd391c2f659"
+    },
+    {
+      "name": "grep comparison: utf8: only-matching with a dot",
+      "script": "printf 'café au lait\\n' | LC_ALL=C.UTF-8 grep -o 'caf.'",
+      "content_hash": "0a9c7daae95ed5a8"
+    },
+    {
+      "name": "grep comparison: utf8: only-matching a bracket class of curly quotes",
+      "script": "printf '“Hi”\\n' | LC_ALL=C.UTF-8 grep -o '[“”]'",
+      "content_hash": "8ef22be8c23a59d2"
+    },
+    {
+      "name": "grep comparison: utf8: case-insensitive accented letters",
+      "script": "printf 'ÉCOLE\\n' | LC_ALL=C.UTF-8 grep -ci 'école'",
+      "content_hash": "13b067bfb790bebb"
     }
   ]
 }

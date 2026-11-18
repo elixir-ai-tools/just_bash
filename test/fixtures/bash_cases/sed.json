@@ -150,6 +150,131 @@
       "name": "sed comparison: first line address",
       "script": "echo -e 'a\\nb\\nc' | sed -n '1p'",
       "content_hash": "1fae5020ebf39c26"
+    },
+    {
+      "name": "sed comparison: semicolon in the replacement",
+      "script": "echo 'a b' | sed 's/a b/a; b/'",
+      "content_hash": "7754d817876085ec"
+    },
+    {
+      "name": "sed comparison: semicolon in the pattern",
+      "script": "echo 'twelve; still' | sed 's/twelve; still/twelve, but still/'",
+      "content_hash": "3e0a8a75ca662f2d"
+    },
+    {
+      "name": "sed comparison: semicolon in the replacement with another delimiter",
+      "script": "echo 'a b' | sed 's|a|x;y|'",
+      "content_hash": "194521a01da4095e"
+    },
+    {
+      "name": "sed comparison: semicolon as the s delimiter",
+      "script": "echo 'a b' | sed 's;a;x;'",
+      "content_hash": "e7def674d3efa10a"
+    },
+    {
+      "name": "sed comparison: semicolon in a regex address",
+      "script": "printf 'x;y\\nz\\n' | sed '/x;y/d'",
+      "content_hash": "fe556782b2960ca4"
+    },
+    {
+      "name": "sed comparison: semicolon in one-line append text",
+      "script": "printf 'a\\nb\\n' | sed '1a Text; with semicolon'",
+      "content_hash": "3ab27b9d88729b4f"
+    },
+    {
+      "name": "sed comparison: semicolon in a\\ text",
+      "script": "printf 'a\\nb\\n' | sed '1a\\Text; more'",
+      "content_hash": "058754343eb94854"
+    },
+    {
+      "name": "sed comparison: semicolon in i\\ and c\\ text",
+      "script": "printf 'a\\nb\\n' | sed -e '1i\\Before; this' -e '2c\\Changed; line'",
+      "content_hash": "0fb5cd7a41d4d8f2"
+    },
+    {
+      "name": "sed comparison: semicolon in y operands",
+      "script": "echo 'a;b' | sed 'y/;/,/'",
+      "content_hash": "2eebb2137e3e0594"
+    },
+    {
+      "name": "sed comparison: newline separates commands",
+      "script": "echo 'a b' | sed 's/a/x/\ns/b/y/'",
+      "content_hash": "df975bb18c777bcb"
+    },
+    {
+      "name": "sed comparison: semicolon after flags separates commands",
+      "script": "echo 'a b a' | sed 's/a/x/g;s/b/y/'",
+      "content_hash": "2c2c5740dce5a636"
+    },
+    {
+      "name": "sed comparison: escaped ampersand is literal",
+      "script": "echo 'Ronas' | sed 's/Ronas/Rosa \\& Kit/'",
+      "content_hash": "5694dc32a7053f11"
+    },
+    {
+      "name": "sed comparison: escaped delimiter in the replacement is literal",
+      "script": "echo 'Ronas' | sed 's/Ronas/a\\/b/'",
+      "content_hash": "186f5a34b65d1584"
+    },
+    {
+      "name": "sed comparison: escaped backslash in the replacement",
+      "script": "echo 'x' | sed 's/x/a\\\\b/'",
+      "content_hash": "5966d2b6193f7805"
+    },
+    {
+      "name": "sed comparison: backreference text in the match is not re-expanded",
+      "script": "echo 'a\\1b' | sed 's/a.*/[&]/'",
+      "content_hash": "1e92ccb832cecb61"
+    },
+    {
+      "name": "sed comparison: ampersand in a group is not re-expanded",
+      "script": "echo 'a&b' | sed 's/\\(a&\\)b/<\\1>/'",
+      "content_hash": "b85f14ebe6f510f6"
+    },
+    {
+      "name": "sed comparison: backslash zero is the whole match",
+      "script": "echo 'abc' | sed 's/b/<\\0>/'",
+      "content_hash": "7645cfe3163caca2"
+    },
+    {
+      "name": "sed comparison: capital I flag is case-insensitive",
+      "script": "echo 'HELLO' | sed 's/hello/world/I'",
+      "content_hash": "00ebab79dfed7ff7"
+    },
+    {
+      "name": "sed comparison: utf8: bracket class of curly quotes",
+      "script": "echo '“Hi,” she said' | LC_ALL=C.UTF-8 sed 's/[“”]/\"/g'",
+      "content_hash": "50eae9dbe75d8d24"
+    },
+    {
+      "name": "sed comparison: utf8: dot matches one multi-byte character",
+      "script": "echo 'café' | LC_ALL=C.UTF-8 sed 's/caf./X/'",
+      "content_hash": "7abf4f211df0ebc2"
+    },
+    {
+      "name": "sed comparison: utf8: dot matches an em-dash",
+      "script": "echo 'door—the' | LC_ALL=C.UTF-8 sed 's/door.the/door the/'",
+      "content_hash": "559eac3b79054976"
+    },
+    {
+      "name": "sed comparison: utf8: caret dot on a curly quote",
+      "script": "echo '“Hello”' | LC_ALL=C.UTF-8 sed 's/^./X/'",
+      "content_hash": "33661119177cc277"
+    },
+    {
+      "name": "sed comparison: utf8: y with multi-byte characters",
+      "script": "echo '“Hi”' | LC_ALL=C.UTF-8 sed 'y/“”/\"\"/'",
+      "content_hash": "e0164f94e507bc55"
+    },
+    {
+      "name": "sed comparison: utf8: word characters include accented letters",
+      "script": "echo 'naïve plan' | LC_ALL=C.UTF-8 sed 's/\\w*/X/'",
+      "content_hash": "901958b00f622f04"
+    },
+    {
+      "name": "sed comparison: utf8: case-insensitive match of accented letters",
+      "script": "echo 'ÉCOLE' | LC_ALL=C.UTF-8 sed 's/école/x/I'",
+      "content_hash": "c20b516c4b2f1e47"
     }
   ]
 }
