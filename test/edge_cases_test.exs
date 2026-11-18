@@ -110,7 +110,8 @@ defmodule JustBash.EdgeCasesTest do
     test "tail with single line no newline" do
       bash = JustBash.new(files: %{"/no_newline.txt" => "single line"})
       {result, _} = JustBash.exec(bash, "tail -1 /no_newline.txt")
-      assert result.stdout == "single line\n"
+      # GNU tail, like head, does not invent a terminator the file did not have.
+      assert result.stdout == "single line"
     end
 
     test "grep matches line without newline" do

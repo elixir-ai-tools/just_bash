@@ -85,6 +85,81 @@
       "name": "tail -c byte mode: includes newlines",
       "script": "printf 'line1\nline2\nline3\n' | tail -c 8",
       "content_hash": "5a6082eb5e3b82ac"
+    },
+    {
+      "name": "tail -n +N starts at line N, not the last N lines",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n' | tail -n +5",
+      "content_hash": "e6b9bf1ff718adaa"
+    },
+    {
+      "name": "tail -n +N on a file, spliced between head and the rest",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n' > f; printf 'new\\n' > i; head -n 2 f > out && cat i >> out && tail -n +3 f >> out && cat out",
+      "content_hash": "8cffe77402933ce6"
+    },
+    {
+      "name": "tail -n +0 is the whole input",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n' | tail -n +0",
+      "content_hash": "f58d259c47accf43"
+    },
+    {
+      "name": "tail -n +N past the end prints nothing",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n' | tail -n +9; echo rc=$?",
+      "content_hash": "d56924308e92d296"
+    },
+    {
+      "name": "tail -n -N is the last N lines",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n' | tail -n -2",
+      "content_hash": "eae2a31646e89c8f"
+    },
+    {
+      "name": "tail -c +N starts at byte N",
+      "script": "printf 'abcdef' | tail -c +3",
+      "content_hash": "9a01d0630c3fcef1"
+    },
+    {
+      "name": "tail keeps blank lines at the start",
+      "script": "printf '\\n\\na\\n' | tail -n 3 | tr '\\n' '|'; echo",
+      "content_hash": "f5739d31f951f695"
+    },
+    {
+      "name": "tail keeps blank lines at the end",
+      "script": "printf 'a\\n\\n\\n' | tail -n 2 | tr '\\n' '|'; echo",
+      "content_hash": "6ab51463040b804a"
+    },
+    {
+      "name": "tail keeps a last line without a newline as it is",
+      "script": "printf 'a\\nb' | tail -n 1 | tr '\\n' '|'; echo",
+      "content_hash": "551c54259924053d"
+    },
+    {
+      "name": "tail -n with a bad count",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n' | tail -n abc; echo rc=$?",
+      "content_hash": "d13c3c70e52a1440"
+    },
+    {
+      "name": "tail -n +abc is a bad count",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n' | tail -n +abc; echo rc=$?",
+      "content_hash": "ba2050476cf53f48"
+    },
+    {
+      "name": "head -n -N drops the last N lines",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n' | head -n -2",
+      "content_hash": "dd0d596f9673406c"
+    },
+    {
+      "name": "head -n -N larger than the input prints nothing",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n' | head -n -9; echo rc=$?",
+      "content_hash": "1934d95725761560"
+    },
+    {
+      "name": "head -c -N drops the last N bytes",
+      "script": "printf 'abcdef' | head -c -2",
+      "content_hash": "e0fac25260df146d"
+    },
+    {
+      "name": "head -n -N keeps a blank last line",
+      "script": "printf 'a\\n\\nb\\n' | head -n -1 | tr '\\n' '|'; echo",
+      "content_hash": "8c1e6919e3c99361"
     }
   ]
 }

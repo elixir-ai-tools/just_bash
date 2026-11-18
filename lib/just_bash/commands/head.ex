@@ -94,6 +94,11 @@ defmodule JustBash.Commands.Head do
     {Command.ok(output), bash}
   end
 
+  # A negative count keeps all but that many from the end: `head -n -1`.
+  defp take_content(content, {:bytes, n}) when n < 0 do
+    binary_part(content, 0, max(byte_size(content) + n, 0))
+  end
+
   defp take_content(content, {:bytes, n}) do
     binary_part(content, 0, min(n, byte_size(content)))
   end
@@ -106,7 +111,15 @@ defmodule JustBash.Commands.Head do
   # aren't that many. String.split/2 leaves an empty piece after a
   # terminating newline; taking it and then appending "\n" again was the
   # extra blank line on the default count (and any -n larger than the file).
-  defp format_head_output(_content, n) when n <= 0, do: ""
+  defp format_head_output(content, n) when n < 0 do
+    content
+    |> String.split(~r/(?<=\n)/)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.drop(n)
+    |> Enum.join()
+  end
+
+  defp format_head_output(_content, 0), do: ""
 
   defp format_head_output(content, n) do
     case content |> :binary.matches("\n") |> Enum.at(n - 1) do

@@ -118,6 +118,111 @@
       "name": "tail -c byte mode: includes newlines",
       "stderr": "",
       "stdout": "2\nline3\n"
+    },
+    {
+      "content_hash": "e6b9bf1ff718adaa",
+      "exit_code": 0,
+      "name": "tail -n +N starts at line N, not the last N lines",
+      "stderr": "",
+      "stdout": "5\n6\n"
+    },
+    {
+      "content_hash": "8cffe77402933ce6",
+      "exit_code": 0,
+      "name": "tail -n +N on a file, spliced between head and the rest",
+      "stderr": "",
+      "stdout": "1\n2\nnew\n3\n4\n5\n6\n"
+    },
+    {
+      "content_hash": "f58d259c47accf43",
+      "exit_code": 0,
+      "name": "tail -n +0 is the whole input",
+      "stderr": "",
+      "stdout": "1\n2\n3\n4\n5\n6\n"
+    },
+    {
+      "content_hash": "d56924308e92d296",
+      "exit_code": 0,
+      "name": "tail -n +N past the end prints nothing",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "eae2a31646e89c8f",
+      "exit_code": 0,
+      "name": "tail -n -N is the last N lines",
+      "stderr": "",
+      "stdout": "5\n6\n"
+    },
+    {
+      "content_hash": "9a01d0630c3fcef1",
+      "exit_code": 0,
+      "name": "tail -c +N starts at byte N",
+      "stderr": "",
+      "stdout": "cdef"
+    },
+    {
+      "content_hash": "f5739d31f951f695",
+      "exit_code": 0,
+      "name": "tail keeps blank lines at the start",
+      "stderr": "",
+      "stdout": "||a|\n"
+    },
+    {
+      "content_hash": "6ab51463040b804a",
+      "exit_code": 0,
+      "name": "tail keeps blank lines at the end",
+      "stderr": "",
+      "stdout": "||\n"
+    },
+    {
+      "content_hash": "551c54259924053d",
+      "exit_code": 0,
+      "name": "tail keeps a last line without a newline as it is",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "d13c3c70e52a1440",
+      "exit_code": 0,
+      "name": "tail -n with a bad count",
+      "stderr": "tail: invalid number of lines: 'abc'\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "ba2050476cf53f48",
+      "exit_code": 0,
+      "name": "tail -n +abc is a bad count",
+      "stderr": "tail: invalid number of lines: '+abc'\n",
+      "stdout": "rc=1\n"
+    },
+    {
+      "content_hash": "dd0d596f9673406c",
+      "exit_code": 0,
+      "name": "head -n -N drops the last N lines",
+      "stderr": "",
+      "stdout": "1\n2\n3\n4\n"
+    },
+    {
+      "content_hash": "1934d95725761560",
+      "exit_code": 0,
+      "name": "head -n -N larger than the input prints nothing",
+      "stderr": "",
+      "stdout": "rc=0\n"
+    },
+    {
+      "content_hash": "e0fac25260df146d",
+      "exit_code": 0,
+      "name": "head -c -N drops the last N bytes",
+      "stderr": "",
+      "stdout": "abcd"
+    },
+    {
+      "content_hash": "8c1e6919e3c99361",
+      "exit_code": 0,
+      "name": "head -n -N keeps a blank last line",
+      "stderr": "",
+      "stdout": "a||\n"
     }
   ],
   "suite": "head_tail"
