@@ -223,8 +223,8 @@
     },
     {
       "name": "sed comparison: backreference text in the match is not re-expanded",
-      "script": "echo 'a\\1b' | sed 's/a.*/[&]/'",
-      "content_hash": "1e92ccb832cecb61"
+      "script": "echo 'a\\1b' | sed 's/\\(a\\).*/[&]/'",
+      "content_hash": "5350f42b06d83369"
     },
     {
       "name": "sed comparison: ampersand in a group is not re-expanded",

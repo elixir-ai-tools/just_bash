@@ -309,7 +309,7 @@
       "stdout": "a\\b\n"
     },
     {
-      "content_hash": "1e92ccb832cecb61",
+      "content_hash": "5350f42b06d83369",
       "exit_code": 0,
       "name": "sed comparison: backreference text in the match is not re-expanded",
       "stderr": "",
