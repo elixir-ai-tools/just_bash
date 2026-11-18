@@ -275,6 +275,61 @@
       "name": "sed comparison: utf8: case-insensitive match of accented letters",
       "script": "echo 'ÉCOLE' | LC_ALL=C.UTF-8 sed 's/école/x/I'",
       "content_hash": "c20b516c4b2f1e47"
+    },
+    {
+      "name": "sed comparison: multi-line a\\ text with blank lines between paragraphs",
+      "script": "printf 'one\\ntwo\\nthree\\n' | sed '1a\\\n\\\nNew para.\\\n\\\nSecond.'",
+      "content_hash": "8b91486858d1a6a0"
+    },
+    {
+      "name": "sed comparison: multi-line i\\ text",
+      "script": "printf 'one\\ntwo\\nthree\\n' | sed '2i\\\nBefore.\\\nAlso before.'",
+      "content_hash": "e4691d672b8185e6"
+    },
+    {
+      "name": "sed comparison: multi-line c\\ text",
+      "script": "printf 'one\\ntwo\\nthree\\n' | sed '2c\\\nChanged.\\\nTwice.'",
+      "content_hash": "5dbbe1e192eb706c"
+    },
+    {
+      "name": "sed comparison: multi-line a\\ text ends at an unescaped newline, and the next command runs",
+      "script": "printf 'one\\ntwo\\nthree\\n' | sed '1a\\\nA.\\\nB.\n3d'",
+      "content_hash": "cfbab1a2c3f39b82"
+    },
+    {
+      "name": "sed comparison: a\\ text on the next line after a dollar address",
+      "script": "printf 'one\\ntwo\\nthree\\n' | sed '$a\\\nEnd.'",
+      "content_hash": "f34067c5c0469d89"
+    },
+    {
+      "name": "sed comparison: a\\ one-liner keeps leading spaces",
+      "script": "printf 'one\\ntwo\\nthree\\n' | sed '1a\\  indented'",
+      "content_hash": "26f1ee4e6756a542"
+    },
+    {
+      "name": "sed comparison: one-line a strips leading spaces",
+      "script": "printf 'one\\ntwo\\nthree\\n' | sed '1a   stripped'",
+      "content_hash": "c032c79eadd69fcf"
+    },
+    {
+      "name": "sed comparison: backslash before an ordinary character in a\\ text is that character",
+      "script": "printf 'one\\ntwo\\nthree\\n' | sed '1a\\-\\ \\*\\*Archery\\*\\*'",
+      "content_hash": "c2be667363f75255"
+    },
+    {
+      "name": "sed comparison: tab, newline and backslash escapes in a text",
+      "script": "printf 'one\\ntwo\\nthree\\n' | sed '1a tab\\there, nl\\nthere, back\\\\slash'",
+      "content_hash": "0739c560c51c2826"
+    },
+    {
+      "name": "sed comparison: multi-line a\\ text with apostrophes and curly quotes",
+      "script": "printf 'one\\ntwo\\n' | LC_ALL=C.UTF-8 sed '1a\\\n\\\nThe servants'\"'\"' stairs — “quiet,” she said.'",
+      "content_hash": "1f361fae4d5245dc"
+    },
+    {
+      "name": "sed comparison: a\\ split across -e arguments",
+      "script": "printf 'one\\ntwo\\nthree\\n' | sed -e '1a\\' -e 'Joined text.'",
+      "content_hash": "975cdc0694c5a66e"
     }
   ]
 }

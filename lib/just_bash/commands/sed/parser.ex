@@ -40,10 +40,10 @@ defmodule JustBash.Commands.Sed.Parser do
   def parse(scripts, extended, limits) do
     ctx = %{extended: extended, limits: limits}
 
-    commands =
-      Enum.flat_map(scripts, fn script ->
-        parse_script(script, ctx)
-      end)
+    # GNU joins the scripts of several -e options with newlines before parsing
+    # them, so `-e '1a\' -e 'text'` is one append whose text is on the next
+    # line, as if the script had been written on two lines.
+    commands = scripts |> Enum.join("\n") |> parse_script(ctx)
 
     if Enum.any?(commands, &match?({:error, _}, &1)) do
       Enum.find(commands, &match?({:error, _}, &1))
@@ -251,34 +251,17 @@ defmodule JustBash.Commands.Sed.Parser do
     parse_substitute_command(rest, ctx)
   end
 
-  # a\ - append text after current line
-  defp parse_single_command("a\\" <> rest, _ctx) do
-    text = String.trim_leading(rest)
-    {:ok, {:append, unescape_text(text)}}
+  # a, i and c: append text after the line, insert it before, or change the
+  # line to it. In the classic form, `a\` and a newline, the text starts on
+  # the next line. In GNU's one-line forms the text follows on the same line:
+  # after `a\` exactly as written, so leading spaces are kept, and after `a `
+  # from its first non-blank character.
+  defp parse_single_command(<<cmd, "\\", rest::binary>>, _ctx) when cmd in [?a, ?i, ?c] do
+    {:ok, {text_command(cmd), rest |> String.replace_prefix("\n", "") |> unescape_text()}}
   end
 
-  defp parse_single_command("a " <> rest, _ctx) do
-    {:ok, {:append, unescape_text(rest)}}
-  end
-
-  # i\ - insert text before current line
-  defp parse_single_command("i\\" <> rest, _ctx) do
-    text = String.trim_leading(rest)
-    {:ok, {:insert, unescape_text(text)}}
-  end
-
-  defp parse_single_command("i " <> rest, _ctx) do
-    {:ok, {:insert, unescape_text(rest)}}
-  end
-
-  # c\ - change (replace) current line with text
-  defp parse_single_command("c\\" <> rest, _ctx) do
-    text = String.trim_leading(rest)
-    {:ok, {:change, unescape_text(text)}}
-  end
-
-  defp parse_single_command("c " <> rest, _ctx) do
-    {:ok, {:change, unescape_text(rest)}}
+  defp parse_single_command(<<cmd, " ", rest::binary>>, _ctx) when cmd in [?a, ?i, ?c] do
+    {:ok, {text_command(cmd), rest |> String.trim_leading() |> unescape_text()}}
   end
 
   # y/source/dest/ - transliterate characters
@@ -485,12 +468,28 @@ defmodule JustBash.Commands.Sed.Parser do
     do_convert_bre(rest, acc <> <<c>>, false)
   end
 
-  defp unescape_text(text) do
-    text
-    |> String.replace("\\n", "\n")
-    |> String.replace("\\t", "\t")
-    |> String.replace("\\\\", "\\")
+  defp text_command(?a), do: :append
+  defp text_command(?i), do: :insert
+  defp text_command(?c), do: :change
+
+  # Backslashes in a, i and c text, as GNU reads them, left to right: `\t` and
+  # `\n` are a tab and a newline, and a backslash before anything else is that
+  # character. A backslash at the end of a line therefore continues the text on
+  # the next line, a line holding only `\` is a blank line, and `\*` is `*`.
+  defp unescape_text(text), do: unescape_text(text, "")
+
+  defp unescape_text("", acc), do: acc
+
+  defp unescape_text("\\" <> rest, acc) do
+    case String.next_grapheme(rest) do
+      {"n", rest} -> unescape_text(rest, acc <> "\n")
+      {"t", rest} -> unescape_text(rest, acc <> "\t")
+      {char, rest} -> unescape_text(rest, acc <> char)
+      nil -> acc
+    end
   end
+
+  defp unescape_text(<<c, rest::binary>>, acc), do: unescape_text(rest, acc <> <<c>>)
 
   defp parse_translate_command(rest) do
     if String.length(rest) < 1 do

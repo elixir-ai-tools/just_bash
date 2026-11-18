@@ -384,6 +384,83 @@
       "name": "sed comparison: utf8: case-insensitive match of accented letters",
       "stderr": "",
       "stdout": "x\n"
+    },
+    {
+      "content_hash": "8b91486858d1a6a0",
+      "exit_code": 0,
+      "name": "sed comparison: multi-line a\\ text with blank lines between paragraphs",
+      "stderr": "",
+      "stdout": "one\n\nNew para.\n\nSecond.\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "e4691d672b8185e6",
+      "exit_code": 0,
+      "name": "sed comparison: multi-line i\\ text",
+      "stderr": "",
+      "stdout": "one\nBefore.\nAlso before.\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "5dbbe1e192eb706c",
+      "exit_code": 0,
+      "name": "sed comparison: multi-line c\\ text",
+      "stderr": "",
+      "stdout": "one\nChanged.\nTwice.\nthree\n"
+    },
+    {
+      "content_hash": "cfbab1a2c3f39b82",
+      "exit_code": 0,
+      "name": "sed comparison: multi-line a\\ text ends at an unescaped newline, and the next command runs",
+      "stderr": "",
+      "stdout": "one\nA.\nB.\ntwo\n"
+    },
+    {
+      "content_hash": "f34067c5c0469d89",
+      "exit_code": 0,
+      "name": "sed comparison: a\\ text on the next line after a dollar address",
+      "stderr": "",
+      "stdout": "one\ntwo\nthree\nEnd.\n"
+    },
+    {
+      "content_hash": "26f1ee4e6756a542",
+      "exit_code": 0,
+      "name": "sed comparison: a\\ one-liner keeps leading spaces",
+      "stderr": "",
+      "stdout": "one\n  indented\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "c032c79eadd69fcf",
+      "exit_code": 0,
+      "name": "sed comparison: one-line a strips leading spaces",
+      "stderr": "",
+      "stdout": "one\nstripped\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "c2be667363f75255",
+      "exit_code": 0,
+      "name": "sed comparison: backslash before an ordinary character in a\\ text is that character",
+      "stderr": "",
+      "stdout": "one\n- **Archery**\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "0739c560c51c2826",
+      "exit_code": 0,
+      "name": "sed comparison: tab, newline and backslash escapes in a text",
+      "stderr": "",
+      "stdout": "one\ntab\there, nl\nthere, back\\slash\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "1f361fae4d5245dc",
+      "exit_code": 0,
+      "name": "sed comparison: multi-line a\\ text with apostrophes and curly quotes",
+      "stderr": "",
+      "stdout": "one\n\nThe servants' stairs — “quiet,” she said.\ntwo\n"
+    },
+    {
+      "content_hash": "975cdc0694c5a66e",
+      "exit_code": 0,
+      "name": "sed comparison: a\\ split across -e arguments",
+      "stderr": "",
+      "stdout": "one\nJoined text.\ntwo\nthree\n"
     }
   ],
   "suite": "sed"
