@@ -356,6 +356,132 @@
       "name": "grep comparison: utf8: case-insensitive accented letters",
       "stderr": "",
       "stdout": "1\n"
+    },
+    {
+      "content_hash": "68d67056face7756",
+      "exit_code": 0,
+      "name": "grep comparison: context: -A prints lines after each match, -- between groups",
+      "stderr": "",
+      "stdout": "X1\nb\n--\nX2\nf\nX3\ng\n"
+    },
+    {
+      "content_hash": "dbf064ecec831abd",
+      "exit_code": 0,
+      "name": "grep comparison: context: -B with -n marks context lines with -",
+      "stderr": "",
+      "stdout": "1-a\n2:X1\n--\n5-d\n6-e\n7:X2\n8-f\n9:X3\n"
+    },
+    {
+      "content_hash": "b25621d5df6470a5",
+      "exit_code": 0,
+      "name": "grep comparison: context: -C prints both sides and merges touching groups",
+      "stderr": "",
+      "stdout": "a\nX1\nb\n--\ne\nX2\nf\nX3\ng\n"
+    },
+    {
+      "content_hash": "76f62cd25c87f153",
+      "exit_code": 0,
+      "name": "grep comparison: context: -A takes its count as the next argument",
+      "stderr": "",
+      "stdout": "X2\nf\n"
+    },
+    {
+      "content_hash": "22e9694fe8fd21d8",
+      "exit_code": 0,
+      "name": "grep comparison: context: context across two files, separated by --",
+      "stderr": "",
+      "stdout": "t:X1\nt-b\n--\nt:X2\nt-f\nt:X3\nt-g\n--\nu:X9\nu-q\n"
+    },
+    {
+      "content_hash": "1b6050da6e071137",
+      "exit_code": 0,
+      "name": "grep comparison: context: -v context lines are the matching ones",
+      "stderr": "",
+      "stdout": "X1\nb\n--\nX2\nf\nX3\ng\n"
+    },
+    {
+      "content_hash": "69e61ca324f3e5b8",
+      "exit_code": 0,
+      "name": "grep comparison: context: -c counts matches, not context",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "ca3eb866390ebeea",
+      "exit_code": 0,
+      "name": "grep comparison: context: -o prints no context lines but keeps separators",
+      "stderr": "",
+      "stdout": "X1\n--\nX2\nX3\n"
+    },
+    {
+      "content_hash": "341ba0d5bad170cf",
+      "exit_code": 0,
+      "name": "grep comparison: context: -l ignores context",
+      "stderr": "",
+      "stdout": "t\n"
+    },
+    {
+      "content_hash": "7d1e4dca580169fe",
+      "exit_code": 0,
+      "name": "grep comparison: context: --after-context with a separate count",
+      "stderr": "",
+      "stdout": "X3\ng\n"
+    },
+    {
+      "content_hash": "67261b6d2a0e56ce",
+      "exit_code": 0,
+      "name": "grep comparison: context: --context=N",
+      "stderr": "",
+      "stdout": "f\nX3\ng\n"
+    },
+    {
+      "content_hash": "73ab7447c51e90c5",
+      "exit_code": 2,
+      "name": "grep comparison: context: a count that is not a number",
+      "stderr": "grep: x: invalid context length argument\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "8adfaab4f25cee3e",
+      "exit_code": 0,
+      "name": "grep comparison: context: -A0 still separates groups",
+      "stderr": "",
+      "stdout": "X1\n--\nX2\n--\nX3\n"
+    },
+    {
+      "content_hash": "0bb53b5d28973505",
+      "exit_code": 0,
+      "name": "grep comparison: context: context on stdin with -n",
+      "stderr": "",
+      "stdout": "9:X3\n10-g\n"
+    },
+    {
+      "content_hash": "c7880310f3301b09",
+      "exit_code": 0,
+      "name": "grep comparison: context: -H names context lines with -",
+      "stderr": "",
+      "stdout": "t-f\nt:X3\n"
+    },
+    {
+      "content_hash": "6c55ee775cd6bd36",
+      "exit_code": 0,
+      "name": "grep comparison: context: -A and -B together",
+      "stderr": "",
+      "stdout": "X2\nf\nX3\ng\n"
+    },
+    {
+      "content_hash": "4cb91373ec7745fc",
+      "exit_code": 0,
+      "name": "grep comparison: context: -A overrides -C",
+      "stderr": "",
+      "stdout": "X2\nf\nX3\n"
+    },
+    {
+      "content_hash": "24f60d0d569767d3",
+      "exit_code": 0,
+      "name": "grep comparison: context: context at the start and end of the file",
+      "stderr": "",
+      "stdout": "a\nX1\nb\nc\nd\ne\nX2\nf\nX3\ng\n"
     }
   ],
   "suite": "grep"

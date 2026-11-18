@@ -255,6 +255,96 @@
       "name": "grep comparison: utf8: case-insensitive accented letters",
       "script": "printf 'ÉCOLE\\n' | LC_ALL=C.UTF-8 grep -ci 'école'",
       "content_hash": "13b067bfb790bebb"
+    },
+    {
+      "name": "grep comparison: context: -A prints lines after each match, -- between groups",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -A1 X t",
+      "content_hash": "68d67056face7756"
+    },
+    {
+      "name": "grep comparison: context: -B with -n marks context lines with -",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -n -B2 X t",
+      "content_hash": "dbf064ecec831abd"
+    },
+    {
+      "name": "grep comparison: context: -C prints both sides and merges touching groups",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -C1 X t",
+      "content_hash": "b25621d5df6470a5"
+    },
+    {
+      "name": "grep comparison: context: -A takes its count as the next argument",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -A 1 X2 t",
+      "content_hash": "76f62cd25c87f153"
+    },
+    {
+      "name": "grep comparison: context: context across two files, separated by --",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; printf 'X9\\nq\\n' > u; grep -A1 X t u",
+      "content_hash": "22e9694fe8fd21d8"
+    },
+    {
+      "name": "grep comparison: context: -v context lines are the matching ones",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -v -A1 '[a-g]' t",
+      "content_hash": "1b6050da6e071137"
+    },
+    {
+      "name": "grep comparison: context: -c counts matches, not context",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -c -A1 X t",
+      "content_hash": "69e61ca324f3e5b8"
+    },
+    {
+      "name": "grep comparison: context: -o prints no context lines but keeps separators",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -o -A1 'X.' t",
+      "content_hash": "ca3eb866390ebeea"
+    },
+    {
+      "name": "grep comparison: context: -l ignores context",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -l -A1 X t",
+      "content_hash": "341ba0d5bad170cf"
+    },
+    {
+      "name": "grep comparison: context: --after-context with a separate count",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep --after-context 1 X3 t",
+      "content_hash": "7d1e4dca580169fe"
+    },
+    {
+      "name": "grep comparison: context: --context=N",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep --context=1 X3 t",
+      "content_hash": "67261b6d2a0e56ce"
+    },
+    {
+      "name": "grep comparison: context: a count that is not a number",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -A x X t",
+      "content_hash": "73ab7447c51e90c5"
+    },
+    {
+      "name": "grep comparison: context: -A0 still separates groups",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -A0 X t",
+      "content_hash": "8adfaab4f25cee3e"
+    },
+    {
+      "name": "grep comparison: context: context on stdin with -n",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; cat t | grep -nA1 X3",
+      "content_hash": "0bb53b5d28973505"
+    },
+    {
+      "name": "grep comparison: context: -H names context lines with -",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -H -B1 X3 t",
+      "content_hash": "c7880310f3301b09"
+    },
+    {
+      "name": "grep comparison: context: -A and -B together",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -A1 -B2 X3 t",
+      "content_hash": "6c55ee775cd6bd36"
+    },
+    {
+      "name": "grep comparison: context: -A overrides -C",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -C2 -A0 X3 t",
+      "content_hash": "4cb91373ec7745fc"
+    },
+    {
+      "name": "grep comparison: context: context at the start and end of the file",
+      "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -C3 'X1\\|X3' t",
+      "content_hash": "24f60d0d569767d3"
     }
   ]
 }
