@@ -330,6 +330,321 @@
       "name": "sed comparison: a\\ split across -e arguments",
       "script": "printf 'one\\ntwo\\nthree\\n' | sed -e '1a\\' -e 'Joined text.'",
       "content_hash": "975cdc0694c5a66e"
+    },
+    {
+      "name": "sed comparison: addr,+N selects the start line and N more",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed '/b/,+2d'",
+      "content_hash": "74006a0a6351ca58"
+    },
+    {
+      "name": "sed comparison: N,+N with a line number",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed -n '2,+1p'",
+      "content_hash": "b30bc60b58f1f8b6"
+    },
+    {
+      "name": "sed comparison: addr,+N restarts when the start matches again",
+      "script": "printf 'x\\n1\\n2\\nx\\n3\\n4\\n' | sed '/x/,+1d'",
+      "content_hash": "1e0c7e1274c1a629"
+    },
+    {
+      "name": "sed comparison: addr,~N runs to the next multiple of N",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed '/b/,~4d'",
+      "content_hash": "fa54be4840211556"
+    },
+    {
+      "name": "sed comparison: addr,~N on a multiple runs to the next multiple",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed -n '4,~4p'",
+      "content_hash": "105b74dd330153f1"
+    },
+    {
+      "name": "sed comparison: first~step address",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed -n '1~2p'",
+      "content_hash": "dc676fa1108c7fb9"
+    },
+    {
+      "name": "sed comparison: 0~3 address",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed '0~3d'",
+      "content_hash": "295887f9e6224289"
+    },
+    {
+      "name": "sed comparison: a numeric range end before the start selects one line",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed '4,2d'",
+      "content_hash": "7e1299d7c747c431"
+    },
+    {
+      "name": "sed comparison: a regex range end is tried from the line after the start",
+      "script": "printf 'x\\na\\nx\\nb\\n' | sed '/x/,/x/d'",
+      "content_hash": "ee1bf6c13279a10e"
+    },
+    {
+      "name": "sed comparison: 0,/re/ can end on line 1",
+      "script": "printf 'x\\na\\nx\\nb\\n' | sed '0,/x/d'",
+      "content_hash": "df8ecf34f82de6c4"
+    },
+    {
+      "name": "sed comparison: 1,/re/ cannot end on line 1",
+      "script": "printf 'x\\na\\nx\\nb\\n' | sed '1,/x/d'",
+      "content_hash": "7750cf5fb725894c"
+    },
+    {
+      "name": "sed comparison: a block under a line address",
+      "script": "printf '\\nfirst\\n\\nsecond\\n' | sed '1{/^$/d}'",
+      "content_hash": "59199f5b3ed0608c"
+    },
+    {
+      "name": "sed comparison: a block with a semicolon before the brace",
+      "script": "printf '\\nfirst\\n' | sed '1{/^$/d;}'",
+      "content_hash": "df859203d681019a"
+    },
+    {
+      "name": "sed comparison: commands after a block",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed -n '2{p;p};4p'",
+      "content_hash": "b7cf398276f1e7bc"
+    },
+    {
+      "name": "sed comparison: nested blocks",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed -n '2,5{/c/,/d/{p}}'",
+      "content_hash": "8e1ffd5da42c4d8a"
+    },
+    {
+      "name": "sed comparison: a negated block",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed '3,4!{s/^/-/}'",
+      "content_hash": "89422c122fd67580"
+    },
+    {
+      "name": "sed comparison: a substitution inside a block",
+      "script": "printf 'one\\ntwo\\nthree\\n' | sed '2{s/^/> /}'",
+      "content_hash": "71ac3cb5020d07b6"
+    },
+    {
+      "name": "sed comparison: N joins the next line",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed 'N;s/\\n/+/'",
+      "content_hash": "f15d870e24af4302"
+    },
+    {
+      "name": "sed comparison: N on the last line prints the pattern space",
+      "script": "printf 'a\\nb\\nc\\n' | sed 'N;s/\\n/+/'",
+      "content_hash": "e48f51ba0bfea02b"
+    },
+    {
+      "name": "sed comparison: $!N;P;D keeps every line",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed '$!N;P;D'",
+      "content_hash": "6589de30a3d99427"
+    },
+    {
+      "name": "sed comparison: collapse runs of blank lines with N and D",
+      "script": "printf 'x\\n\\n\\n\\ny\\n\\nz\\n' | sed '/^$/N;/^\\n$/D'",
+      "content_hash": "08158dc250ee9735"
+    },
+    {
+      "name": "sed comparison: join all lines with a label and N",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed ':a;N;$!ba;s/\\n/ /g'",
+      "content_hash": "cbb5a692e6becb6d"
+    },
+    {
+      "name": "sed comparison: delete a line and the blank after it with N",
+      "script": "printf '# T\\n\\n## Characters\\n\\n## Outline\\nText.\\n' | sed '/^## Characters$/{N;d}'",
+      "content_hash": "2c3ae56ceb5f7030"
+    },
+    {
+      "name": "sed comparison: P prints the first line of the pattern space",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed -n 'N;P'",
+      "content_hash": "28bac94d87631991"
+    },
+    {
+      "name": "sed comparison: D without a newline deletes like d",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed '2D'",
+      "content_hash": "73518475f51d4a40"
+    },
+    {
+      "name": "sed comparison: n prints and reads the next line",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed 'n;d'",
+      "content_hash": "20cc2f5918b7933c"
+    },
+    {
+      "name": "sed comparison: n at the last line ends the script",
+      "script": "printf 'a\\nb\\nc\\n' | sed '$!n;s/^/-/'",
+      "content_hash": "1498a8101ae362c9"
+    },
+    {
+      "name": "sed comparison: ^$ does not match a pattern space holding a newline",
+      "script": "printf 'a\\n\\n\\nb\\n' | sed 'N;/^$/d'",
+      "content_hash": "246cd908a4670a04"
+    },
+    {
+      "name": "sed comparison: dot matches a newline in the pattern space",
+      "script": "printf 'a\\nb\\n' | sed 'N;s/a.b/joined/'",
+      "content_hash": "2d1316068db27fb5"
+    },
+    {
+      "name": "sed comparison: hold space reverses lines",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed -n '1!G;h;$p'",
+      "content_hash": "a98f4b5156f7eb7c"
+    },
+    {
+      "name": "sed comparison: x swaps and H appends",
+      "script": "printf 'a\\nb\\nc\\n' | sed -n 'H;${x;s/\\n/,/g;p}'",
+      "content_hash": "e1505a38c8c0cbc9"
+    },
+    {
+      "name": "sed comparison: g copies the hold space back",
+      "script": "printf 'keep\\nx\\ny\\n' | sed '1h;2,$g'",
+      "content_hash": "9630fda1d53555c0"
+    },
+    {
+      "name": "sed comparison: t branches after a substitution",
+      "script": "printf 'aaa\\nb\\n' | sed ':a;s/a/x/;ta'",
+      "content_hash": "78012bb2822bc1f8"
+    },
+    {
+      "name": "sed comparison: T branches when nothing was substituted",
+      "script": "printf 'cat\\ndog\\n' | sed 's/cat/CAT/;T;s/$/!/'",
+      "content_hash": "6d373db53d03e6f7"
+    },
+    {
+      "name": "sed comparison: b with no label ends the cycle",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed '/c/,$!b;s/^/-/'",
+      "content_hash": "1ea4c363a3fc6267"
+    },
+    {
+      "name": "sed comparison: a label after b with a space",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed -n '/c/b skip;p;:skip'",
+      "content_hash": "bb2c7ebabf023579"
+    },
+    {
+      "name": "sed comparison: an unknown label is an error",
+      "script": "printf 'a\\n' | sed 'b nowhere' 2>/dev/null; echo \"exit=$?\"",
+      "content_hash": "7bba7eba568bae9c"
+    },
+    {
+      "name": "sed comparison: an unmatched brace is an error",
+      "script": "printf 'a\\n' | sed '1{p' 2>/dev/null; echo \"exit=$?\"",
+      "content_hash": "36d03e5c2b9183fe"
+    },
+    {
+      "name": "sed comparison: an unexpected close brace is an error",
+      "script": "printf 'a\\n' | sed 'p;}' 2>/dev/null; echo \"exit=$?\"",
+      "content_hash": "ec8621ffa375ea40"
+    },
+    {
+      "name": "sed comparison: an address with no command is an error",
+      "script": "printf 'a\\n' | sed '/a/' 2>/dev/null; echo \"exit=$?\"",
+      "content_hash": "015d3ec7148b9915"
+    },
+    {
+      "name": "sed comparison: a with text right after the letter",
+      "script": "printf 'one\\ntwo\\n' | sed '1a- **The dining room** — seats twenty.'",
+      "content_hash": "aa4eaa224d1688b5"
+    },
+    {
+      "name": "sed comparison: i with text right after the letter",
+      "script": "printf 'one\\ntwo\\n' | sed '2i- inserted'",
+      "content_hash": "d95ae2ff98452687"
+    },
+    {
+      "name": "sed comparison: i prints before the line, a after, in command order",
+      "script": "printf 'one\\n' | sed -e '1a after' -e '1i before' -e '1a after2'",
+      "content_hash": "8a1af83df438603b"
+    },
+    {
+      "name": "sed comparison: p prints immediately, before later edits",
+      "script": "printf 'cat\\n' | sed 'p;s/cat/dog/'",
+      "content_hash": "9847ec6a52e8c849"
+    },
+    {
+      "name": "sed comparison: s///p prints at the substitution",
+      "script": "printf 'cat\\n' | sed -n 's/cat/dog/p;s/dog/cow/p'",
+      "content_hash": "1d4dcd4adce1645c"
+    },
+    {
+      "name": "sed comparison: c over a range prints its text once",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed '2,4c\\\nreplaced'",
+      "content_hash": "b2c5340f014567c6"
+    },
+    {
+      "name": "sed comparison: c on a regex prints for each line",
+      "script": "printf 'x\\ny\\nx\\n' | sed '/x/c\\\nX'",
+      "content_hash": "f22a0e858ac227d1"
+    },
+    {
+      "name": "sed comparison: = prints the line number",
+      "script": "printf 'a\\nb\\n' | sed -n '$='",
+      "content_hash": "8ac5e62d64f2d4ca"
+    },
+    {
+      "name": "sed comparison: q prints the line and stops",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed '3q'",
+      "content_hash": "7c00161cfa6a081a"
+    },
+    {
+      "name": "sed comparison: Q stops without printing",
+      "script": "printf 'a\\nb\\nc\\nd\\ne\\nf\\n' | sed '3Q'",
+      "content_hash": "322ec54f2b6d64f5"
+    },
+    {
+      "name": "sed comparison: q prints text queued by a",
+      "script": "printf 'a\\nb\\n' | sed '1{a after\nq}'",
+      "content_hash": "10243df270bdb364"
+    },
+    {
+      "name": "sed comparison: z empties the pattern space",
+      "script": "printf 'a\\nb\\n' | sed '1z'",
+      "content_hash": "f95e116b9de5659b"
+    },
+    {
+      "name": "sed comparison: r appends a file after the line",
+      "script": "printf 'Inserted one.\\n\\nInserted two.\\n' > /tmp/ins.md; printf 'one\\n\\ntwo\\n' | sed '1r /tmp/ins.md'",
+      "content_hash": "d962dd6f1113c452"
+    },
+    {
+      "name": "sed comparison: r on a regex line, in place",
+      "script": "printf 'New.\\n' > /tmp/n.md; printf 'one\\n\\ntwo\\n' > /tmp/doc.md; sed -i '/two/r /tmp/n.md' /tmp/doc.md; cat /tmp/doc.md",
+      "content_hash": "ba9aecf2a970a87e"
+    },
+    {
+      "name": "sed comparison: r of a missing file prints nothing",
+      "script": "printf 'one\\ntwo\\n' | sed '1r /tmp/no-such-file'",
+      "content_hash": "ab3aa5758d5835da"
+    },
+    {
+      "name": "sed comparison: an escaped delimiter in a regex address",
+      "script": "printf 'a/b\\nc\\n' | sed '/a\\/b/d'",
+      "content_hash": "da150cfe9936fe78"
+    },
+    {
+      "name": "sed comparison: a custom regex address delimiter",
+      "script": "printf '/usr/bin\\n/etc\\n' | sed -n '\\%^/usr%p'",
+      "content_hash": "ea96be7b9341dc41"
+    },
+    {
+      "name": "sed comparison: a case-insensitive regex address",
+      "script": "printf 'Hello\\nbye\\n' | sed -n '/hello/Ip'",
+      "content_hash": "264a54acd41f65a1"
+    },
+    {
+      "name": "sed comparison: an empty regex address reuses the last regex",
+      "script": "printf 'cat\\ndog\\ncat\\n' | sed -n '/cat/{//p}'",
+      "content_hash": "5d9ebcfef95c8780"
+    },
+    {
+      "name": "sed comparison: comments in a script",
+      "script": "printf 'a\\nb\\n' | sed '# drop b\n/b/d'",
+      "content_hash": "fd40a576af86e2c1"
+    },
+    {
+      "name": "sed comparison: addr,~2 from an even line",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n7\\n8\\n' | sed -n '4,~2p'",
+      "content_hash": "818834e0d57749c0"
+    },
+    {
+      "name": "sed comparison: addr,~2 from an odd line",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n7\\n8\\n' | sed -n '3,~2p'",
+      "content_hash": "5579875feed18cad"
+    },
+    {
+      "name": "sed comparison: addr,~0 selects one line",
+      "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n7\\n8\\n' | sed -n '3,~0p'",
+      "content_hash": "5417cccd4eed9ab7"
     }
   ]
 }

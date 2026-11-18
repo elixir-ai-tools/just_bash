@@ -461,6 +461,447 @@
       "name": "sed comparison: a\\ split across -e arguments",
       "stderr": "",
       "stdout": "one\nJoined text.\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "74006a0a6351ca58",
+      "exit_code": 0,
+      "name": "sed comparison: addr,+N selects the start line and N more",
+      "stderr": "",
+      "stdout": "a\ne\nf\n"
+    },
+    {
+      "content_hash": "b30bc60b58f1f8b6",
+      "exit_code": 0,
+      "name": "sed comparison: N,+N with a line number",
+      "stderr": "",
+      "stdout": "b\nc\n"
+    },
+    {
+      "content_hash": "1e0c7e1274c1a629",
+      "exit_code": 0,
+      "name": "sed comparison: addr,+N restarts when the start matches again",
+      "stderr": "",
+      "stdout": "2\n4\n"
+    },
+    {
+      "content_hash": "fa54be4840211556",
+      "exit_code": 0,
+      "name": "sed comparison: addr,~N runs to the next multiple of N",
+      "stderr": "",
+      "stdout": "a\ne\nf\n"
+    },
+    {
+      "content_hash": "105b74dd330153f1",
+      "exit_code": 0,
+      "name": "sed comparison: addr,~N on a multiple selects one line",
+      "stderr": "",
+      "stdout": "d\ne\nf\n"
+    },
+    {
+      "content_hash": "dc676fa1108c7fb9",
+      "exit_code": 0,
+      "name": "sed comparison: first~step address",
+      "stderr": "",
+      "stdout": "a\nc\ne\n"
+    },
+    {
+      "content_hash": "295887f9e6224289",
+      "exit_code": 0,
+      "name": "sed comparison: 0~3 address",
+      "stderr": "",
+      "stdout": "a\nb\nd\ne\n"
+    },
+    {
+      "content_hash": "7e1299d7c747c431",
+      "exit_code": 0,
+      "name": "sed comparison: a numeric range end before the start selects one line",
+      "stderr": "",
+      "stdout": "a\nb\nc\ne\nf\n"
+    },
+    {
+      "content_hash": "ee1bf6c13279a10e",
+      "exit_code": 0,
+      "name": "sed comparison: a regex range end is tried from the line after the start",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "df8ecf34f82de6c4",
+      "exit_code": 0,
+      "name": "sed comparison: 0,/re/ can end on line 1",
+      "stderr": "",
+      "stdout": "a\nx\nb\n"
+    },
+    {
+      "content_hash": "7750cf5fb725894c",
+      "exit_code": 0,
+      "name": "sed comparison: 1,/re/ cannot end on line 1",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "59199f5b3ed0608c",
+      "exit_code": 0,
+      "name": "sed comparison: a block under a line address",
+      "stderr": "",
+      "stdout": "first\n\nsecond\n"
+    },
+    {
+      "content_hash": "df859203d681019a",
+      "exit_code": 0,
+      "name": "sed comparison: a block with a semicolon before the brace",
+      "stderr": "",
+      "stdout": "first\n"
+    },
+    {
+      "content_hash": "b7cf398276f1e7bc",
+      "exit_code": 0,
+      "name": "sed comparison: commands after a block",
+      "stderr": "",
+      "stdout": "b\nb\nd\n"
+    },
+    {
+      "content_hash": "8e1ffd5da42c4d8a",
+      "exit_code": 0,
+      "name": "sed comparison: nested blocks",
+      "stderr": "",
+      "stdout": "c\nd\n"
+    },
+    {
+      "content_hash": "89422c122fd67580",
+      "exit_code": 0,
+      "name": "sed comparison: a negated block",
+      "stderr": "",
+      "stdout": "-a\n-b\nc\nd\n-e\n-f\n"
+    },
+    {
+      "content_hash": "71ac3cb5020d07b6",
+      "exit_code": 0,
+      "name": "sed comparison: a substitution inside a block",
+      "stderr": "",
+      "stdout": "one\n> two\nthree\n"
+    },
+    {
+      "content_hash": "f15d870e24af4302",
+      "exit_code": 0,
+      "name": "sed comparison: N joins the next line",
+      "stderr": "",
+      "stdout": "a+b\nc+d\ne+f\n"
+    },
+    {
+      "content_hash": "e48f51ba0bfea02b",
+      "exit_code": 0,
+      "name": "sed comparison: N on the last line prints the pattern space",
+      "stderr": "",
+      "stdout": "a+b\nc\n"
+    },
+    {
+      "content_hash": "6589de30a3d99427",
+      "exit_code": 0,
+      "name": "sed comparison: $!N;P;D keeps every line",
+      "stderr": "",
+      "stdout": "a\nb\nc\nd\ne\nf\n"
+    },
+    {
+      "content_hash": "08158dc250ee9735",
+      "exit_code": 0,
+      "name": "sed comparison: collapse runs of blank lines with N and D",
+      "stderr": "",
+      "stdout": "x\n\ny\n\nz\n"
+    },
+    {
+      "content_hash": "cbb5a692e6becb6d",
+      "exit_code": 0,
+      "name": "sed comparison: join all lines with a label and N",
+      "stderr": "",
+      "stdout": "a b c d e f\n"
+    },
+    {
+      "content_hash": "2c3ae56ceb5f7030",
+      "exit_code": 0,
+      "name": "sed comparison: delete a line and the blank after it with N",
+      "stderr": "",
+      "stdout": "# T\n\n## Outline\nText.\n"
+    },
+    {
+      "content_hash": "28bac94d87631991",
+      "exit_code": 0,
+      "name": "sed comparison: P prints the first line of the pattern space",
+      "stderr": "",
+      "stdout": "a\nc\ne\n"
+    },
+    {
+      "content_hash": "73518475f51d4a40",
+      "exit_code": 0,
+      "name": "sed comparison: D without a newline deletes like d",
+      "stderr": "",
+      "stdout": "a\nc\nd\ne\nf\n"
+    },
+    {
+      "content_hash": "20cc2f5918b7933c",
+      "exit_code": 0,
+      "name": "sed comparison: n prints and reads the next line",
+      "stderr": "",
+      "stdout": "a\nc\ne\n"
+    },
+    {
+      "content_hash": "1498a8101ae362c9",
+      "exit_code": 0,
+      "name": "sed comparison: n at the last line ends the script",
+      "stderr": "",
+      "stdout": "a\n-b\n-c\n"
+    },
+    {
+      "content_hash": "246cd908a4670a04",
+      "exit_code": 0,
+      "name": "sed comparison: ^$ does not match a pattern space holding a newline",
+      "stderr": "",
+      "stdout": "a\n\n\nb\n"
+    },
+    {
+      "content_hash": "2d1316068db27fb5",
+      "exit_code": 0,
+      "name": "sed comparison: dot matches a newline in the pattern space",
+      "stderr": "",
+      "stdout": "joined\n"
+    },
+    {
+      "content_hash": "a98f4b5156f7eb7c",
+      "exit_code": 0,
+      "name": "sed comparison: hold space reverses lines",
+      "stderr": "",
+      "stdout": "f\ne\nd\nc\nb\na\n"
+    },
+    {
+      "content_hash": "e1505a38c8c0cbc9",
+      "exit_code": 0,
+      "name": "sed comparison: x swaps and H appends",
+      "stderr": "",
+      "stdout": ",a,b,c\n"
+    },
+    {
+      "content_hash": "9630fda1d53555c0",
+      "exit_code": 0,
+      "name": "sed comparison: g copies the hold space back",
+      "stderr": "",
+      "stdout": "keep\nkeep\nkeep\n"
+    },
+    {
+      "content_hash": "78012bb2822bc1f8",
+      "exit_code": 0,
+      "name": "sed comparison: t branches after a substitution",
+      "stderr": "",
+      "stdout": "xxx\nb\n"
+    },
+    {
+      "content_hash": "6d373db53d03e6f7",
+      "exit_code": 0,
+      "name": "sed comparison: T branches when nothing was substituted",
+      "stderr": "",
+      "stdout": "CAT!\ndog\n"
+    },
+    {
+      "content_hash": "1ea4c363a3fc6267",
+      "exit_code": 0,
+      "name": "sed comparison: b with no label ends the cycle",
+      "stderr": "",
+      "stdout": "a\nb\n-c\n-d\n-e\n-f\n"
+    },
+    {
+      "content_hash": "bb2c7ebabf023579",
+      "exit_code": 0,
+      "name": "sed comparison: a label after b with a space",
+      "stderr": "",
+      "stdout": "a\nb\nd\ne\nf\n"
+    },
+    {
+      "content_hash": "7bba7eba568bae9c",
+      "exit_code": 0,
+      "name": "sed comparison: an unknown label is an error",
+      "stderr": "",
+      "stdout": "exit=4\n"
+    },
+    {
+      "content_hash": "36d03e5c2b9183fe",
+      "exit_code": 0,
+      "name": "sed comparison: an unmatched brace is an error",
+      "stderr": "",
+      "stdout": "exit=1\n"
+    },
+    {
+      "content_hash": "ec8621ffa375ea40",
+      "exit_code": 0,
+      "name": "sed comparison: an unexpected close brace is an error",
+      "stderr": "",
+      "stdout": "exit=1\n"
+    },
+    {
+      "content_hash": "015d3ec7148b9915",
+      "exit_code": 0,
+      "name": "sed comparison: an address with no command is an error",
+      "stderr": "",
+      "stdout": "exit=1\n"
+    },
+    {
+      "content_hash": "aa4eaa224d1688b5",
+      "exit_code": 0,
+      "name": "sed comparison: a with text right after the letter",
+      "stderr": "",
+      "stdout": "one\n- **The dining room** — seats twenty.\ntwo\n"
+    },
+    {
+      "content_hash": "d95ae2ff98452687",
+      "exit_code": 0,
+      "name": "sed comparison: i with text right after the letter",
+      "stderr": "",
+      "stdout": "one\n- inserted\ntwo\n"
+    },
+    {
+      "content_hash": "8a1af83df438603b",
+      "exit_code": 0,
+      "name": "sed comparison: i prints before the line, a after, in command order",
+      "stderr": "",
+      "stdout": "before\none\nafter\nafter2\n"
+    },
+    {
+      "content_hash": "9847ec6a52e8c849",
+      "exit_code": 0,
+      "name": "sed comparison: p prints immediately, before later edits",
+      "stderr": "",
+      "stdout": "cat\ndog\n"
+    },
+    {
+      "content_hash": "1d4dcd4adce1645c",
+      "exit_code": 0,
+      "name": "sed comparison: s///p prints at the substitution",
+      "stderr": "",
+      "stdout": "dog\ncow\n"
+    },
+    {
+      "content_hash": "b2c5340f014567c6",
+      "exit_code": 0,
+      "name": "sed comparison: c over a range prints its text once",
+      "stderr": "",
+      "stdout": "a\nreplaced\ne\nf\n"
+    },
+    {
+      "content_hash": "f22a0e858ac227d1",
+      "exit_code": 0,
+      "name": "sed comparison: c on a regex prints for each line",
+      "stderr": "",
+      "stdout": "X\ny\nX\n"
+    },
+    {
+      "content_hash": "8ac5e62d64f2d4ca",
+      "exit_code": 0,
+      "name": "sed comparison: = prints the line number",
+      "stderr": "",
+      "stdout": "2\n"
+    },
+    {
+      "content_hash": "7c00161cfa6a081a",
+      "exit_code": 0,
+      "name": "sed comparison: q prints the line and stops",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "322ec54f2b6d64f5",
+      "exit_code": 0,
+      "name": "sed comparison: Q stops without printing",
+      "stderr": "",
+      "stdout": "a\nb\n"
+    },
+    {
+      "content_hash": "10243df270bdb364",
+      "exit_code": 0,
+      "name": "sed comparison: q prints text queued by a",
+      "stderr": "",
+      "stdout": "a\nafter\n"
+    },
+    {
+      "content_hash": "f95e116b9de5659b",
+      "exit_code": 0,
+      "name": "sed comparison: z empties the pattern space",
+      "stderr": "",
+      "stdout": "\nb\n"
+    },
+    {
+      "content_hash": "d962dd6f1113c452",
+      "exit_code": 0,
+      "name": "sed comparison: r appends a file after the line",
+      "stderr": "",
+      "stdout": "one\nInserted one.\n\nInserted two.\n\ntwo\n"
+    },
+    {
+      "content_hash": "ba9aecf2a970a87e",
+      "exit_code": 0,
+      "name": "sed comparison: r on a regex line, in place",
+      "stderr": "",
+      "stdout": "one\n\ntwo\nNew.\n"
+    },
+    {
+      "content_hash": "ab3aa5758d5835da",
+      "exit_code": 0,
+      "name": "sed comparison: r of a missing file prints nothing",
+      "stderr": "",
+      "stdout": "one\ntwo\n"
+    },
+    {
+      "content_hash": "da150cfe9936fe78",
+      "exit_code": 0,
+      "name": "sed comparison: an escaped delimiter in a regex address",
+      "stderr": "",
+      "stdout": "c\n"
+    },
+    {
+      "content_hash": "ea96be7b9341dc41",
+      "exit_code": 0,
+      "name": "sed comparison: a custom regex address delimiter",
+      "stderr": "",
+      "stdout": "/usr/bin\n"
+    },
+    {
+      "content_hash": "264a54acd41f65a1",
+      "exit_code": 0,
+      "name": "sed comparison: a case-insensitive regex address",
+      "stderr": "",
+      "stdout": "Hello\n"
+    },
+    {
+      "content_hash": "5d9ebcfef95c8780",
+      "exit_code": 0,
+      "name": "sed comparison: an empty regex address reuses the last regex",
+      "stderr": "",
+      "stdout": "cat\ncat\n"
+    },
+    {
+      "content_hash": "fd40a576af86e2c1",
+      "exit_code": 0,
+      "name": "sed comparison: comments in a script",
+      "stderr": "",
+      "stdout": "a\n"
+    },
+    {
+      "content_hash": "818834e0d57749c0",
+      "exit_code": 0,
+      "name": "sed comparison: addr,~2 from an even line",
+      "stderr": "",
+      "stdout": "4\n5\n6\n"
+    },
+    {
+      "content_hash": "5579875feed18cad",
+      "exit_code": 0,
+      "name": "sed comparison: addr,~2 from an odd line",
+      "stderr": "",
+      "stdout": "3\n4\n"
+    },
+    {
+      "content_hash": "5417cccd4eed9ab7",
+      "exit_code": 0,
+      "name": "sed comparison: addr,~0 selects one line",
+      "stderr": "",
+      "stdout": "3\n"
     }
   ],
   "suite": "sed"
