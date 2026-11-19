@@ -165,17 +165,19 @@ defmodule JustBash.Commands.Awk.Parser do
         # No pattern, just action
         {nil, state}
 
-      :regex ->
-        {token, state} = expect(state, :regex)
-        pattern = {:regex, elem(token, 1)}
-        # Check for range pattern
-        parse_range_pattern(state, pattern)
-
       _ ->
-        # Expression pattern
-        {expr, state} = parse_expression(state)
-        pattern = {:expr, expr}
+        {pattern, state} = parse_condition(state)
         parse_range_pattern(state, pattern)
+    end
+  end
+
+  # A pattern is an expression, and a regex in one matches `$0`, so `/a/ &&
+  # !done` and `!/a/` are patterns like any other. A pattern that is only a
+  # regex keeps its own form.
+  defp parse_condition(state) do
+    case parse_expression(state) do
+      {{:regex, _pattern} = regex, state} -> {regex, state}
+      {expr, state} -> {{:expr, expr}, state}
     end
   end
 
@@ -183,14 +185,7 @@ defmodule JustBash.Commands.Awk.Parser do
     if token_is?(state, :comma) do
       state = advance(state)
 
-      {end_pattern, state} =
-        if token_is?(state, :regex) do
-          {token, state} = expect(state, :regex)
-          {{:regex, elem(token, 1)}, state}
-        else
-          {expr, state} = parse_expression(state)
-          {{:expr, expr}, state}
-        end
+      {end_pattern, state} = parse_condition(state)
 
       {{:range, start_pattern, end_pattern}, state}
     else

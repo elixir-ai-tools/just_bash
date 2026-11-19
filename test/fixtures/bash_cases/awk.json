@@ -530,6 +530,31 @@
       "name": "awk edge cases comparison: awk string coercion in arithmetic",
       "script": "echo '10abc 5' | awk '{print $1 + $2}'",
       "content_hash": "587a86f56c3a1f53"
+    },
+    {
+      "name": "awk comparison: regex and negated variable joined by && in a pattern",
+      "script": "printf 'one\\ntwo\\nthree\\ntwo\\n' | awk '/two/ && !done {print \"first two at \" NR; done=1} {print}'",
+      "content_hash": "3e96b440fce588ec"
+    },
+    {
+      "name": "awk comparison: comparisons joined by || in a pattern",
+      "script": "printf 'one\\ntwo\\nthree\\ntwo\\n' | awk 'NR==1 || NR==3'",
+      "content_hash": "eb42c9b497db2f59"
+    },
+    {
+      "name": "awk comparison: comparison and regex joined by && in a pattern",
+      "script": "printf 'one\\ntwo\\nthree\\ntwo\\n' | awk 'NR>1 && /t/ {print NR\": \"$0}'",
+      "content_hash": "50ba20b4c542414b"
+    },
+    {
+      "name": "awk comparison: negated regex in a pattern",
+      "script": "printf 'one\\ntwo\\nthree\\ntwo\\n' | awk '!/two/'",
+      "content_hash": "d5dd204d5b0212e6"
+    },
+    {
+      "name": "awk comparison: parenthesized pattern with && and ||",
+      "script": "printf 'one\\ntwo\\nthree\\ntwo\\n' | awk '(NR==1 || /three/) && !/x/ {print}'",
+      "content_hash": "81f99c2933639e5b"
     }
   ]
 }

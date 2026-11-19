@@ -1,227 +1,372 @@
 defmodule JustBash.Commands.Sed.Executor do
   @moduledoc """
-  Executor for SED commands.
+  Executor for SED programs.
 
-  Processes input content by applying SED commands to each line.
+  Runs a program the way GNU sed does, one cycle per input line: read the
+  line into the pattern space, run the commands in order from the first,
+  print the pattern space (unless `-n`), then print the text that `a` and `r`
+  queued. `n` and `N` read further lines within a cycle, `D` starts the next
+  cycle on what is left of the pattern space without reading, and branches
+  move the program counter. A hold space persists across cycles.
+
+  Ranges follow GNU: a numeric end at or before the start line selects only
+  the start line, a regex end is first tried on the line after the start,
+  `addr,+N` selects N more lines, `addr,~N` runs to the next line number after the
+  start that is a multiple of N, and `0,/re/` can end on line 1.
   """
 
   alias JustBash.Commands.Sed.Parser
+  alias JustBash.Limit
+  alias JustBash.TextRegex
 
-  @type line_state :: %{
-          pattern_space: String.t(),
-          deleted: boolean(),
-          printed: boolean(),
-          appended: String.t() | nil,
-          inserted: String.t() | nil,
-          changed: String.t() | nil,
-          line_num: pos_integer(),
-          total_lines: pos_integer()
+  @typedoc """
+  - `:silent` - `-n`: no automatic print at the end of a cycle
+  - `:read_file` - reads the file an `r` command names; `:error` prints nothing
+  - `:deadline` - checked on every branch and every `D` restart, which are
+    the only ways a program can loop without consuming input
+  """
+  @type opts :: %{
+          optional(:silent) => boolean(),
+          optional(:read_file) => (String.t() -> {:ok, String.t()} | :error),
+          optional(:deadline) => Limit.Deadline.t() | nil
         }
 
   @doc """
-  Process content by applying SED commands.
-
-  Returns the transformed output string.
+  Runs `program` over `content` and returns the output.
   """
-  @spec execute(String.t(), [Parser.sed_command()], boolean()) :: String.t()
-  def execute(content, commands, silent) do
+  @spec execute(String.t(), tuple(), opts() | boolean()) :: String.t()
+  def execute(content, program, silent) when is_boolean(silent),
+    do: execute(content, program, %{silent: silent})
+
+  def execute(content, program, opts) do
     lines = String.split(content, "\n", trim: false)
+    lines = if List.last(lines) == "", do: List.delete_at(lines, -1), else: lines
 
-    lines =
-      if List.last(lines) == "" do
-        List.delete_at(lines, -1)
-      else
-        lines
-      end
-
-    total_lines = length(lines)
-
-    # Initialize execution state:
-    # - range_state: tracks if we're inside a range (key is command index)
-    # - last_regex: tracks the last regex used for empty pattern substitution
-    initial_exec_state = %{range_state: %{}, last_regex: nil}
-
-    {output_iodata, _final_exec_state} =
-      lines
-      |> Enum.with_index(1)
-      |> Enum.reduce({[], initial_exec_state}, fn {line, line_num}, {output, exec_state} ->
-        process_line(line, line_num, total_lines, commands, silent, output, exec_state)
-      end)
-
-    IO.iodata_to_binary(output_iodata)
-  end
-
-  defp process_line(line, line_num, total_lines, commands, silent, output, exec_state) do
-    line_state = %{
-      pattern_space: line,
-      deleted: false,
-      printed: false,
-      appended: nil,
-      inserted: nil,
-      changed: nil,
-      line_num: line_num,
-      total_lines: total_lines
+    state = %{
+      program: program,
+      size: tuple_size(program),
+      silent: Map.get(opts, :silent, false),
+      read_file: Map.get(opts, :read_file, fn _ -> :error end),
+      deadline: Map.get(opts, :deadline),
+      input: lines,
+      line_num: 0,
+      pattern: "",
+      hold: "",
+      substituted: false,
+      ranges: %{},
+      last_regex: nil,
+      queue: [],
+      out: []
     }
 
-    {final_line_state, new_exec_state} =
-      commands
-      |> Enum.with_index()
-      |> Enum.reduce({line_state, exec_state}, fn {cmd, cmd_idx}, {state, es} ->
-        apply_command(cmd, cmd_idx, state, es)
-      end)
-
-    inserted = if final_line_state.inserted, do: [final_line_state.inserted, "\n"], else: []
-    appended = if final_line_state.appended, do: [final_line_state.appended, "\n"], else: []
-
-    new_output =
-      cond do
-        final_line_state.changed != nil ->
-          [output, inserted, final_line_state.changed, "\n", appended]
-
-        final_line_state.deleted ->
-          [output, inserted, appended]
-
-        silent ->
-          if final_line_state.printed do
-            [output, inserted, final_line_state.pattern_space, "\n", appended]
-          else
-            [output, inserted, appended]
-          end
-
-        true ->
-          extra =
-            if final_line_state.printed, do: [final_line_state.pattern_space, "\n"], else: []
-
-          [output, inserted, final_line_state.pattern_space, "\n", appended, extra]
-      end
-
-    {new_output, new_exec_state}
+    state |> cycle() |> Map.fetch!(:out) |> Enum.reverse() |> IO.iodata_to_binary()
   end
 
-  defp apply_command(cmd, cmd_idx, state, exec_state) do
-    if state.deleted do
-      {state, exec_state}
+  # --- Cycles -------------------------------------------------------------
+
+  defp cycle(%{input: []} = state), do: state
+
+  defp cycle(state) do
+    state |> read_line() |> run(0)
+  end
+
+  # Reads the next input line into the pattern space. Text queued by `a` and
+  # `r` is printed first, as GNU prints it whenever a new line is read.
+  defp read_line(%{input: [line | rest]} = state) do
+    %{
+      flush_queue(state)
+      | input: rest,
+        line_num: state.line_num + 1,
+        pattern: line,
+        substituted: false
+    }
+  end
+
+  defp run(state, pc) when pc >= state.size, do: finish(state, true)
+
+  defp run(state, pc) do
+    cmd = elem(state.program, pc)
+    {matched, state} = matches?(cmd, pc, state)
+
+    if matched do
+      case execute_command(cmd.command, cmd, pc, state) do
+        {:next, state} -> run(state, pc + 1)
+        {:jump, state, target} -> jump(state, pc, target)
+        {:end_cycle, state, autoprint} -> finish(state, autoprint)
+        {:restart, state} -> restart(state)
+        {:quit, state, autoprint} -> quit(state, autoprint)
+      end
     else
-      {matches, new_range_state} =
-        address_matches?(cmd.address1, cmd.address2, state, cmd_idx, exec_state.range_state)
-
-      # Apply negation if present
-      negated = Map.get(cmd, :negated, false)
-      should_execute = if negated, do: not matches, else: matches
-
-      if should_execute do
-        {new_state, new_exec_state} =
-          execute_command(cmd.command, state, exec_state)
-
-        {new_state, %{new_exec_state | range_state: new_range_state}}
-      else
-        {state, %{exec_state | range_state: new_range_state}}
+      case cmd.command do
+        {:block, close} -> run(state, close + 1)
+        _ -> run(state, pc + 1)
       end
     end
   end
 
-  # No address - always matches
-  defp address_matches?(nil, nil, _state, _cmd_idx, range_state), do: {true, range_state}
+  # A backward jump is the one way a program loops within a line, so each one
+  # checks the wall clock (`:a;s/x/xx/;ta` never ends).
+  defp jump(state, _pc, :end), do: finish(state, true)
 
-  # Single address - match on that line only
-  defp address_matches?(addr1, nil, state, _cmd_idx, range_state) do
-    {single_address_matches?(addr1, state), range_state}
+  defp jump(state, pc, target) do
+    if target <= pc, do: Limit.check_deadline!(state.deadline)
+    run(state, target)
   end
 
-  # Range address - need to track state
-  defp address_matches?(addr1, addr2, state, cmd_idx, range_state) do
-    in_range = Map.get(range_state, cmd_idx, false)
+  defp finish(state, autoprint) do
+    state
+    |> autoprint(autoprint)
+    |> flush_queue()
+    |> cycle()
+  end
 
-    if in_range do
-      check_range_end(addr2, state, cmd_idx, range_state)
-    else
-      check_range_start(addr1, addr2, state, cmd_idx, range_state)
+  # `D` with a newline in the pattern space: the next cycle runs on what is
+  # left of it, without reading a line and without printing it first.
+  defp restart(state) do
+    Limit.check_deadline!(state.deadline)
+    state |> flush_queue() |> run(0)
+  end
+
+  defp quit(state, autoprint) do
+    state |> autoprint(autoprint) |> flush_queue()
+  end
+
+  defp autoprint(%{silent: false} = state, true), do: emit(state, [state.pattern, "\n"])
+  defp autoprint(state, _autoprint), do: state
+
+  defp emit(state, iodata), do: %{state | out: [iodata | state.out]}
+
+  defp flush_queue(%{queue: []} = state), do: state
+
+  defp flush_queue(state) do
+    state.queue
+    |> Enum.reverse()
+    |> Enum.reduce(%{state | queue: []}, fn
+      {:text, text}, state ->
+        emit(state, [text, "\n"])
+
+      {:file, path}, state ->
+        case state.read_file.(path) do
+          {:ok, content} -> emit(state, content)
+          :error -> state
+        end
+    end)
+  end
+
+  defp queue(state, item), do: %{state | queue: [item | state.queue]}
+
+  # --- Addresses ----------------------------------------------------------
+
+  defp matches?(%{address1: nil} = cmd, _pc, state), do: {not cmd.negated, state}
+
+  defp matches?(%{address2: nil} = cmd, _pc, state) do
+    {matched, state} = address?(cmd.address1, state)
+    {matched != cmd.negated, state}
+  end
+
+  defp matches?(cmd, pc, state) do
+    {matched, state} = in_range?(cmd, pc, state)
+    {matched != cmd.negated, state}
+  end
+
+  defp in_range?(cmd, pc, state) do
+    case Map.get(state.ranges, pc) do
+      {:active, ending} -> continue_range(ending, pc, state)
+      _ -> start_range(cmd, pc, state)
     end
   end
 
-  defp check_range_end(addr2, state, cmd_idx, range_state) do
-    if single_address_matches?(addr2, state) do
-      # End pattern matched - include this line, then deactivate range
-      {true, Map.put(range_state, cmd_idx, false)}
+  # `0,/re/` is active before line 1, so its regex is tried on line 1 too.
+  defp start_range(%{address1: {:line, 0}, address2: ending}, pc, state) do
+    if Map.has_key?(state.ranges, pc) do
+      {false, state}
     else
-      # Still in range
-      {true, range_state}
+      continue_range(ending, pc, state)
     end
   end
 
-  defp check_range_start(addr1, addr2, state, cmd_idx, range_state) do
-    if single_address_matches?(addr1, state) do
-      # Start pattern matched - activate range
-      # Also check if end pattern matches on same line
-      check_same_line_end(addr2, state, cmd_idx, range_state)
-    else
-      # Not matching start pattern
-      {false, range_state}
+  defp start_range(%{address1: start, address2: ending}, pc, state) do
+    case address?(start, state) do
+      {false, state} -> {false, state}
+      {true, state} -> {true, open_range(ending, pc, state)}
     end
   end
 
-  defp check_same_line_end(addr2, state, cmd_idx, range_state) do
-    if single_address_matches?(addr2, state) do
-      # Both start and end match on same line - include but don't stay in range
-      {true, range_state}
-    else
-      # Start matched, end didn't - enter range
-      {true, Map.put(range_state, cmd_idx, true)}
+  defp open_range(ending, pc, state) do
+    line = state.line_num
+
+    case ending do
+      {:line, last} -> numeric_range(last, pc, state)
+      {:plus, n} -> numeric_range(line + n, pc, state)
+      {:multiple, 0} -> numeric_range(line, pc, state)
+      {:multiple, n} -> numeric_range(next_multiple(line, n), pc, state)
+      _address -> set_range(state, pc, {:active, ending})
     end
   end
 
-  defp single_address_matches?({:line, n}, state), do: state.line_num == n
-  defp single_address_matches?(:last, state), do: state.line_num == state.total_lines
-
-  defp single_address_matches?({:regex, regex}, state) do
-    Regex.match?(regex, state.pattern_space)
+  defp numeric_range(last, pc, state) do
+    if last <= state.line_num,
+      do: set_range(state, pc, :closed),
+      else: set_range(state, pc, {:active, {:until, last}})
   end
 
-  defp execute_command(:noop, state, exec_state), do: {state, exec_state}
-  defp execute_command(:delete, state, exec_state), do: {%{state | deleted: true}, exec_state}
-  defp execute_command(:print, state, exec_state), do: {%{state | printed: true}, exec_state}
+  # The first multiple of `n` after `line`: GNU runs `4,~4` to line 8, not
+  # just line 4.
+  defp next_multiple(line, n), do: (div(line, n) + 1) * n
 
-  defp execute_command({:append, text}, state, exec_state),
-    do: {%{state | appended: text}, exec_state}
+  # A numeric end closes the range when the line number reaches it, and a
+  # line past it (skipped by `N`) is outside the range.
+  defp continue_range({:until, last}, pc, state) do
+    line = state.line_num
+    state = if line >= last, do: set_range(state, pc, :closed), else: state
+    {line <= last, state}
+  end
 
-  defp execute_command({:insert, text}, state, exec_state),
-    do: {%{state | inserted: text}, exec_state}
+  defp continue_range(ending, pc, state) do
+    case address?(ending, state) do
+      {true, state} -> {true, set_range(state, pc, :closed)}
+      {false, state} -> {true, set_range(state, pc, {:active, ending})}
+    end
+  end
 
-  defp execute_command({:change, text}, state, exec_state),
-    do: {%{state | changed: text}, exec_state}
+  defp set_range(state, pc, value), do: %{state | ranges: Map.put(state.ranges, pc, value)}
 
-  defp execute_command({:translate, source, dest}, state, exec_state) do
+  defp address?({:line, n}, state), do: {state.line_num == n, state}
+  defp address?(:last, state), do: {state.input == [], state}
+
+  defp address?({:step, first, 0}, state), do: {state.line_num == first, state}
+
+  defp address?({:step, first, step}, state) do
+    line = state.line_num
+    {line >= first and rem(line - first, step) == 0, state}
+  end
+
+  defp address?({:regex, :last}, %{last_regex: nil} = state), do: {false, state}
+  defp address?({:regex, :last}, state), do: address?({:regex, state.last_regex}, state)
+
+  defp address?({:regex, regex}, state),
+    do: {TextRegex.match?(regex, state.pattern), %{state | last_regex: regex}}
+
+  # --- Commands -----------------------------------------------------------
+
+  defp execute_command(:noop, _cmd, _pc, state), do: {:next, state}
+  defp execute_command({:label, _}, _cmd, _pc, state), do: {:next, state}
+  defp execute_command({:block, _close}, _cmd, _pc, state), do: {:next, state}
+  defp execute_command(:block_end, _cmd, _pc, state), do: {:next, state}
+
+  defp execute_command(:delete, _cmd, _pc, state), do: {:end_cycle, state, false}
+
+  defp execute_command(:delete_first_line, _cmd, _pc, state) do
+    case String.split(state.pattern, "\n", parts: 2) do
+      [_first, rest] -> {:restart, %{state | pattern: rest}}
+      [_only] -> {:end_cycle, state, false}
+    end
+  end
+
+  defp execute_command(:print, _cmd, _pc, state),
+    do: {:next, emit(state, [state.pattern, "\n"])}
+
+  defp execute_command(:print_first_line, _cmd, _pc, state) do
+    [first | _] = String.split(state.pattern, "\n", parts: 2)
+    {:next, emit(state, [first, "\n"])}
+  end
+
+  # With no next line, GNU prints the pattern space and stops, so `$!N` and
+  # `N` give the same output on the last line.
+  defp execute_command(:append_next, _cmd, _pc, %{input: []} = state),
+    do: {:quit, state, true}
+
+  defp execute_command(:append_next, _cmd, _pc, state) do
+    pattern = state.pattern
+    state = read_line(state)
+    {:next, %{state | pattern: pattern <> "\n" <> state.pattern}}
+  end
+
+  defp execute_command(:next, _cmd, _pc, %{input: []} = state), do: {:quit, state, true}
+
+  defp execute_command(:next, _cmd, _pc, state),
+    do: {:next, state |> autoprint(true) |> read_line()}
+
+  defp execute_command(:hold, _cmd, _pc, state), do: {:next, %{state | hold: state.pattern}}
+
+  defp execute_command(:hold_append, _cmd, _pc, state),
+    do: {:next, %{state | hold: state.hold <> "\n" <> state.pattern}}
+
+  defp execute_command(:get, _cmd, _pc, state), do: {:next, %{state | pattern: state.hold}}
+
+  defp execute_command(:get_append, _cmd, _pc, state),
+    do: {:next, %{state | pattern: state.pattern <> "\n" <> state.hold}}
+
+  defp execute_command(:exchange, _cmd, _pc, state),
+    do: {:next, %{state | pattern: state.hold, hold: state.pattern}}
+
+  defp execute_command(:zap, _cmd, _pc, state), do: {:next, %{state | pattern: ""}}
+
+  defp execute_command(:line_number, _cmd, _pc, state),
+    do: {:next, emit(state, [Integer.to_string(state.line_num), "\n"])}
+
+  defp execute_command(:quit, _cmd, _pc, state), do: {:quit, state, true}
+  defp execute_command(:quit_silently, _cmd, _pc, state), do: {:quit, %{state | queue: []}, false}
+
+  defp execute_command({:append, text}, _cmd, _pc, state),
+    do: {:next, queue(state, {:text, text})}
+
+  defp execute_command({:read_file, path}, _cmd, _pc, state),
+    do: {:next, queue(state, {:file, path})}
+
+  defp execute_command({:insert, text}, _cmd, _pc, state),
+    do: {:next, emit(state, [text, "\n"])}
+
+  # `c` over a range prints its text once, at the end of the range; on a
+  # single line, or negated, it prints it for every line it replaces.
+  defp execute_command({:change, text}, cmd, pc, state) do
+    print? =
+      cmd.address2 == nil or cmd.negated or not match?({:active, _}, Map.get(state.ranges, pc))
+
+    state = if print?, do: emit(state, [text, "\n"]), else: state
+    {:end_cycle, state, false}
+  end
+
+  defp execute_command({:branch, target}, _cmd, _pc, state), do: {:jump, state, target}
+
+  defp execute_command({:branch_if_substituted, target}, _cmd, _pc, state) do
+    if state.substituted,
+      do: {:jump, %{state | substituted: false}, target},
+      else: {:next, state}
+  end
+
+  defp execute_command({:branch_unless_substituted, target}, _cmd, _pc, state) do
+    if state.substituted,
+      do: {:next, %{state | substituted: false}},
+      else: {:jump, state, target}
+  end
+
+  defp execute_command({:translate, source, dest}, _cmd, _pc, state) do
     translation = Enum.zip(String.graphemes(source), String.graphemes(dest)) |> Map.new()
 
-    new_pattern_space =
-      state.pattern_space
+    pattern =
+      state.pattern
       |> String.graphemes()
       |> Enum.map_join(fn char -> Map.get(translation, char, char) end)
 
-    {%{state | pattern_space: new_pattern_space}, exec_state}
+    {:next, %{state | pattern: pattern}}
   end
 
-  defp execute_command({:substitute, :last_regex, replacement, flags}, state, exec_state) do
-    case exec_state.last_regex do
-      nil ->
-        # No previous regex - this is an error, but just return unchanged
-        {state, exec_state}
-
-      regex ->
-        execute_substitute(regex, replacement, flags, state, exec_state)
+  defp execute_command({:substitute, :last_regex, replacement, flags}, _cmd, _pc, state) do
+    case state.last_regex do
+      # No previous regex: GNU reports an error; this leaves the line unchanged.
+      nil -> {:next, state}
+      regex -> {:next, substitute(regex, replacement, flags, state)}
     end
   end
 
-  defp execute_command({:substitute, regex, replacement, flags}, state, exec_state) do
-    # Update last_regex and execute
-    new_exec_state = %{exec_state | last_regex: regex}
-    execute_substitute(regex, replacement, flags, state, new_exec_state)
-  end
+  defp execute_command({:substitute, regex, replacement, flags}, _cmd, _pc, state),
+    do: {:next, substitute(regex, replacement, flags, %{state | last_regex: regex})}
 
-  defp execute_substitute(regex, replacement, flags, state, exec_state) do
-    global = :global in flags
-    print_on_match = :print in flags
+  # --- Substitution -------------------------------------------------------
 
+  @spec substitute(Regex.t(), String.t(), Parser.substitute_flags(), map()) :: map()
+  defp substitute(regex, replacement, flags, state) do
     nth =
       Enum.find_value(flags, fn
         {:nth, n} -> n
@@ -230,38 +375,20 @@ defmodule JustBash.Commands.Sed.Executor do
 
     replacement = process_replacement(replacement)
 
-    {new_pattern_space, matched} =
+    {pattern, matched} =
       cond do
-        global ->
-          # Global replacement with backref expansion
-          {result, had_match} =
-            global_replace_with_backrefs(regex, state.pattern_space, replacement)
-
-          {result, had_match}
-
-        nth != nil ->
-          # Replace nth occurrence only
-          nth_substitute(regex, state.pattern_space, replacement, nth)
-
-        true ->
-          # Replace first occurrence
-          single_substitute(regex, state.pattern_space, replacement)
+        :global in flags -> global_replace_with_backrefs(regex, state.pattern, replacement)
+        nth != nil -> nth_substitute(regex, state.pattern, replacement, nth)
+        true -> single_substitute(regex, state.pattern, replacement)
       end
 
-    new_state = %{state | pattern_space: new_pattern_space}
+    state = %{state | pattern: pattern, substituted: state.substituted or matched}
 
-    final_state =
-      if matched and print_on_match do
-        %{new_state | printed: true}
-      else
-        new_state
-      end
-
-    {final_state, exec_state}
+    if matched and :print in flags, do: emit(state, [pattern, "\n"]), else: state
   end
 
   defp single_substitute(regex, pattern_space, replacement) do
-    case Regex.run(regex, pattern_space, return: :index) do
+    case TextRegex.run(regex, pattern_space, return: :index) do
       nil ->
         {pattern_space, false}
 
@@ -282,7 +409,7 @@ defmodule JustBash.Commands.Sed.Executor do
   end
 
   defp nth_substitute(regex, pattern_space, replacement, nth) do
-    case Regex.scan(regex, pattern_space, return: :index) do
+    case TextRegex.scan(regex, pattern_space, return: :index) do
       [] ->
         {pattern_space, false}
 
@@ -307,16 +434,16 @@ defmodule JustBash.Commands.Sed.Executor do
   end
 
   defp global_replace_with_backrefs(regex, string, replacement) do
-    case Regex.scan(regex, string, return: :index) do
+    case TextRegex.scan(regex, string, return: :index) do
       [] ->
         {string, false}
 
       matches ->
-        has_ampersand = String.contains?(replacement, "&")
-        has_backrefs = String.contains?(replacement, "\\")
+        # A replacement of plain text is the same for every match.
+        literal_only? = Enum.all?(replacement, &is_binary/1)
 
         result =
-          build_global_replacement(matches, string, replacement, 0, has_ampersand, has_backrefs)
+          build_global_replacement(matches, string, replacement, 0, literal_only?)
           |> IO.iodata_to_binary()
 
         {result, true}
@@ -324,34 +451,27 @@ defmodule JustBash.Commands.Sed.Executor do
   end
 
   # Walk matches left-to-right, building iodata: [gap, replacement, gap, replacement, ... tail]
-  defp build_global_replacement([], string, _replacement, pos, _has_amp, _has_backref) do
+  defp build_global_replacement([], string, _replacement, pos, _literal_only?) do
     [tail_part(string, pos)]
   end
 
-  defp build_global_replacement(
-         [match | rest],
-         string,
-         replacement,
-         pos,
-         has_amp,
-         has_backref
-       ) do
+  defp build_global_replacement([match | rest], string, replacement, pos, literal_only?) do
     [{start, len} | group_indices] = match
     gap = :binary.part(string, pos, start - pos)
 
     expanded =
-      if has_amp or has_backref do
+      if literal_only? do
+        replacement
+      else
         full_match = :binary.part(string, start, len)
         group_values = extract_group_values(group_indices, string)
         expand_replacement(replacement, full_match, group_values)
-      else
-        replacement
       end
 
     [
       gap,
       expanded
-      | build_global_replacement(rest, string, replacement, start + len, has_amp, has_backref)
+      | build_global_replacement(rest, string, replacement, start + len, literal_only?)
     ]
   end
 
@@ -366,37 +486,53 @@ defmodule JustBash.Commands.Sed.Executor do
     end)
   end
 
+  # Reads the replacement once, left to right, into literal text, `:match` for
+  # `&` and `{:group, n}` for `\1`-`\9`, as GNU sed does. `\n` and `\t` are a
+  # newline and a tab; a backslash before any other character makes that
+  # character literal, so `\&` is an ampersand, `\/` a slash and `\\` one
+  # backslash. Expanding per match then never re-reads text it inserted: a
+  # matched line containing `\1` or `&` is copied as is.
   defp process_replacement(replacement) do
     replacement
-    |> String.replace("\\n", "\n")
-    |> String.replace("\\t", "\t")
+    |> tokenize_replacement([], "")
+    |> Enum.reverse()
   end
 
-  # Expand & (full match) and \1-\9 (capture groups) in replacement string.
-  defp expand_replacement(replacement, full_match, groups) do
-    replacement =
-      if String.contains?(replacement, "&") do
-        String.replace(replacement, "&", full_match)
-      else
-        replacement
-      end
+  defp tokenize_replacement("", tokens, literal), do: push_literal(tokens, literal)
 
-    if String.contains?(replacement, "\\") do
-      expand_numbered_backrefs(replacement, groups)
-    else
-      replacement
+  defp tokenize_replacement("&" <> rest, tokens, literal),
+    do: tokenize_replacement(rest, [:match | push_literal(tokens, literal)], "")
+
+  defp tokenize_replacement(<<"\\", d, rest::binary>>, tokens, literal) when d in ?0..?9,
+    do: tokenize_replacement(rest, [{:group, d - ?0} | push_literal(tokens, literal)], "")
+
+  defp tokenize_replacement("\\n" <> rest, tokens, literal),
+    do: tokenize_replacement(rest, tokens, literal <> "\n")
+
+  defp tokenize_replacement("\\t" <> rest, tokens, literal),
+    do: tokenize_replacement(rest, tokens, literal <> "\t")
+
+  defp tokenize_replacement("\\" <> rest, tokens, literal) do
+    case String.next_grapheme(rest) do
+      {char, rest} -> tokenize_replacement(rest, tokens, literal <> char)
+      nil -> push_literal(tokens, literal <> "\\")
     end
   end
 
-  defp expand_numbered_backrefs(str, groups) do
-    Regex.replace(~r/\\(\d)/, str, fn _, num_str ->
-      num = String.to_integer(num_str)
+  defp tokenize_replacement(<<c, rest::binary>>, tokens, literal),
+    do: tokenize_replacement(rest, tokens, literal <> <<c>>)
 
-      if num > 0 and num <= length(groups) do
-        Enum.at(groups, num - 1)
-      else
-        "\\#{num_str}"
-      end
+  defp push_literal(tokens, ""), do: tokens
+  defp push_literal(tokens, literal), do: [literal | tokens]
+
+  # The text one match is replaced with. `\0` is the whole match, as in GNU
+  # sed; a group the regex does not have is empty.
+  defp expand_replacement(tokens, full_match, groups) do
+    Enum.map(tokens, fn
+      :match -> full_match
+      {:group, 0} -> full_match
+      {:group, n} -> Enum.at(groups, n - 1, "")
+      literal -> literal
     end)
   end
 end

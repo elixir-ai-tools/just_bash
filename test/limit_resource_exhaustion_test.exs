@@ -50,6 +50,29 @@ defmodule JustBash.Limit.ResourceExhaustionTest do
       assert result.exit_code == 1
     end
 
+    # A sed branch loops inside one command, where the step counter sees a
+    # single step, so the wall clock is what ends it.
+    test "sed branch that never exits" do
+      bash = strict_bash(max_wall_ms: 50)
+
+      {elapsed_us, {result, _}} = :timer.tc(fn -> JustBash.exec(bash, "echo x | sed ':a;ba'") end)
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
+      assert elapsed_us < 1_000_000
+    end
+
+    test "sed substitution loop that grows the pattern space" do
+      bash = strict_bash(max_wall_ms: 50)
+
+      {elapsed_us, {result, _}} =
+        :timer.tc(fn -> JustBash.exec(bash, "echo x | sed ':a;s/x/xx/;ta'") end)
+
+      assert result.exit_code == 1
+      assert result.stderr =~ "execution wall clock limit exceeded (50 ms)"
+      assert elapsed_us < 1_000_000
+    end
+
     test "nested loop multiplication" do
       bash = strict_bash()
 

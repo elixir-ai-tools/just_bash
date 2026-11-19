@@ -328,6 +328,209 @@
       "name": "grep -q: an operand read before the match still reports its error",
       "stderr": "grep: nope.txt: No such file or directory\n",
       "stdout": "0\n"
+    },
+    {
+      "content_hash": "d909acd391c2f659",
+      "exit_code": 0,
+      "name": "grep comparison: utf8: dot matches one multi-byte character at end of line",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "0a9c7daae95ed5a8",
+      "exit_code": 0,
+      "name": "grep comparison: utf8: only-matching with a dot",
+      "stderr": "",
+      "stdout": "café\n"
+    },
+    {
+      "content_hash": "8ef22be8c23a59d2",
+      "exit_code": 0,
+      "name": "grep comparison: utf8: only-matching a bracket class of curly quotes",
+      "stderr": "",
+      "stdout": "“\n”\n"
+    },
+    {
+      "content_hash": "13b067bfb790bebb",
+      "exit_code": 0,
+      "name": "grep comparison: utf8: case-insensitive accented letters",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "68d67056face7756",
+      "exit_code": 0,
+      "name": "grep comparison: context: -A prints lines after each match, -- between groups",
+      "stderr": "",
+      "stdout": "X1\nb\n--\nX2\nf\nX3\ng\n"
+    },
+    {
+      "content_hash": "dbf064ecec831abd",
+      "exit_code": 0,
+      "name": "grep comparison: context: -B with -n marks context lines with -",
+      "stderr": "",
+      "stdout": "1-a\n2:X1\n--\n5-d\n6-e\n7:X2\n8-f\n9:X3\n"
+    },
+    {
+      "content_hash": "b25621d5df6470a5",
+      "exit_code": 0,
+      "name": "grep comparison: context: -C prints both sides and merges touching groups",
+      "stderr": "",
+      "stdout": "a\nX1\nb\n--\ne\nX2\nf\nX3\ng\n"
+    },
+    {
+      "content_hash": "76f62cd25c87f153",
+      "exit_code": 0,
+      "name": "grep comparison: context: -A takes its count as the next argument",
+      "stderr": "",
+      "stdout": "X2\nf\n"
+    },
+    {
+      "content_hash": "22e9694fe8fd21d8",
+      "exit_code": 0,
+      "name": "grep comparison: context: context across two files, separated by --",
+      "stderr": "",
+      "stdout": "t:X1\nt-b\n--\nt:X2\nt-f\nt:X3\nt-g\n--\nu:X9\nu-q\n"
+    },
+    {
+      "content_hash": "1b6050da6e071137",
+      "exit_code": 0,
+      "name": "grep comparison: context: -v context lines are the matching ones",
+      "stderr": "",
+      "stdout": "X1\nb\n--\nX2\nf\nX3\ng\n"
+    },
+    {
+      "content_hash": "69e61ca324f3e5b8",
+      "exit_code": 0,
+      "name": "grep comparison: context: -c counts matches, not context",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "ca3eb866390ebeea",
+      "exit_code": 0,
+      "name": "grep comparison: context: -o prints no context lines but keeps separators",
+      "stderr": "",
+      "stdout": "X1\n--\nX2\nX3\n"
+    },
+    {
+      "content_hash": "341ba0d5bad170cf",
+      "exit_code": 0,
+      "name": "grep comparison: context: -l ignores context",
+      "stderr": "",
+      "stdout": "t\n"
+    },
+    {
+      "content_hash": "7d1e4dca580169fe",
+      "exit_code": 0,
+      "name": "grep comparison: context: --after-context with a separate count",
+      "stderr": "",
+      "stdout": "X3\ng\n"
+    },
+    {
+      "content_hash": "67261b6d2a0e56ce",
+      "exit_code": 0,
+      "name": "grep comparison: context: --context=N",
+      "stderr": "",
+      "stdout": "f\nX3\ng\n"
+    },
+    {
+      "content_hash": "73ab7447c51e90c5",
+      "exit_code": 2,
+      "name": "grep comparison: context: a count that is not a number",
+      "stderr": "grep: x: invalid context length argument\n",
+      "stdout": ""
+    },
+    {
+      "content_hash": "8adfaab4f25cee3e",
+      "exit_code": 0,
+      "name": "grep comparison: context: -A0 still separates groups",
+      "stderr": "",
+      "stdout": "X1\n--\nX2\n--\nX3\n"
+    },
+    {
+      "content_hash": "0bb53b5d28973505",
+      "exit_code": 0,
+      "name": "grep comparison: context: context on stdin with -n",
+      "stderr": "",
+      "stdout": "9:X3\n10-g\n"
+    },
+    {
+      "content_hash": "c7880310f3301b09",
+      "exit_code": 0,
+      "name": "grep comparison: context: -H names context lines with -",
+      "stderr": "",
+      "stdout": "t-f\nt:X3\n"
+    },
+    {
+      "content_hash": "6c55ee775cd6bd36",
+      "exit_code": 0,
+      "name": "grep comparison: context: -A and -B together",
+      "stderr": "",
+      "stdout": "X2\nf\nX3\ng\n"
+    },
+    {
+      "content_hash": "4cb91373ec7745fc",
+      "exit_code": 0,
+      "name": "grep comparison: context: -A overrides -C",
+      "stderr": "",
+      "stdout": "X2\nf\nX3\n"
+    },
+    {
+      "content_hash": "24f60d0d569767d3",
+      "exit_code": 0,
+      "name": "grep comparison: context: context at the start and end of the file",
+      "stderr": "",
+      "stdout": "a\nX1\nb\nc\nd\ne\nX2\nf\nX3\ng\n"
+    },
+    {
+      "content_hash": "e2dea305eb33ef45",
+      "exit_code": 0,
+      "name": "grep comparison: a question mark in a BRE is literal",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "7389f2a1df58d074",
+      "exit_code": 0,
+      "name": "grep comparison: plus, braces and parentheses in a BRE are literal",
+      "stderr": "",
+      "stdout": "1:a+b\n2:a{2}\n3:f(x)\n"
+    },
+    {
+      "content_hash": "47854a9555908374",
+      "exit_code": 0,
+      "name": "grep comparison: escaped operators in a BRE",
+      "stderr": "",
+      "stdout": "1:ab\n2:aab\n4:foo\n"
+    },
+    {
+      "content_hash": "e621ae9a733e8d20",
+      "exit_code": 0,
+      "name": "grep comparison: a dollar sign mid-pattern is literal",
+      "stderr": "",
+      "stdout": "costs $5\n"
+    },
+    {
+      "content_hash": "f2056664579b9c40",
+      "exit_code": 0,
+      "name": "grep comparison: a backslash in a bracket expression is literal",
+      "stderr": "",
+      "stdout": "a.b\na\\b\n"
+    },
+    {
+      "content_hash": "a4619d874398b7cc",
+      "exit_code": 0,
+      "name": "grep comparison: BRE literals with -w",
+      "stderr": "",
+      "stdout": "is it? yes\n"
+    },
+    {
+      "content_hash": "0e353c20831fd173",
+      "exit_code": 0,
+      "name": "grep comparison: ERE operators are unchanged",
+      "stderr": "",
+      "stdout": "2\n"
     }
   ],
   "suite": "grep"

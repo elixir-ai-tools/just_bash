@@ -329,4 +329,49 @@ defmodule JustBash.UnicodeTest do
       assert result.stdout == "#{japanese_text()}\n"
     end
   end
+
+  describe "sed and grep match characters, not bytes" do
+    # The behaviors GNU sed and grep show in a UTF-8 locale are asserted
+    # against recordings of real bash in the `sed` and `grep` fixture suites.
+    # These cover input that is not valid UTF-8, which those tools read as
+    # single bytes: JustBash falls back to matching bytes for that input
+    # instead of crashing.
+
+    test "sed edits a line holding an invalid UTF-8 byte and keeps the byte" do
+      bash = JustBash.new(files: %{"/f" => <<"caf", 0xFF, " au lait\n">>})
+      {result, bash} = JustBash.exec(bash, "sed -i 's/au/with/' /f")
+
+      assert result.exit_code == 0
+      assert {:ok, <<"caf", 0xFF, " with lait\n">>, _} = JustBash.FS.read_file(bash.fs, "/f")
+    end
+
+    test "sed's dot matches a single byte where the line is not valid UTF-8" do
+      bash = JustBash.new(files: %{"/f" => <<"caf", 0xFF, "\n">>})
+      {result, _} = JustBash.exec(bash, "sed 's/caf./X/' /f")
+
+      assert result.stdout == "X\n"
+    end
+
+    test "sed matches characters on the valid lines of a file with an invalid one" do
+      bash = JustBash.new(files: %{"/f" => <<"café\n", 0xFF, "\n">>})
+      {result, _} = JustBash.exec(bash, "sed 's/caf./X/' /f")
+
+      assert result.stdout == <<"X\n", 0xFF, "\n">>
+    end
+
+    test "grep finds a line holding an invalid UTF-8 byte" do
+      bash = JustBash.new(files: %{"/f" => <<"caf", 0xFF, "\nno\n">>})
+      {result, _} = JustBash.exec(bash, "grep -c 'caf' /f")
+
+      assert result.exit_code == 0
+      assert result.stdout == "1\n"
+    end
+
+    test "grep -o with a dot keeps the whole character on valid lines" do
+      bash = JustBash.new(files: %{"/f" => "café\n"})
+      {result, _} = JustBash.exec(bash, "grep -o 'f.' /f")
+
+      assert result.stdout == "fé\n"
+    end
+  end
 end

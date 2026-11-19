@@ -2,12 +2,13 @@ defmodule JustBash.Commands.Sed do
   @moduledoc """
   The `sed` command - stream editor for filtering and transforming text.
 
-  This module provides a basic SED implementation supporting:
-  - Substitute command (s/pattern/replacement/flags)
-  - Delete command (d)
-  - Print command (p)
-  - Line number and regex addresses
-  - Address ranges
+  This module provides a SED implementation supporting:
+  - s, y, d, p, a, i, c, r, =, q, Q, z
+  - Multi-line editing: n, N, P, D
+  - The hold space: h, H, g, G, x
+  - `{...}` blocks, `:label` and branches (b, t, T)
+  - Line number, `$`, `first~step` and regex addresses (`/re/`, `\\%re%`, `I`)
+  - Ranges, including `addr,+N`, `addr,~N` and `0,/re/`
   - In-place editing (-i flag)
   """
   @behaviour JustBash.Commands.Command
@@ -44,6 +45,9 @@ defmodule JustBash.Commands.Sed do
       {:error, msg} ->
         {Command.error("sed: #{msg}\n"), bash}
 
+      {:panic, msg} ->
+        {Command.error("sed: #{msg}\n", 4), bash}
+
       {:ok, commands} ->
         execute_commands(bash, commands, opts, stdin)
     end
@@ -51,7 +55,7 @@ defmodule JustBash.Commands.Sed do
 
   defp execute_commands(bash, commands, opts, stdin) do
     if opts.files == [] do
-      output = Executor.execute(stdin, commands, opts.silent)
+      output = Executor.execute(stdin, commands, executor_opts(bash, opts))
       {Command.ok(output), bash}
     else
       execute_on_files(bash, commands, opts, stdin)
@@ -67,6 +71,25 @@ defmodule JustBash.Commands.Sed do
         {Command.error(msg), bash}
     end
   end
+
+  # `r FILE` reads from the sandbox's filesystem; a file that cannot be read
+  # prints nothing, as in GNU. The deadline bounds programs that loop through
+  # branches without reading input.
+  defp executor_opts(bash, opts) do
+    %{
+      silent: opts.silent,
+      deadline: deadline(bash),
+      read_file: fn path ->
+        case FS.read_file(bash.fs, FS.resolve_path(bash.cwd, path)) do
+          {:ok, content, _fs} -> {:ok, content}
+          {:error, _} -> :error
+        end
+      end
+    }
+  end
+
+  defp deadline(%{interpreter: %{deadline: deadline}}), do: deadline
+  defp deadline(_bash), do: nil
 
   defp parse_args(args) do
     {option_args, extra} = StdinOperand.split_end_of_options(args)
@@ -100,14 +123,23 @@ defmodule JustBash.Commands.Sed do
 
     Commands:
       s/regexp/replacement/[flags]  substitute
-      d                             delete pattern space
-      p                             print pattern space
-      
+      y/source/dest/                transliterate characters
+      d, D                          delete pattern space / its first line
+      p, P                          print pattern space / its first line
+      n, N                          read / append the next line
+      a, i, c TEXT                  append, insert, change
+      r FILE                        append the contents of FILE
+      h, H, g, G, x                 copy to / append to / from the hold space
+      { ... }                       group commands under one address
+      :label, b, t, T               label and branches
+      =, q, Q, z                    line number, quit, quit silently, zap
+
     Addresses:
       N                             line number
       $                             last line
-      /regexp/                      lines matching regexp
-      N,M                           range from line N to M
+      FIRST~STEP                    every STEPth line from FIRST
+      /regexp/, \\%regexp%           lines matching regexp (I: ignore case)
+      A,B  A,+N  A,~N  0,/re/       ranges
     """
 
     {:ok, Map.put(opts, :help, help)}
@@ -177,7 +209,7 @@ defmodule JustBash.Commands.Sed do
       Enum.reduce_while(files, {:ok, "", bash.fs}, fn file, {:ok, acc, fs} ->
         case StdinOperand.read(fs, bash.cwd, file, stdin) do
           {:ok, content, fs} ->
-            output = Executor.execute(content, commands, opts.silent)
+            output = Executor.execute(content, commands, executor_opts(%{bash | fs: fs}, opts))
             {:cont, {:ok, acc <> output, fs}}
 
           {:error, error} ->
@@ -231,7 +263,7 @@ defmodule JustBash.Commands.Sed do
   end
 
   defp write_processed_content(bash, resolved, file, content, commands, opts) do
-    output = Executor.execute(content, commands, opts.silent)
+    output = Executor.execute(content, commands, executor_opts(bash, opts))
 
     with {:ok, fs} <- unlink_symlink_operand(bash.fs, resolved),
          {:ok, new_fs} <- FS.write_file(fs, resolved, output) do

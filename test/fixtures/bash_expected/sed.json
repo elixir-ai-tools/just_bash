@@ -209,6 +209,832 @@
       "name": "sed comparison: first line address",
       "stderr": "",
       "stdout": "a\n"
+    },
+    {
+      "content_hash": "7754d817876085ec",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in the replacement",
+      "stderr": "",
+      "stdout": "a; b\n"
+    },
+    {
+      "content_hash": "3e0a8a75ca662f2d",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in the pattern",
+      "stderr": "",
+      "stdout": "twelve, but still\n"
+    },
+    {
+      "content_hash": "194521a01da4095e",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in the replacement with another delimiter",
+      "stderr": "",
+      "stdout": "x;y b\n"
+    },
+    {
+      "content_hash": "e7def674d3efa10a",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon as the s delimiter",
+      "stderr": "",
+      "stdout": "x b\n"
+    },
+    {
+      "content_hash": "fe556782b2960ca4",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in a regex address",
+      "stderr": "",
+      "stdout": "z\n"
+    },
+    {
+      "content_hash": "3ab27b9d88729b4f",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in one-line append text",
+      "stderr": "",
+      "stdout": "a\nText; with semicolon\nb\n"
+    },
+    {
+      "content_hash": "058754343eb94854",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in a\\ text",
+      "stderr": "",
+      "stdout": "a\nText; more\nb\n"
+    },
+    {
+      "content_hash": "0fb5cd7a41d4d8f2",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in i\\ and c\\ text",
+      "stderr": "",
+      "stdout": "Before; this\na\nChanged; line\n"
+    },
+    {
+      "content_hash": "2eebb2137e3e0594",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon in y operands",
+      "stderr": "",
+      "stdout": "a,b\n"
+    },
+    {
+      "content_hash": "df975bb18c777bcb",
+      "exit_code": 0,
+      "name": "sed comparison: newline separates commands",
+      "stderr": "",
+      "stdout": "x y\n"
+    },
+    {
+      "content_hash": "2c2c5740dce5a636",
+      "exit_code": 0,
+      "name": "sed comparison: semicolon after flags separates commands",
+      "stderr": "",
+      "stdout": "x y x\n"
+    },
+    {
+      "content_hash": "5694dc32a7053f11",
+      "exit_code": 0,
+      "name": "sed comparison: escaped ampersand is literal",
+      "stderr": "",
+      "stdout": "Rosa & Kit\n"
+    },
+    {
+      "content_hash": "186f5a34b65d1584",
+      "exit_code": 0,
+      "name": "sed comparison: escaped delimiter in the replacement is literal",
+      "stderr": "",
+      "stdout": "a/b\n"
+    },
+    {
+      "content_hash": "5966d2b6193f7805",
+      "exit_code": 0,
+      "name": "sed comparison: escaped backslash in the replacement",
+      "stderr": "",
+      "stdout": "a\\b\n"
+    },
+    {
+      "content_hash": "5350f42b06d83369",
+      "exit_code": 0,
+      "name": "sed comparison: backreference text in the match is not re-expanded",
+      "stderr": "",
+      "stdout": "[a\\1b]\n"
+    },
+    {
+      "content_hash": "b85f14ebe6f510f6",
+      "exit_code": 0,
+      "name": "sed comparison: ampersand in a group is not re-expanded",
+      "stderr": "",
+      "stdout": "<a&>\n"
+    },
+    {
+      "content_hash": "7645cfe3163caca2",
+      "exit_code": 0,
+      "name": "sed comparison: backslash zero is the whole match",
+      "stderr": "",
+      "stdout": "a<b>c\n"
+    },
+    {
+      "content_hash": "00ebab79dfed7ff7",
+      "exit_code": 0,
+      "name": "sed comparison: capital I flag is case-insensitive",
+      "stderr": "",
+      "stdout": "world\n"
+    },
+    {
+      "content_hash": "50eae9dbe75d8d24",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: bracket class of curly quotes",
+      "stderr": "",
+      "stdout": "\"Hi,\" she said\n"
+    },
+    {
+      "content_hash": "7abf4f211df0ebc2",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: dot matches one multi-byte character",
+      "stderr": "",
+      "stdout": "X\n"
+    },
+    {
+      "content_hash": "559eac3b79054976",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: dot matches an em-dash",
+      "stderr": "",
+      "stdout": "door the\n"
+    },
+    {
+      "content_hash": "33661119177cc277",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: caret dot on a curly quote",
+      "stderr": "",
+      "stdout": "XHello”\n"
+    },
+    {
+      "content_hash": "e0164f94e507bc55",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: y with multi-byte characters",
+      "stderr": "",
+      "stdout": "\"Hi\"\n"
+    },
+    {
+      "content_hash": "901958b00f622f04",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: word characters include accented letters",
+      "stderr": "",
+      "stdout": "X plan\n"
+    },
+    {
+      "content_hash": "c20b516c4b2f1e47",
+      "exit_code": 0,
+      "name": "sed comparison: utf8: case-insensitive match of accented letters",
+      "stderr": "",
+      "stdout": "x\n"
+    },
+    {
+      "content_hash": "8b91486858d1a6a0",
+      "exit_code": 0,
+      "name": "sed comparison: multi-line a\\ text with blank lines between paragraphs",
+      "stderr": "",
+      "stdout": "one\n\nNew para.\n\nSecond.\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "e4691d672b8185e6",
+      "exit_code": 0,
+      "name": "sed comparison: multi-line i\\ text",
+      "stderr": "",
+      "stdout": "one\nBefore.\nAlso before.\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "5dbbe1e192eb706c",
+      "exit_code": 0,
+      "name": "sed comparison: multi-line c\\ text",
+      "stderr": "",
+      "stdout": "one\nChanged.\nTwice.\nthree\n"
+    },
+    {
+      "content_hash": "cfbab1a2c3f39b82",
+      "exit_code": 0,
+      "name": "sed comparison: multi-line a\\ text ends at an unescaped newline, and the next command runs",
+      "stderr": "",
+      "stdout": "one\nA.\nB.\ntwo\n"
+    },
+    {
+      "content_hash": "f34067c5c0469d89",
+      "exit_code": 0,
+      "name": "sed comparison: a\\ text on the next line after a dollar address",
+      "stderr": "",
+      "stdout": "one\ntwo\nthree\nEnd.\n"
+    },
+    {
+      "content_hash": "26f1ee4e6756a542",
+      "exit_code": 0,
+      "name": "sed comparison: a\\ one-liner keeps leading spaces",
+      "stderr": "",
+      "stdout": "one\n  indented\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "c032c79eadd69fcf",
+      "exit_code": 0,
+      "name": "sed comparison: one-line a strips leading spaces",
+      "stderr": "",
+      "stdout": "one\nstripped\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "c2be667363f75255",
+      "exit_code": 0,
+      "name": "sed comparison: backslash before an ordinary character in a\\ text is that character",
+      "stderr": "",
+      "stdout": "one\n- **Archery**\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "0739c560c51c2826",
+      "exit_code": 0,
+      "name": "sed comparison: tab, newline and backslash escapes in a text",
+      "stderr": "",
+      "stdout": "one\ntab\there, nl\nthere, back\\slash\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "1f361fae4d5245dc",
+      "exit_code": 0,
+      "name": "sed comparison: multi-line a\\ text with apostrophes and curly quotes",
+      "stderr": "",
+      "stdout": "one\n\nThe servants' stairs — “quiet,” she said.\ntwo\n"
+    },
+    {
+      "content_hash": "975cdc0694c5a66e",
+      "exit_code": 0,
+      "name": "sed comparison: a\\ split across -e arguments",
+      "stderr": "",
+      "stdout": "one\nJoined text.\ntwo\nthree\n"
+    },
+    {
+      "content_hash": "74006a0a6351ca58",
+      "exit_code": 0,
+      "name": "sed comparison: addr,+N selects the start line and N more",
+      "stderr": "",
+      "stdout": "a\ne\nf\n"
+    },
+    {
+      "content_hash": "b30bc60b58f1f8b6",
+      "exit_code": 0,
+      "name": "sed comparison: N,+N with a line number",
+      "stderr": "",
+      "stdout": "b\nc\n"
+    },
+    {
+      "content_hash": "1e0c7e1274c1a629",
+      "exit_code": 0,
+      "name": "sed comparison: addr,+N restarts when the start matches again",
+      "stderr": "",
+      "stdout": "2\n4\n"
+    },
+    {
+      "content_hash": "fa54be4840211556",
+      "exit_code": 0,
+      "name": "sed comparison: addr,~N runs to the next multiple of N",
+      "stderr": "",
+      "stdout": "a\ne\nf\n"
+    },
+    {
+      "content_hash": "105b74dd330153f1",
+      "exit_code": 0,
+      "name": "sed comparison: addr,~N on a multiple runs to the next multiple",
+      "stderr": "",
+      "stdout": "d\ne\nf\n"
+    },
+    {
+      "content_hash": "dc676fa1108c7fb9",
+      "exit_code": 0,
+      "name": "sed comparison: first~step address",
+      "stderr": "",
+      "stdout": "a\nc\ne\n"
+    },
+    {
+      "content_hash": "295887f9e6224289",
+      "exit_code": 0,
+      "name": "sed comparison: 0~3 address",
+      "stderr": "",
+      "stdout": "a\nb\nd\ne\n"
+    },
+    {
+      "content_hash": "7e1299d7c747c431",
+      "exit_code": 0,
+      "name": "sed comparison: a numeric range end before the start selects one line",
+      "stderr": "",
+      "stdout": "a\nb\nc\ne\nf\n"
+    },
+    {
+      "content_hash": "ee1bf6c13279a10e",
+      "exit_code": 0,
+      "name": "sed comparison: a regex range end is tried from the line after the start",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "df8ecf34f82de6c4",
+      "exit_code": 0,
+      "name": "sed comparison: 0,/re/ can end on line 1",
+      "stderr": "",
+      "stdout": "a\nx\nb\n"
+    },
+    {
+      "content_hash": "7750cf5fb725894c",
+      "exit_code": 0,
+      "name": "sed comparison: 1,/re/ cannot end on line 1",
+      "stderr": "",
+      "stdout": "b\n"
+    },
+    {
+      "content_hash": "59199f5b3ed0608c",
+      "exit_code": 0,
+      "name": "sed comparison: a block under a line address",
+      "stderr": "",
+      "stdout": "first\n\nsecond\n"
+    },
+    {
+      "content_hash": "df859203d681019a",
+      "exit_code": 0,
+      "name": "sed comparison: a block with a semicolon before the brace",
+      "stderr": "",
+      "stdout": "first\n"
+    },
+    {
+      "content_hash": "b7cf398276f1e7bc",
+      "exit_code": 0,
+      "name": "sed comparison: commands after a block",
+      "stderr": "",
+      "stdout": "b\nb\nd\n"
+    },
+    {
+      "content_hash": "8e1ffd5da42c4d8a",
+      "exit_code": 0,
+      "name": "sed comparison: nested blocks",
+      "stderr": "",
+      "stdout": "c\nd\n"
+    },
+    {
+      "content_hash": "89422c122fd67580",
+      "exit_code": 0,
+      "name": "sed comparison: a negated block",
+      "stderr": "",
+      "stdout": "-a\n-b\nc\nd\n-e\n-f\n"
+    },
+    {
+      "content_hash": "71ac3cb5020d07b6",
+      "exit_code": 0,
+      "name": "sed comparison: a substitution inside a block",
+      "stderr": "",
+      "stdout": "one\n> two\nthree\n"
+    },
+    {
+      "content_hash": "f15d870e24af4302",
+      "exit_code": 0,
+      "name": "sed comparison: N joins the next line",
+      "stderr": "",
+      "stdout": "a+b\nc+d\ne+f\n"
+    },
+    {
+      "content_hash": "e48f51ba0bfea02b",
+      "exit_code": 0,
+      "name": "sed comparison: N on the last line prints the pattern space",
+      "stderr": "",
+      "stdout": "a+b\nc\n"
+    },
+    {
+      "content_hash": "6589de30a3d99427",
+      "exit_code": 0,
+      "name": "sed comparison: $!N;P;D keeps every line",
+      "stderr": "",
+      "stdout": "a\nb\nc\nd\ne\nf\n"
+    },
+    {
+      "content_hash": "08158dc250ee9735",
+      "exit_code": 0,
+      "name": "sed comparison: collapse runs of blank lines with N and D",
+      "stderr": "",
+      "stdout": "x\n\ny\n\nz\n"
+    },
+    {
+      "content_hash": "cbb5a692e6becb6d",
+      "exit_code": 0,
+      "name": "sed comparison: join all lines with a label and N",
+      "stderr": "",
+      "stdout": "a b c d e f\n"
+    },
+    {
+      "content_hash": "2c3ae56ceb5f7030",
+      "exit_code": 0,
+      "name": "sed comparison: delete a line and the blank after it with N",
+      "stderr": "",
+      "stdout": "# T\n\n## Outline\nText.\n"
+    },
+    {
+      "content_hash": "28bac94d87631991",
+      "exit_code": 0,
+      "name": "sed comparison: P prints the first line of the pattern space",
+      "stderr": "",
+      "stdout": "a\nc\ne\n"
+    },
+    {
+      "content_hash": "73518475f51d4a40",
+      "exit_code": 0,
+      "name": "sed comparison: D without a newline deletes like d",
+      "stderr": "",
+      "stdout": "a\nc\nd\ne\nf\n"
+    },
+    {
+      "content_hash": "20cc2f5918b7933c",
+      "exit_code": 0,
+      "name": "sed comparison: n prints and reads the next line",
+      "stderr": "",
+      "stdout": "a\nc\ne\n"
+    },
+    {
+      "content_hash": "1498a8101ae362c9",
+      "exit_code": 0,
+      "name": "sed comparison: n at the last line ends the script",
+      "stderr": "",
+      "stdout": "a\n-b\n-c\n"
+    },
+    {
+      "content_hash": "246cd908a4670a04",
+      "exit_code": 0,
+      "name": "sed comparison: ^$ does not match a pattern space holding a newline",
+      "stderr": "",
+      "stdout": "a\n\n\nb\n"
+    },
+    {
+      "content_hash": "2d1316068db27fb5",
+      "exit_code": 0,
+      "name": "sed comparison: dot matches a newline in the pattern space",
+      "stderr": "",
+      "stdout": "joined\n"
+    },
+    {
+      "content_hash": "a98f4b5156f7eb7c",
+      "exit_code": 0,
+      "name": "sed comparison: hold space reverses lines",
+      "stderr": "",
+      "stdout": "f\ne\nd\nc\nb\na\n"
+    },
+    {
+      "content_hash": "e1505a38c8c0cbc9",
+      "exit_code": 0,
+      "name": "sed comparison: x swaps and H appends",
+      "stderr": "",
+      "stdout": ",a,b,c\n"
+    },
+    {
+      "content_hash": "9630fda1d53555c0",
+      "exit_code": 0,
+      "name": "sed comparison: g copies the hold space back",
+      "stderr": "",
+      "stdout": "keep\nkeep\nkeep\n"
+    },
+    {
+      "content_hash": "78012bb2822bc1f8",
+      "exit_code": 0,
+      "name": "sed comparison: t branches after a substitution",
+      "stderr": "",
+      "stdout": "xxx\nb\n"
+    },
+    {
+      "content_hash": "6d373db53d03e6f7",
+      "exit_code": 0,
+      "name": "sed comparison: T branches when nothing was substituted",
+      "stderr": "",
+      "stdout": "CAT!\ndog\n"
+    },
+    {
+      "content_hash": "1ea4c363a3fc6267",
+      "exit_code": 0,
+      "name": "sed comparison: b with no label ends the cycle",
+      "stderr": "",
+      "stdout": "a\nb\n-c\n-d\n-e\n-f\n"
+    },
+    {
+      "content_hash": "bb2c7ebabf023579",
+      "exit_code": 0,
+      "name": "sed comparison: a label after b with a space",
+      "stderr": "",
+      "stdout": "a\nb\nd\ne\nf\n"
+    },
+    {
+      "content_hash": "7bba7eba568bae9c",
+      "exit_code": 0,
+      "name": "sed comparison: an unknown label is an error",
+      "stderr": "",
+      "stdout": "exit=4\n"
+    },
+    {
+      "content_hash": "36d03e5c2b9183fe",
+      "exit_code": 0,
+      "name": "sed comparison: an unmatched brace is an error",
+      "stderr": "",
+      "stdout": "exit=1\n"
+    },
+    {
+      "content_hash": "ec8621ffa375ea40",
+      "exit_code": 0,
+      "name": "sed comparison: an unexpected close brace is an error",
+      "stderr": "",
+      "stdout": "exit=1\n"
+    },
+    {
+      "content_hash": "015d3ec7148b9915",
+      "exit_code": 0,
+      "name": "sed comparison: an address with no command is an error",
+      "stderr": "",
+      "stdout": "exit=1\n"
+    },
+    {
+      "content_hash": "aa4eaa224d1688b5",
+      "exit_code": 0,
+      "name": "sed comparison: a with text right after the letter",
+      "stderr": "",
+      "stdout": "one\n- **The dining room** — seats twenty.\ntwo\n"
+    },
+    {
+      "content_hash": "d95ae2ff98452687",
+      "exit_code": 0,
+      "name": "sed comparison: i with text right after the letter",
+      "stderr": "",
+      "stdout": "one\n- inserted\ntwo\n"
+    },
+    {
+      "content_hash": "8a1af83df438603b",
+      "exit_code": 0,
+      "name": "sed comparison: i prints before the line, a after, in command order",
+      "stderr": "",
+      "stdout": "before\none\nafter\nafter2\n"
+    },
+    {
+      "content_hash": "9847ec6a52e8c849",
+      "exit_code": 0,
+      "name": "sed comparison: p prints immediately, before later edits",
+      "stderr": "",
+      "stdout": "cat\ndog\n"
+    },
+    {
+      "content_hash": "1d4dcd4adce1645c",
+      "exit_code": 0,
+      "name": "sed comparison: s///p prints at the substitution",
+      "stderr": "",
+      "stdout": "dog\ncow\n"
+    },
+    {
+      "content_hash": "b2c5340f014567c6",
+      "exit_code": 0,
+      "name": "sed comparison: c over a range prints its text once",
+      "stderr": "",
+      "stdout": "a\nreplaced\ne\nf\n"
+    },
+    {
+      "content_hash": "f22a0e858ac227d1",
+      "exit_code": 0,
+      "name": "sed comparison: c on a regex prints for each line",
+      "stderr": "",
+      "stdout": "X\ny\nX\n"
+    },
+    {
+      "content_hash": "8ac5e62d64f2d4ca",
+      "exit_code": 0,
+      "name": "sed comparison: = prints the line number",
+      "stderr": "",
+      "stdout": "2\n"
+    },
+    {
+      "content_hash": "7c00161cfa6a081a",
+      "exit_code": 0,
+      "name": "sed comparison: q prints the line and stops",
+      "stderr": "",
+      "stdout": "a\nb\nc\n"
+    },
+    {
+      "content_hash": "322ec54f2b6d64f5",
+      "exit_code": 0,
+      "name": "sed comparison: Q stops without printing",
+      "stderr": "",
+      "stdout": "a\nb\n"
+    },
+    {
+      "content_hash": "10243df270bdb364",
+      "exit_code": 0,
+      "name": "sed comparison: q prints text queued by a",
+      "stderr": "",
+      "stdout": "a\nafter\n"
+    },
+    {
+      "content_hash": "f95e116b9de5659b",
+      "exit_code": 0,
+      "name": "sed comparison: z empties the pattern space",
+      "stderr": "",
+      "stdout": "\nb\n"
+    },
+    {
+      "content_hash": "d962dd6f1113c452",
+      "exit_code": 0,
+      "name": "sed comparison: r appends a file after the line",
+      "stderr": "",
+      "stdout": "one\nInserted one.\n\nInserted two.\n\ntwo\n"
+    },
+    {
+      "content_hash": "ba9aecf2a970a87e",
+      "exit_code": 0,
+      "name": "sed comparison: r on a regex line, in place",
+      "stderr": "",
+      "stdout": "one\n\ntwo\nNew.\n"
+    },
+    {
+      "content_hash": "ab3aa5758d5835da",
+      "exit_code": 0,
+      "name": "sed comparison: r of a missing file prints nothing",
+      "stderr": "",
+      "stdout": "one\ntwo\n"
+    },
+    {
+      "content_hash": "da150cfe9936fe78",
+      "exit_code": 0,
+      "name": "sed comparison: an escaped delimiter in a regex address",
+      "stderr": "",
+      "stdout": "c\n"
+    },
+    {
+      "content_hash": "ea96be7b9341dc41",
+      "exit_code": 0,
+      "name": "sed comparison: a custom regex address delimiter",
+      "stderr": "",
+      "stdout": "/usr/bin\n"
+    },
+    {
+      "content_hash": "264a54acd41f65a1",
+      "exit_code": 0,
+      "name": "sed comparison: a case-insensitive regex address",
+      "stderr": "",
+      "stdout": "Hello\n"
+    },
+    {
+      "content_hash": "5d9ebcfef95c8780",
+      "exit_code": 0,
+      "name": "sed comparison: an empty regex address reuses the last regex",
+      "stderr": "",
+      "stdout": "cat\ncat\n"
+    },
+    {
+      "content_hash": "fd40a576af86e2c1",
+      "exit_code": 0,
+      "name": "sed comparison: comments in a script",
+      "stderr": "",
+      "stdout": "a\n"
+    },
+    {
+      "content_hash": "818834e0d57749c0",
+      "exit_code": 0,
+      "name": "sed comparison: addr,~2 from an even line",
+      "stderr": "",
+      "stdout": "4\n5\n6\n"
+    },
+    {
+      "content_hash": "5579875feed18cad",
+      "exit_code": 0,
+      "name": "sed comparison: addr,~2 from an odd line",
+      "stderr": "",
+      "stdout": "3\n4\n"
+    },
+    {
+      "content_hash": "5417cccd4eed9ab7",
+      "exit_code": 0,
+      "name": "sed comparison: addr,~0 selects one line",
+      "stderr": "",
+      "stdout": "3\n"
+    },
+    {
+      "content_hash": "516591aad023460e",
+      "exit_code": 0,
+      "name": "sed comparison: a question mark in a BRE is literal",
+      "stderr": "",
+      "stdout": "Which state does Eric live in Illinois? Community property.\n"
+    },
+    {
+      "content_hash": "c8b4d0cdcf88b102",
+      "exit_code": 0,
+      "name": "sed comparison: a quoted open question deleted by address",
+      "stderr": "",
+      "stdout": "- Which state?\n"
+    },
+    {
+      "content_hash": "7404a0b67bc62cd2",
+      "exit_code": 0,
+      "name": "sed comparison: plus, pipe and braces in a BRE are literal",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "daf8374365b41c6e",
+      "exit_code": 0,
+      "name": "sed comparison: parentheses in a BRE are literal",
+      "stderr": "",
+      "stdout": "f(x) = [a]\n"
+    },
+    {
+      "content_hash": "20ad0792f8add552",
+      "exit_code": 0,
+      "name": "sed comparison: escaped operators in a BRE",
+      "stderr": "",
+      "stdout": "X\naX\nZ\n"
+    },
+    {
+      "content_hash": "35841951b87fd9b5",
+      "exit_code": 0,
+      "name": "sed comparison: BRE alternation with an escaped pipe",
+      "stderr": "",
+      "stdout": "pet and pet\n"
+    },
+    {
+      "content_hash": "560f9024da267236",
+      "exit_code": 0,
+      "name": "sed comparison: BRE groups and a backreference",
+      "stderr": "",
+      "stdout": "<ab>\n"
+    },
+    {
+      "content_hash": "e9e05b13e7531379",
+      "exit_code": 0,
+      "name": "sed comparison: a dollar sign mid-pattern is literal",
+      "stderr": "",
+      "stdout": "It costs five dollars today.\n"
+    },
+    {
+      "content_hash": "6a5f333d9aa143cd",
+      "exit_code": 0,
+      "name": "sed comparison: a caret mid-pattern is literal",
+      "stderr": "",
+      "stdout": "x squared + y\n"
+    },
+    {
+      "content_hash": "e339f350da44f6e4",
+      "exit_code": 0,
+      "name": "sed comparison: a caret after a BRE group start anchors",
+      "stderr": "",
+      "stdout": "[a]b\nba\n"
+    },
+    {
+      "content_hash": "c7630d73520e17f8",
+      "exit_code": 0,
+      "name": "sed comparison: a star with nothing to repeat is literal",
+      "stderr": "",
+      "stdout": "-note\n-*bold**\n"
+    },
+    {
+      "content_hash": "7547514af56e0464",
+      "exit_code": 0,
+      "name": "sed comparison: a backslash in a bracket expression is literal",
+      "stderr": "",
+      "stdout": "X\nX\naxb\n"
+    },
+    {
+      "content_hash": "8047de0251acc659",
+      "exit_code": 0,
+      "name": "sed comparison: a close bracket first in a set",
+      "stderr": "",
+      "stdout": "a-b\n"
+    },
+    {
+      "content_hash": "060d4581d13f71f6",
+      "exit_code": 0,
+      "name": "sed comparison: a POSIX class in a set",
+      "stderr": "",
+      "stdout": "Chapter N\n"
+    },
+    {
+      "content_hash": "f6c4e7f7bdc7deed",
+      "exit_code": 0,
+      "name": "sed comparison: an escaped delimiter in a set",
+      "stderr": "",
+      "stdout": "and or\n"
+    },
+    {
+      "content_hash": "9e306368229113a1",
+      "exit_code": 0,
+      "name": "sed comparison: an escaped pipe delimiter is a literal pipe",
+      "stderr": "",
+      "stdout": "X ab\n"
+    },
+    {
+      "content_hash": "7cc15d712ea1cae2",
+      "exit_code": 0,
+      "name": "sed comparison: newline in a set after N",
+      "stderr": "",
+      "stdout": "a+b\n"
+    },
+    {
+      "content_hash": "a666b60e1936ef7f",
+      "exit_code": 0,
+      "name": "sed comparison: word boundaries",
+      "stderr": "",
+      "stdout": "the dog scattered\n"
+    },
+    {
+      "content_hash": "daa20a42092864bc",
+      "exit_code": 0,
+      "name": "sed comparison: ERE operators are unchanged",
+      "stderr": "",
+      "stdout": "X f[x]\n"
     }
   ],
   "suite": "sed"

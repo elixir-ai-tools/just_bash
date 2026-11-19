@@ -741,6 +741,41 @@
       "name": "awk edge cases comparison: awk string coercion in arithmetic",
       "stderr": "",
       "stdout": "15\n"
+    },
+    {
+      "content_hash": "3e96b440fce588ec",
+      "exit_code": 0,
+      "name": "awk comparison: regex and negated variable joined by && in a pattern",
+      "stderr": "",
+      "stdout": "one\nfirst two at 2\ntwo\nthree\ntwo\n"
+    },
+    {
+      "content_hash": "eb42c9b497db2f59",
+      "exit_code": 0,
+      "name": "awk comparison: comparisons joined by || in a pattern",
+      "stderr": "",
+      "stdout": "one\nthree\n"
+    },
+    {
+      "content_hash": "50ba20b4c542414b",
+      "exit_code": 0,
+      "name": "awk comparison: comparison and regex joined by && in a pattern",
+      "stderr": "",
+      "stdout": "2: two\n3: three\n4: two\n"
+    },
+    {
+      "content_hash": "d5dd204d5b0212e6",
+      "exit_code": 0,
+      "name": "awk comparison: negated regex in a pattern",
+      "stderr": "",
+      "stdout": "one\nthree\n"
+    },
+    {
+      "content_hash": "81f99c2933639e5b",
+      "exit_code": 0,
+      "name": "awk comparison: parenthesized pattern with && and ||",
+      "stderr": "",
+      "stdout": "one\nthree\n"
     }
   ],
   "suite": "awk"
