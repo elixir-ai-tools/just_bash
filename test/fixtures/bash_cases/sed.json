@@ -645,6 +645,101 @@
       "name": "sed comparison: addr,~0 selects one line",
       "script": "printf '1\\n2\\n3\\n4\\n5\\n6\\n7\\n8\\n' | sed -n '3,~0p'",
       "content_hash": "5417cccd4eed9ab7"
+    },
+    {
+      "name": "sed comparison: a question mark in a BRE is literal",
+      "script": "echo 'Which state does Eric live in? Community property.' | sed 's|live in? Community|live in Illinois? Community|'",
+      "content_hash": "516591aad023460e"
+    },
+    {
+      "name": "sed comparison: a quoted open question deleted by address",
+      "script": "printf '%s\\n' '- Which state?' '- Does Eric consult a lawyer, or only Jim?' | sed '/- Does Eric consult a lawyer, or only Jim?/d'",
+      "content_hash": "c8b4d0cdcf88b102"
+    },
+    {
+      "name": "sed comparison: plus, pipe and braces in a BRE are literal",
+      "script": "printf 'a+b\\na|b\\na{2}\\n' | sed 's/a+b/1/;s/a|b/2/;s/a{2}/3/'",
+      "content_hash": "7404a0b67bc62cd2"
+    },
+    {
+      "name": "sed comparison: parentheses in a BRE are literal",
+      "script": "echo 'f(x) = (a)' | sed 's/(a)/[a]/'",
+      "content_hash": "daf8374365b41c6e"
+    },
+    {
+      "name": "sed comparison: escaped operators in a BRE",
+      "script": "printf 'ab\\naab\\nfoo\\n' | sed 's/ab\\?$/X/;s/a\\+b/Y/;s/fo\\{2\\}/Z/'",
+      "content_hash": "20ad0792f8add552"
+    },
+    {
+      "name": "sed comparison: BRE alternation with an escaped pipe",
+      "script": "echo 'cat and dog' | sed 's/cat\\|dog/pet/g'",
+      "content_hash": "35841951b87fd9b5"
+    },
+    {
+      "name": "sed comparison: BRE groups and a backreference",
+      "script": "echo 'abab' | sed 's/\\(ab\\)\\1/<\\1>/'",
+      "content_hash": "560f9024da267236"
+    },
+    {
+      "name": "sed comparison: a dollar sign mid-pattern is literal",
+      "script": "echo 'It costs $5 today.' | sed 's/$5/five dollars/'",
+      "content_hash": "e9e05b13e7531379"
+    },
+    {
+      "name": "sed comparison: a caret mid-pattern is literal",
+      "script": "echo 'x^2 + y' | sed 's/x^2/x squared/'",
+      "content_hash": "6a5f333d9aa143cd"
+    },
+    {
+      "name": "sed comparison: a caret after a BRE group start anchors",
+      "script": "printf 'ab\\nba\\n' | sed 's/\\(^a\\)/[\\1]/'",
+      "content_hash": "e339f350da44f6e4"
+    },
+    {
+      "name": "sed comparison: a star with nothing to repeat is literal",
+      "script": "printf '*note\\n**bold**\\n' | sed 's/*/-/;s/^*/+/'",
+      "content_hash": "c7630d73520e17f8"
+    },
+    {
+      "name": "sed comparison: a backslash in a bracket expression is literal",
+      "script": "printf 'a.b\\na\\\\b\\naxb\\n' | sed 's/a[\\.]b/X/'",
+      "content_hash": "7547514af56e0464"
+    },
+    {
+      "name": "sed comparison: a close bracket first in a set",
+      "script": "echo 'a]b' | sed 's/[]]/-/'",
+      "content_hash": "8047de0251acc659"
+    },
+    {
+      "name": "sed comparison: a POSIX class in a set",
+      "script": "echo 'Chapter 12' | sed 's/[[:digit:]]\\+/N/'",
+      "content_hash": "060d4581d13f71f6"
+    },
+    {
+      "name": "sed comparison: an escaped delimiter in a set",
+      "script": "echo 'and/or' | sed 's/[\\/]/ /'",
+      "content_hash": "f6c4e7f7bdc7deed"
+    },
+    {
+      "name": "sed comparison: an escaped pipe delimiter is a literal pipe",
+      "script": "echo 'a|b ab' | sed 's|a\\|b|X|'",
+      "content_hash": "9e306368229113a1"
+    },
+    {
+      "name": "sed comparison: newline in a set after N",
+      "script": "printf 'a\\nb\\n' | sed 'N;s/[\\n]/+/'",
+      "content_hash": "7cc15d712ea1cae2"
+    },
+    {
+      "name": "sed comparison: word boundaries",
+      "script": "echo 'the cat scattered' | sed 's/\\<cat\\>/dog/g'",
+      "content_hash": "a666b60e1936ef7f"
+    },
+    {
+      "name": "sed comparison: ERE operators are unchanged",
+      "script": "echo 'aab f(x)' | sed -E 's/a+b/X/;s/\\(x\\)/[x]/'",
+      "content_hash": "daa20a42092864bc"
     }
   ]
 }

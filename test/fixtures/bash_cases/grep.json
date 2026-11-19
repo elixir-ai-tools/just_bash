@@ -345,6 +345,41 @@
       "name": "grep comparison: context: context at the start and end of the file",
       "script": "printf 'a\\nX1\\nb\\nc\\nd\\ne\\nX2\\nf\\nX3\\ng\\n' > t; grep -C3 'X1\\|X3' t",
       "content_hash": "24f60d0d569767d3"
+    },
+    {
+      "name": "grep comparison: a question mark in a BRE is literal",
+      "script": "printf 'Which state? Illinois.\\nWhich states\\n' | grep -c 'state? Illinois'",
+      "content_hash": "e2dea305eb33ef45"
+    },
+    {
+      "name": "grep comparison: plus, braces and parentheses in a BRE are literal",
+      "script": "printf 'a+b\\na{2}\\nf(x)\\naab\\n' | grep -n 'a+b\\|a{2}\\|f(x)'",
+      "content_hash": "7389f2a1df58d074"
+    },
+    {
+      "name": "grep comparison: escaped operators in a BRE",
+      "script": "printf 'ab\\naab\\nb\\nfoo\\n' | grep -n 'a\\+b\\|^fo\\{2\\}$'",
+      "content_hash": "47854a9555908374"
+    },
+    {
+      "name": "grep comparison: a dollar sign mid-pattern is literal",
+      "script": "printf 'costs $5\\ncosts 5\\n' | grep 'costs $5'",
+      "content_hash": "e621ae9a733e8d20"
+    },
+    {
+      "name": "grep comparison: a backslash in a bracket expression is literal",
+      "script": "printf 'a.b\\na\\\\b\\naxb\\n' | grep 'a[\\.]b'",
+      "content_hash": "f2056664579b9c40"
+    },
+    {
+      "name": "grep comparison: BRE literals with -w",
+      "script": "printf 'is it? yes\\nis it yes\\n' | grep -w 'it?'",
+      "content_hash": "a4619d874398b7cc"
+    },
+    {
+      "name": "grep comparison: ERE operators are unchanged",
+      "script": "printf 'aab\\nab\\nb\\n' | grep -E -c 'a+b'",
+      "content_hash": "0e353c20831fd173"
     }
   ]
 }

@@ -310,15 +310,18 @@ defmodule JustBash.Commands.Grep do
       if flags.f_fixed do
         Regex.escape(pattern)
       else
-        bre_pipes_to_pcre(pattern, flags)
+        bre_to_pcre(pattern, flags)
       end
 
     # The group is not cosmetic: `\bfoo|bar\b` is read as `(\bfoo)|(bar\b)`,
     # so each anchor would bind to a single branch and `-w`/`-x` would admit
-    # unanchored matches of every other one.
+    # unanchored matches of every other one. `-w` asks, as GNU does, for no
+    # word character on either side of the match, which is not `\b`: `it?`
+    # ends in a non-word character, so `\b` after it needs a word character
+    # next and `grep -w 'it?'` would miss `is it? yes`.
     regex_pattern =
       cond do
-        flags.w -> "\\b(?:" <> base_pattern <> ")\\b"
+        flags.w -> "(?<!\\w)(?:" <> base_pattern <> ")(?!\\w)"
         flags.x -> "^(?:" <> base_pattern <> ")$"
         true -> base_pattern
       end
@@ -329,47 +332,16 @@ defmodule JustBash.Commands.Grep do
     end
   end
 
-  # Real `grep` without `-E`/`-P` is BRE, where `\|` is alternation and a bare
-  # `|` is an ordinary character. This is PCRE (`Regex.compile/2`), where those
-  # two meanings are exactly swapped — and both spellings compile cleanly either
-  # way, so a BRE pattern passed through unchanged never reaches the
-  # `{:error, _}` fallback above. It just quietly matches something else: `a\|b`
-  # looks for a literal pipe the input almost never contains, turning the single
-  # most common agent idiom (`grep -r "a\|b"`) into a false negative, while
-  # `a|b` matches either half of a pattern whose author meant it verbatim.
-  #
-  # One left-to-right scan fixes both, and scanning is what makes the escaped
-  # forms come out right. `a\\|b` is a literal backslash followed by a BRE pipe;
-  # a blind `String.replace(pattern, "\\|", "|")` finds a `\|` straddling the
-  # backslash pair and rewrites it, so the pattern ends up matching the literal
-  # text `a|b`. Consuming each backslash together with the character it escapes
-  # means an escaped character is never re-read as syntax.
-  #
-  # Only the pipe is translated. Full BRE emulation — bare `(`, `)`, `{` as
-  # literals, `\(...\)` as groups, `\{n,m\}` as bounds — is a much larger
-  # surface with more ways to land partially right, and is left alone rather
-  # than half-translated.
-  defp bre_pipes_to_pcre(pattern, flags) do
-    if flags.e_ext or flags.p_pcre do
-      pattern
-    else
-      pattern |> do_bre_pipes_to_pcre([]) |> IO.iodata_to_binary()
-    end
+  # Real `grep` without `-E`/`-P` reads a basic regular expression, where `\|`,
+  # `\?`, `\+`, `\{...\}` and `\(...\)` are the operators and the bare
+  # characters are literals. PCRE has those meanings exactly swapped, and both
+  # spellings compile either way, so a BRE passed through unchanged never
+  # reaches the `{:error, _}` fallback above. It quietly matches something
+  # else: `a\|b` looks for a literal pipe, and `in? Yes` no longer matches the
+  # text `in? Yes`. `TextRegex.bre_to_pcre/1` translates the whole pattern.
+  defp bre_to_pcre(pattern, flags) do
+    if flags.e_ext or flags.p_pcre, do: pattern, else: TextRegex.bre_to_pcre(pattern)
   end
-
-  defp do_bre_pipes_to_pcre(<<>>, acc), do: Enum.reverse(acc)
-
-  defp do_bre_pipes_to_pcre(<<"\\|", rest::binary>>, acc),
-    do: do_bre_pipes_to_pcre(rest, ["|" | acc])
-
-  defp do_bre_pipes_to_pcre(<<"\\", escaped::binary-size(1), rest::binary>>, acc),
-    do: do_bre_pipes_to_pcre(rest, ["\\" <> escaped | acc])
-
-  defp do_bre_pipes_to_pcre(<<"|", rest::binary>>, acc),
-    do: do_bre_pipes_to_pcre(rest, ["\\|" | acc])
-
-  defp do_bre_pipes_to_pcre(<<char::binary-size(1), rest::binary>>, acc),
-    do: do_bre_pipes_to_pcre(rest, [char | acc])
 
   defp selected?(line, regex, flags) do
     TextRegex.match?(regex, line) != flags.v

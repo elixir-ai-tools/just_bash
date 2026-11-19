@@ -52,4 +52,48 @@ defmodule JustBash.TextRegexTest do
       assert TextRegex.run(TextRegex.compile!("\\w+"), "naïve plan") == ["naïve"]
     end
   end
+
+  describe "bre_to_pcre/2" do
+    test "bare ? + | { } ( ) are literals" do
+      assert TextRegex.bre_to_pcre("in? (a+b|c{2})") == "in\\? \\(a\\+b\\|c\\{2\\}\\)"
+    end
+
+    test "escaped operators become PCRE operators" do
+      assert TextRegex.bre_to_pcre("\\(ab\\)\\?x\\+\\|y\\{2\\}") == "(ab)?x+|y{2}"
+    end
+
+    test "^ and $ anchor only at the ends of the pattern, a group or an alternative" do
+      assert TextRegex.bre_to_pcre("^a^b$c$") == "^a\\^b\\$c$"
+      assert TextRegex.bre_to_pcre("\\(^a$\\)\\|^b$") == "(^a$)|^b$"
+    end
+
+    test "* with nothing to repeat is literal" do
+      assert TextRegex.bre_to_pcre("*a*") == "\\*a*"
+      assert TextRegex.bre_to_pcre("^*") == "^\\*"
+    end
+
+    test "a bracket expression keeps its backslashes literal" do
+      assert TextRegex.bre_to_pcre("[\\.]") == "[\\\\.]"
+      assert TextRegex.bre_to_pcre("[]a]") == "[\\]a]"
+      assert TextRegex.bre_to_pcre("[^[:digit:]]") == "[^[:digit:]]"
+    end
+
+    test "an unterminated bracket is a literal [" do
+      assert TextRegex.bre_to_pcre("a[b") == "a\\[b"
+    end
+
+    test "an escaped delimiter is that character, in a bracket too" do
+      assert TextRegex.bre_to_pcre("a\\|b", delimiter: "|") == "a\\|b"
+      assert TextRegex.bre_to_pcre("[\\/]", delimiter: "/") == "[/]"
+    end
+
+    test "sed's \\n and \\t in a bracket expression" do
+      assert TextRegex.bre_to_pcre("[\\n]", bracket_escapes: true) == "[\\n]"
+      assert TextRegex.bre_to_pcre("[\\n]") == "[\\\\n]"
+    end
+
+    test "GNU word boundaries" do
+      assert TextRegex.bre_to_pcre("\\<cat\\>") == "\\b(?=\\w)cat\\b(?<=\\w)"
+    end
+  end
 end

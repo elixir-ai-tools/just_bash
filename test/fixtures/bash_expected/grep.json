@@ -482,6 +482,55 @@
       "name": "grep comparison: context: context at the start and end of the file",
       "stderr": "",
       "stdout": "a\nX1\nb\nc\nd\ne\nX2\nf\nX3\ng\n"
+    },
+    {
+      "content_hash": "e2dea305eb33ef45",
+      "exit_code": 0,
+      "name": "grep comparison: a question mark in a BRE is literal",
+      "stderr": "",
+      "stdout": "1\n"
+    },
+    {
+      "content_hash": "7389f2a1df58d074",
+      "exit_code": 0,
+      "name": "grep comparison: plus, braces and parentheses in a BRE are literal",
+      "stderr": "",
+      "stdout": "1:a+b\n2:a{2}\n3:f(x)\n"
+    },
+    {
+      "content_hash": "47854a9555908374",
+      "exit_code": 0,
+      "name": "grep comparison: escaped operators in a BRE",
+      "stderr": "",
+      "stdout": "1:ab\n2:aab\n4:foo\n"
+    },
+    {
+      "content_hash": "e621ae9a733e8d20",
+      "exit_code": 0,
+      "name": "grep comparison: a dollar sign mid-pattern is literal",
+      "stderr": "",
+      "stdout": "costs $5\n"
+    },
+    {
+      "content_hash": "f2056664579b9c40",
+      "exit_code": 0,
+      "name": "grep comparison: a backslash in a bracket expression is literal",
+      "stderr": "",
+      "stdout": "a.b\na\\b\n"
+    },
+    {
+      "content_hash": "a4619d874398b7cc",
+      "exit_code": 0,
+      "name": "grep comparison: BRE literals with -w",
+      "stderr": "",
+      "stdout": "is it? yes\n"
+    },
+    {
+      "content_hash": "0e353c20831fd173",
+      "exit_code": 0,
+      "name": "grep comparison: ERE operators are unchanged",
+      "stderr": "",
+      "stdout": "2\n"
     }
   ],
   "suite": "grep"

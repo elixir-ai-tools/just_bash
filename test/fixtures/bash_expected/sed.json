@@ -493,7 +493,7 @@
     {
       "content_hash": "105b74dd330153f1",
       "exit_code": 0,
-      "name": "sed comparison: addr,~N on a multiple selects one line",
+      "name": "sed comparison: addr,~N on a multiple runs to the next multiple",
       "stderr": "",
       "stdout": "d\ne\nf\n"
     },
@@ -902,6 +902,139 @@
       "name": "sed comparison: addr,~0 selects one line",
       "stderr": "",
       "stdout": "3\n"
+    },
+    {
+      "content_hash": "516591aad023460e",
+      "exit_code": 0,
+      "name": "sed comparison: a question mark in a BRE is literal",
+      "stderr": "",
+      "stdout": "Which state does Eric live in Illinois? Community property.\n"
+    },
+    {
+      "content_hash": "c8b4d0cdcf88b102",
+      "exit_code": 0,
+      "name": "sed comparison: a quoted open question deleted by address",
+      "stderr": "",
+      "stdout": "- Which state?\n"
+    },
+    {
+      "content_hash": "7404a0b67bc62cd2",
+      "exit_code": 0,
+      "name": "sed comparison: plus, pipe and braces in a BRE are literal",
+      "stderr": "",
+      "stdout": "1\n2\n3\n"
+    },
+    {
+      "content_hash": "daf8374365b41c6e",
+      "exit_code": 0,
+      "name": "sed comparison: parentheses in a BRE are literal",
+      "stderr": "",
+      "stdout": "f(x) = [a]\n"
+    },
+    {
+      "content_hash": "20ad0792f8add552",
+      "exit_code": 0,
+      "name": "sed comparison: escaped operators in a BRE",
+      "stderr": "",
+      "stdout": "X\naX\nZ\n"
+    },
+    {
+      "content_hash": "35841951b87fd9b5",
+      "exit_code": 0,
+      "name": "sed comparison: BRE alternation with an escaped pipe",
+      "stderr": "",
+      "stdout": "pet and pet\n"
+    },
+    {
+      "content_hash": "560f9024da267236",
+      "exit_code": 0,
+      "name": "sed comparison: BRE groups and a backreference",
+      "stderr": "",
+      "stdout": "<ab>\n"
+    },
+    {
+      "content_hash": "e9e05b13e7531379",
+      "exit_code": 0,
+      "name": "sed comparison: a dollar sign mid-pattern is literal",
+      "stderr": "",
+      "stdout": "It costs five dollars today.\n"
+    },
+    {
+      "content_hash": "6a5f333d9aa143cd",
+      "exit_code": 0,
+      "name": "sed comparison: a caret mid-pattern is literal",
+      "stderr": "",
+      "stdout": "x squared + y\n"
+    },
+    {
+      "content_hash": "e339f350da44f6e4",
+      "exit_code": 0,
+      "name": "sed comparison: a caret after a BRE group start anchors",
+      "stderr": "",
+      "stdout": "[a]b\nba\n"
+    },
+    {
+      "content_hash": "c7630d73520e17f8",
+      "exit_code": 0,
+      "name": "sed comparison: a star with nothing to repeat is literal",
+      "stderr": "",
+      "stdout": "-note\n-*bold**\n"
+    },
+    {
+      "content_hash": "7547514af56e0464",
+      "exit_code": 0,
+      "name": "sed comparison: a backslash in a bracket expression is literal",
+      "stderr": "",
+      "stdout": "X\nX\naxb\n"
+    },
+    {
+      "content_hash": "8047de0251acc659",
+      "exit_code": 0,
+      "name": "sed comparison: a close bracket first in a set",
+      "stderr": "",
+      "stdout": "a-b\n"
+    },
+    {
+      "content_hash": "060d4581d13f71f6",
+      "exit_code": 0,
+      "name": "sed comparison: a POSIX class in a set",
+      "stderr": "",
+      "stdout": "Chapter N\n"
+    },
+    {
+      "content_hash": "f6c4e7f7bdc7deed",
+      "exit_code": 0,
+      "name": "sed comparison: an escaped delimiter in a set",
+      "stderr": "",
+      "stdout": "and or\n"
+    },
+    {
+      "content_hash": "9e306368229113a1",
+      "exit_code": 0,
+      "name": "sed comparison: an escaped pipe delimiter is a literal pipe",
+      "stderr": "",
+      "stdout": "X ab\n"
+    },
+    {
+      "content_hash": "7cc15d712ea1cae2",
+      "exit_code": 0,
+      "name": "sed comparison: newline in a set after N",
+      "stderr": "",
+      "stdout": "a+b\n"
+    },
+    {
+      "content_hash": "a666b60e1936ef7f",
+      "exit_code": 0,
+      "name": "sed comparison: word boundaries",
+      "stderr": "",
+      "stdout": "the dog scattered\n"
+    },
+    {
+      "content_hash": "daa20a42092864bc",
+      "exit_code": 0,
+      "name": "sed comparison: ERE operators are unchanged",
+      "stderr": "",
+      "stdout": "X f[x]\n"
     }
   ],
   "suite": "sed"

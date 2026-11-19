@@ -7,6 +7,8 @@ defmodule JustBash.Commands.Sed.Parser do
   branch knows the index it jumps to.
   """
 
+  alias JustBash.TextRegex
+
   @type address ::
           nil
           | :last
@@ -299,7 +301,7 @@ defmodule JustBash.Commands.Sed.Parser do
     {body, rest} = take_delimited(rest, delimiter, "")
 
     if String.ends_with?(body, delimiter) do
-      pattern = body |> String.slice(0..-2//1) |> unescape_delimiter(delimiter)
+      pattern = String.slice(body, 0..-2//1)
 
       {flags, rest} =
         if String.starts_with?(rest, "I"),
@@ -309,19 +311,13 @@ defmodule JustBash.Commands.Sed.Parser do
       if pattern == "" do
         {:ok, {:regex, :last}, rest}
       else
-        with {:ok, regex} <- compile_regex(pattern, flags, ctx), do: {:ok, {:regex, regex}, rest}
+        with {:ok, regex} <- compile_regex(pattern, flags, delimiter, ctx),
+             do: {:ok, {:regex, regex}, rest}
       end
     else
       {:error, "unterminated address regex"}
     end
   end
-
-  # In `\%a\%b%`, `\%` is a literal `%`. A `\/` inside `/.../` is left for the
-  # regex engine, which reads it as `/` too.
-  defp unescape_delimiter(pattern, "/"), do: pattern
-
-  defp unescape_delimiter(pattern, delimiter),
-    do: String.replace(pattern, "\\" <> delimiter, delimiter)
 
   defp parse_single_command("", nil, _ctx), do: {:ok, :noop}
   defp parse_single_command("", _addr, _ctx), do: {:error, "missing command"}
@@ -467,21 +463,21 @@ defmodule JustBash.Commands.Sed.Parser do
   defp parse_substitute_parts(rest, delimiter, ctx) do
     case split_by_delimiter(rest, delimiter) do
       {:ok, pattern, replacement, flags_str} ->
-        build_substitute_command(pattern, replacement, flags_str, ctx)
+        build_substitute_command(pattern, replacement, flags_str, delimiter, ctx)
 
       {:error, msg} ->
         {:error, msg}
     end
   end
 
-  defp build_substitute_command(pattern, replacement, flags_str, ctx) do
+  defp build_substitute_command(pattern, replacement, flags_str, delimiter, ctx) do
     flags = parse_substitute_flags(flags_str)
 
     # Empty pattern means "reuse last regex"
     if pattern == "" do
       {:ok, {:substitute, :last_regex, replacement, flags}}
     else
-      case compile_regex(pattern, flags, ctx) do
+      case compile_regex(pattern, flags, delimiter, ctx) do
         {:ok, regex} ->
           {:ok, {:substitute, regex, replacement, flags}}
 
@@ -561,19 +557,20 @@ defmodule JustBash.Commands.Sed.Parser do
 
   @doc """
   Compile a regex pattern with the given flags.
-  Converts BRE (Basic Regular Expression) to ERE for Elixir's PCRE engine.
+
+  A basic regular expression (no `-E`) is translated to PCRE by
+  `JustBash.TextRegex.bre_to_pcre/2`, which also reads an escaped
+  `delimiter` as that character. In an extended one PCRE already reads an
+  escaped delimiter as the character, so it is compiled as written.
   """
-  @spec compile_regex(String.t(), substitute_flags(), ctx()) ::
+  @spec compile_regex(String.t(), substitute_flags(), String.t(), ctx()) ::
           {:ok, Regex.t()} | {:error, String.t()}
-  def compile_regex(pattern, flags, ctx) do
-    # Convert BRE to ERE if not in extended mode
-    # In BRE: \( \) \{ \} are special, ( ) { } are literal
-    # In ERE (and PCRE): ( ) { } are special, \( \) \{ \} are literal
+  def compile_regex(pattern, flags, delimiter, ctx) do
     converted_pattern =
       if ctx.extended do
         pattern
       else
-        convert_bre_to_ere(pattern)
+        TextRegex.bre_to_pcre(pattern, delimiter: delimiter, bracket_escapes: true)
       end
 
     # A pattern space can hold several lines once `N` or `G` has joined
@@ -592,67 +589,10 @@ defmodule JustBash.Commands.Sed.Parser do
 
     JustBash.Limit.check_regex_size!(ctx.limits, converted_pattern)
 
-    case JustBash.TextRegex.compile(converted_pattern, regex_opts) do
+    case TextRegex.compile(converted_pattern, regex_opts) do
       {:ok, regex} -> {:ok, regex}
       {:error, {msg, _}} -> {:error, "invalid regex: #{msg}"}
     end
-  end
-
-  # Convert Basic Regular Expression to Extended Regular Expression
-  # BRE: \( \) for groups, \{ \} for repetition, ( ) { } are literal
-  # ERE/PCRE: ( ) for groups, { } for repetition, \( \) \{ \} are literal
-  defp convert_bre_to_ere(pattern) do
-    pattern
-    |> convert_bre_groups()
-  end
-
-  defp convert_bre_groups(pattern) do
-    # Process character by character, handling escape sequences
-    do_convert_bre(pattern, "", false)
-  end
-
-  defp do_convert_bre("", acc, _escaped), do: acc
-
-  defp do_convert_bre(<<"\\", rest::binary>>, acc, false) do
-    case rest do
-      <<"(", rest2::binary>> ->
-        # \( in BRE -> ( in ERE (start capture group)
-        do_convert_bre(rest2, acc <> "(", false)
-
-      <<")", rest2::binary>> ->
-        # \) in BRE -> ) in ERE (end capture group)
-        do_convert_bre(rest2, acc <> ")", false)
-
-      <<"{", rest2::binary>> ->
-        # \{ in BRE -> { in ERE (start repetition)
-        do_convert_bre(rest2, acc <> "{", false)
-
-      <<"}", rest2::binary>> ->
-        # \} in BRE -> } in ERE (end repetition)
-        do_convert_bre(rest2, acc <> "}", false)
-
-      <<c, rest2::binary>> ->
-        # Other escaped characters - keep the backslash
-        do_convert_bre(rest2, acc <> "\\" <> <<c>>, false)
-
-      "" ->
-        # Trailing backslash
-        acc <> "\\"
-    end
-  end
-
-  defp do_convert_bre(<<"(", rest::binary>>, acc, false) do
-    # Literal ( in BRE -> \( in ERE
-    do_convert_bre(rest, acc <> "\\(", false)
-  end
-
-  defp do_convert_bre(<<")", rest::binary>>, acc, false) do
-    # Literal ) in BRE -> \) in ERE
-    do_convert_bre(rest, acc <> "\\)", false)
-  end
-
-  defp do_convert_bre(<<c, rest::binary>>, acc, false) do
-    do_convert_bre(rest, acc <> <<c>>, false)
   end
 
   defp text_command(?a), do: :append
